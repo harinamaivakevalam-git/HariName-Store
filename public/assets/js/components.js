@@ -81,13 +81,9 @@ const renderHeader = (activePage = '') => {
           
           <!-- Logo -->
           <a href="/index.html" class="hn-brand">
-            <svg width="28" height="34" viewBox="0 0 24 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2C7 6 4 12 4 18C4 22.4183 7.58172 26 12 26C16.4183 26 20 22.4183 20 18C20 12 17 6 12 2Z" fill="#0E6251"/>
-              <ellipse cx="12" cy="18" rx="5" ry="7" fill="#16A085"/>
-              <circle cx="12" cy="18" rx="2.5" fill="#0B2545"/>
-              <circle cx="12" cy="18" rx="1" fill="#F1C40F"/>
-              <path d="M12 26V30" stroke="#C59B27" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
+            <div class="hn-brand-logo-wrap">
+              <img src="/assets/images/krishna-logo.jpg" alt="Harinama Store Logo - Sri Krishna" class="hn-brand-img">
+            </div>
             <div class="hn-brand-text">
               <span class="hn-brand-title">Harinama Store</span>
               <span class="hn-brand-tagline">Remember Krishna. Share Krishna.</span>
@@ -189,14 +185,12 @@ const renderFooter = () => {
           
           <!-- Col 1: Brand Info -->
           <div class="col-lg-4 mb-3 mb-lg-0">
-            <div class="d-flex align-items-center gap-2 mb-3">
-              <svg width="24" height="30" viewBox="0 0 24 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C7 6 4 12 4 18C4 22.4183 7.58172 26 12 26C16.4183 26 20 22.4183 20 18C20 12 17 6 12 2Z" fill="#16A085"/>
-                <ellipse cx="12" cy="18" rx="5" ry="7" fill="#F1C40F"/>
-                <circle cx="12" cy="18" rx="2" fill="#0B2545"/>
-              </svg>
+            <a href="/index.html" class="d-flex align-items-center gap-2 mb-3 text-decoration-none">
+              <div class="hn-brand-logo-wrap footer-logo">
+                <img src="/assets/images/krishna-logo.jpg" alt="Harinama Store Logo - Sri Krishna" class="hn-brand-img">
+              </div>
               <h5 class="hn-brand-title text-white mb-0">Harinama Store</h5>
-            </div>
+            </a>
             <p class="hn-footer-desc">
               Beautiful devotional keychains and gifts designed to keep Krishna in your heart and everyday life.
             </p>

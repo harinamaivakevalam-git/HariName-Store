@@ -68,15 +68,42 @@ a:hover {
 .hn-brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   text-decoration: none;
   color: var(--hn-navy);
 }
 
-.hn-brand-logo {
+.hn-brand-logo-wrap {
+  width: 42px;
   height: 42px;
-  width: auto;
-  object-fit: contain;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1.5px solid var(--hn-gold);
+  box-shadow: 0 0 0 2px rgba(197, 155, 39, 0.2), 0 3px 10px rgba(11, 37, 69, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: var(--hn-transition);
+  background: #FFFFFF;
+}
+
+.hn-brand:hover .hn-brand-logo-wrap {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 3px rgba(197, 155, 39, 0.35), 0 4px 14px rgba(197, 155, 39, 0.3);
+}
+
+.hn-brand-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hn-brand-logo-wrap.footer-logo {
+  width: 36px;
+  height: 36px;
+  border-color: rgba(197, 155, 39, 0.8);
 }
 
 .hn-brand-text {

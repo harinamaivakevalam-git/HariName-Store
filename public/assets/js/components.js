@@ -63,7 +63,8 @@ const renderHeader = (activePage = '') => {
   const currentPath = window.location.pathname;
   let active = activePage;
   if (!active) {
-    if (currentPath.includes('shop') || currentPath.includes('products') || currentPath.includes('product-details')) active = 'shop';
+    if (currentPath.includes('collections')) active = 'collections';
+    else if (currentPath.includes('shop') || currentPath.includes('products') || currentPath.includes('product-details')) active = 'shop';
     else if (currentPath.includes('about')) active = 'about';
     else if (currentPath.includes('contact')) active = 'contact';
     else if (currentPath.includes('mission')) active = 'mission';
@@ -94,7 +95,7 @@ const renderHeader = (activePage = '') => {
           <nav class="d-none d-lg-flex align-items-center gap-2">
             <a href="/index.html" class="hn-nav-link ${active === 'home' ? 'active' : ''}">Home</a>
             <a href="/shop.html" class="hn-nav-link ${active === 'shop' ? 'active' : ''}">Shop</a>
-            <a href="/shop.html" class="hn-nav-link">Collections</a>
+            <a href="/collections.html" class="hn-nav-link ${active === 'collections' ? 'active' : ''}">Collections</a>
             <a href="/about.html" class="hn-nav-link ${active === 'mission' ? 'active' : ''}">Our Mission</a>
             <a href="/about.html" class="hn-nav-link ${active === 'about' ? 'active' : ''}">About</a>
             <a href="/contact.html" class="hn-nav-link ${active === 'contact' ? 'active' : ''}">Contact</a>
@@ -137,6 +138,10 @@ const renderHeader = (activePage = '') => {
               </a>
               <a href="/shop.html" class="hn-mobile-nav-link ${active === 'shop' ? 'active' : ''}">
                 <span><i class="bi bi-shop me-2"></i>Shop All Products</span>
+                <i class="bi bi-chevron-right small text-muted"></i>
+              </a>
+              <a href="/collections.html" class="hn-mobile-nav-link ${active === 'collections' ? 'active' : ''}">
+                <span><i class="bi bi-grid me-2"></i>Collections</span>
                 <i class="bi bi-chevron-right small text-muted"></i>
               </a>
               <a href="/about.html" class="hn-mobile-nav-link ${active === 'mission' ? 'active' : ''}">
@@ -192,7 +197,7 @@ const renderFooter = () => {
               <h5 class="hn-brand-title text-white mb-0">Harinama Store</h5>
             </a>
             <p class="hn-footer-desc">
-              Beautiful devotional keychains and gifts designed to keep Krishna in your heart and everyday life.
+              Beautiful devotional products and gifts designed to keep Krishna in your heart and everyday life.
             </p>
             <div class="hn-footer-social">
               <a href="https://instagram.com" target="_blank" title="Instagram"><i class="bi bi-instagram"></i></a>
@@ -205,7 +210,7 @@ const renderFooter = () => {
           <!-- Col 2: Shop Links -->
           <div class="col-6 col-lg-2">
             <div class="hn-footer-title">Shop</div>
-            <a href="/shop.html">All Keychains</a>
+            <a href="/shop.html">All Products</a>
             <a href="/shop.html?category=gift-sets">Gift Sets</a>
             <a href="/shop.html">New Arrivals</a>
           </div>
@@ -247,23 +252,25 @@ const renderFooter = () => {
 };
 
 // Render Product Card (Exact match to reference image)
+// Render Product Card (Exact match to reference image)
 const renderProductCard = (p) => {
-  const isWish = false;
+  const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+  const isWish = wishlist.includes(p.id);
 
   return `
     <div class="col-6 col-md-4 col-lg-2">
       <div class="hn-product-card" data-product-id="${p.id}">
         
-        <button class="hn-card-wishlist ${isWish ? 'active' : ''}" onclick="toggleWishlist('${p.id}', this)" title="Wishlist">
+        <button class="hn-card-wishlist ${isWish ? 'active text-danger' : ''}" onclick="toggleWishlist('${p.id}', this)" title="Wishlist">
           <i class="bi ${isWish ? 'bi-heart-fill text-danger' : 'bi-heart'}"></i>
         </button>
 
         <a href="/product-details.html?id=${p.id}" class="hn-card-img-box">
-          <img src="${p.image}" alt="${p.name}" loading="lazy">
+          <img src="${p.image}" alt="${p.name || p.title}" loading="lazy">
         </a>
 
         <div class="hn-card-title">
-          <a href="/product-details.html?id=${p.id}">${p.name}</a>
+          <a href="/product-details.html?id=${p.id}">${p.name || p.title}</a>
         </div>
 
         <div class="hn-card-price">
@@ -272,9 +279,11 @@ const renderProductCard = (p) => {
 
         ${renderRatingStars(p.rating, p.reviews_count)}
 
-        <button class="hn-btn-card-add" onclick="handleAddToCart('${p.id}')">
-          Add to Cart
-        </button>
+        <div class="d-flex gap-1 mt-auto">
+          <button class="hn-btn-card-add flex-grow-1" onclick="handleAddToCart('${p.id}')">
+            Add to Cart
+          </button>
+        </div>
 
       </div>
     </div>
@@ -282,23 +291,29 @@ const renderProductCard = (p) => {
 };
 
 // Cart Helpers
-const handleAddToCart = (productId, qty = 1, selectedMaterial = 'Acrylic') => {
+const handleAddToCart = (productId, qty = 1, selectedMaterial = null) => {
   const product = (HARINAMA_DATA.products || []).find(p => p.id === productId);
-  if (!product) return;
+  if (!product) {
+    showToast('Product not found.', 'error');
+    return;
+  }
+
+  const material = selectedMaterial || product.material || 'Acrylic';
+  const quantity = Math.max(1, Number(qty) || 1);
 
   let cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
-  const existingIndex = cart.findIndex(item => item.id === productId && item.material === selectedMaterial);
+  const existingIndex = cart.findIndex(item => item.id === productId && item.material === material);
 
   if (existingIndex > -1) {
-    cart[existingIndex].qty += Number(qty);
+    cart[existingIndex].qty += quantity;
   } else {
     cart.push({
       id: product.id,
-      name: product.name || product.title,
+      name: product.title || product.name,
       price: product.price,
       image: product.image,
-      material: selectedMaterial,
-      qty: Number(qty)
+      material: material,
+      qty: quantity
     });
   }
 
@@ -310,17 +325,51 @@ const handleAddToCart = (productId, qty = 1, selectedMaterial = 'Acrylic') => {
   const badge = document.getElementById('hn-cart-badge') || document.getElementById('cres-cart-badge');
   if (badge) badge.innerText = totalCount;
 
-  showToast(`Added "${product.name}" to your cart.`);
+  // Dispatch global event for reactive listeners
+  window.dispatchEvent(new CustomEvent('hn_cart_updated', { detail: { cart, totalCount } }));
+
+  showToast(`Added "${product.title || product.name}" (${quantity}) to cart.`);
 };
 
+// Buy Now Helper
+const handleBuyNow = (productId, qty = 1, selectedMaterial = null) => {
+  handleAddToCart(productId, qty, selectedMaterial);
+  setTimeout(() => {
+    window.location.href = '/checkout.html';
+  }, 250);
+};
+
+// Wishlist Helper with LocalStorage Persistence
 const toggleWishlist = (productId, btn) => {
-  showToast('Item saved to your sacred wishlist.');
+  let wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+  const index = wishlist.indexOf(productId);
+  let isNowWish = false;
+
+  if (index > -1) {
+    wishlist.splice(index, 1);
+    isNowWish = false;
+    showToast('Item removed from wishlist.');
+  } else {
+    wishlist.push(productId);
+    isNowWish = true;
+    showToast('Item saved to your sacred wishlist.');
+  }
+
+  localStorage.setItem('hn_wishlist', JSON.stringify(wishlist));
+
   if (btn) {
+    btn.classList.toggle('active', isNowWish);
+    btn.classList.toggle('text-danger', isNowWish);
     const icon = btn.querySelector('i');
     if (icon) {
-      icon.classList.toggle('bi-heart');
-      icon.classList.toggle('bi-heart-fill');
-      icon.classList.toggle('text-danger');
+      if (isNowWish) {
+        icon.className = 'bi bi-heart-fill text-danger';
+      } else {
+        icon.className = 'bi bi-heart';
+      }
     }
   }
+
+  window.dispatchEvent(new CustomEvent('hn_wishlist_updated', { detail: wishlist }));
 };
+

@@ -27,7 +27,7 @@
       
       <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom">
         <h1 class="hn-section-title mb-0" style="font-size: 2rem;">My Wishlist</h1>
-        <a href="/shop.html" class="text-secondary small fw-semibold">Browse Keychains</a>
+        <a href="/shop.html" class="text-secondary small fw-semibold">Browse Products</a>
       </div>
 
       <div class="row g-4">
@@ -72,27 +72,94 @@
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      renderHeader('account');
-      renderFooter();
-
+    function renderWishlist() {
       const grid = document.getElementById('hn-wishlist-grid');
-      const wishlistItems = HARINAMA_DATA.products.slice(0, 3);
-      grid.innerHTML = wishlistItems.map(p => {
+      if (!grid) return;
+
+      let wishlistIds = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+      
+      // Default to 3 popular items on fresh visit if empty
+      if (!wishlistIds || wishlistIds.length === 0) {
+        if (localStorage.getItem('hn_wishlist_init') === null) {
+          wishlistIds = ['prod-001', 'prod-003', 'prod-004'];
+          localStorage.setItem('hn_wishlist', JSON.stringify(wishlistIds));
+          localStorage.setItem('hn_wishlist_init', '1');
+        } else {
+          grid.innerHTML = `
+            <div class="col-12 py-5 text-center">
+              <i class="bi bi-heart fs-1 text-muted d-block mb-3"></i>
+              <h5 class="fw-bold">Your Wishlist is Empty</h5>
+              <p class="text-muted small mb-4">Save your favorite holy products and books to view them anytime.</p>
+              <a href="/shop.html" class="btn hn-btn-gold">Explore Devotional Products</a>
+            </div>
+          `;
+          return;
+        }
+      }
+
+      const products = (HARINAMA_DATA.products || []).filter(p => wishlistIds.includes(p.id));
+
+      if (products.length === 0) {
+        grid.innerHTML = `
+          <div class="col-12 py-5 text-center">
+            <i class="bi bi-heart fs-1 text-muted d-block mb-3"></i>
+            <h5 class="fw-bold">Your Wishlist is Empty</h5>
+            <p class="text-muted small mb-4">Save your favorite holy products and books to view them anytime.</p>
+            <a href="/shop.html" class="btn hn-btn-gold">Explore Devotional Products</a>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = products.map(p => {
         return `
           <div class="col-6 col-md-4">
-            <div class="hn-product-card">
+            <div class="hn-product-card" id="wish-card-${p.id}">
+              
+              <button class="hn-card-wishlist active text-danger" onclick="removeFromWishlistPage('${p.id}')" title="Remove from Wishlist">
+                <i class="bi bi-trash"></i>
+              </button>
+
               <a href="/product-details.html?id=${p.id}" class="hn-card-img-box">
-                <img src="${p.image}" alt="${p.name}">
+                <img src="${p.image}" alt="${p.name || p.title}">
               </a>
-              <div class="hn-card-title"><a href="/product-details.html?id=${p.id}">${p.name}</a></div>
+
+              <div class="hn-card-title">
+                <a href="/product-details.html?id=${p.id}">${p.name || p.title}</a>
+              </div>
+
               <div class="hn-card-price">${formatPrice(p.price)}</div>
+              
               ${renderRatingStars(p.rating, p.reviews_count)}
-              <button class="hn-btn-card-add mt-2" onclick="handleAddToCart('${p.id}')">Add to Cart</button>
+
+              <div class="d-flex flex-column gap-2 mt-auto pt-2">
+                <button class="hn-btn-card-add w-100" onclick="handleAddToCart('${p.id}')">
+                  <i class="bi bi-bag-plus me-1"></i> Add to Cart
+                </button>
+                <button class="btn btn-sm btn-outline-dark w-100" onclick="handleBuyNow('${p.id}')">
+                  Buy Now
+                </button>
+              </div>
+
             </div>
           </div>
         `;
       }).join('');
+    }
+
+    function removeFromWishlistPage(prodId) {
+      let wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+      wishlist = wishlist.filter(id => id !== prodId);
+      localStorage.setItem('hn_wishlist', JSON.stringify(wishlist));
+      showToast('Item removed from wishlist.');
+      renderWishlist();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderHeader('account');
+      renderFooter();
+      renderWishlist();
+      window.addEventListener('hn_wishlist_updated', renderWishlist);
     });
   </script>
 </body>

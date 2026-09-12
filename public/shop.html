@@ -29,7 +29,7 @@
       <!-- Page Header -->
       <div class="text-center my-4">
         <h1 class="hn-section-title">Shop Devotional Products</h1>
-        <div class="hn-section-subtitle">Sacred books, chanting malas, spiritual keychains, and holy reminders.</div>
+        <div class="hn-section-subtitle">Sacred books, chanting malas, spiritual products, and holy reminders.</div>
       </div>
 
       <div class="row g-4 mt-2">
@@ -137,21 +137,25 @@
         grid.innerHTML = '<div class="col-12 py-5 text-center text-muted"><i class="bi bi-box-seam fs-1 d-block mb-2 text-gold"></i>No products found matching your selected filters.</div>';
         return;
       }
+
+      const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+
       grid.innerHTML = items.map(p => {
+        const isWish = wishlist.includes(p.id);
         return `
           <div class="col-6 col-md-4 col-lg-3">
             <div class="hn-product-card" data-product-id="${p.id}">
               
-              <button class="hn-card-wishlist" onclick="toggleWishlist('${p.id}', this)" title="Wishlist">
-                <i class="bi bi-heart"></i>
+              <button class="hn-card-wishlist ${isWish ? 'active text-danger' : ''}" onclick="toggleWishlist('${p.id}', this)" title="Wishlist">
+                <i class="bi ${isWish ? 'bi-heart-fill text-danger' : 'bi-heart'}"></i>
               </button>
 
               <a href="/product-details.html?id=${p.id}" class="hn-card-img-box">
-                <img src="${p.image}" alt="${p.name}" loading="lazy">
+                <img src="${p.image}" alt="${p.name || p.title}" loading="lazy">
               </a>
 
               <div class="hn-card-title">
-                <a href="/product-details.html?id=${p.id}">${p.name}</a>
+                <a href="/product-details.html?id=${p.id}">${p.name || p.title}</a>
               </div>
 
               <div class="hn-card-price">
@@ -160,9 +164,11 @@
 
               ${renderRatingStars(p.rating, p.reviews_count)}
 
-              <button class="hn-btn-card-add" onclick="handleAddToCart('${p.id}')">
-                Add to Cart
-              </button>
+              <div class="d-flex flex-column gap-1 mt-auto pt-2">
+                <button class="hn-btn-card-add w-100" onclick="handleAddToCart('${p.id}')">
+                  Add to Cart
+                </button>
+              </div>
 
             </div>
           </div>

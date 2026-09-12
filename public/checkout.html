@@ -26,44 +26,58 @@
   <main class="py-5">
     <div class="container">
       
+      <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom">
+        <div>
+          <h1 class="hn-section-title text-start mb-0" style="font-size: 2rem;">Secure Checkout</h1>
+          <div class="text-secondary small">Complete your order with blessed devotion and secure delivery.</div>
+        </div>
+        <a href="/cart.html" class="text-secondary small fw-semibold text-decoration-underline">
+          <i class="bi bi-arrow-left me-1"></i> Return to Cart
+        </a>
+      </div>
+
       <form id="hn-checkout-form" onsubmit="handlePlaceOrder(event)">
         <div class="row g-4 g-lg-5">
           
-          <!-- Left Column: Shipping Information -->
+          <!-- Left Column: Shipping Information & Payment -->
           <div class="col-lg-7">
-            <div class="bg-white border rounded p-4 shadow-sm">
-              <h4 class="fw-bold mb-4" style="font-family: var(--hn-font-serif); color: var(--hn-navy);">Shipping Information</h4>
+            
+            <!-- Shipping Details Box -->
+            <div class="bg-white border rounded p-4 shadow-sm mb-4">
+              <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                <div class="rounded-circle bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; font-size: 0.9rem;">1</div>
+                <h4 class="fw-bold mb-0" style="font-family: var(--hn-font-serif); color: var(--hn-navy);">Shipping Information</h4>
+              </div>
               
               <div class="mb-3">
                 <label class="form-label small fw-bold text-secondary">Full Name *</label>
-                <input type="text" class="form-control" id="hn-ship-name" required placeholder="Gauranga Das">
+                <input type="text" class="form-control" id="hn-ship-name" required placeholder="Gauranga Das" value="Gauranga Das">
               </div>
 
               <div class="row g-3 mb-3">
                 <div class="col-md-6">
-                  <label class="form-label small fw-bold text-secondary">Mobile Number *</label>
-                  <input type="tel" class="form-control" id="hn-ship-phone" required placeholder="+91 98765 43210">
+                  <label class="form-label small fw-bold text-secondary">Mobile Number (for delivery tracking) *</label>
+                  <input type="tel" class="form-control" id="hn-ship-phone" required placeholder="+91 98765 43210" value="+91 98765 43210">
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label small fw-bold text-secondary">Email (optional)</label>
-                  <input type="email" class="form-control" id="hn-ship-email" placeholder="devotee@harinama.com">
+                  <label class="form-label small fw-bold text-secondary">Email Address (for invoice)</label>
+                  <input type="email" class="form-control" id="hn-ship-email" placeholder="devotee@harinama.com" value="user@harinama.com">
                 </div>
               </div>
 
               <div class="mb-3">
-                <label class="form-label small fw-bold text-secondary">Address *</label>
-                <input type="text" class="form-control" id="hn-ship-address" required placeholder="Flat 402, Radharani Kripa, Raman Reti">
+                <label class="form-label small fw-bold text-secondary">Delivery Street Address / Flat / Landmark *</label>
+                <input type="text" class="form-control" id="hn-ship-address" required placeholder="Flat 402, Radharani Kripa Apartments, Raman Reti" value="Flat 402, Radharani Kripa Apartments, Raman Reti">
               </div>
 
               <div class="row g-3">
                 <div class="col-md-4">
-                  <label class="form-label small fw-bold text-secondary">City *</label>
-                  <input type="text" class="form-control" id="hn-ship-city" required placeholder="Vrindavan">
+                  <label class="form-label small fw-bold text-secondary">City / Town *</label>
+                  <input type="text" class="form-control" id="hn-ship-city" required placeholder="Vrindavan" value="Vrindavan">
                 </div>
                 <div class="col-md-4">
                   <label class="form-label small fw-bold text-secondary">State *</label>
                   <select class="form-select" id="hn-ship-state" required>
-                    <option value="">(Select State)</option>
                     <option value="Uttar Pradesh" selected>Uttar Pradesh</option>
                     <option value="West Bengal">West Bengal</option>
                     <option value="Maharashtra">Maharashtra</option>
@@ -72,36 +86,47 @@
                     <option value="Gujarat">Gujarat</option>
                     <option value="Tamil Nadu">Tamil Nadu</option>
                     <option value="Rajasthan">Rajasthan</option>
+                    <option value="Punjab">Punjab</option>
+                    <option value="Telangana">Telangana</option>
+                    <option value="Other">Other State</option>
                   </select>
                 </div>
                 <div class="col-md-4">
                   <label class="form-label small fw-bold text-secondary">PIN Code *</label>
-                  <input type="text" class="form-control" id="hn-ship-pin" required placeholder="281121">
+                  <input type="text" class="form-control" id="hn-ship-pin" required placeholder="281121" value="281121">
                 </div>
               </div>
 
             </div>
-          </div>
 
-          <!-- Right Column: Payment Method (Exact Match to Reference) -->
-          <div class="col-lg-5">
+            <!-- Payment Method Box -->
             <div class="bg-white border rounded p-4 shadow-sm">
-              <h4 class="fw-bold mb-4" style="font-family: var(--hn-font-serif); color: var(--hn-navy);">Payment Method</h4>
+              <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                <div class="rounded-circle bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; font-size: 0.9rem;">2</div>
+                <h4 class="fw-bold mb-0" style="font-family: var(--hn-font-serif); color: var(--hn-navy);">Payment Method</h4>
+              </div>
 
               <!-- Payment Method Radios -->
               <div class="d-flex flex-column gap-3 mb-4">
                 
-                <label class="border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer;">
+                <label class="border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer; background: #FAF9F5; border-color: var(--hn-gold-border) !important;">
                   <div class="d-flex align-items-center gap-2">
-                    <input type="radio" name="payment_method" value="upi" checked class="form-check-input">
-                    <span class="fw-semibold small">UPI (Google Pay, PhonePe, Paytm)</span>
+                    <input type="radio" name="payment_method" value="UPI Instant (Google Pay, PhonePe, Paytm)" checked class="form-check-input">
+                    <div>
+                      <span class="fw-semibold small d-block">UPI (Google Pay, PhonePe, Paytm, BHIM)</span>
+                      <span class="text-muted" style="font-size: 0.75rem;">Fastest &amp; zero transaction charges</span>
+                    </div>
                   </div>
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">Recommended</span>
                 </label>
 
                 <label class="border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer;">
                   <div class="d-flex align-items-center gap-2">
-                    <input type="radio" name="payment_method" value="card" class="form-check-input">
-                    <span class="fw-semibold small">Credit / Debit Card</span>
+                    <input type="radio" name="payment_method" value="Credit / Debit Card" class="form-check-input">
+                    <div>
+                      <span class="fw-semibold small d-block">Credit / Debit Card</span>
+                      <span class="text-muted" style="font-size: 0.75rem;">Visa, Mastercard, RuPay</span>
+                    </div>
                   </div>
                   <div class="d-flex gap-1">
                     <span class="badge bg-light text-dark border">VISA</span>
@@ -112,16 +137,20 @@
 
                 <label class="border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer;">
                   <div class="d-flex align-items-center gap-2">
-                    <input type="radio" name="payment_method" value="netbanking" class="form-check-input">
-                    <span class="fw-semibold small">Net Banking</span>
+                    <input type="radio" name="payment_method" value="Net Banking" class="form-check-input">
+                    <span class="fw-semibold small">Net Banking (All Indian Banks)</span>
                   </div>
                 </label>
 
                 <label class="border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer;">
                   <div class="d-flex align-items-center gap-2">
-                    <input type="radio" name="payment_method" value="wallets" class="form-check-input">
-                    <span class="fw-semibold small">Wallets</span>
+                    <input type="radio" name="payment_method" value="Cash on Delivery (COD)" class="form-check-input">
+                    <div>
+                      <span class="fw-semibold small d-block">Cash on Delivery (COD)</span>
+                      <span class="text-muted" style="font-size: 0.75rem;">Pay when blessed package arrives</span>
+                    </div>
                   </div>
+                  <span class="badge bg-light text-dark border">COD Available</span>
                 </label>
 
               </div>
@@ -130,18 +159,81 @@
               <div class="form-check mb-4">
                 <input class="form-check-input" type="checkbox" id="hn-terms-check" required checked>
                 <label class="form-check-label small text-secondary" for="hn-terms-check">
-                  I agree to the <a href="/terms.html" class="text-decoration-underline text-navy">Terms &amp; Conditions</a>
+                  I agree to the <a href="/terms.html" target="_blank" class="text-decoration-underline text-navy">Terms &amp; Conditions</a> and understand orders are dispatched with sacred care.
                 </label>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Right Column: Dynamic Order Summary Box -->
+          <div class="col-lg-5">
+            <div class="hn-summary-box sticky-top" style="top: 20px;">
+              
+              <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                <h5 class="fw-bold mb-0" style="font-family: var(--hn-font-serif); color: var(--hn-navy);">Order Summary</h5>
+                <span class="badge bg-light text-dark border" id="hn-checkout-item-count">0 items</span>
+              </div>
+
+              <!-- Items Scroll List -->
+              <div class="mb-3" id="hn-checkout-items-list" style="max-height: 240px; overflow-y: auto; padding-right: 4px;">
+                <!-- Dynamically rendered -->
+              </div>
+
+              <!-- Coupon Code Box -->
+              <div class="border rounded p-2 bg-light mb-3">
+                <div class="input-group input-group-sm">
+                  <input type="text" class="form-control" id="hn-checkout-coupon" placeholder="Coupon Code (e.g. WELCOME10)">
+                  <button type="button" class="btn btn-outline-dark" onclick="applyCheckoutCoupon()">Apply</button>
+                </div>
+                <div id="hn-checkout-coupon-msg" class="small mt-1"></div>
+              </div>
+
+              <!-- Price Breakdown -->
+              <div class="d-flex justify-content-between mb-2 small text-secondary">
+                <span>Subtotal</span>
+                <span class="fw-semibold text-dark" id="hn-co-subtotal">₹0</span>
+              </div>
+
+              <div class="d-flex justify-content-between mb-2 small text-secondary">
+                <span>Shipping &amp; Sacred Packaging</span>
+                <span class="text-success fw-semibold" id="hn-co-shipping">FREE</span>
+              </div>
+
+              <div class="d-flex justify-content-between mb-3 small text-secondary d-none" id="hn-co-discount-row">
+                <span class="text-success fw-semibold">Coupon Discount</span>
+                <span class="text-success fw-semibold" id="hn-co-discount">-₹0</span>
+              </div>
+
+              <hr class="my-3">
+
+              <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                  <span class="fw-bold d-block">Total Amount</span>
+                  <span class="text-muted" style="font-size: 0.72rem;">(Inclusive of all taxes)</span>
+                </div>
+                <span class="fs-3 fw-bold" style="color: var(--hn-navy);" id="hn-co-total">₹0</span>
               </div>
 
               <!-- Place Order Button -->
               <button type="submit" class="btn hn-btn-gold w-100 py-3 mb-3 fw-bold" id="hn-btn-place-order">
-                Place Order
+                <i class="bi bi-lock-fill me-1"></i> Place Sacred Order
               </button>
 
-              <!-- Secure Note -->
-              <div class="text-center small text-muted">
-                <i class="bi bi-lock-fill text-warning me-1"></i> Your payment information is secure and encrypted.
+              <!-- Sacred Unboxing Card -->
+              <div class="p-3 border rounded text-center mb-3" style="background-color: var(--hn-cream); border-color: var(--hn-gold-border) !important;">
+                <div class="small fw-bold text-navy" style="font-family: var(--hn-font-serif);">
+                  <i class="bi bi-flower2 text-warning me-1"></i> Blessed Maha-Mantra Unboxing
+                </div>
+                <div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">
+                  Every order includes sacred chanting reminder cards and holy protection packaging.
+                </div>
+              </div>
+
+              <!-- Security Badges -->
+              <div class="text-center small text-muted" style="font-size: 0.75rem;">
+                <i class="bi bi-shield-check text-success me-1"></i> 256-Bit SSL Encryption • 100% Authentic Products
               </div>
 
             </div>
@@ -161,28 +253,142 @@
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
+    let checkoutDiscount = Number(sessionStorage.getItem('hn_checkout_discount') || '0');
+    let checkoutCouponCode = sessionStorage.getItem('hn_coupon_code') || '';
+
+    function getCheckoutCart() {
+      let cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
+      if (!cart || cart.length === 0) {
+        // Fallback to sample item if user arrived directly
+        cart = [
+          { id: 'prod-001', name: 'Peacock Feather Keychain', price: 99, qty: 1, image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80', material: 'Acrylic' }
+        ];
+        localStorage.setItem('hn_cart', JSON.stringify(cart));
+      }
+      return cart;
+    }
+
+    function renderCheckoutSummary() {
+      const cart = getCheckoutCart();
+      const listContainer = document.getElementById('hn-checkout-items-list');
+      const countBadge = document.getElementById('hn-checkout-item-count');
+
+      const totalItemsCount = cart.reduce((acc, i) => acc + (i.qty || 1), 0);
+      if (countBadge) countBadge.innerText = `${totalItemsCount} ${totalItemsCount === 1 ? 'item' : 'items'}`;
+
+      let subtotal = 0;
+      listContainer.innerHTML = cart.map(item => {
+        const itemTotal = item.price * (item.qty || 1);
+        subtotal += itemTotal;
+        return `
+          <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+            <div class="d-flex align-items-center gap-2">
+              <img src="${item.image}" alt="${item.name}" class="rounded border" style="width: 44px; height: 44px; object-fit: cover;">
+              <div>
+                <div class="fw-semibold text-dark small text-truncate" style="max-width: 180px;">${item.name}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Qty: ${item.qty || 1} &nbsp;|&nbsp; ${item.material || 'Standard'}</div>
+              </div>
+            </div>
+            <div class="fw-bold small text-navy">₹${itemTotal}</div>
+          </div>
+        `;
+      }).join('');
+
+      // Shipping is FREE for orders above ₹499 or flat ₹0 promotional
+      const shipping = subtotal >= 499 ? 0 : 0; // Promotional Free Shipping
+      document.getElementById('hn-co-shipping').innerText = shipping === 0 ? 'FREE' : `₹${shipping}`;
+
+      if (checkoutCouponCode && checkoutDiscount > 0) {
+        document.getElementById('hn-co-discount-row').classList.remove('d-none');
+        document.getElementById('hn-co-discount').innerText = `-₹${checkoutDiscount}`;
+        const couponInput = document.getElementById('hn-checkout-coupon');
+        if (couponInput) couponInput.value = checkoutCouponCode;
+        const msg = document.getElementById('hn-checkout-coupon-msg');
+        if (msg) msg.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> Applied: ${checkoutCouponCode} (-₹${checkoutDiscount})</span>`;
+      }
+
+      const finalTotal = Math.max(0, subtotal + shipping - checkoutDiscount);
+      document.getElementById('hn-co-subtotal').innerText = `₹${subtotal}`;
+      document.getElementById('hn-co-total').innerText = `₹${finalTotal}`;
+    }
+
+    function applyCheckoutCoupon() {
+      const code = (document.getElementById('hn-checkout-coupon').value || '').trim().toUpperCase();
+      const msg = document.getElementById('hn-checkout-coupon-msg');
+
+      if (code === 'WELCOME10' || code === 'KRISHNA50') {
+        checkoutDiscount = 50;
+        checkoutCouponCode = code;
+        sessionStorage.setItem('hn_checkout_discount', '50');
+        sessionStorage.setItem('hn_coupon_code', code);
+        msg.innerHTML = '<span class="text-success"><i class="bi bi-check-circle"></i> Coupon WELCOME10 applied! ₹50 discount.</span>';
+        renderCheckoutSummary();
+      } else if (code === 'RADHA100') {
+        checkoutDiscount = 100;
+        checkoutCouponCode = code;
+        sessionStorage.setItem('hn_checkout_discount', '100');
+        sessionStorage.setItem('hn_coupon_code', code);
+        msg.innerHTML = '<span class="text-success"><i class="bi bi-check-circle"></i> Holy Blessing! ₹100 discount applied.</span>';
+        renderCheckoutSummary();
+      } else {
+        msg.innerHTML = '<span class="text-danger">Invalid code. Try WELCOME10 or KRISHNA50</span>';
+      }
+    }
+
     function handlePlaceOrder(e) {
       e.preventDefault();
       const btn = document.getElementById('hn-btn-place-order');
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing Sacred Order...';
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Placing Sacred Order...';
       btn.disabled = true;
 
       const orderNumber = 'HN-2026-' + Math.floor(10000 + Math.random() * 90000);
       const name = document.getElementById('hn-ship-name').value;
       const phone = document.getElementById('hn-ship-phone').value;
+      const email = document.getElementById('hn-ship-email').value;
+      const address = document.getElementById('hn-ship-address').value;
+      const city = document.getElementById('hn-ship-city').value;
+      const state = document.getElementById('hn-ship-state').value;
+      const pin = document.getElementById('hn-ship-pin').value;
+      const paymentMethod = document.querySelector('input[name="payment_method"]:checked')?.value || 'UPI';
+
+      const cart = getCheckoutCart();
+      const subtotal = cart.reduce((acc, i) => acc + (i.price * (i.qty || 1)), 0);
+      const total = Math.max(0, subtotal - checkoutDiscount);
+
+      const orderData = {
+        orderId: orderNumber,
+        date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+        timestamp: Date.now(),
+        customer: { name, phone, email, address, city, state, pin },
+        paymentMethod,
+        items: [...cart],
+        subtotal,
+        discount: checkoutDiscount,
+        total,
+        status: 'Confirmed'
+      };
+
+      // Store into user orders
+      let orders = JSON.parse(localStorage.getItem('hn_orders') || '[]');
+      orders.unshift(orderData);
+      localStorage.setItem('hn_orders', JSON.stringify(orders));
 
       setTimeout(() => {
         // Clear cart
         localStorage.removeItem('hn_cart');
         localStorage.removeItem('cres_cart');
-        window.location.href = `/order-success.html?order=${orderNumber}&name=${encodeURIComponent(name)}`;
-      }, 1200);
+        sessionStorage.removeItem('hn_checkout_discount');
+        sessionStorage.removeItem('hn_coupon_code');
+        window.location.href = `/order-success.html?order=${orderNumber}&name=${encodeURIComponent(name)}&total=${total}`;
+      }, 1000);
     }
 
     document.addEventListener('DOMContentLoaded', () => {
       renderHeader('checkout');
       renderFooter();
+      renderCheckoutSummary();
     });
   </script>
 </body>
 </html>
+

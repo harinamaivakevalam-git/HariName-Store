@@ -53,69 +53,8 @@
         </div>
 
         <!-- Right Orders List -->
-        <div class="col-lg-9">
-          
-          <!-- Sample Order Card 1 -->
-          <div class="card border rounded shadow-sm bg-white mb-4 overflow-hidden">
-            <div class="card-header bg-light p-3 d-flex flex-wrap align-items-center justify-content-between gap-2 border-bottom">
-              <div>
-                <span class="small text-muted">Order Placed:</span> <span class="small fw-semibold">12 Sep 2026</span> &nbsp;|&nbsp;
-                <span class="small text-muted">Order ID:</span> <span class="small fw-bold text-navy">#HN-2026-98124</span>
-              </div>
-              <div>
-                <span class="badge bg-success">Delivered</span>
-              </div>
-            </div>
-
-            <div class="card-body p-3 p-md-4">
-              <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                <div class="d-flex align-items-center gap-3">
-                  <img src="https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=200&q=80" alt="Peacock Feather Keychain" class="rounded border" style="width: 60px; height: 60px; object-fit: cover;">
-                  <div>
-                    <h6 class="fw-bold mb-1 text-navy">Peacock Feather Keychain + Maha-Mantra Set</h6>
-                    <div class="text-muted small">Qty: 2 &nbsp;|&nbsp; Material: Acrylic / Metal</div>
-                    <div class="fw-bold text-navy mt-1">₹526</div>
-                  </div>
-                </div>
-
-                <div class="d-flex gap-2">
-                  <a href="/order-tracking.html?order=HN-2026-98124" class="btn btn-outline-dark btn-sm">Track Order</a>
-                  <button class="btn hn-btn-gold btn-sm" onclick="showToast('Invoice downloaded.')">Download Invoice</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Sample Order Card 2 -->
-          <div class="card border rounded shadow-sm bg-white mb-4 overflow-hidden">
-            <div class="card-header bg-light p-3 d-flex flex-wrap align-items-center justify-content-between gap-2 border-bottom">
-              <div>
-                <span class="small text-muted">Order Placed:</span> <span class="small fw-semibold">05 Sep 2026</span> &nbsp;|&nbsp;
-                <span class="small text-muted">Order ID:</span> <span class="small fw-bold text-navy">#HN-2026-88219</span>
-              </div>
-              <div>
-                <span class="badge bg-primary">Dispatched</span>
-              </div>
-            </div>
-
-            <div class="card-body p-3 p-md-4">
-              <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                <div class="d-flex align-items-center gap-3">
-                  <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=200&q=80" alt="3-Keychain Gift Set" class="rounded border" style="width: 60px; height: 60px; object-fit: cover;">
-                  <div>
-                    <h6 class="fw-bold mb-1 text-navy">3-Keychain Devotional Gift Set</h6>
-                    <div class="text-muted small">Qty: 1 &nbsp;|&nbsp; Deluxe Box Edition</div>
-                    <div class="fw-bold text-navy mt-1">₹299</div>
-                  </div>
-                </div>
-
-                <div class="d-flex gap-2">
-                  <a href="/order-tracking.html?order=HN-2026-88219" class="btn btn-outline-dark btn-sm">Track Order</a>
-                </div>
-              </div>
-            </div>
-          </div>
-
+        <div class="col-lg-9" id="hn-orders-list-container">
+          <!-- Dynamically populated from localStorage & sample history -->
         </div>
 
       </div>
@@ -131,9 +70,96 @@
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
+    function renderOrdersList() {
+      const container = document.getElementById('hn-orders-list-container');
+      if (!container) return;
+
+      let storedOrders = JSON.parse(localStorage.getItem('hn_orders') || '[]');
+
+      // Default sample orders if no orders stored yet
+      if (!storedOrders || storedOrders.length === 0) {
+        storedOrders = [
+          {
+            orderId: 'HN-2026-98124',
+            date: '12 Sep 2026',
+            status: 'Delivered',
+            total: 526,
+            items: [
+              {
+                name: 'Peacock Feather Keychain + Maha-Mantra Set',
+                material: 'Acrylic / Metal',
+                price: 263,
+                qty: 2,
+                image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=200&q=80'
+              }
+            ]
+          },
+          {
+            orderId: 'HN-2026-88219',
+            date: '05 Sep 2026',
+            status: 'Dispatched',
+            total: 299,
+            items: [
+              {
+                name: '3-Keychain Devotional Gift Set',
+                material: 'Deluxe Box Edition',
+                price: 299,
+                qty: 1,
+                image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=200&q=80'
+              }
+            ]
+          }
+        ];
+      }
+
+      container.innerHTML = storedOrders.map(order => {
+        const statusClass = order.status === 'Delivered' ? 'bg-success' : (order.status === 'Dispatched' ? 'bg-primary' : 'bg-warning text-dark');
+        const firstItem = (order.items && order.items.length > 0) ? order.items[0] : {
+          name: 'Harinama Devotional Keychain',
+          image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=200&q=80',
+          material: 'Standard',
+          qty: 1
+        };
+        const totalItemsCount = order.items ? order.items.reduce((acc, i) => acc + (i.qty || 1), 0) : 1;
+
+        return `
+          <div class="card border rounded shadow-sm bg-white mb-4 overflow-hidden">
+            <div class="card-header bg-light p-3 d-flex flex-wrap align-items-center justify-content-between gap-2 border-bottom">
+              <div>
+                <span class="small text-muted">Order Placed:</span> <span class="small fw-semibold">${order.date || 'Recent'}</span> &nbsp;|&nbsp;
+                <span class="small text-muted">Order ID:</span> <span class="small fw-bold text-navy">#${order.orderId}</span>
+              </div>
+              <div>
+                <span class="badge ${statusClass}">${order.status || 'Confirmed'}</span>
+              </div>
+            </div>
+
+            <div class="card-body p-3 p-md-4">
+              <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div class="d-flex align-items-center gap-3">
+                  <img src="${firstItem.image}" alt="${firstItem.name}" class="rounded border" style="width: 60px; height: 60px; object-fit: cover;">
+                  <div>
+                    <h6 class="fw-bold mb-1 text-navy">${firstItem.name} ${order.items && order.items.length > 1 ? `(+${order.items.length - 1} more items)` : ''}</h6>
+                    <div class="text-muted small">Total Qty: ${totalItemsCount} &nbsp;|&nbsp; Material: ${firstItem.material || 'Devotional Grade'}</div>
+                    <div class="fw-bold text-navy mt-1">₹${order.total}</div>
+                  </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                  <a href="/order-tracking.html?order=${order.orderId}" class="btn btn-outline-dark btn-sm">Track Order</a>
+                  <button class="btn hn-btn-gold btn-sm" onclick="showToast('Invoice for #${order.orderId} downloaded.')">Download Invoice</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       renderHeader('account');
       renderFooter();
+      renderOrdersList();
     });
   </script>
 </body>

@@ -127,12 +127,14 @@ a:hover {
 }
 
 .hn-brand-tagline {
-  font-size: 0.68rem;
+  font-size: 0.58rem;
   color: var(--hn-text-muted);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   font-family: var(--hn-font-sans);
   text-transform: uppercase;
-  font-weight: 700;
+  font-weight: 600;
+  line-height: 1.1;
+  margin-top: 2px;
 }
 
 .hn-nav-link {
@@ -1484,7 +1486,8 @@ a:hover {
   }
 
   .hn-brand-tagline {
-    font-size: 0.6rem;
+    font-size: 0.52rem;
+    letter-spacing: 0.05em;
   }
 
   .hn-hero-badge {

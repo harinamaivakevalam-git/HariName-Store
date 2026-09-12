@@ -58,7 +58,7 @@
               <i class="bi bi-bag-x fs-1 text-muted d-block mb-3"></i>
               <h5 class="fw-bold">Your cart is currently empty</h5>
               <p class="text-muted small mb-4">Add your favorite devotional reminders and gift sets to begin.</p>
-              <a href="/shop.html" class="btn hn-btn-gold">Explore Keychains</a>
+              <a href="/shop.html" class="btn hn-btn-gold">Explore Products</a>
             </div>
           </div>
         </div>
@@ -85,7 +85,7 @@
               <span class="fs-4 fw-bold" style="color: var(--hn-navy);" id="hn-sum-total">₹526</span>
             </div>
 
-            <a href="/checkout.html" class="btn hn-btn-gold w-100 py-3 mb-4 fw-bold" id="hn-btn-checkout">
+            <a href="/checkout.html" class="btn hn-btn-gold w-100 py-3 mb-4 fw-bold" id="hn-btn-checkout" onclick="return handleProceedToCheckout(event)">
               Proceed to Checkout
             </a>
 
@@ -127,19 +127,30 @@
   <script src="/assets/js/components.js"></script>
   <script>
     let cartDiscount = 0;
+    let appliedCouponCode = '';
 
     function getCart() {
-      let cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
-      if (!cart || cart.length === 0) {
-        // Initialize default sample cart matching reference image if fresh visit
-        cart = [
-          { id: 'prod-003', name: 'Maha-Mantra Keychain', price: 149, qty: 2, image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=400&q=80', material: 'Metal' },
+      const stored = localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart');
+      const initialized = localStorage.getItem('hn_cart_init');
+
+      if (stored === null && initialized === null) {
+        // First time sample cart
+        const defaultCart = [
+          { id: 'prod-003', name: 'Maha-Mantra Keychain (Hare Krishna)', price: 149, qty: 2, image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=400&q=80', material: 'Metal' },
           { id: 'prod-001', name: 'Peacock Feather Keychain', price: 99, qty: 1, image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80', material: 'Acrylic' },
-          { id: 'prod-004', name: 'Radhe Radhe Keychain', price: 129, qty: 1, image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', material: 'Acrylic' }
+          { id: 'prod-004', name: 'Radhe Radhe Enamel Keychain', price: 129, qty: 1, image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', material: 'Acrylic' }
         ];
-        localStorage.setItem('hn_cart', JSON.stringify(cart));
+        localStorage.setItem('hn_cart', JSON.stringify(defaultCart));
+        localStorage.setItem('cres_cart', JSON.stringify(defaultCart));
+        localStorage.setItem('hn_cart_init', '1');
+        return defaultCart;
       }
-      return cart;
+
+      try {
+        return JSON.parse(stored || '[]');
+      } catch (e) {
+        return [];
+      }
     }
 
     function renderCart() {
@@ -153,6 +164,8 @@
         if (emptyMsg) emptyMsg.classList.remove('d-none');
         document.getElementById('hn-sum-subtotal').innerText = '₹0';
         document.getElementById('hn-sum-total').innerText = '₹0';
+        const badge = document.getElementById('hn-cart-badge');
+        if (badge) badge.innerText = '0';
         return;
       }
 
@@ -166,9 +179,11 @@
           <tr>
             <td>
               <div class="d-flex align-items-center gap-3">
-                <img src="${item.image}" alt="${item.name}" class="rounded border" style="width: 50px; height: 50px; object-fit: cover;">
+                <a href="/product-details.html?id=${item.id}">
+                  <img src="${item.image}" alt="${item.name}" class="rounded border" style="width: 50px; height: 50px; object-fit: cover;">
+                </a>
                 <div>
-                  <div class="fw-semibold text-dark">${item.name}</div>
+                  <a href="/product-details.html?id=${item.id}" class="fw-semibold text-dark text-decoration-none d-block">${item.name}</a>
                   <div class="text-muted small">${item.material || 'Standard'}</div>
                 </div>
               </div>
@@ -183,8 +198,8 @@
             </td>
             <td class="fw-bold" style="color: var(--hn-navy);">₹${itemTotal}</td>
             <td>
-              <button class="btn btn-sm btn-link text-muted p-0" onclick="removeCartItem(${index})" title="Remove">
-                <i class="bi bi-x-lg"></i>
+              <button class="btn btn-sm btn-link text-danger p-0" onclick="removeCartItem(${index})" title="Remove">
+                <i class="bi bi-trash fs-6"></i>
               </button>
             </td>
           </tr>
@@ -215,28 +230,52 @@
 
     function removeCartItem(index) {
       let cart = getCart();
-      cart.splice(index, 1);
+      const removed = cart.splice(index, 1);
       localStorage.setItem('hn_cart', JSON.stringify(cart));
       localStorage.setItem('cres_cart', JSON.stringify(cart));
       renderCart();
+      if (removed && removed.length > 0) {
+        showToast(`Removed "${removed[0].name}" from cart.`);
+      }
     }
 
     function applyCartCoupon() {
       const code = (document.getElementById('hn-coupon-code').value || '').trim().toUpperCase();
       const feedback = document.getElementById('hn-coupon-feedback');
-      if (code === 'WELCOME10') {
+      if (code === 'WELCOME10' || code === 'KRISHNA50') {
         cartDiscount = 50;
+        appliedCouponCode = code;
+        sessionStorage.setItem('hn_checkout_discount', '50');
+        sessionStorage.setItem('hn_coupon_code', code);
         feedback.innerHTML = '<span class="text-success fw-semibold"><i class="bi bi-check-circle"></i> Coupon applied! ₹50 discount.</span>';
         renderCart();
+      } else if (code === 'RADHA100') {
+        cartDiscount = 100;
+        appliedCouponCode = code;
+        sessionStorage.setItem('hn_checkout_discount', '100');
+        sessionStorage.setItem('hn_coupon_code', code);
+        feedback.innerHTML = '<span class="text-success fw-semibold"><i class="bi bi-check-circle"></i> Holy Blessing! ₹100 discount applied.</span>';
+        renderCart();
       } else {
-        feedback.innerHTML = '<span class="text-danger small">Invalid coupon code. Try WELCOME10</span>';
+        feedback.innerHTML = '<span class="text-danger small">Invalid coupon code. Try WELCOME10 or KRISHNA50</span>';
       }
+    }
+
+    function handleProceedToCheckout(e) {
+      const cart = getCart();
+      if (!cart || cart.length === 0) {
+        e.preventDefault();
+        showToast('Your cart is empty! Please add devotional items first.', 'error');
+        return false;
+      }
+      return true;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
       renderHeader('cart');
       renderFooter();
       renderCart();
+      window.addEventListener('hn_cart_updated', renderCart);
     });
   </script>
 </body>

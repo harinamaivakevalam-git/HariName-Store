@@ -38,22 +38,38 @@
             </p>
 
             <div class="p-3 bg-light rounded border mb-4 text-start small">
-              <div class="d-flex justify-content-between mb-1">
+              <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted">Order Number:</span>
                 <span class="fw-bold text-navy" id="hn-success-order-num">#HN-2026-98124</span>
               </div>
-              <div class="d-flex justify-content-between mb-1">
+              <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted">Customer Name:</span>
+                <span class="fw-semibold text-dark" id="hn-success-name">Gauranga Das</span>
+              </div>
+              <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted">Total Paid:</span>
+                <span class="fw-bold text-navy" id="hn-success-total">₹526</span>
+              </div>
+              <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted">Estimated Delivery:</span>
-                <span class="fw-semibold">3-5 Business Days</span>
+                <span class="fw-semibold">3-5 Business Days (Vrindavan Express)</span>
               </div>
               <div class="d-flex justify-content-between">
-                <span class="text-muted">Payment:</span>
-                <span class="badge bg-success">Confirmed</span>
+                <span class="text-muted">Payment Status:</span>
+                <span class="badge bg-success">Confirmed &amp; Blessed</span>
+              </div>
+            </div>
+
+            <!-- Ordered Items List -->
+            <div class="text-start mb-4 d-none" id="hn-success-items-wrap">
+              <div class="fw-semibold text-secondary small mb-2">Items Ordered:</div>
+              <div class="border rounded p-2 bg-white" id="hn-success-items-list" style="max-height: 180px; overflow-y: auto;">
+                <!-- Dynamically filled -->
               </div>
             </div>
 
             <!-- Unboxing Holy Card -->
-            <div class="p-3 border rounded mb-4" style="background-color: var(--hn-cream);">
+            <div class="p-3 border rounded mb-4" style="background-color: var(--hn-cream); border-color: var(--hn-gold-border) !important;">
               <div class="small fw-bold text-navy mb-1" style="font-family: var(--hn-font-serif);">
                 Hare Krishna Hare Krishna • Krishna Krishna Hare Hare<br>
                 Hare Rama Hare Rama • Rama Rama Hare Hare
@@ -63,9 +79,10 @@
               </div>
             </div>
 
-            <div class="d-flex gap-3 justify-content-center">
+            <div class="d-flex flex-wrap gap-2 justify-content-center">
               <a href="/shop.html" class="btn hn-btn-gold">Continue Shopping</a>
-              <a href="/orders.html" class="btn btn-outline-dark">View My Orders</a>
+              <a href="#" id="hn-btn-track-order" class="btn btn-outline-dark">Track Shipment</a>
+              <a href="/orders.html" class="btn btn-link text-navy text-decoration-none">View My Orders</a>
             </div>
           </div>
 
@@ -85,10 +102,43 @@
     document.addEventListener('DOMContentLoaded', () => {
       renderHeader('orders');
       renderFooter();
+
       const params = new URLSearchParams(window.location.search);
-      const order = params.get('order');
+      const order = params.get('order') || 'HN-2026-98124';
+      const name = params.get('name');
+      const total = params.get('total');
+
       if (order) {
         document.getElementById('hn-success-order-num').innerText = '#' + order;
+        document.getElementById('hn-btn-track-order').href = `/order-tracking.html?order=${order}`;
+      }
+
+      if (name) {
+        document.getElementById('hn-success-name').innerText = decodeURIComponent(name);
+      }
+
+      if (total) {
+        document.getElementById('hn-success-total').innerText = '₹' + total;
+      }
+
+      // Check stored orders for matching items
+      const orders = JSON.parse(localStorage.getItem('hn_orders') || '[]');
+      const currentOrder = orders.find(o => o.orderId === order) || orders[0];
+      if (currentOrder && currentOrder.items && currentOrder.items.length > 0) {
+        const wrap = document.getElementById('hn-success-items-wrap');
+        const list = document.getElementById('hn-success-items-list');
+        if (wrap && list) {
+          wrap.classList.remove('d-none');
+          list.innerHTML = currentOrder.items.map(item => `
+            <div class="d-flex align-items-center justify-content-between py-1 border-bottom small">
+              <div class="d-flex align-items-center gap-2">
+                <img src="${item.image}" alt="${item.name}" class="rounded border" style="width: 32px; height: 32px; object-fit: cover;">
+                <span class="fw-semibold text-truncate" style="max-width: 180px;">${item.name}</span>
+              </div>
+              <span class="text-muted">Qty: ${item.qty || 1} &nbsp;|&nbsp; <strong>₹${item.price * (item.qty || 1)}</strong></span>
+            </div>
+          `).join('');
+        }
       }
     });
   </script>

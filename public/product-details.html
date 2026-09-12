@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Product Details — Harinama Store</title>
-  <meta name="description" content="Authentic devotional keychains from Harinama Store with handcrafted brass and acrylic finishes.">
+  <meta name="description" content="Authentic devotional products from Harinama Store with handcrafted brass and acrylic finishes.">
   
   <!-- Google Fonts: Poppins Master Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -223,6 +223,16 @@
         document.getElementById('hn-tab-desc').innerText = currentProduct.description;
         document.getElementById('hn-main-image').src = currentProduct.image;
         document.getElementById('hn-product-reviews').innerText = `(${currentProduct.reviews_count || 24} reviews)`;
+
+        // Specifications
+        if (currentProduct.specifications) {
+          const specUl = document.getElementById('hn-tab-specs');
+          if (specUl) {
+            specUl.innerHTML = Object.entries(currentProduct.specifications).map(([k, v]) => `
+              <li class="py-1"><strong>${k}:</strong> ${v}</li>
+            `).join('');
+          }
+        }
 
         // Thumbs
         const gallery = currentProduct.gallery && currentProduct.gallery.length ? currentProduct.gallery : [currentProduct.image, currentProduct.image, currentProduct.image];

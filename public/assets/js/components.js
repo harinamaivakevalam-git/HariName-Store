@@ -74,13 +74,6 @@ const renderHeader = (activePage = '') => {
   const cartCount = cart.reduce((acc, i) => acc + (i.qty || 1), 0);
 
   container.innerHTML = `
-    <!-- Top Announcement Bar -->
-    <div class="hn-topbar">
-      <span>Free shipping on orders above ₹499</span>
-      <span class="separator">|</span>
-      <span>Harinama Store. Remember Krishna. Share Krishna!</span>
-    </div>
-
     <!-- Main Navigation Header -->
     <header class="hn-header">
       <div class="container">
@@ -126,27 +119,56 @@ const renderHeader = (activePage = '') => {
               <span class="hn-badge-pill" id="hn-cart-badge">${cartCount}</span>
             </a>
 
-            <!-- Mobile Menu Toggle Button -->
-            <button class="hn-icon-btn d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#hnMobileNav" aria-label="Toggle navigation">
-              <i class="bi bi-list fs-4"></i>
+            <!-- Modern Animated Mobile Menu Toggle Button -->
+            <button class="hn-hamburger-btn d-lg-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hnMobileNav" aria-expanded="false" aria-label="Toggle navigation" id="hnMobileNavToggle">
+              <span class="hn-hamburger-lines">
+                <span class="hn-hamburger-line line-1"></span>
+                <span class="hn-hamburger-line line-2"></span>
+                <span class="hn-hamburger-line line-3"></span>
+              </span>
             </button>
           </div>
 
         </div>
 
         <!-- Mobile Navigation Drawer -->
-        <div class="collapse d-lg-none mt-3 pt-3 border-top" id="hnMobileNav">
-          <div class="d-flex flex-column gap-2">
-            <a href="/index.html" class="hn-nav-link ${active === 'home' ? 'active' : ''}">Home</a>
-            <a href="/shop.html" class="hn-nav-link ${active === 'shop' ? 'active' : ''}">Shop Keychains</a>
-            <a href="/shop.html" class="hn-nav-link">Collections</a>
-            <a href="/about.html" class="hn-nav-link">Our Mission</a>
-            <a href="/about.html" class="hn-nav-link">About Us</a>
-            <a href="/contact.html" class="hn-nav-link">Contact</a>
-            <hr class="my-1">
-            <a href="/cart.html" class="hn-nav-link">Shopping Cart (${cartCount})</a>
-            <a href="/account.html" class="hn-nav-link">My Account / Orders</a>
-            <a href="/admin.html" class="hn-nav-link text-warning fw-semibold">Admin Dashboard</a>
+        <div class="collapse d-lg-none" id="hnMobileNav">
+          <div class="hn-mobile-drawer">
+            <div class="d-flex flex-column gap-1">
+              <a href="/index.html" class="hn-mobile-nav-link ${active === 'home' ? 'active' : ''}">
+                <span><i class="bi bi-house-door me-2"></i>Home</span>
+                <i class="bi bi-chevron-right small text-muted"></i>
+              </a>
+              <a href="/shop.html" class="hn-mobile-nav-link ${active === 'shop' ? 'active' : ''}">
+                <span><i class="bi bi-shop me-2"></i>Shop All Products</span>
+                <i class="bi bi-chevron-right small text-muted"></i>
+              </a>
+              <a href="/about.html" class="hn-mobile-nav-link ${active === 'mission' ? 'active' : ''}">
+                <span><i class="bi bi-heart me-2"></i>Our Mission</span>
+                <i class="bi bi-chevron-right small text-muted"></i>
+              </a>
+              <a href="/about.html" class="hn-mobile-nav-link ${active === 'about' ? 'active' : ''}">
+                <span><i class="bi bi-info-circle me-2"></i>About Us</span>
+                <i class="bi bi-chevron-right small text-muted"></i>
+              </a>
+              <a href="/contact.html" class="hn-mobile-nav-link ${active === 'contact' ? 'active' : ''}">
+                <span><i class="bi bi-envelope me-2"></i>Contact</span>
+                <i class="bi bi-chevron-right small text-muted"></i>
+              </a>
+              <hr class="my-2">
+              <a href="/cart.html" class="hn-mobile-nav-link">
+                <span><i class="bi bi-bag me-2"></i>Shopping Cart</span>
+                <span class="badge text-white rounded-pill px-2" style="background-color: var(--hn-gold);">${cartCount}</span>
+              </a>
+              <a href="/account.html" class="hn-mobile-nav-link">
+                <span><i class="bi bi-person me-2"></i>My Account & Orders</span>
+                <i class="bi bi-chevron-right small text-muted"></i>
+              </a>
+              <a href="/admin.html" class="hn-mobile-nav-link admin-link mt-1">
+                <span><i class="bi bi-shield-lock me-2"></i>Admin Dashboard</span>
+                <i class="bi bi-arrow-up-right small"></i>
+              </a>
+            </div>
           </div>
         </div>
 

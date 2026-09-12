@@ -148,47 +148,203 @@ a:hover {
   justify-content: center;
 }
 
-/* --------------------------------------------------------------------------
-   3. HERO SECTION (Exact Match)
-   -------------------------------------------------------------------------- */
-.hn-hero-section {
-  background-color: var(--hn-cream);
-  padding: 50px 0 30px;
-  border-bottom: 1px solid var(--hn-border);
+/* Modern Animated Hamburger Menu Button */
+.hn-hamburger-btn {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #FFFFFF;
+  border: 1.5px solid var(--hn-border);
+  border-radius: 50%;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(11, 37, 69, 0.05);
+  outline: none;
 }
 
-.hn-hero-eyebrow {
-  font-size: 0.9rem;
-  color: var(--hn-text-secondary);
-  letter-spacing: 0.08em;
-  font-weight: 600;
-  text-transform: uppercase;
-  margin-bottom: 12px;
+.hn-hamburger-btn:hover {
+  background-color: var(--hn-gold-light);
+  border-color: var(--hn-gold);
+  box-shadow: 0 4px 12px rgba(197, 155, 39, 0.18);
+  transform: translateY(-1px);
+}
+
+.hn-hamburger-btn:active {
+  transform: scale(0.93);
+}
+
+.hn-hamburger-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(197, 155, 39, 0.35);
+}
+
+.hn-hamburger-lines {
+  width: 20px;
+  height: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  position: relative;
+}
+
+.hn-hamburger-line {
+  display: block;
+  height: 2.2px;
+  background-color: var(--hn-navy);
+  border-radius: 4px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.hn-hamburger-line.line-1 {
+  width: 20px;
+}
+
+.hn-hamburger-line.line-2 {
+  width: 14px;
+  transition: width 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+
+.hn-hamburger-line.line-3 {
+  width: 20px;
+}
+
+/* Dynamic Hover State - Middle Bar Expands */
+.hn-hamburger-btn:hover .hn-hamburger-line.line-2 {
+  width: 20px;
+}
+
+.hn-hamburger-btn:hover .hn-hamburger-line {
+  background-color: var(--hn-gold-hover);
+}
+
+/* Active / Open State - Smooth Morphing into Close "X" */
+.hn-hamburger-btn[aria-expanded="true"],
+.hn-hamburger-btn:not(.collapsed) {
+  background-color: var(--hn-gold-light);
+  border-color: var(--hn-gold);
+  box-shadow: 0 4px 14px rgba(197, 155, 39, 0.22);
+}
+
+.hn-hamburger-btn[aria-expanded="true"] .hn-hamburger-lines,
+.hn-hamburger-btn:not(.collapsed) .hn-hamburger-lines {
+  align-items: center;
+}
+
+.hn-hamburger-btn[aria-expanded="true"] .hn-hamburger-line,
+.hn-hamburger-btn:not(.collapsed) .hn-hamburger-line {
+  background-color: var(--hn-gold);
+}
+
+.hn-hamburger-btn[aria-expanded="true"] .hn-hamburger-line.line-1,
+.hn-hamburger-btn:not(.collapsed) .hn-hamburger-line.line-1 {
+  transform: translateY(6.9px) rotate(45deg);
+}
+
+.hn-hamburger-btn[aria-expanded="true"] .hn-hamburger-line.line-2,
+.hn-hamburger-btn:not(.collapsed) .hn-hamburger-line.line-2 {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.hn-hamburger-btn[aria-expanded="true"] .hn-hamburger-line.line-3,
+.hn-hamburger-btn:not(.collapsed) .hn-hamburger-line.line-3 {
+  transform: translateY(-6.9px) rotate(-45deg);
+}
+
+/* --------------------------------------------------------------------------
+   3. HERO SECTION (Luxurious Devotional Redesign)
+   -------------------------------------------------------------------------- */
+.hn-hero-section {
+  background: radial-gradient(circle at 90% 15%, rgba(197, 155, 39, 0.12) 0%, rgba(251, 248, 242, 0.98) 45%, #FAF7F0 100%);
+  padding: 48px 0 36px;
+  border-bottom: 1px solid var(--hn-border);
+  position: relative;
+  overflow: hidden;
+}
+
+.hn-hero-section::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(197, 155, 39, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Sacred Pill Eyebrow */
+.hn-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFFFFF;
+  border: 1px solid var(--hn-gold-border);
+  padding: 6px 14px;
+  border-radius: var(--hn-radius-full);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--hn-navy);
+  margin-bottom: 18px;
+  box-shadow: 0 2px 8px rgba(197, 155, 39, 0.08);
+}
+
+.hn-badge-pulse {
+  width: 7px;
+  height: 7px;
+  background-color: var(--hn-gold);
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 0 3px rgba(197, 155, 39, 0.25);
+  animation: hnPulse 2s infinite;
+}
+
+@keyframes hnPulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(197, 155, 39, 0.4); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(197, 155, 39, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(197, 155, 39, 0); }
 }
 
 .hn-hero-title {
   font-family: var(--hn-font-serif);
-  font-size: clamp(2.4rem, 4.5vw, 3.6rem);
-  font-weight: 600;
+  font-size: clamp(2.3rem, 4.2vw, 3.6rem);
+  font-weight: 700;
   color: var(--hn-navy);
   line-height: 1.15;
   margin-bottom: 18px;
+  letter-spacing: -0.01em;
+}
+
+.hn-title-accent {
+  background: linear-gradient(135deg, #0B2545 10%, #C59B27 60%, #D4AF37 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+  position: relative;
 }
 
 .hn-hero-desc {
   font-size: 1.05rem;
   color: var(--hn-text-secondary);
-  max-width: 480px;
-  margin-bottom: 28px;
-  line-height: 1.6;
+  max-width: 500px;
+  margin-bottom: 26px;
+  line-height: 1.65;
 }
 
 .hn-btn-gold {
-  background-color: var(--hn-gold);
+  background: linear-gradient(135deg, var(--hn-gold) 0%, #B88E1C 100%);
   color: #FFFFFF !important;
   font-weight: 600;
   font-size: 0.95rem;
-  padding: 11px 26px;
+  padding: 12px 26px;
   border-radius: var(--hn-radius-sm);
   border: 1px solid var(--hn-gold);
   display: inline-flex;
@@ -196,55 +352,189 @@ a:hover {
   justify-content: center;
   gap: 8px;
   transition: var(--hn-transition);
+  box-shadow: 0 4px 14px rgba(197, 155, 39, 0.28);
 }
 
 .hn-btn-gold:hover {
-  background-color: var(--hn-gold-hover);
+  background: linear-gradient(135deg, #D4AF37 0%, var(--hn-gold-hover) 100%);
   border-color: var(--hn-gold-hover);
-  box-shadow: 0 4px 12px rgba(197, 155, 39, 0.3);
+  box-shadow: 0 6px 20px rgba(197, 155, 39, 0.38);
+  transform: translateY(-2px);
 }
 
 .hn-btn-outline-dark {
-  background-color: transparent;
+  background-color: #FFFFFF;
   color: var(--hn-navy) !important;
   font-weight: 600;
   font-size: 0.95rem;
-  padding: 11px 26px;
+  padding: 12px 24px;
   border-radius: var(--hn-radius-sm);
-  border: 1px solid var(--hn-navy);
+  border: 1.5px solid var(--hn-navy);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   transition: var(--hn-transition);
+  box-shadow: 0 2px 6px rgba(11, 37, 69, 0.04);
 }
 
 .hn-btn-outline-dark:hover {
   background-color: var(--hn-navy);
   color: #FFFFFF !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(11, 37, 69, 0.15);
 }
 
-.hn-hero-quote {
+/* Sacred Quote Card */
+.hn-hero-quote-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--hn-gold-border);
+  border-left: 3.5px solid var(--hn-gold);
+  border-radius: var(--hn-radius-sm);
+  padding: 12px 16px;
+  max-width: 480px;
+}
+
+.hn-quote-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--hn-gold);
+  opacity: 0.9;
+}
+
+.hn-quote-verse {
   font-family: var(--hn-font-serif);
   font-style: italic;
-  font-size: 1.25rem;
+  font-size: 1.05rem;
   color: var(--hn-navy);
-  margin-top: 30px;
-  opacity: 0.85;
+  font-weight: 600;
 }
 
+.hn-quote-sub {
+  font-size: 0.76rem;
+  color: var(--hn-text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+/* Devotee Social Proof Strip */
+.hn-hero-trust {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hn-trust-avatars {
+  display: flex;
+  align-items: center;
+}
+
+.hn-avatar-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 2px solid var(--hn-cream);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  margin-right: -8px;
+  box-shadow: 0 2px 4px rgba(11, 37, 69, 0.08);
+}
+
+.hn-trust-caption {
+  font-size: 0.78rem;
+  color: var(--hn-text-secondary);
+  display: block;
+}
+
+/* Hero Showcase Image & Floating Badges */
 .hn-hero-image-wrap {
   position: relative;
-  border-radius: var(--hn-radius-md);
-  overflow: hidden;
-  box-shadow: 0 12px 32px rgba(11, 37, 69, 0.1);
-  background: #FFFFFF;
+  border-radius: var(--hn-radius-lg);
+  overflow: visible;
+  padding: 6px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(197, 155, 39, 0.2));
+  border: 1px solid var(--hn-gold-border);
+  box-shadow: 0 16px 40px rgba(11, 37, 69, 0.12), 0 4px 12px rgba(197, 155, 39, 0.08);
 }
 
 .hn-hero-img {
   width: 100%;
   height: 420px;
   object-fit: cover;
+  border-radius: calc(var(--hn-radius-lg) - 4px);
   display: block;
+  transition: transform 0.5s ease;
+}
+
+.hn-hero-image-wrap:hover .hn-hero-img {
+  transform: scale(1.015);
+}
+
+.hn-floating-badge {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(197, 155, 39, 0.35);
+  border-radius: var(--hn-radius-md);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(11, 37, 69, 0.12);
+  z-index: 2;
+  transition: transform 0.3s ease;
+}
+
+.hn-floating-badge:hover {
+  transform: translateY(-2px);
+}
+
+.hn-floating-badge.top-badge {
+  top: 18px;
+  right: 18px;
+}
+
+.hn-floating-badge.bottom-badge {
+  bottom: 20px;
+  left: 20px;
+}
+
+.badge-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--hn-green-light);
+  color: var(--hn-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.badge-icon-wrap.gold-icon {
+  background: var(--hn-gold-light);
+  color: var(--hn-gold);
+}
+
+.badge-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--hn-navy);
+  line-height: 1.2;
+}
+
+.badge-sub {
+  font-size: 0.7rem;
+  color: var(--hn-text-secondary);
 }
 
 /* Hero Benefits 3-Strip */
@@ -254,6 +544,7 @@ a:hover {
   border-radius: var(--hn-radius-md);
   padding: 24px 20px;
   margin-top: 40px;
+  box-shadow: var(--hn-shadow-card);
 }
 
 .hn-benefit-col {
@@ -938,6 +1229,7 @@ a:hover {
   background-color: var(--hn-cream);
   border-bottom: 1px solid var(--hn-border);
   padding: 12px;
+  white-space: nowrap;
 }
 
 .hn-table-cart td {
@@ -954,26 +1246,368 @@ a:hover {
   box-shadow: var(--hn-shadow-card);
 }
 
+/* Mobile Navigation Drawer */
+.hn-mobile-drawer {
+  background: #FFFFFF;
+  border-radius: var(--hn-radius-md);
+  padding: 16px;
+  margin-top: 14px;
+  border: 1px solid var(--hn-border);
+  box-shadow: 0 10px 30px rgba(11, 37, 69, 0.08);
+}
+
+.hn-mobile-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: var(--hn-radius-sm);
+  color: var(--hn-navy);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: var(--hn-transition);
+}
+
+.hn-mobile-nav-link:hover, 
+.hn-mobile-nav-link.active {
+  background-color: var(--hn-cream);
+  color: var(--hn-gold-hover);
+}
+
+.hn-mobile-nav-link.admin-link {
+  color: #B45309;
+  background-color: #FEF3C7;
+}
+
+/* Responsive Product Gallery */
+.hn-detail-gallery-row {
+  display: flex;
+  gap: 16px;
+}
+
+.hn-detail-thumb-col {
+  width: 75px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 /* --------------------------------------------------------------------------
-   16. RESPONSIVE BREAKPOINTS
+   16. COMPREHENSIVE RESPONSIVE BREAKPOINTS
    -------------------------------------------------------------------------- */
-@media (max-width: 991px) {
+
+/* Laptops & Tablets (max-width: 991px) */
+@media (max-width: 991.98px) {
   .hn-lifestyle-grid {
     grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
   }
+  
   .hn-benefit-col:not(:last-child)::after {
     display: none;
   }
+
+  .hn-benefit-col {
+    padding: 12px 10px;
+  }
+
+  .hn-hero-section {
+    padding: 36px 0 24px;
+  }
+
+  .hn-hero-img {
+    height: 340px;
+  }
+
+  .hn-section-header {
+    margin-bottom: 28px;
+  }
+
+  .hn-section-title {
+    font-size: 1.85rem;
+  }
+
+  .hn-promo-img-wrap {
+    min-height: 220px;
+  }
+
+  .hn-promo-content {
+    padding: 24px 20px;
+  }
+
+  .hn-promo-title {
+    font-size: 1.5rem;
+  }
+
+  .hn-story-section, 
+  .hn-why-section {
+    padding: 44px 0;
+  }
+
+  .hn-footer {
+    padding: 40px 0 20px;
+  }
 }
 
-@media (max-width: 576px) {
-  .hn-lifestyle-grid {
-    grid-template-columns: repeat(2, 1fr);
+/* Tablets to Phablets (max-width: 767.98px) */
+@media (max-width: 767.98px) {
+  .hn-detail-gallery-row {
+    flex-direction: column-reverse;
   }
+
+  .hn-detail-thumb-col {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px;
+  }
+
+  .hn-thumb-img {
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+  }
+
+  .hn-detail-main-img {
+    height: 320px;
+  }
+
+  .hn-hero-benefits {
+    padding: 16px 12px;
+    margin-top: 24px;
+  }
+
+  .hn-benefit-col {
+    border-bottom: 1px solid var(--hn-border-subtle);
+  }
+
+  .hn-benefit-col:last-child {
+    border-bottom: none;
+  }
+
+  .hn-service-bar {
+    padding: 18px 0;
+  }
+
+  .hn-service-item {
+    padding: 8px 4px;
+    font-size: 0.85rem;
+  }
+
+  .hn-service-item i {
+    font-size: 1.2rem;
+  }
+
+  .hn-why-card {
+    padding: 14px 8px;
+  }
+
+  .hn-why-circle {
+    width: 58px;
+    height: 58px;
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+  }
+
+  .hn-table-cart td, 
+  .hn-table-cart th {
+    padding: 10px 8px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Mobile Phones (max-width: 575.98px) */
+@media (max-width: 575.98px) {
+  .hn-brand-title {
+    font-size: 1.15rem;
+  }
+
+  .hn-brand-tagline {
+    font-size: 0.6rem;
+  }
+
+  .hn-hero-badge {
+    font-size: 0.68rem;
+    padding: 5px 10px;
+    gap: 6px;
+  }
+
   .hn-hero-title {
     font-size: 2.1rem;
+    line-height: 1.18;
   }
+
+  .hn-hero-desc {
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+  }
+
+  .hn-hero-img {
+    height: 290px;
+  }
+
+  .hn-floating-badge {
+    padding: 5px 10px;
+    gap: 6px;
+  }
+
+  .hn-floating-badge.top-badge {
+    top: 12px;
+    right: 12px;
+  }
+
+  .hn-floating-badge.bottom-badge {
+    bottom: 12px;
+    left: 12px;
+  }
+
+  .badge-icon-wrap {
+    width: 26px;
+    height: 26px;
+    font-size: 0.85rem;
+  }
+
+  .badge-title {
+    font-size: 0.72rem;
+  }
+
+  .badge-sub {
+    font-size: 0.62rem;
+  }
+
+  .hn-hero-quote-card {
+    padding: 10px 12px;
+  }
+
+  .hn-quote-verse {
+    font-size: 0.95rem;
+  }
+
   .hn-section-title {
-    font-size: 1.7rem;
+    font-size: 1.55rem;
+  }
+
+  .hn-section-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .hn-product-card {
+    padding: 10px;
+  }
+
+  .hn-card-img-box {
+    height: 140px;
+    margin-bottom: 8px;
+  }
+
+  .hn-card-title {
+    font-size: 0.88rem;
+  }
+
+  .hn-card-price {
+    font-size: 0.95rem;
+  }
+
+  .hn-card-rating {
+    font-size: 0.75rem;
+    margin-bottom: 8px;
+  }
+
+  .hn-btn-card-add {
+    font-size: 0.8rem;
+    padding: 6px 8px;
+  }
+
+  .hn-lifestyle-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .hn-lifestyle-item {
+    height: 150px;
+  }
+
+  .hn-gift-card {
+    padding: 14px;
+  }
+
+  .hn-gift-img-box {
+    height: 160px;
+    margin-bottom: 12px;
+  }
+
+  .hn-gift-title {
+    font-size: 1.15rem;
+  }
+
+  .hn-gift-price {
+    font-size: 1.2rem;
+  }
+
+  .hn-promo-banner {
+    border-radius: var(--hn-radius-sm);
+  }
+
+  .hn-promo-content {
+    padding: 18px 14px;
+  }
+
+  .hn-mantra-box {
+    padding: 16px 12px;
+  }
+
+  .hn-mantra-verse {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .hn-mantra-chant {
+    font-size: 0.85rem;
+    margin-top: 10px;
+  }
+
+  .hn-story-title {
+    font-size: 1.6rem;
+  }
+
+  .hn-story-desc {
+    font-size: 0.9rem;
+  }
+
+  .hn-story-quote {
+    font-size: 1.1rem;
+  }
+
+  .hn-summary-box {
+    padding: 18px 14px;
+  }
+
+  .hn-detail-main-img {
+    height: 260px;
+  }
+}
+
+/* Extra Small Phones (max-width: 380px) */
+@media (max-width: 380px) {
+  .hn-brand-tagline {
+    display: none;
+  }
+
+  .hn-icon-btn,
+  .hn-hamburger-btn {
+    width: 35px;
+    height: 35px;
+    font-size: 1.05rem;
+  }
+
+  .hn-card-img-box {
+    height: 120px;
+  }
+
+  .hn-lifestyle-item {
+    height: 130px;
   }
 }

@@ -61,10 +61,17 @@ body.hn-admin-body-bg {
   border-radius: 8px;
   padding: 6px;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
   align-items: center;
   gap: 4px;
   box-shadow: 0 2px 8px rgba(11, 37, 69, 0.03);
+}
+
+.hn-admin-nav-bar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
 }
 
 .hn-admin-tab {
@@ -79,6 +86,8 @@ body.hn-admin-body-bg {
   text-decoration: none;
   transition: all 0.2s ease;
   border: 1px solid transparent;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .hn-admin-tab:hover {
@@ -400,4 +409,88 @@ body.hn-admin-body-bg {
   background: #FFFFFF;
   border-top: 1px solid var(--hn-border);
   padding: 14px 24px;
+}
+
+/* ==========================================================================
+   Admin Responsive Breakpoints
+   ========================================================================== */
+@media (max-width: 991.98px) {
+  .hn-kpi-card {
+    padding: 16px 18px;
+  }
+  .hn-kpi-num {
+    font-size: 1.55rem;
+  }
+  .hn-kpi-icon-box {
+    width: 44px;
+    height: 44px;
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .hn-admin-topbar {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+  
+  .hn-admin-brand-title {
+    font-size: 1.15rem;
+  }
+
+  .hn-admin-badge-portal {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+  }
+
+  .hn-admin-filter-bar {
+    padding: 12px 14px;
+  }
+
+  .hn-admin-filter-bar .input-group,
+  .hn-admin-filter-bar select {
+    max-width: 100% !important;
+    width: 100%;
+  }
+
+  .hn-admin-card-header {
+    padding: 14px 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .hn-table th, 
+  .hn-table td {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .hn-kpi-card {
+    padding: 14px;
+  }
+
+  .hn-kpi-num {
+    font-size: 1.4rem;
+  }
+
+  .hn-kpi-label {
+    font-size: 0.72rem;
+  }
+
+  .hn-admin-tab {
+    padding: 6px 12px;
+    font-size: 0.82rem;
+  }
+
+  .hn-admin-modal .modal-body {
+    padding: 16px;
+  }
+
+  .hn-admin-modal .modal-header,
+  .hn-admin-modal .modal-footer {
+    padding: 12px 16px;
+  }
 }

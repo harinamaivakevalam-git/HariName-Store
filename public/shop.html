@@ -31,67 +31,75 @@
         
         <!-- Left Sidebar Filters -->
         <div class="col-lg-3">
-          <div class="hn-shop-sidebar">
-            
-            <!-- Collections Filter -->
-            <div class="mb-4">
-              <div class="hn-filter-title">Collections & Categories</div>
-              <a href="#" class="hn-filter-link active" onclick="filterByCollection('all', this); return false;">All Products</a>
-              <a href="#" class="hn-filter-link" onclick="filterByCollection('devotional-keychains', this); return false;">Devotional Keychains</a>
-              <a href="#" class="hn-filter-link" onclick="filterByCollection('sacred-books', this); return false;">Sacred Books & Shastras</a>
-              <a href="#" class="hn-filter-link" onclick="filterByCollection('japa-chanting', this); return false;">Japa & Chanting</a>
-              <a href="#" class="hn-filter-link" onclick="filterByCollection('gift-sets', this); return false;">Gift Sets & Bundles</a>
-            </div>
+          <!-- Mobile Filter Toggle Button -->
+          <button class="btn btn-outline-dark w-100 d-lg-none mb-3 d-flex align-items-center justify-content-between py-2 fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#hnShopSidebarCollapse" aria-expanded="false" aria-controls="hnShopSidebarCollapse">
+            <span><i class="bi bi-funnel me-2 text-warning"></i>Filter & Sort Products</span>
+            <i class="bi bi-chevron-down"></i>
+          </button>
 
-            <!-- Price Filter -->
-            <div class="mb-4">
-              <div class="hn-filter-title">Price Range</div>
-              <label class="hn-checkbox-label">
-                <input type="checkbox" onchange="applyFilters()" value="under-150" class="filter-price">
-                <span>Under ₹150</span>
-              </label>
-              <label class="hn-checkbox-label">
-                <input type="checkbox" onchange="applyFilters()" value="150-300" class="filter-price">
-                <span>₹150 – ₹300</span>
-              </label>
-              <label class="hn-checkbox-label">
-                <input type="checkbox" onchange="applyFilters()" value="300-600" class="filter-price">
-                <span>₹300 – ₹600</span>
-              </label>
-            </div>
+          <div class="collapse d-lg-block" id="hnShopSidebarCollapse">
+            <div class="hn-shop-sidebar mb-4 mb-lg-0">
+              
+              <!-- Collections Filter -->
+              <div class="mb-4">
+                <div class="hn-filter-title">Collections & Categories</div>
+                <a href="#" class="hn-filter-link active" onclick="filterByCollection('all', this); return false;">All Products</a>
+                <a href="#" class="hn-filter-link" onclick="filterByCollection('devotional-keychains', this); return false;">Devotional Keychains</a>
+                <a href="#" class="hn-filter-link" onclick="filterByCollection('sacred-books', this); return false;">Sacred Books & Shastras</a>
+                <a href="#" class="hn-filter-link" onclick="filterByCollection('japa-chanting', this); return false;">Japa & Chanting</a>
+                <a href="#" class="hn-filter-link" onclick="filterByCollection('gift-sets', this); return false;">Gift Sets & Bundles</a>
+              </div>
 
-            <!-- Material Filter -->
-            <div class="mb-4">
-              <div class="hn-filter-title">Material / Type</div>
-              <label class="hn-checkbox-label">
-                <input type="checkbox" onchange="applyFilters()" value="Acrylic" class="filter-material">
-                <span>Acrylic / Resin</span>
-              </label>
-              <label class="hn-checkbox-label">
-                <input type="checkbox" onchange="applyFilters()" value="Metal" class="filter-material">
-                <span>Solid Brass / Metal</span>
-              </label>
-              <label class="hn-checkbox-label">
-                <input type="checkbox" onchange="applyFilters()" value="Wood" class="filter-material">
-                <span>Neem & Tulasi Wood</span>
-              </label>
-              <label class="hn-checkbox-label">
-                <input type="checkbox" onchange="applyFilters()" value="Hardbound Book" class="filter-material">
-                <span>Books & Shastras</span>
-              </label>
-            </div>
+              <!-- Price Filter -->
+              <div class="mb-4">
+                <div class="hn-filter-title">Price Range</div>
+                <label class="hn-checkbox-label">
+                  <input type="checkbox" onchange="applyFilters()" value="under-150" class="filter-price">
+                  <span>Under ₹150</span>
+                </label>
+                <label class="hn-checkbox-label">
+                  <input type="checkbox" onchange="applyFilters()" value="150-300" class="filter-price">
+                  <span>₹150 – ₹300</span>
+                </label>
+                <label class="hn-checkbox-label">
+                  <input type="checkbox" onchange="applyFilters()" value="300-600" class="filter-price">
+                  <span>₹300 – ₹600</span>
+                </label>
+              </div>
 
-            <!-- Sort By -->
-            <div>
-              <div class="hn-filter-title">Sort by</div>
-              <select class="form-select form-select-sm" id="hn-sort-select" onchange="applyFilters()">
-                <option value="featured">Featured First</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-                <option value="rating">Best Rating</option>
-              </select>
-            </div>
+              <!-- Material Filter -->
+              <div class="mb-4">
+                <div class="hn-filter-title">Material / Type</div>
+                <label class="hn-checkbox-label">
+                  <input type="checkbox" onchange="applyFilters()" value="Acrylic" class="filter-material">
+                  <span>Acrylic / Resin</span>
+                </label>
+                <label class="hn-checkbox-label">
+                  <input type="checkbox" onchange="applyFilters()" value="Metal" class="filter-material">
+                  <span>Solid Brass / Metal</span>
+                </label>
+                <label class="hn-checkbox-label">
+                  <input type="checkbox" onchange="applyFilters()" value="Wood" class="filter-material">
+                  <span>Neem & Tulasi Wood</span>
+                </label>
+                <label class="hn-checkbox-label">
+                  <input type="checkbox" onchange="applyFilters()" value="Hardbound Book" class="filter-material">
+                  <span>Books & Shastras</span>
+                </label>
+              </div>
 
+              <!-- Sort By -->
+              <div>
+                <div class="hn-filter-title">Sort by</div>
+                <select class="form-select form-select-sm" id="hn-sort-select" onchange="applyFilters()">
+                  <option value="featured">Featured First</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="rating">Best Rating</option>
+                </select>
+              </div>
+
+            </div>
           </div>
         </div>
 

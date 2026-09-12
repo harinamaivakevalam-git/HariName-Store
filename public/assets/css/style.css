@@ -50,23 +50,30 @@ a:hover {
 }
 
 .cres-brand {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   text-decoration: none;
   color: var(--cres-secondary);
   font-family: var(--cres-font-heading);
   font-weight: 800;
-  font-size: 1.45rem;
+  font-size: clamp(1.05rem, 3.5vw, 1.4rem);
   letter-spacing: -0.03em;
+  white-space: nowrap !important;
+  flex-shrink: 0;
+}
+
+.cres-brand span {
+  white-space: nowrap !important;
 }
 
 .cres-brand-dot {
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: var(--cres-primary);
   display: inline-block;
+  flex-shrink: 0;
 }
 
 .cres-nav-link {
@@ -91,7 +98,7 @@ a:hover {
   border-radius: 50%;
   background: #FFFFFF;
   border: 1px solid var(--cres-border);
-  display: inline-flex !important;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--cres-secondary);
@@ -668,18 +675,20 @@ a:hover {
     padding: 10px 0;
   }
   .cres-brand {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
+    white-space: nowrap;
   }
   .cres-hero-container {
-    padding: 30px 18px;
+    padding: 36px 24px;
     border-radius: var(--cres-radius-lg);
   }
   .cres-hero-title {
-    font-size: 2rem;
+    font-size: 2.2rem;
+    line-height: 1.2;
   }
   .cres-hero-desc {
     font-size: 0.95rem;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
   }
   .cres-hero-discount-badge {
     top: 10px;
@@ -721,9 +730,30 @@ a:hover {
 
 /* Extra Small Phones (<= 575.98px down to 320px) */
 @media (max-width: 575.98px) {
+  .cres-brand {
+    font-size: 1.05rem;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .cres-brand-dot {
+    width: 7px;
+    height: 7px;
+  }
+  .cres-hero-container {
+    padding: 28px 16px;
+    margin: 10px 0;
+  }
   .cres-hero-title {
-    font-size: 1.7rem;
-    line-height: 1.2;
+    font-size: 1.85rem;
+    line-height: 1.22;
+    letter-spacing: -0.02em;
+    margin-bottom: 14px;
+  }
+  .cres-hero-desc {
+    font-size: 0.92rem;
+    line-height: 1.5;
+    margin-bottom: 20px;
   }
   .cres-hero-container .btn {
     width: 100%;

@@ -111,12 +111,12 @@ const renderHeader = (activePage = '') => {
           </nav>
 
           <!-- Right Actions -->
-          <div class="d-flex align-items-center gap-3">
+          <div class="d-flex align-items-center gap-2 gap-md-3">
             <a href="/products.html" class="cres-icon-btn" title="Search Products">
               <i class="bi bi-search"></i>
             </a>
 
-            <a href="/wishlist.html" class="cres-icon-btn" title="Wishlist">
+            <a href="/wishlist.html" class="cres-icon-btn d-none d-md-inline-flex" title="Wishlist">
               <i class="bi bi-heart"></i>
               <span class="cres-badge-pill" id="cres-wishlist-badge">${wishCount}</span>
             </a>
@@ -126,16 +126,16 @@ const renderHeader = (activePage = '') => {
               <span class="cres-badge-pill" id="cres-cart-badge">${cartCount}</span>
             </a>
 
-            <a href="/account.html" class="cres-icon-btn" title="Account">
+            <a href="/account.html" class="cres-icon-btn d-none d-md-inline-flex" title="Account">
               <i class="bi bi-person"></i>
             </a>
 
-            <a href="/products.html" class="btn cres-btn-primary d-none d-sm-inline-flex">
+            <a href="/products.html" class="btn cres-btn-primary d-none d-xl-inline-flex">
               Buy Template
             </a>
 
             <!-- Mobile Menu Toggle -->
-            <button class="cres-icon-btn d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#cresMobileNav">
+            <button class="cres-icon-btn d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#cresMobileNav" aria-label="Toggle navigation">
               <i class="bi bi-list"></i>
             </button>
           </div>
@@ -144,19 +144,16 @@ const renderHeader = (activePage = '') => {
 
         <!-- Mobile Navigation Dropdown -->
         <div class="collapse d-lg-none mt-3 pt-3 border-top" id="cresMobileNav">
-          <div class="d-flex flex-column gap-2">
-            <a href="/index.html" class="cres-nav-link ${active === 'home' ? 'active' : ''}">Home</a>
-            <a href="/products.html" class="cres-nav-link ${active === 'products' ? 'active' : ''}">Products</a>
-            <a href="/about.html" class="cres-nav-link ${active === 'about' ? 'active' : ''}">About</a>
-            <a href="/cart.html" class="cres-nav-link">Cart</a>
-            <a href="/account.html" class="cres-nav-link">My Account</a>
-            <a href="/orders.html" class="cres-nav-link">My Orders</a>
-            <a href="/wishlist.html" class="cres-nav-link">My Wishlist</a>
-            <a href="/addresses.html" class="cres-nav-link">My Addresses</a>
-            <a href="/faq.html" class="cres-nav-link">FAQ</a>
-            <a href="/terms.html" class="cres-nav-link">Terms & Conditions</a>
-            <a href="/contact.html" class="cres-nav-link ${active === 'contact' ? 'active' : ''}">Contact</a>
-            <a href="/admin.html" class="cres-nav-link text-primary fw-bold">Admin Portal</a>
+          <div class="d-flex flex-column gap-2 p-2 bg-light rounded-4">
+            <a href="/index.html" class="cres-nav-link ${active === 'home' ? 'active' : ''}"><i class="bi bi-house me-2"></i>Home</a>
+            <a href="/products.html" class="cres-nav-link ${active === 'products' ? 'active' : ''}"><i class="bi bi-grid me-2"></i>Products</a>
+            <a href="/wishlist.html" class="cres-nav-link"><i class="bi bi-heart me-2"></i>Wishlist (${wishCount})</a>
+            <a href="/cart.html" class="cres-nav-link"><i class="bi bi-bag me-2"></i>Shopping Cart (${cartCount})</a>
+            <a href="/account.html" class="cres-nav-link"><i class="bi bi-person me-2"></i>My Account</a>
+            <a href="/orders.html" class="cres-nav-link"><i class="bi bi-box-seam me-2"></i>My Orders</a>
+            <a href="/about.html" class="cres-nav-link ${active === 'about' ? 'active' : ''}"><i class="bi bi-info-circle me-2"></i>About Us</a>
+            <a href="/contact.html" class="cres-nav-link ${active === 'contact' ? 'active' : ''}"><i class="bi bi-envelope me-2"></i>Contact</a>
+            <a href="/admin.html" class="cres-nav-link text-primary fw-bold"><i class="bi bi-shield-lock me-2"></i>Admin Portal</a>
           </div>
         </div>
       </div>

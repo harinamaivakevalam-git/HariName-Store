@@ -3,300 +3,99 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Track Your Order - Sample Store</title>
+  <title>Order Tracking — Harinama Store</title>
   
   <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
-  
-  <link rel="stylesheet" href="/assets/css/style.css">
+  <!-- Harinama Store Master Stylesheet -->
+  <link rel="stylesheet" href="/assets/css/style.css?v=4">
 </head>
 <body>
 
-  <!-- App Header -->
+  <!-- Top Announcement Bar & Header -->
   <div id="hn-header-placeholder"></div>
 
-  <main class="container py-5">
-    <div class="row justify-content-center">
-      <div class="col-lg-8">
-        
-        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4 text-center">
-          <div class="feature-icon-circle bg-primary-subtle text-primary mx-auto mb-3" style="width:64px; height:64px; font-size: 1.75rem;">
-            <i class="bi bi-truck"></i>
-          </div>
-          <h2 class="fw-bold mb-2">Track Your Sacred Order</h2>
-          <p class="text-muted">Enter your Order Tracking Number or Order ID below to view live shipment milestones.</p>
+  <main class="py-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
           
-          <form id="tracking-form" class="mt-4" onsubmit="handleTrackOrder(event)">
-            <div class="input-group input-group-lg">
-              <input type="text" id="track-number-input" class="form-control" placeholder="e.g. TRK-2026-89104" required>
-              <button class="btn btn-primary px-4 fw-semibold" type="submit">
-                <i class="bi bi-search me-1"></i> Track Order
-              </button>
+          <div class="bg-white border rounded shadow-sm p-4 p-md-5 mb-4">
+            <div class="text-center mb-4">
+              <h2 class="hn-section-title mb-1" style="font-size: 1.8rem;">Track Your Order</h2>
+              <div class="text-secondary small">Order ID: <span class="fw-bold text-navy" id="hn-track-order-id">#HN-2026-98124</span></div>
             </div>
-          </form>
+
+            <!-- Status Timeline -->
+            <div class="py-4">
+              <div class="d-flex justify-content-between position-relative mb-4">
+                <div class="text-center" style="z-index: 2;">
+                  <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;">
+                    <i class="bi bi-check-lg"></i>
+                  </div>
+                  <div class="small fw-bold">Confirmed</div>
+                  <div class="text-muted" style="font-size: 0.75rem;">12 Sep 10:30 AM</div>
+                </div>
+
+                <div class="text-center" style="z-index: 2;">
+                  <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;">
+                    <i class="bi bi-box-seam"></i>
+                  </div>
+                  <div class="small fw-bold">Packed</div>
+                  <div class="text-muted" style="font-size: 0.75rem;">12 Sep 02:15 PM</div>
+                </div>
+
+                <div class="text-center" style="z-index: 2;">
+                  <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;">
+                    <i class="bi bi-truck"></i>
+                  </div>
+                  <div class="small fw-bold">Dispatched</div>
+                  <div class="text-muted" style="font-size: 0.75rem;">13 Sep 09:00 AM</div>
+                </div>
+
+                <div class="text-center" style="z-index: 2;">
+                  <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;">
+                    <i class="bi bi-house-door"></i>
+                  </div>
+                  <div class="small fw-bold">Delivered</div>
+                  <div class="text-muted" style="font-size: 0.75rem;">14 Sep 04:30 PM</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-3 bg-light rounded border text-center small text-secondary">
+              <span class="fw-bold text-navy">Carrier:</span> BlueDart Express &nbsp;|&nbsp;
+              <span class="fw-bold text-navy">Tracking AWB:</span> <code>BD77291039IN</code>
+            </div>
+
+            <div class="text-center mt-4">
+              <a href="/shop.html" class="btn hn-btn-gold">Continue Shopping</a>
+            </div>
+
+          </div>
+
         </div>
-
-        <!-- Tracking Result Card -->
-        <div id="tracking-result" class="card border-0 shadow-sm rounded-4 p-4 p-md-5 d-none">
-          <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4">
-            <div>
-              <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fw-semibold mb-1" id="track-status-badge">In Transit</span>
-              <h4 class="fw-bold mb-0" id="track-id-display">Order #HN-89104</h4>
-            </div>
-            <div class="text-md-end mt-2 mt-md-0">
-              <div class="text-muted small">Carrier</div>
-              <strong class="text-dark">Express Logistics</strong>
-            </div>
-          </div>
-
-          <!-- Visual Timeline -->
-          <div class="mb-5">
-            <h6 class="fw-bold text-muted small text-uppercase mb-4">Shipment Progress</h6>
-            <div class="hn-timeline" id="tr-timeline-container">
-              <!-- Timeline nodes injected dynamically -->
-            </div>
-          </div>
-
-          <!-- Courier Details -->
-          <div class="row g-3 p-3 bg-light rounded-3 mb-4">
-            <div class="col-sm-6">
-              <span class="small text-muted d-block">Courier Partner</span>
-              <strong class="text-dark">Express Logistics</strong>
-            </div>
-            <div class="col-sm-6">
-              <span class="small text-muted d-block">Tracking Reference</span>
-              <strong class="text-dark" id="tr-tracking-number">HN-EXP-XXXXXX</strong>
-            </div>
-          </div>
-
-          <!-- Items in Shipment -->
-          <h6 class="fw-bold text-muted small text-uppercase mb-3">Items in Shipment</h6>
-          <div class="d-flex flex-column gap-3 mb-4" id="tr-items-list">
-            <!-- Items injected dynamically -->
-          </div>
-
-          <!-- Cancel Order Option -->
-          <div id="cancel-order-box" class="pt-3 border-top text-end" style="display: none;">
-            <button class="btn btn-outline-danger btn-sm" onclick="cancelCurrentOrder()">
-              <i class="bi bi-x-circle me-1"></i> Cancel Order
-            </button>
-          </div>
-        </div>
-
       </div>
     </div>
   </main>
 
-  <!-- Footer Placeholder -->
+  <!-- Global Footer -->
   <div id="hn-footer-placeholder"></div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/assets/js/api.js"></script>
-  <script src="/assets/js/state.js"></script>
+  <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
-  <script src="/assets/js/main.js"></script>
-
   <script>
-    let activeOrder = null;
-
-    const sampleOrders = [
-      {
-        order_number: 'HN-89104',
-        tracking_number: 'TRK-2026-89104',
-        order_status: 'in_transit',
-        carrier: 'Express Logistics',
-        created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-        items: [
-          { product_name: 'Wireless Noise-Canceling Headphones', quantity: 1, price: 149.99, total: 149.99, product_image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=120&q=80' }
-        ],
-        timeline: [
-          { label: 'Order Placed', completed: true, active: false, date: new Date(Date.now() - 86400000 * 2).toISOString() },
-          { label: 'Payment Confirmed', completed: true, active: false, date: new Date(Date.now() - 86400000 * 1.8).toISOString() },
-          { label: 'Processing & Packed', completed: true, active: false, date: new Date(Date.now() - 86400000 * 1.2).toISOString() },
-          { label: 'Shipped & In Transit', completed: true, active: true, date: new Date(Date.now() - 86400000 * 0.5).toISOString() },
-          { label: 'Out for Delivery', completed: false, active: false, date: null },
-          { label: 'Delivered', completed: false, active: false, date: null }
-        ]
-      }
-    ];
-
-    const formatCurrency = (val) => '$' + Number(val || 0).toFixed(2);
-
-    function getStoredOrders() {
-      try {
-        const stored = JSON.parse(localStorage.getItem('cres_orders') || '[]');
-        return Array.isArray(stored) && stored.length > 0 ? stored : sampleOrders;
-      } catch (e) {
-        return sampleOrders;
-      }
-    }
-
-    const fetchOrderTracking = async (orderNum) => {
-      const q = (orderNum || '').trim().toLowerCase();
-      if (!q) return;
-
-      const orders = getStoredOrders();
-      let ord = orders.find(o => 
-        (o.order_number && o.order_number.toLowerCase() === q) ||
-        (o.tracking_number && o.tracking_number.toLowerCase() === q) ||
-        (o.id && String(o.id).toLowerCase() === q) ||
-        (o.order_number && o.order_number.toLowerCase().includes(q))
-      );
-
-      if (!ord && typeof api !== 'undefined') {
-        try {
-          const res = await api.get(`/orders/${orderNum}`);
-          if (res && res.success && res.data) {
-            ord = res.data;
-          }
-        } catch (e) {}
-      }
-
-      if (!ord) {
-        // Build a mock order if it looks like a tracking number
-        ord = {
-          order_number: orderNum.toUpperCase().startsWith('HN-') ? orderNum.toUpperCase() : 'HN-' + orderNum.toUpperCase(),
-          tracking_number: orderNum.toUpperCase(),
-          order_status: 'in_transit',
-          carrier: 'Sample Express Delivery',
-          created_at: new Date().toISOString(),
-          items: [
-            { product_name: 'Sample Store Verified Package', quantity: 1, price: 99.00, total: 99.00, product_image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=120&q=80' }
-          ],
-          timeline: [
-            { label: 'Order Placed', completed: true, active: false, date: new Date(Date.now() - 3600000 * 24).toISOString() },
-            { label: 'Processing at Sorting Center', completed: true, active: false, date: new Date(Date.now() - 3600000 * 12).toISOString() },
-            { label: 'In Transit to Destination', completed: true, active: true, date: new Date().toISOString() },
-            { label: 'Out for Delivery', completed: false, active: false, date: null },
-            { label: 'Delivered', completed: false, active: false, date: null }
-          ]
-        };
-      }
-
-      activeOrder = ord;
-      renderTrackingView(activeOrder);
-    };
-
-    const renderTrackingView = (ord) => {
-      const resContainer = document.getElementById('tracking-result');
-      if (!resContainer) return;
-      resContainer.classList.remove('d-none');
-      resContainer.style.display = 'block';
-
-      const idDisp = document.getElementById('track-id-display');
-      if (idDisp) idDisp.textContent = `Order #${ord.order_number || ord.id}`;
-
-      const statusBadge = document.getElementById('track-status-badge');
-      if (statusBadge) {
-        const rawStatus = (ord.order_status || 'processing').replace(/_/g, ' ');
-        statusBadge.textContent = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
-        statusBadge.className = 'badge px-3 py-2 rounded-pill fw-semibold mb-1 ' + 
-          (rawStatus.includes('deliver') ? 'bg-success text-white' : 
-           rawStatus.includes('cancel') ? 'bg-danger text-white' : 
-           rawStatus.includes('transit') || rawStatus.includes('ship') ? 'bg-info text-dark' : 'bg-primary-subtle text-primary');
-      }
-
-      const trNum = document.getElementById('tr-tracking-number');
-      if (trNum) trNum.textContent = ord.tracking_number || `TRK-${Date.now().toString().slice(-6)}`;
-
-      // Render Timeline
-      const timelineEl = document.getElementById('tr-timeline-container');
-      if (timelineEl) {
-        const timeline = ord.timeline || [
-          { label: 'Order Placed', completed: true, active: false, date: ord.created_at || new Date().toISOString() },
-          { label: 'Processing & Packed', completed: ord.order_status !== 'pending', active: ord.order_status === 'processing', date: null },
-          { label: 'Shipped & In Transit', completed: ['shipped', 'in_transit', 'delivered'].includes(ord.order_status), active: ord.order_status === 'shipped' || ord.order_status === 'in_transit', date: null },
-          { label: 'Delivered', completed: ord.order_status === 'delivered', active: ord.order_status === 'delivered', date: null }
-        ];
-
-        timelineEl.innerHTML = timeline.map(t => `
-          <div class="d-flex align-items-start gap-3 mb-3">
-            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 ${t.completed ? 'bg-success text-white' : t.active ? 'bg-primary text-white' : 'bg-light text-muted border'}" style="width:32px; height:32px;">
-              <i class="bi ${t.completed ? 'bi-check-lg' : t.active ? 'bi-truck' : 'bi-circle'}"></i>
-            </div>
-            <div>
-              <div class="fw-semibold ${t.completed || t.active ? 'text-dark' : 'text-muted'}">${t.label}</div>
-              <div class="small text-muted">${t.date ? new Date(t.date).toLocaleString() : (t.completed || t.active ? 'In progress' : 'Pending')}</div>
-            </div>
-          </div>
-        `).join('');
-      }
-
-      // Render Items
-      const itemsEl = document.getElementById('tr-items-list');
-      if (itemsEl && ord.items) {
-        itemsEl.innerHTML = ord.items.map(item => `
-          <div class="d-flex align-items-center justify-content-between p-3 border rounded-3 bg-white shadow-sm">
-            <div class="d-flex align-items-center gap-3">
-              <img src="${item.product_image || item.image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=100&q=80'}" class="rounded-2" style="width: 48px; height: 48px; object-fit: cover;">
-              <div>
-                <div class="fw-bold small text-dark">${item.product_name || item.name}</div>
-                <div class="text-muted small">Qty: ${item.quantity} &bull; ${formatCurrency(item.price)}</div>
-              </div>
-            </div>
-            <div class="fw-bold text-primary">${formatCurrency(item.total || (item.price * item.quantity))}</div>
-          </div>
-        `).join('');
-      }
-
-      // Show cancel button if order is processing or pending
-      const cancelBox = document.getElementById('cancel-order-box');
-      if (cancelBox) {
-        if (['pending', 'processing'].includes(ord.order_status)) {
-          cancelBox.style.display = 'block';
-        } else {
-          cancelBox.style.display = 'none';
-        }
-      }
-    };
-
-    window.handleTrackOrder = (e) => {
-      if (e) e.preventDefault();
-      const inputEl = document.getElementById('track-number-input');
-      const num = inputEl ? inputEl.value.trim() : '';
-      if (num) {
-        window.history.pushState({}, '', `/order-tracking.html?order=${encodeURIComponent(num)}`);
-        fetchOrderTracking(num);
-      }
-    };
-
-    window.cancelCurrentOrder = async () => {
-      if (!activeOrder) return;
-      if (!confirm('Are you sure you want to cancel this order?')) return;
-      
-      try {
-        const stored = JSON.parse(localStorage.getItem('cres_orders') || '[]');
-        const idx = stored.findIndex(o => o.order_number === activeOrder.order_number || o.id === activeOrder.id);
-        if (idx !== -1) {
-          stored[idx].order_status = 'cancelled';
-          localStorage.setItem('cres_orders', JSON.stringify(stored));
-        }
-        activeOrder.order_status = 'cancelled';
-        if (typeof showToast === 'function') {
-          showToast('Order was successfully cancelled', 'success');
-        } else {
-          alert('Order was successfully cancelled');
-        }
-        renderTrackingView(activeOrder);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
     document.addEventListener('DOMContentLoaded', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const orderNum = urlParams.get('order');
-      if (orderNum) {
-        const inputEl = document.getElementById('track-number-input');
-        if (inputEl) inputEl.value = orderNum;
-        fetchOrderTracking(orderNum);
+      renderHeader('orders');
+      renderFooter();
+      const params = new URLSearchParams(window.location.search);
+      const order = params.get('order');
+      if (order) {
+        document.getElementById('hn-track-order-id').innerText = '#' + order;
       }
     });
   </script>

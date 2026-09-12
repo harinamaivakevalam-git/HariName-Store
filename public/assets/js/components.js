@@ -1,46 +1,48 @@
 /**
- * CRESCENDO - Reusable Components & Layout Renderers
+ * HARINAMA STORE - Reusable Components & Layout Renderers
+ * Exact Match to Reference Specification
  */
 
 const formatPrice = (num) => {
   const amount = Number(num) || 0;
-  return `$${amount.toFixed(2)} USD`;
+  return `₹${amount.toLocaleString('en-IN')}`;
 };
 
-const renderRatingStars = (rating = 5.0, count = 124) => {
+const renderRatingStars = (rating = 5.0, count = 24) => {
   return `
-    <div class="cres-product-rating">
-      <i class="bi bi-star-fill text-warning"></i>
-      <i class="bi bi-star-fill text-warning"></i>
-      <i class="bi bi-star-fill text-warning"></i>
-      <i class="bi bi-star-fill text-warning"></i>
-      <i class="bi bi-star-fill text-warning"></i>
-      <span class="text-muted ms-1 small">(${count})</span>
+    <div class="hn-card-rating">
+      <i class="bi bi-star-fill"></i>
+      <i class="bi bi-star-fill"></i>
+      <i class="bi bi-star-fill"></i>
+      <i class="bi bi-star-fill"></i>
+      <i class="bi bi-star-fill"></i>
+      <span class="hn-card-rating-count">(${count})</span>
     </div>
   `;
 };
 
 const showToast = (message, type = 'success') => {
-  let container = document.getElementById('cres-toast-container');
+  let container = document.getElementById('hn-toast-container');
   if (!container) {
     container = document.createElement('div');
-    container.id = 'cres-toast-container';
+    container.id = 'hn-toast-container';
     container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
     container.style.zIndex = '2000';
     document.body.appendChild(container);
   }
 
   const toastEl = document.createElement('div');
-  toastEl.className = 'toast align-items-center text-bg-dark border-0 show shadow-lg mb-2 rounded-4';
+  toastEl.className = 'toast align-items-center text-bg-dark border-0 show shadow-lg mb-2 rounded-2';
   toastEl.role = 'alert';
   toastEl.ariaLive = 'assertive';
   toastEl.ariaAtomic = 'true';
-  toastEl.style.background = 'linear-gradient(135deg, #1E1B4B 0%, #312E81 100%)';
+  toastEl.style.background = '#0B2545';
   toastEl.style.color = '#FFFFFF';
+  toastEl.style.borderLeft = '4px solid #C59B27';
   toastEl.innerHTML = `
     <div class="d-flex p-2 align-items-center">
       <div class="toast-body d-flex align-items-center gap-2">
-        <i class="bi bi-check-circle-fill text-info fs-5"></i>
+        <i class="bi bi-check-circle-fill text-warning fs-5"></i>
         <span>${message}</span>
       </div>
       <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.closest('.toast').remove()"></button>
@@ -55,109 +57,99 @@ const showToast = (message, type = 'success') => {
 
 // Global Header Component
 const renderHeader = (activePage = '') => {
-  const container = document.getElementById('cres-header-placeholder') || document.getElementById('hn-header-placeholder');
+  const container = document.getElementById('hn-header-placeholder') || document.getElementById('cres-header-placeholder');
   if (!container) return;
 
   const currentPath = window.location.pathname;
   let active = activePage;
   if (!active) {
-    if (currentPath.includes('products') || currentPath.includes('product-details')) active = 'products';
+    if (currentPath.includes('shop') || currentPath.includes('products') || currentPath.includes('product-details')) active = 'shop';
     else if (currentPath.includes('about')) active = 'about';
     else if (currentPath.includes('contact')) active = 'contact';
+    else if (currentPath.includes('mission')) active = 'mission';
     else if (currentPath === '/' || currentPath.includes('index')) active = 'home';
   }
 
-  const cart = JSON.parse(localStorage.getItem('cres_cart') || '[]');
-  const wishlist = JSON.parse(localStorage.getItem('cres_wishlist') || '[]');
+  const cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
   const cartCount = cart.reduce((acc, i) => acc + (i.qty || 1), 0);
-  const wishCount = Array.isArray(wishlist) ? wishlist.length : 0;
 
   container.innerHTML = `
-    <header class="cres-header">
+    <!-- Top Announcement Bar -->
+    <div class="hn-topbar">
+      <span>Free shipping on orders above ₹499</span>
+      <span class="separator">|</span>
+      <span>Harinama Store. Remember Krishna. Share Krishna!</span>
+    </div>
+
+    <!-- Main Navigation Header -->
+    <header class="hn-header">
       <div class="container">
         <div class="d-flex align-items-center justify-content-between">
           
           <!-- Logo -->
-          <a href="/index.html" class="cres-brand">
-            <span class="cres-brand-dot"></span>
-            <span>SAMPLE STORE</span>
+          <a href="/index.html" class="hn-brand">
+            <svg width="28" height="34" viewBox="0 0 24 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C7 6 4 12 4 18C4 22.4183 7.58172 26 12 26C16.4183 26 20 22.4183 20 18C20 12 17 6 12 2Z" fill="#0E6251"/>
+              <ellipse cx="12" cy="18" rx="5" ry="7" fill="#16A085"/>
+              <circle cx="12" cy="18" rx="2.5" fill="#0B2545"/>
+              <circle cx="12" cy="18" rx="1" fill="#F1C40F"/>
+              <path d="M12 26V30" stroke="#C59B27" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <div class="hn-brand-text">
+              <span class="hn-brand-title">Harinama Store</span>
+              <span class="hn-brand-tagline">Remember Krishna. Share Krishna.</span>
+            </div>
           </a>
 
-          <!-- Desktop Navigation -->
-          <nav class="d-none d-lg-flex align-items-center gap-1">
-            <a href="/index.html" class="cres-nav-link ${active === 'home' ? 'active' : ''}">Home</a>
-            <a href="/products.html" class="cres-nav-link ${active === 'products' ? 'active' : ''}">Products</a>
-            <a href="/about.html" class="cres-nav-link ${active === 'about' ? 'active' : ''}">About</a>
-            <div class="dropdown">
-              <a href="#" class="cres-nav-link dropdown-toggle" data-bs-toggle="dropdown">Pages</a>
-              <ul class="dropdown-menu shadow border-0 p-2 rounded-4">
-                <li><a class="dropdown-item py-2" href="/cart.html"><i class="bi bi-cart me-2"></i>Shopping Cart</a></li>
-                <li><a class="dropdown-item py-2" href="/checkout.html"><i class="bi bi-credit-card me-2"></i>Checkout</a></li>
-                <li><a class="dropdown-item py-2" href="/account.html"><i class="bi bi-person me-2"></i>My Account</a></li>
-                <li><a class="dropdown-item py-2" href="/orders.html"><i class="bi bi-box-seam me-2"></i>My Orders</a></li>
-                <li><a class="dropdown-item py-2" href="/wishlist.html"><i class="bi bi-heart me-2"></i>My Wishlist</a></li>
-                <li><a class="dropdown-item py-2" href="/addresses.html"><i class="bi bi-geo-alt me-2"></i>My Addresses</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item py-2" href="/faq.html"><i class="bi bi-question-circle me-2"></i>FAQ</a></li>
-                <li><a class="dropdown-item py-2" href="/terms.html"><i class="bi bi-file-earmark-text me-2"></i>Terms &amp; Conditions</a></li>
-                <li><a class="dropdown-item py-2" href="/404.html"><i class="bi bi-exclamation-triangle me-2"></i>404 Error Page</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin.html"><i class="bi bi-shield-lock me-2"></i>Admin Dashboard</a></li>
-                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-products.html"><i class="bi bi-box-seam me-2"></i>Admin Products</a></li>
-                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-categories.html"><i class="bi bi-tags me-2"></i>Admin Categories</a></li>
-                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-orders.html"><i class="bi bi-receipt me-2"></i>Admin Orders</a></li>
-                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-customers.html"><i class="bi bi-people me-2"></i>Admin Customers</a></li>
-                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-coupons.html"><i class="bi bi-ticket-perforated me-2"></i>Admin Coupons</a></li>
-                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-reviews.html"><i class="bi bi-star me-2"></i>Admin Reviews</a></li>
-                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-analytics.html"><i class="bi bi-graph-up-arrow me-2"></i>Admin Analytics</a></li>
-                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-settings.html"><i class="bi bi-gear me-2"></i>Admin Settings</a></li>
-              </ul>
-            </div>
-            <a href="/contact.html" class="cres-nav-link ${active === 'contact' ? 'active' : ''}">Contact</a>
+          <!-- Centered Navigation -->
+          <nav class="d-none d-lg-flex align-items-center gap-2">
+            <a href="/index.html" class="hn-nav-link ${active === 'home' ? 'active' : ''}">Home</a>
+            <a href="/shop.html" class="hn-nav-link ${active === 'shop' ? 'active' : ''}">Shop</a>
+            <a href="/shop.html" class="hn-nav-link">Collections</a>
+            <a href="/about.html" class="hn-nav-link ${active === 'mission' ? 'active' : ''}">Our Mission</a>
+            <a href="/about.html" class="hn-nav-link ${active === 'about' ? 'active' : ''}">About</a>
+            <a href="/contact.html" class="hn-nav-link ${active === 'contact' ? 'active' : ''}">Contact</a>
           </nav>
 
-          <!-- Right Actions -->
-          <div class="d-flex align-items-center gap-2 gap-md-3">
-            <a href="/products.html" class="cres-icon-btn" title="Search Products">
+          <!-- Right Action Icons -->
+          <div class="d-flex align-items-center gap-1 gap-md-2">
+            <a href="/shop.html" class="hn-icon-btn" title="Search Products">
               <i class="bi bi-search"></i>
             </a>
 
-            <a href="/wishlist.html" class="cres-icon-btn d-none d-md-inline-flex" title="Wishlist">
-              <i class="bi bi-heart"></i>
-              <span class="cres-badge-pill" id="cres-wishlist-badge">${wishCount}</span>
-            </a>
-
-            <a href="/cart.html" class="cres-icon-btn" title="Shopping Cart">
-              <i class="bi bi-bag"></i>
-              <span class="cres-badge-pill" id="cres-cart-badge">${cartCount}</span>
-            </a>
-
-            <a href="/account.html" class="cres-icon-btn d-none d-md-inline-flex" title="Account">
+            <a href="/account.html" class="hn-icon-btn" title="My Account">
               <i class="bi bi-person"></i>
             </a>
 
-            <!-- Mobile Menu Toggle -->
-            <button class="cres-icon-btn d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#cresMobileNav" aria-label="Toggle navigation">
-              <i class="bi bi-list"></i>
+            <a href="/cart.html" class="hn-icon-btn" title="Shopping Cart">
+              <i class="bi bi-bag"></i>
+              <span class="hn-badge-pill" id="hn-cart-badge">${cartCount}</span>
+            </a>
+
+            <!-- Mobile Menu Toggle Button -->
+            <button class="hn-icon-btn d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#hnMobileNav" aria-label="Toggle navigation">
+              <i class="bi bi-list fs-4"></i>
             </button>
           </div>
 
         </div>
 
-        <!-- Mobile Navigation Dropdown -->
-        <div class="collapse d-lg-none mt-3 pt-3 border-top" id="cresMobileNav">
-          <div class="d-flex flex-column gap-2 p-2 bg-light rounded-4">
-            <a href="/index.html" class="cres-nav-link ${active === 'home' ? 'active' : ''}"><i class="bi bi-house me-2"></i>Home</a>
-            <a href="/products.html" class="cres-nav-link ${active === 'products' ? 'active' : ''}"><i class="bi bi-grid me-2"></i>Products</a>
-            <a href="/wishlist.html" class="cres-nav-link"><i class="bi bi-heart me-2"></i>Wishlist (${wishCount})</a>
-            <a href="/cart.html" class="cres-nav-link"><i class="bi bi-bag me-2"></i>Shopping Cart (${cartCount})</a>
-            <a href="/account.html" class="cres-nav-link"><i class="bi bi-person me-2"></i>My Account</a>
-            <a href="/orders.html" class="cres-nav-link"><i class="bi bi-box-seam me-2"></i>My Orders</a>
-            <a href="/about.html" class="cres-nav-link ${active === 'about' ? 'active' : ''}"><i class="bi bi-info-circle me-2"></i>About Us</a>
-            <a href="/contact.html" class="cres-nav-link ${active === 'contact' ? 'active' : ''}"><i class="bi bi-envelope me-2"></i>Contact</a>
-            <a href="/admin.html" class="cres-nav-link text-primary fw-bold"><i class="bi bi-shield-lock me-2"></i>Admin Portal</a>
+        <!-- Mobile Navigation Drawer -->
+        <div class="collapse d-lg-none mt-3 pt-3 border-top" id="hnMobileNav">
+          <div class="d-flex flex-column gap-2">
+            <a href="/index.html" class="hn-nav-link ${active === 'home' ? 'active' : ''}">Home</a>
+            <a href="/shop.html" class="hn-nav-link ${active === 'shop' ? 'active' : ''}">Shop Keychains</a>
+            <a href="/shop.html" class="hn-nav-link">Collections</a>
+            <a href="/about.html" class="hn-nav-link">Our Mission</a>
+            <a href="/about.html" class="hn-nav-link">About Us</a>
+            <a href="/contact.html" class="hn-nav-link">Contact</a>
+            <hr class="my-1">
+            <a href="/cart.html" class="hn-nav-link">Shopping Cart (${cartCount})</a>
+            <a href="/account.html" class="hn-nav-link">My Account / Orders</a>
+            <a href="/admin.html" class="hn-nav-link text-warning fw-semibold">Admin Dashboard</a>
           </div>
         </div>
+
       </div>
     </header>
   `;
@@ -165,217 +157,154 @@ const renderHeader = (activePage = '') => {
 
 // Global Footer Component
 const renderFooter = () => {
-  const container = document.getElementById('cres-footer-placeholder') || document.getElementById('hn-footer-placeholder');
+  const container = document.getElementById('hn-footer-placeholder') || document.getElementById('cres-footer-placeholder');
   if (!container) return;
 
   container.innerHTML = `
-    <footer class="cres-footer">
+    <footer class="hn-footer">
       <div class="container">
         <div class="row g-4">
-          <!-- Col 1 -->
-          <div class="col-lg-4">
-            <a href="/index.html" class="cres-brand mb-3 d-inline-block">
-              <span class="cres-brand-dot"></span>
-              <span>SAMPLE STORE</span>
-            </a>
-            <p class="text-muted small mb-4 pe-lg-4">
-              Premium quality audio gear and lifestyle store designed for those who love pure acoustics, high fidelity, and modern design.
+          
+          <!-- Col 1: Brand Info -->
+          <div class="col-lg-4 mb-3 mb-lg-0">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <svg width="24" height="30" viewBox="0 0 24 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C7 6 4 12 4 18C4 22.4183 7.58172 26 12 26C16.4183 26 20 22.4183 20 18C20 12 17 6 12 2Z" fill="#16A085"/>
+                <ellipse cx="12" cy="18" rx="5" ry="7" fill="#F1C40F"/>
+                <circle cx="12" cy="18" rx="2" fill="#0B2545"/>
+              </svg>
+              <h5 class="hn-brand-title text-white mb-0">Harinama Store</h5>
+            </div>
+            <p class="hn-footer-desc">
+              Beautiful devotional keychains and gifts designed to keep Krishna in your heart and everyday life.
             </p>
-            <div class="d-flex gap-2">
-              <a href="#" class="cres-icon-btn"><i class="bi bi-instagram"></i></a>
-              <a href="#" class="cres-icon-btn"><i class="bi bi-twitter-x"></i></a>
-              <a href="#" class="cres-icon-btn"><i class="bi bi-youtube"></i></a>
-              <a href="#" class="cres-icon-btn"><i class="bi bi-facebook"></i></a>
+            <div class="hn-footer-social">
+              <a href="https://instagram.com" target="_blank" title="Instagram"><i class="bi bi-instagram"></i></a>
+              <a href="https://youtube.com" target="_blank" title="YouTube"><i class="bi bi-youtube"></i></a>
+              <a href="https://facebook.com" target="_blank" title="Facebook"><i class="bi bi-facebook"></i></a>
+              <a href="https://pinterest.com" target="_blank" title="Pinterest"><i class="bi bi-pinterest"></i></a>
             </div>
           </div>
 
-          <!-- Col 2 -->
+          <!-- Col 2: Shop Links -->
           <div class="col-6 col-lg-2">
-            <h6>Categories</h6>
-            <a href="/products.html?category=speakers">Speakers</a>
-            <a href="/products.html?category=headphones">Headphones</a>
-            <a href="/products.html?category=earbuds">Earbuds</a>
-            <a href="/products.html?category=accessories">Accessories</a>
-            <a href="/products.html?category=wireless-charger">Wireless Charger</a>
+            <div class="hn-footer-title">Shop</div>
+            <a href="/shop.html">All Keychains</a>
+            <a href="/shop.html?category=gift-sets">Gift Sets</a>
+            <a href="/shop.html">New Arrivals</a>
           </div>
 
-          <!-- Col 3 -->
+          <!-- Col 3: Help Links -->
           <div class="col-6 col-lg-2">
-            <h6>Quick Links</h6>
-            <a href="/products.html">All Products</a>
-            <a href="/about.html">About Us</a>
+            <div class="hn-footer-title">Help</div>
+            <a href="/faq.html">Shipping</a>
+            <a href="/terms.html">Returns</a>
             <a href="/faq.html">FAQs</a>
-            <a href="/contact.html">Contact Us</a>
-            <a href="/admin.html">Admin Portal</a>
           </div>
 
-          <!-- Col 4 -->
-          <div class="col-lg-4">
-            <h6>Subscribe to Newsletter</h6>
-            <p class="text-muted small mb-3">Get 10% off your first purchase and stay updated with new product releases.</p>
-            <form onsubmit="handleCrescendoNewsletter(event)" class="d-flex gap-2">
-              <input type="email" required class="form-control rounded-pill px-3" placeholder="Enter your email address">
-              <button type="submit" class="btn cres-btn-primary px-4">Subscribe</button>
-            </form>
+          <!-- Col 4: About Links -->
+          <div class="col-6 col-lg-2">
+            <div class="hn-footer-title">About</div>
+            <a href="/about.html">Our Mission</a>
+            <a href="/contact.html">Contact Us</a>
           </div>
+
+          <!-- Col 5: Follow Us Column -->
+          <div class="col-6 col-lg-2">
+            <div class="hn-footer-title">Follow Us</div>
+            <div class="d-flex flex-column gap-1">
+              <a href="https://instagram.com" target="_blank"><i class="bi bi-instagram me-2"></i>Instagram</a>
+              <a href="https://youtube.com" target="_blank"><i class="bi bi-youtube me-2"></i>YouTube</a>
+              <a href="https://facebook.com" target="_blank"><i class="bi bi-facebook me-2"></i>Facebook</a>
+              <a href="https://pinterest.com" target="_blank"><i class="bi bi-pinterest me-2"></i>Pinterest</a>
+            </div>
+          </div>
+
         </div>
 
-        <hr class="my-4 text-muted opacity-25">
-
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 small text-muted">
-          <div>© ${new Date().getFullYear()} SAMPLE STORE. All rights reserved.</div>
-          <div class="d-flex gap-3">
-            <a href="/terms.html" class="text-muted">Privacy Policy</a>
-            <a href="/terms.html" class="text-muted">Terms of Service</a>
-            <a href="/faq.html" class="text-muted">Support</a>
-          </div>
+        <div class="hn-footer-bottom">
+          <div>© ${new Date().getFullYear()} Harinama Store. All rights reserved. &nbsp;|&nbsp; Made with love for a higher purpose. &nbsp;|&nbsp; Hare Krishna!</div>
         </div>
       </div>
     </footer>
   `;
 };
 
-// Render Product Card Component (Matching Reference Image)
+// Render Product Card (Exact match to reference image)
 const renderProductCard = (p) => {
-  const badgeClass = p.badge_type === 'pink' ? 'cres-badge-pink' : (p.badge_type === 'blue' ? 'cres-badge-blue' : 'cres-badge-purple');
-  const wishlist = JSON.parse(localStorage.getItem('cres_wishlist') || '[]');
-  const isWish = Array.isArray(wishlist) && (wishlist.includes(p.id) || wishlist.some(item => (typeof item === 'object' ? item.id === p.id : item === p.id)));
+  const isWish = false;
 
   return `
-    <div class="cres-product-card" data-product-id="${p.id}">
-      ${p.badge ? `<span class="cres-product-badge ${badgeClass}">${p.badge}</span>` : ''}
-      
-      <button class="cres-card-wishlist ${isWish ? 'active' : ''}" onclick="toggleWishlist('${p.id}', this)" title="Add to Wishlist">
-        <i class="bi ${isWish ? 'bi-heart-fill text-danger' : 'bi-heart'}"></i>
-      </button>
-
-      <a href="/product-details.html?id=${p.id}" class="cres-product-img-box">
-        <img src="${p.image}" alt="${p.name}" loading="lazy">
-      </a>
-
-      <h6 class="cres-product-title">
-        <a href="/product-details.html?id=${p.id}">${p.name}</a>
-      </h6>
-
-      ${renderRatingStars(p.rating, p.reviews_count)}
-
-      <div class="cres-product-price-row">
-        <div class="cres-product-price">${formatPrice(p.price)}</div>
-        <button class="cres-card-cart-btn" onclick="addToCart('${p.id}')" title="Add to Cart">
-          <i class="bi bi-bag"></i>
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="hn-product-card" data-product-id="${p.id}">
+        
+        <button class="hn-card-wishlist ${isWish ? 'active' : ''}" onclick="toggleWishlist('${p.id}', this)" title="Wishlist">
+          <i class="bi ${isWish ? 'bi-heart-fill text-danger' : 'bi-heart'}"></i>
         </button>
+
+        <a href="/product-details.html?id=${p.id}" class="hn-card-img-box">
+          <img src="${p.image}" alt="${p.name}" loading="lazy">
+        </a>
+
+        <div class="hn-card-title">
+          <a href="/product-details.html?id=${p.id}">${p.name}</a>
+        </div>
+
+        <div class="hn-card-price">
+          ${formatPrice(p.price)}
+        </div>
+
+        ${renderRatingStars(p.rating, p.reviews_count)}
+
+        <button class="hn-btn-card-add" onclick="handleAddToCart('${p.id}')">
+          Add to Cart
+        </button>
+
       </div>
     </div>
   `;
 };
 
-// Cart & Wishlist local state helpers
-window.findProductByIdOrSlug = (identifier) => {
-  if (!identifier) return null;
-  const idStr = String(identifier);
+// Cart Helpers
+const handleAddToCart = (productId, qty = 1, selectedMaterial = 'Acrylic') => {
+  const product = (HARINAMA_DATA.products || []).find(p => p.id === productId);
+  if (!product) return;
 
-  // Check base catalog
-  if (typeof CRESCENDO_DATA !== 'undefined' && Array.isArray(CRESCENDO_DATA.products)) {
-    const found = CRESCENDO_DATA.products.find(p => p.id === idStr || p.slug === idStr || String(p.id) === idStr);
-    if (found) return found;
-  }
+  let cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
+  const existingIndex = cart.findIndex(item => item.id === productId && item.material === selectedMaterial);
 
-  // Check dynamically created admin products
-  try {
-    const adminProds = JSON.parse(localStorage.getItem('cres_admin_products') || '[]');
-    const adminFound = adminProds.find(p => p.id === idStr || p.slug === idStr || String(p.id) === idStr);
-    if (adminFound) return adminFound;
-  } catch (e) {}
-
-  return null;
-};
-
-window.addToCart = (productId, qty = 1, color = 'Standard') => {
-  const p = window.findProductByIdOrSlug(productId) || (typeof activeProduct !== 'undefined' && activeProduct ? activeProduct : null);
-  if (!p) {
-    console.warn('Product not found:', productId);
-    return;
-  }
-
-  const quantity = Math.max(1, parseInt(qty, 10) || 1);
-  let cart = JSON.parse(localStorage.getItem('cres_cart') || '[]');
-  const pId = p.id || productId;
-  const existing = cart.find(i => (i.id === pId || i.id === p.slug) && (i.color === color || (!i.color && !color)));
-  
-  if (existing) {
-    existing.qty += quantity;
+  if (existingIndex > -1) {
+    cart[existingIndex].qty += Number(qty);
   } else {
     cart.push({
-      id: pId,
-      name: p.name || 'Sample Product',
-      slug: p.slug || pId,
-      price: Number(p.price) || 99.00,
-      image: p.image || (p.gallery && p.gallery[0]) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80',
-      color: color || 'Standard',
-      qty: quantity
+      id: product.id,
+      name: product.name || product.title,
+      price: product.price,
+      image: product.image,
+      material: selectedMaterial,
+      qty: Number(qty)
     });
   }
 
+  localStorage.setItem('hn_cart', JSON.stringify(cart));
   localStorage.setItem('cres_cart', JSON.stringify(cart));
-  if (window.cresUpdateCounters) window.cresUpdateCounters();
 
-  showToast(`Added "${p.name || 'Item'}" to cart! 🛍️`, 'success');
+  // Update badge
+  const totalCount = cart.reduce((acc, i) => acc + (i.qty || 1), 0);
+  const badge = document.getElementById('hn-cart-badge') || document.getElementById('cres-cart-badge');
+  if (badge) badge.innerText = totalCount;
+
+  showToast(`Added "${product.name}" to your cart.`);
 };
 
-window.buyNow = (productId, qty = 1, color = 'Standard') => {
-  window.addToCart(productId, qty, color);
-  setTimeout(() => {
-    window.location.href = '/checkout.html';
-  }, 200);
-};
-
-window.toggleWishlist = (productId, btnEl) => {
-  const p = window.findProductByIdOrSlug(productId) || (typeof activeProduct !== 'undefined' && activeProduct ? activeProduct : null);
-  const pId = p ? p.id : productId;
-  if (!pId) return;
-
-  let wishlist = JSON.parse(localStorage.getItem('cres_wishlist') || '[]');
-  const index = wishlist.findIndex(item => (typeof item === 'object' ? item.id === pId : item === pId));
-  let isAdded = false;
-
-  if (index > -1) {
-    wishlist.splice(index, 1);
-    showToast(`Removed "${p ? p.name : 'Item'}" from wishlist.`, 'info');
-  } else {
-    wishlist.push(pId);
-    isAdded = true;
-    showToast(`Added "${p ? p.name : 'Item'}" to wishlist! 💖`, 'success');
-  }
-
-  localStorage.setItem('cres_wishlist', JSON.stringify(wishlist));
-  if (window.cresUpdateCounters) window.cresUpdateCounters();
-
-  if (btnEl) {
-    btnEl.classList.toggle('active', isAdded);
-    const icon = btnEl.querySelector('i');
-    if (icon) icon.className = isAdded ? 'bi bi-heart-fill text-danger' : 'bi bi-heart';
+const toggleWishlist = (productId, btn) => {
+  showToast('Item saved to your sacred wishlist.');
+  if (btn) {
+    const icon = btn.querySelector('i');
+    if (icon) {
+      icon.classList.toggle('bi-heart');
+      icon.classList.toggle('bi-heart-fill');
+      icon.classList.toggle('text-danger');
+    }
   }
 };
-
-window.cresAddToCart = window.addToCart;
-window.cresToggleWishlist = window.toggleWishlist;
-window.cresShowToast = showToast;
-window.cresUpdateCounters = () => {
-  const cart = JSON.parse(localStorage.getItem('cres_cart') || '[]');
-  const wishlist = JSON.parse(localStorage.getItem('cres_wishlist') || '[]');
-  const cartBadge = document.getElementById('cres-cart-badge');
-  const wishBadge = document.getElementById('cres-wishlist-badge');
-  if (cartBadge) cartBadge.textContent = cart.reduce((acc, i) => acc + (i.qty || 1), 0);
-  if (wishBadge) wishBadge.textContent = wishlist.length;
-};
-
-window.handleCrescendoNewsletter = (e) => {
-  e.preventDefault();
-  showToast('Thank you for subscribing to CRESCENDO updates! 🎧', 'success');
-  e.target.reset();
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-  renderHeader();
-  renderFooter();
-});

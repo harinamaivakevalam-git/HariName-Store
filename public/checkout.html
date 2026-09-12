@@ -3,408 +3,181 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Checkout - Sample Store</title>
+  <title>Checkout — Harinama Store</title>
+  <meta name="description" content="Secure multi-step checkout for Harinama Store.">
   
   <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/assets/css/style.css">
+  
+  <!-- Harinama Store Master Stylesheet -->
+  <link rel="stylesheet" href="/assets/css/style.css?v=4">
 </head>
 <body>
 
-  <!-- Header Placeholder -->
+  <!-- Top Announcement Bar & Header -->
   <div id="hn-header-placeholder"></div>
 
-  <main class="container my-5">
-    
-    <div class="mb-4">
-      <h2 class="fw-bold mb-3">Checkout</h2>
-
-      <!-- 3-Step Stepper -->
-      <div class="d-flex flex-wrap align-items-center gap-2 gap-sm-3 mb-4">
-        <div class="d-flex align-items-center gap-2 cursor-pointer" onclick="goToStep(1)">
-          <span class="rounded-circle d-inline-flex align-items-center justify-content-center fw-bold small" id="step-badge-1" style="width: 28px; height: 28px; background: var(--cres-primary); color: #fff;">1</span>
-          <span class="fw-bold small text-dark" id="step-label-1">Information</span>
-        </div>
-        <div class="border-top d-none d-sm-block flex-grow-1" style="max-width: 40px;"></div>
-        <div class="d-flex align-items-center gap-2 text-muted cursor-pointer" onclick="goToStep(2)">
-          <span class="rounded-circle bg-light border text-muted d-inline-flex align-items-center justify-content-center fw-bold small" id="step-badge-2" style="width: 28px; height: 28px;">2</span>
-          <span class="small" id="step-label-2">Address & Shipping</span>
-        </div>
-        <div class="border-top d-none d-sm-block flex-grow-1" style="max-width: 40px;"></div>
-        <div class="d-flex align-items-center gap-2 text-muted cursor-pointer" onclick="goToStep(3)">
-          <span class="rounded-circle bg-light border text-muted d-inline-flex align-items-center justify-content-center fw-bold small" id="step-badge-3" style="width: 28px; height: 28px;">3</span>
-          <span class="small" id="step-label-3">Payment</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="row g-5">
-      <!-- Left: Multi-step Form Sections -->
-      <div class="col-lg-7">
-        <form id="checkoutMultiForm" onsubmit="handleCheckoutSubmit(event)">
+  <main class="py-5">
+    <div class="container">
+      
+      <form id="hn-checkout-form" onsubmit="handlePlaceOrder(event)">
+        <div class="row g-4 g-lg-5">
           
-          <!-- STEP 1: Contact Information Card -->
-          <div id="checkout-step-1" class="checkout-step-panel">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-              <h5 class="fw-bold mb-4"><i class="bi bi-person-lines-fill text-primary me-2"></i>Contact Information</h5>
-              <div class="row g-3">
-                <div class="col-12">
-                  <label class="form-label small fw-bold">Full Name</label>
-                  <input type="text" id="chk-fullname" required class="form-control rounded-pill px-3" placeholder="John Doe" value="John Doe">
+          <!-- Left Column: Shipping Information -->
+          <div class="col-lg-7">
+            <div class="bg-white border rounded p-4 shadow-sm">
+              <h4 class="fw-bold mb-4" style="font-family: var(--hn-font-serif); color: var(--hn-navy);">Shipping Information</h4>
+              
+              <div class="mb-3">
+                <label class="form-label small fw-bold text-secondary">Full Name *</label>
+                <input type="text" class="form-control" id="hn-ship-name" required placeholder="Gauranga Das">
+              </div>
+
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold text-secondary">Mobile Number *</label>
+                  <input type="tel" class="form-control" id="hn-ship-phone" required placeholder="+91 98765 43210">
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label small fw-bold">Email Address</label>
-                  <input type="email" id="chk-email" required class="form-control rounded-pill px-3" placeholder="john@example.com" value="john@example.com">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label small fw-bold">Phone Number</label>
-                  <input type="tel" id="chk-phone" required class="form-control rounded-pill px-3" placeholder="+1 234 567 890" value="+1 234 567 890">
+                  <label class="form-label small fw-bold text-secondary">Email (optional)</label>
+                  <input type="email" class="form-control" id="hn-ship-email" placeholder="devotee@harinama.com">
                 </div>
               </div>
-            </div>
 
-            <button type="button" class="btn cres-btn-primary w-100 py-3 fw-bold" onclick="goToStep(2)">
-              Continue to Address & Shipping <i class="bi bi-arrow-right ms-1"></i>
-            </button>
-          </div>
+              <div class="mb-3">
+                <label class="form-label small fw-bold text-secondary">Address *</label>
+                <input type="text" class="form-control" id="hn-ship-address" required placeholder="Flat 402, Radharani Kripa, Raman Reti">
+              </div>
 
-          <!-- STEP 2: Shipping Address & Methods -->
-          <div id="checkout-step-2" class="checkout-step-panel d-none">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-              <h5 class="fw-bold mb-4"><i class="bi bi-geo-alt-fill text-primary me-2"></i>Shipping Address</h5>
               <div class="row g-3">
-                <div class="col-12">
-                  <label class="form-label small fw-bold">Address Line 1</label>
-                  <input type="text" id="chk-addr1" required class="form-control rounded-pill px-3" placeholder="123 Music Street" value="123 Music Street">
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold text-secondary">City *</label>
+                  <input type="text" class="form-control" id="hn-ship-city" required placeholder="Vrindavan">
                 </div>
-                <div class="col-12">
-                  <label class="form-label small fw-bold">Address Line 2 (Optional)</label>
-                  <input type="text" id="chk-addr2" class="form-control rounded-pill px-3" placeholder="Apt 4B, Studio" value="Apt 4B">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label small fw-bold">City</label>
-                  <input type="text" id="chk-city" required class="form-control rounded-pill px-3" placeholder="New York" value="New York">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label small fw-bold">State</label>
-                  <input type="text" id="chk-state" required class="form-control rounded-pill px-3" placeholder="NY" value="NY">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label small fw-bold">Postal Code</label>
-                  <input type="text" id="chk-zip" required class="form-control rounded-pill px-3" placeholder="10001" value="10001">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label small fw-bold">Country</label>
-                  <select class="form-select rounded-pill px-3" id="chk-country">
-                    <option value="US" selected>United States</option>
-                    <option value="CA">Canada</option>
-                    <option value="UK">United Kingdom</option>
-                    <option value="IN">India</option>
-                    <option value="AU">Australia</option>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold text-secondary">State *</label>
+                  <select class="form-select" id="hn-ship-state" required>
+                    <option value="">(Select State)</option>
+                    <option value="Uttar Pradesh" selected>Uttar Pradesh</option>
+                    <option value="West Bengal">West Bengal</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Gujarat">Gujarat</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Rajasthan">Rajasthan</option>
                   </select>
                 </div>
-              </div>
-            </div>
-
-            <!-- Shipping Speed Selection -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-              <h6 class="fw-bold mb-3">Delivery Options</h6>
-              <div class="d-flex flex-column gap-2">
-                <label class="border rounded-4 p-3 d-flex align-items-center justify-content-between cursor-pointer">
-                  <div class="d-flex align-items-center gap-3">
-                    <input class="form-check-input mt-0" type="radio" name="shippingMethod" value="0" checked onchange="updateShippingCost(0)">
-                    <div>
-                      <div class="fw-bold small">Standard Free Delivery</div>
-                      <div class="text-muted small">Estimated 3–5 business days</div>
-                    </div>
-                  </div>
-                  <strong class="text-success">Free</strong>
-                </label>
-
-                <label class="border rounded-4 p-3 d-flex align-items-center justify-content-between cursor-pointer">
-                  <div class="d-flex align-items-center gap-3">
-                    <input class="form-check-input mt-0" type="radio" name="shippingMethod" value="15" onchange="updateShippingCost(15)">
-                    <div>
-                      <div class="fw-bold small">Express Courier Air Delivery</div>
-                      <div class="text-muted small">Estimated 1–2 business days</div>
-                    </div>
-                  </div>
-                  <strong class="text-dark">$15.00</strong>
-                </label>
-              </div>
-            </div>
-
-            <div class="d-flex gap-2">
-              <button type="button" class="btn btn-outline-secondary rounded-pill px-4 py-3 fw-semibold" onclick="goToStep(1)">
-                <i class="bi bi-arrow-left me-1"></i> Back
-              </button>
-              <button type="button" class="btn cres-btn-primary flex-grow-1 py-3 fw-bold" onclick="goToStep(3)">
-                Continue to Payment <i class="bi bi-arrow-right ms-1"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- STEP 3: Payment Method -->
-          <div id="checkout-step-3" class="checkout-step-panel d-none">
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-              <h5 class="fw-bold mb-4"><i class="bi bi-credit-card-2-front-fill text-primary me-2"></i>Select Payment Method</h5>
-
-              <div class="d-flex flex-column gap-3 mb-4">
-                <label class="border rounded-4 p-3 d-flex align-items-center gap-3 cursor-pointer">
-                  <input class="form-check-input mt-0" type="radio" name="paymentOption" value="card" checked onchange="togglePaymentPane('card')">
-                  <div class="flex-grow-1">
-                    <div class="fw-bold small">Credit / Debit Card</div>
-                    <div class="text-muted small">Visa, MasterCard, Amex, Discover</div>
-                  </div>
-                  <i class="bi bi-credit-card fs-4 text-primary"></i>
-                </label>
-
-                <label class="border rounded-4 p-3 d-flex align-items-center gap-3 cursor-pointer">
-                  <input class="form-check-input mt-0" type="radio" name="paymentOption" value="paypal" onchange="togglePaymentPane('paypal')">
-                  <div class="flex-grow-1">
-                    <div class="fw-bold small">PayPal Express</div>
-                    <div class="text-muted small">Safe and fast checkout with PayPal account</div>
-                  </div>
-                  <i class="bi bi-paypal fs-4 text-primary"></i>
-                </label>
-
-                <label class="border rounded-4 p-3 d-flex align-items-center gap-3 cursor-pointer">
-                  <input class="form-check-input mt-0" type="radio" name="paymentOption" value="cod" onchange="togglePaymentPane('cod')">
-                  <div class="flex-grow-1">
-                    <div class="fw-bold small">Cash on Delivery (COD)</div>
-                    <div class="text-muted small">Pay when your audio package is delivered</div>
-                  </div>
-                  <i class="bi bi-cash-stack fs-4 text-success"></i>
-                </label>
-              </div>
-
-              <!-- Card Input Details -->
-              <div id="card-details-panel">
-                <div class="row g-3">
-                  <div class="col-12">
-                    <label class="form-label small fw-bold">Cardholder Name</label>
-                    <input type="text" class="form-control rounded-pill px-3" placeholder="John Doe" value="John Doe">
-                  </div>
-                  <div class="col-12">
-                    <label class="form-label small fw-bold">Card Number</label>
-                    <input type="text" class="form-control rounded-pill px-3" placeholder="•••• •••• •••• 4242" value="4242 •••• •••• 4242">
-                  </div>
-                  <div class="col-6">
-                    <label class="form-label small fw-bold">Expiry Date</label>
-                    <input type="text" class="form-control rounded-pill px-3" placeholder="MM/YY" value="12/28">
-                  </div>
-                  <div class="col-6">
-                    <label class="form-label small fw-bold">CVV / CVC</label>
-                    <input type="password" maxlength="4" class="form-control rounded-pill px-3" placeholder="123" value="123">
-                  </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold text-secondary">PIN Code *</label>
+                  <input type="text" class="form-control" id="hn-ship-pin" required placeholder="281121">
                 </div>
               </div>
 
             </div>
+          </div>
 
-            <div class="d-flex gap-2">
-              <button type="button" class="btn btn-outline-secondary rounded-pill px-4 py-3 fw-semibold" onclick="goToStep(2)">
-                <i class="bi bi-arrow-left me-1"></i> Back
+          <!-- Right Column: Payment Method (Exact Match to Reference) -->
+          <div class="col-lg-5">
+            <div class="bg-white border rounded p-4 shadow-sm">
+              <h4 class="fw-bold mb-4" style="font-family: var(--hn-font-serif); color: var(--hn-navy);">Payment Method</h4>
+
+              <!-- Payment Method Radios -->
+              <div class="d-flex flex-column gap-3 mb-4">
+                
+                <label class="border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer;">
+                  <div class="d-flex align-items-center gap-2">
+                    <input type="radio" name="payment_method" value="upi" checked class="form-check-input">
+                    <span class="fw-semibold small">UPI (Google Pay, PhonePe, Paytm)</span>
+                  </div>
+                </label>
+
+                <label class="border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer;">
+                  <div class="d-flex align-items-center gap-2">
+                    <input type="radio" name="payment_method" value="card" class="form-check-input">
+                    <span class="fw-semibold small">Credit / Debit Card</span>
+                  </div>
+                  <div class="d-flex gap-1">
+                    <span class="badge bg-light text-dark border">VISA</span>
+                    <span class="badge bg-light text-dark border">Mastercard</span>
+                    <span class="badge bg-light text-dark border">RuPay</span>
+                  </div>
+                </label>
+
+                <label class="border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer;">
+                  <div class="d-flex align-items-center gap-2">
+                    <input type="radio" name="payment_method" value="netbanking" class="form-check-input">
+                    <span class="fw-semibold small">Net Banking</span>
+                  </div>
+                </label>
+
+                <label class="border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer;">
+                  <div class="d-flex align-items-center gap-2">
+                    <input type="radio" name="payment_method" value="wallets" class="form-check-input">
+                    <span class="fw-semibold small">Wallets</span>
+                  </div>
+                </label>
+
+              </div>
+
+              <!-- Terms Checkbox -->
+              <div class="form-check mb-4">
+                <input class="form-check-input" type="checkbox" id="hn-terms-check" required checked>
+                <label class="form-check-label small text-secondary" for="hn-terms-check">
+                  I agree to the <a href="/terms.html" class="text-decoration-underline text-navy">Terms &amp; Conditions</a>
+                </label>
+              </div>
+
+              <!-- Place Order Button -->
+              <button type="submit" class="btn hn-btn-gold w-100 py-3 mb-3 fw-bold" id="hn-btn-place-order">
+                Place Order
               </button>
-              <button type="submit" class="btn cres-btn-primary flex-grow-1 py-3 fw-bold" id="placeOrderBtn">
-                <i class="bi bi-lock-fill me-1"></i> Place Order (<span id="btn-total-val">$1,000.00</span>)
-              </button>
-            </div>
-          </div>
 
-        </form>
-      </div>
+              <!-- Secure Note -->
+              <div class="text-center small text-muted">
+                <i class="bi bi-lock-fill text-warning me-1"></i> Your payment information is secure and encrypted.
+              </div>
 
-      <!-- Right: Live Dynamic Order Summary -->
-      <div class="col-lg-5">
-        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white position-sticky" style="top: 100px;">
-          <h5 class="fw-bold mb-4">Order Summary</h5>
-
-          <!-- Items Mini List -->
-          <div class="d-flex flex-column gap-3 mb-4" id="checkout-items-summary-list">
-            <!-- Rendered by JS -->
-          </div>
-
-          <hr class="my-3 opacity-25">
-
-          <div class="d-flex justify-content-between mb-2 small text-muted">
-            <span>Subtotal</span>
-            <span class="fw-semibold text-dark" id="chk-subtotal">$0.00</span>
-          </div>
-
-          <div class="d-flex justify-content-between mb-3 small text-muted">
-            <span>Shipping</span>
-            <span class="fw-semibold text-success" id="chk-shipping-display">Free</span>
-          </div>
-
-          <hr class="my-3 opacity-25">
-
-          <div class="d-flex justify-content-between mb-4">
-            <span class="fw-bold fs-5">Total</span>
-            <span class="fw-bold fs-5 text-dark" id="chk-total">$0.00</span>
-          </div>
-
-          <!-- Trust Badges -->
-          <div class="d-flex flex-column gap-2 p-3 bg-light rounded-3 small text-muted">
-            <div class="d-flex align-items-center gap-2">
-              <i class="bi bi-shield-check text-success"></i> <strong>Secure Checkout</strong> (256-bit encryption)
-            </div>
-            <div class="d-flex align-items-center gap-2">
-              <i class="bi bi-lock-fill text-primary"></i> <strong>SSL Encrypted</strong> Connection
-            </div>
-            <div class="d-flex align-items-center gap-2">
-              <i class="bi bi-patch-check-fill text-primary"></i> <strong>Trusted Payment</strong> Gateways
             </div>
           </div>
 
         </div>
-      </div>
+      </form>
+
     </div>
   </main>
 
-  <!-- Footer Placeholder -->
+  <!-- Global Footer -->
   <div id="hn-footer-placeholder"></div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
-
   <script>
-    let shippingCost = 0;
-    let currentCheckoutStep = 1;
-
-    document.addEventListener('DOMContentLoaded', () => {
-      renderHeader('cart');
-      renderFooter();
-      renderCheckoutSummary();
-    });
-
-    function renderCheckoutSummary() {
-      let cart = JSON.parse(localStorage.getItem('cres_cart') || '[]');
-      if (cart.length === 0) {
-        cart = [
-          { id: 'prod-002', name: 'Pro X168A Headphones', price: 250.00, color: 'Purple', qty: 1, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80' },
-          { id: 'prod-003', name: 'Speaker P168A', price: 340.00, color: 'Black', qty: 2, image: 'https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=400&q=80' }
-        ];
-      }
-
-      const listContainer = document.getElementById('checkout-items-summary-list');
-      let subtotal = 0;
-
-      listContainer.innerHTML = cart.map(item => {
-        const itemTotal = item.price * item.qty;
-        subtotal += itemTotal;
-        return `
-          <div class="d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-3">
-              <img src="${item.image}" class="rounded-3" style="width: 48px; height: 48px; object-fit: contain; background: #FAF9FE;">
-              <div>
-                <h6 class="fw-bold small mb-0">${item.name}</h6>
-                <div class="text-muted" style="font-size: 0.75rem;">Qty: ${item.qty} &bull; ${item.color || 'Standard'}</div>
-              </div>
-            </div>
-            <div class="fw-bold small">$${Number(itemTotal).toFixed(2)}</div>
-          </div>
-        `;
-      }).join('');
-
-      const total = subtotal + shippingCost;
-      document.getElementById('chk-subtotal').textContent = formatPrice(subtotal);
-      document.getElementById('chk-shipping-display').textContent = shippingCost > 0 ? formatPrice(shippingCost) : 'Free';
-      document.getElementById('chk-total').textContent = formatPrice(total);
-      document.getElementById('btn-total-val').textContent = formatPrice(total);
-    }
-
-    function updateShippingCost(val) {
-      shippingCost = val;
-      renderCheckoutSummary();
-    }
-
-    function togglePaymentPane(type) {
-      const cardPanel = document.getElementById('card-details-panel');
-      if (type === 'card') {
-        cardPanel.classList.remove('d-none');
-      } else {
-        cardPanel.classList.add('d-none');
-      }
-    }
-
-    function goToStep(step) {
-      currentCheckoutStep = step;
-      document.querySelectorAll('.checkout-step-panel').forEach(p => p.classList.add('d-none'));
-      document.getElementById(`checkout-step-${step}`).classList.remove('d-none');
-
-      // Update badges
-      for (let i = 1; i <= 3; i++) {
-        const badge = document.getElementById(`step-badge-${i}`);
-        const label = document.getElementById(`step-label-${i}`);
-        if (i === step) {
-          badge.style.background = 'var(--cres-primary)';
-          badge.style.color = '#fff';
-          badge.className = 'rounded-circle d-inline-flex align-items-center justify-content-center fw-bold small';
-          label.className = 'fw-bold small text-dark';
-        } else if (i < step) {
-          badge.style.background = '#10B981';
-          badge.style.color = '#fff';
-          badge.innerHTML = '<i class="bi bi-check"></i>';
-          badge.className = 'rounded-circle d-inline-flex align-items-center justify-content-center fw-bold small';
-          label.className = 'small text-muted';
-        } else {
-          badge.style.background = '#f1f5f9';
-          badge.style.color = '#64748b';
-          badge.innerHTML = `${i}`;
-          badge.className = 'rounded-circle bg-light border text-muted d-inline-flex align-items-center justify-content-center fw-bold small';
-          label.className = 'small text-muted';
-        }
-      }
-      window.scrollTo({ top: 80, behavior: 'smooth' });
-    }
-
-    window.handleCheckoutSubmit = (e) => {
+    function handlePlaceOrder(e) {
       e.preventDefault();
-      const btn = document.getElementById('placeOrderBtn');
+      const btn = document.getElementById('hn-btn-place-order');
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing Sacred Order...';
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing order...';
 
-      const customerName = document.getElementById('chk-fullname').value || 'John Doe';
-      const customerEmail = document.getElementById('chk-email').value || 'john@example.com';
-      const orderNum = 'ORD-' + Math.floor(10000 + Math.random() * 90000);
-
-      const cart = JSON.parse(localStorage.getItem('cres_cart') || '[]');
-      const firstItem = cart[0] || { name: 'Pro X168A Headphones', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80', color: 'Purple', qty: 1 };
-      const subtotal = cart.reduce((acc, i) => acc + (i.price * i.qty), 0) || 250;
-
-      const newOrder = {
-        id: 'ord-' + Date.now(),
-        order_number: '#' + orderNum,
-        customer_name: customerName,
-        customer_email: customerEmail,
-        product_name: firstItem.name,
-        product_image: firstItem.image,
-        color: firstItem.color || 'Purple',
-        quantity: cart.reduce((acc, i) => acc + i.qty, 0) || 1,
-        total: subtotal + shippingCost,
-        status: 'processing',
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-      };
-
-      if (!window.CRESCENDO_DATA.orders) window.CRESCENDO_DATA.orders = [];
-      window.CRESCENDO_DATA.orders.unshift(newOrder);
-      localStorage.setItem('cres_orders', JSON.stringify(window.CRESCENDO_DATA.orders));
-
-      // Clear Cart
-      localStorage.removeItem('cres_cart');
-      if (typeof window.cresUpdateCounters === 'function') window.cresUpdateCounters();
+      const orderNumber = 'HN-2026-' + Math.floor(10000 + Math.random() * 90000);
+      const name = document.getElementById('hn-ship-name').value;
+      const phone = document.getElementById('hn-ship-phone').value;
 
       setTimeout(() => {
-        showToast('🎉 Order placed successfully! Order ID: ' + orderNum, 'success');
-        setTimeout(() => {
-          window.location.href = '/orders.html';
-        }, 1200);
-      }, 800);
-    };
+        // Clear cart
+        localStorage.removeItem('hn_cart');
+        localStorage.removeItem('cres_cart');
+        window.location.href = `/order-success.html?order=${orderNumber}&name=${encodeURIComponent(name)}`;
+      }, 1200);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderHeader('checkout');
+      renderFooter();
+    });
   </script>
 </body>
 </html>

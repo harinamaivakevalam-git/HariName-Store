@@ -3,222 +3,466 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sample Store - Feel the Sound. Live the Moment.</title>
+  <title>Harinama Store — Wherever You Go | Devotional Keychains & Gifts</title>
+  <meta name="description" content="Beautiful devotional keychains designed to keep Krishna in your heart and everyday life. Authentic Vrindavan inspired keychains, gift sets, and spiritual reminders.">
   
   <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   
-  <!-- Custom Stylesheet (Exact Theme) -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=3">
+  <!-- Harinama Store Master Stylesheet -->
+  <link rel="stylesheet" href="/assets/css/style.css?v=4">
 </head>
 <body>
 
-  <!-- Header Placeholder -->
+  <!-- Top Announcement Bar & Header -->
   <div id="hn-header-placeholder"></div>
 
-  <main class="container my-4">
-    
-    <!-- Hero Section -->
-    <section class="cres-hero-container my-3">
-      <div class="row align-items-center g-4">
-        <div class="col-lg-7">
-          <h1 class="cres-hero-title">
-            Feel the Sound.<br class="d-none d-md-inline">
-            <span class="purple-accent">Live</span> the Moment.
-          </h1>
-          <p class="cres-hero-desc">
-            Premium audio gear designed for those who love pure sound and modern style.
-          </p>
-          <div class="d-flex flex-wrap gap-3 mb-4 mb-lg-5">
-            <a href="/products.html" class="btn cres-btn-primary">
-              Shop Now <i class="bi bi-arrow-right ms-1"></i>
-            </a>
-            <a href="/products.html" class="btn cres-btn-outline">
-              Explore More
-            </a>
+  <main>
+    <!-- ====================================================================
+         1. HERO SECTION (Exact Reference Composition)
+         ==================================================================== -->
+    <section class="hn-hero-section">
+      <div class="container">
+        <div class="row align-items-center g-4 g-lg-5">
+          
+          <!-- Left Column -->
+          <div class="col-lg-6">
+            <div class="hn-hero-eyebrow">A Small Keychain. A Big Reminder.</div>
+            <h1 class="hn-hero-title">
+              Carry Krishna<br>
+              Wherever You Go
+            </h1>
+            <p class="hn-hero-desc">
+              Beautiful devotional keychains designed to keep Krishna in your heart and everyday life.
+            </p>
+            <div class="d-flex flex-wrap gap-3">
+              <a href="/shop.html" class="btn hn-btn-gold">Shop Keychains</a>
+              <a href="/about.html" class="btn hn-btn-outline-dark">Our Mission</a>
+            </div>
+            <div class="hn-hero-quote">
+              “In every step, remember Krishna.”
+            </div>
           </div>
 
-          <!-- Feature Trust Strip -->
-          <div class="cres-feature-strip">
-            <div class="cres-feature-item">
-              <div class="cres-feature-icon"><i class="bi bi-truck"></i></div>
-              <div>
-                <div class="fw-bold small">Free Shipping</div>
-                <div class="text-muted small" style="font-size: 0.75rem;">On all orders</div>
-              </div>
+          <!-- Right Column (Hero Photo) -->
+          <div class="col-lg-6">
+            <div class="hn-hero-image-wrap">
+              <img src="https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=1000&q=80" alt="Harinama Store Devotional Keychains" class="hn-hero-img">
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 3 Benefit Strips (Under Hero) -->
+        <div class="hn-hero-benefits">
+          <div class="row g-3">
+            
+            <div class="col-md-4 hn-benefit-col">
+              <div class="hn-benefit-icon"><i class="bi bi-flower1"></i></div>
+              <div class="hn-benefit-title">REMEMBER</div>
+              <p class="hn-benefit-desc">Keep Krishna close throughout your day.</p>
             </div>
 
-            <div class="cres-feature-item">
-              <div class="cres-feature-icon"><i class="bi bi-shield-check"></i></div>
-              <div>
-                <div class="fw-bold small">Secure Payment</div>
-                <div class="text-muted small" style="font-size: 0.75rem;">100% Protected</div>
-              </div>
+            <div class="col-md-4 hn-benefit-col">
+              <div class="hn-benefit-icon"><i class="bi bi-music-note-beamed"></i></div>
+              <div class="hn-benefit-title">CHANT</div>
+              <p class="hn-benefit-desc">Let the Maha-mantra be part of your journey.</p>
             </div>
 
-            <div class="cres-feature-item">
-              <div class="cres-feature-icon"><i class="bi bi-arrow-repeat"></i></div>
-              <div>
-                <div class="fw-bold small">Easy Returns</div>
-                <div class="text-muted small" style="font-size: 0.75rem;">30-day money back</div>
-              </div>
+            <div class="col-md-4 hn-benefit-col">
+              <div class="hn-benefit-icon"><i class="bi bi-gift"></i></div>
+              <div class="hn-benefit-title">SHARE</div>
+              <p class="hn-benefit-desc">Give a beautiful reminder to someone you care about.</p>
             </div>
+
           </div>
         </div>
 
-        <div class="col-lg-5 text-center">
-          <div class="cres-hero-img-wrap">
-            <div class="cres-hero-discount-badge">
-              <span>Up to</span>
-              <span class="fs-4 fw-black">30%</span>
-              <span class="sub">OFF</span>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         2. FEATURED COLLECTION SECTION
+         ==================================================================== -->
+    <section class="py-5">
+      <div class="container">
+        
+        <div class="hn-section-header">
+          <h2 class="hn-section-title">Featured Collection</h2>
+          <div class="hn-section-subtitle">Choose Your Reminder</div>
+        </div>
+
+        <div class="row g-3" id="hn-featured-grid">
+          <!-- Injected via JavaScript from HARINAMA_DATA: 6 Cards -->
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         3. PROMOTIONAL MAHA-MANTRA SECTION
+         ==================================================================== -->
+    <section class="py-4">
+      <div class="container">
+        <div class="hn-promo-banner">
+          <div class="row g-0 align-items-stretch">
+            
+            <!-- Left: Macro Keychain Image -->
+            <div class="col-md-4">
+              <div class="hn-promo-img-wrap">
+                <img src="https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=700&q=80" alt="The Maha-Mantra Keychain" class="hn-promo-img">
+              </div>
             </div>
-            <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80" alt="Feel the Sound" class="cres-hero-img">
+
+            <!-- Center: Text & Pricing -->
+            <div class="col-md-4 d-flex flex-column justify-content-center hn-promo-content">
+              <h3 class="hn-promo-title">The Maha-Mantra Keychain</h3>
+              <div class="hn-promo-subtitle">Carry the Maha-Mantra with you.</div>
+              <p class="hn-promo-desc">
+                A simple everyday reminder to pause, remember Krishna, and chant.
+              </p>
+              <div class="hn-promo-price">₹149</div>
+              <div>
+                <button class="btn hn-btn-gold px-4" onclick="handleAddToCart('prod-003')">Add to Cart</button>
+              </div>
+            </div>
+
+            <!-- Right: Sacred Verse Box -->
+            <div class="col-md-4 p-4">
+              <div class="hn-mantra-box">
+                <div class="hn-mantra-verse">
+                  Hare Krishna Hare Krishna<br>
+                  Krishna Krishna Hare Hare<br>
+                  Hare Rama Hare Rama<br>
+                  Rama Rama Hare Hare
+                </div>
+                <div class="hn-mantra-chant">Chant &amp; Be Happy.</div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Featured Products Section -->
-    <section class="my-5">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold mb-0">Featured Products</h3>
-        <a href="/products.html" class="text-primary fw-semibold small text-decoration-none">
-          View All <i class="bi bi-chevron-right"></i>
+    <!-- ====================================================================
+         4. WHY HARINAMA STORE SECTION
+         ==================================================================== -->
+    <section class="hn-why-section my-5">
+      <div class="container">
+        
+        <div class="hn-section-header">
+          <h2 class="hn-section-title">Why Carry Krishna?</h2>
+          <div class="hn-section-subtitle">A small reminder can change the direction of your day.</div>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+          
+          <div class="col-md-4">
+            <div class="hn-why-card">
+              <div class="hn-why-circle"><i class="bi bi-flower2"></i></div>
+              <div class="hn-why-title">SPIRITUAL AWARENESS</div>
+              <div class="hn-why-text">A moment of peace in a busy life.</div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="hn-why-card">
+              <div class="hn-why-circle"><i class="bi bi-brightness-high"></i></div>
+              <div class="hn-why-title">POSITIVE VIBES</div>
+              <div class="hn-why-text">Stay connected to what truly matters.</div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="hn-why-card">
+              <div class="hn-why-circle"><i class="bi bi-heart"></i></div>
+              <div class="hn-why-title">SPREAD JOY</div>
+              <div class="hn-why-text">A simple way to inspire others.</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="hn-why-quote-wrap">
+          <div class="hn-why-quote">“Carry a reminder of eternal happiness.”</div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         5. TAKE KRISHNA WITH YOU (Lifestyle Grid)
+         ==================================================================== -->
+    <section class="py-5">
+      <div class="container">
+        
+        <div class="hn-section-header">
+          <h2 class="hn-section-title">Take Krishna With You</h2>
+          <div class="hn-section-subtitle">From your morning commute to your next journey.</div>
+        </div>
+
+        <div class="hn-lifestyle-grid">
+          <div class="hn-lifestyle-item">
+            <img src="https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=400&q=80" alt="Devotional Keychain on Bag">
+          </div>
+          <div class="hn-lifestyle-item">
+            <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80" alt="Holding Krishna Keychain">
+          </div>
+          <div class="hn-lifestyle-item">
+            <img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=400&q=80" alt="Peacock Feather Keychain on Denim">
+          </div>
+          <div class="hn-lifestyle-item">
+            <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=400&q=80" alt="Backpack with Keychain">
+          </div>
+          <div class="hn-lifestyle-item">
+            <img src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=400&q=80" alt="Car Keys with Hare Krishna Keychain">
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         6. GIFT SECTION (Give a Reminder, Not Just a Gift)
+         ==================================================================== -->
+    <section class="py-5" style="background-color: var(--hn-cream);">
+      <div class="container">
+        
+        <div class="hn-section-header">
+          <h2 class="hn-section-title">Give a Reminder, Not Just a Gift</h2>
+          <div class="hn-section-subtitle">Beautiful gift sets for your loved ones.</div>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+          
+          <!-- Card 1: 3-Keychain Gift Set -->
+          <div class="col-md-6 col-lg-5">
+            <div class="hn-gift-card">
+              <div class="hn-gift-img-box">
+                <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80" alt="3-Keychain Gift Set">
+              </div>
+              <h4 class="hn-gift-title">3-Keychain Gift Set</h4>
+              <div class="hn-gift-price-row">
+                <span class="hn-gift-price">₹299</span>
+                <span class="hn-gift-old-price">₹357</span>
+                <span class="hn-gift-badge">Save ₹58</span>
+              </div>
+              <button class="btn hn-btn-gold mt-auto" onclick="handleAddToCart('prod-009')">Add to Cart</button>
+            </div>
+          </div>
+
+          <!-- Card 2: 5-Keychain Collection -->
+          <div class="col-md-6 col-lg-5">
+            <div class="hn-gift-card">
+              <div class="hn-gift-img-box">
+                <img src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80" alt="5-Keychain Collection">
+              </div>
+              <h4 class="hn-gift-title">5-Keychain Collection</h4>
+              <div class="hn-gift-price-row">
+                <span class="hn-gift-price">₹499</span>
+                <span class="hn-gift-old-price">₹645</span>
+                <span class="hn-gift-badge">Save ₹146</span>
+              </div>
+              <button class="btn hn-btn-gold mt-auto" onclick="handleAddToCart('prod-010')">Add to Cart</button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         7. SERVICE / TRUST BAR
+         ==================================================================== -->
+    <div class="hn-service-bar">
+      <div class="container">
+        <div class="row g-3 text-center">
+          
+          <div class="col-6 col-md-3">
+            <div class="hn-service-item">
+              <i class="bi bi-shield-check"></i>
+              <span>Secure Payments</span>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <div class="hn-service-item">
+              <i class="bi bi-arrow-repeat"></i>
+              <span>Easy Returns</span>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <div class="hn-service-item">
+              <i class="bi bi-truck"></i>
+              <span>Fast Shipping</span>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <div class="hn-service-item">
+              <i class="bi bi-heart-pulse"></i>
+              <span>Support with Care</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         8. CUSTOMER REVIEWS (Loved by Devotees)
+         ==================================================================== -->
+    <section class="py-5" style="background-color: var(--hn-cream);">
+      <div class="container">
+        
+        <div class="hn-section-header">
+          <h2 class="hn-section-title">Loved by Devotees</h2>
+          <div class="hn-section-subtitle">Real experiences from our devotional community.</div>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+          
+          <div class="col-md-4">
+            <div class="bg-white border rounded p-4 h-100 shadow-sm d-flex flex-column justify-content-between">
+              <div>
+                <div class="text-warning mb-2">
+                  <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                </div>
+                <p class="text-secondary small fst-italic mb-3">
+                  “The Maha-Mantra keychain is so beautifully made. It gives me an immediate pause of peace and chanting whenever I hold my keys.”
+                </p>
+              </div>
+              <div class="fw-bold small text-navy">— Radharani Devi Dasi, Vrindavan</div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="bg-white border rounded p-4 h-100 shadow-sm d-flex flex-column justify-content-between">
+              <div>
+                <div class="text-warning mb-2">
+                  <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                </div>
+                <p class="text-secondary small fst-italic mb-3">
+                  “I bought one for myself and three as gifts for temple friends. The gold polish and peacock feather detail are supreme quality!”
+                </p>
+              </div>
+              <div class="fw-bold small text-navy">— Krishna Chaitanya Das, Mumbai</div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="bg-white border rounded p-4 h-100 shadow-sm d-flex flex-column justify-content-between">
+              <div>
+                <div class="text-warning mb-2">
+                  <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                </div>
+                <p class="text-secondary small fst-italic mb-3">
+                  “Every time I travel, this small reminder keeps Krishna in my thoughts. Truly a keychain with a sacred purpose.”
+                </p>
+              </div>
+              <div class="fw-bold small text-navy">— Ananya Sharma, Bangalore</div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         9. SOCIAL MEDIA SECTION (Carry Krishna With You)
+         ==================================================================== -->
+    <section class="py-5 bg-white border-bottom">
+      <div class="container text-center">
+        
+        <div class="hn-section-header mb-4">
+          <h2 class="hn-section-title">Carry Krishna With You</h2>
+          <div class="hn-section-subtitle">Follow our journey on Instagram &amp; share your daily devotional moments.</div>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-md-3">
+            <div class="rounded overflow-hidden border shadow-sm" style="height: 180px;">
+              <img src="https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=400&q=80" alt="Instagram Post 1" class="w-100 h-100 object-fit-cover">
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="rounded overflow-hidden border shadow-sm" style="height: 180px;">
+              <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80" alt="Instagram Post 2" class="w-100 h-100 object-fit-cover">
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="rounded overflow-hidden border shadow-sm" style="height: 180px;">
+              <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=400&q=80" alt="Instagram Post 3" class="w-100 h-100 object-fit-cover">
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="rounded overflow-hidden border shadow-sm" style="height: 180px;">
+              <img src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=400&q=80" alt="Instagram Post 4" class="w-100 h-100 object-fit-cover">
+            </div>
+          </div>
+        </div>
+
+        <a href="https://instagram.com" target="_blank" class="btn hn-btn-outline-dark px-4 py-2">
+          <i class="bi bi-instagram me-2 text-danger"></i> Follow Us @HarinamaStore
         </a>
-      </div>
 
-      <div class="row g-4" id="home-featured-grid">
-        <!-- Injected dynamically: 3 cards matching reference -->
       </div>
     </section>
 
-    <!-- Shop By Category Section -->
-    <section class="my-5">
-      <h3 class="fw-bold mb-4">Shop By Category</h3>
-      <div class="row g-4">
-        <!-- Speakers -->
-        <div class="col-6 col-md-3">
-          <a href="/products.html?category=speakers" class="cres-category-card">
-            <div>
-              <h6 class="fw-bold mb-1">Speakers</h6>
-              <div class="text-muted small mb-2">24 Products</div>
-              <span class="small fw-bold text-primary">Shop Now &rarr;</span>
-            </div>
-            <img src="https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=200&q=80" class="cres-category-img" alt="Speakers">
-          </a>
-        </div>
+    <!-- ====================================================================
+         10. BRAND STORY / PURPOSE SECTION
+         ==================================================================== -->
+    <section class="hn-story-section">
+      <div class="container">
+        <div class="row align-items-center g-4">
+          
+          <div class="col-lg-7">
+            <h2 class="hn-story-title">A Keychain With a Purpose</h2>
+            <p class="hn-story-desc">
+              We believe Krishna consciousness can enter everyday life through simple reminders. Every keychain is designed to make devotional inspiration beautiful, accessible and easy to share.
+            </p>
+            <div class="fw-semibold text-navy mb-3">Carry Krishna. Remember Krishna. Share Krishna.</div>
+            <a href="/about.html" class="btn hn-btn-gold">Read Our Mission</a>
+          </div>
 
-        <!-- Headphones -->
-        <div class="col-6 col-md-3">
-          <a href="/products.html?category=headphones" class="cres-category-card">
-            <div>
-              <h6 class="fw-bold mb-1">Headphones</h6>
-              <div class="text-muted small mb-2">18 Products</div>
-              <span class="small fw-bold text-primary">Shop Now &rarr;</span>
-            </div>
-            <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=200&q=80" class="cres-category-img" alt="Headphones">
-          </a>
-        </div>
-
-        <!-- Accessories -->
-        <div class="col-6 col-md-3">
-          <a href="/products.html?category=accessories" class="cres-category-card">
-            <div>
-              <h6 class="fw-bold mb-1">Accessories</h6>
-              <div class="text-muted small mb-2">12 Products</div>
-              <span class="small fw-bold text-primary">Shop Now &rarr;</span>
-            </div>
-            <img src="https://images.unsplash.com/photo-1625961332771-3f40b0e2bdcf?auto=format&fit=crop&w=200&q=80" class="cres-category-img" alt="Accessories">
-          </a>
-        </div>
-
-        <!-- Wireless Charger -->
-        <div class="col-6 col-md-3">
-          <a href="/products.html?category=wireless-charger" class="cres-category-card">
-            <div>
-              <h6 class="fw-bold mb-1">Wireless Charger</h6>
-              <div class="text-muted small mb-2">6 Products</div>
-              <span class="small fw-bold text-primary">Shop Now &rarr;</span>
-            </div>
-            <img src="https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=200&q=80" class="cres-category-img" alt="Wireless Charger">
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- Promotional Banner Section -->
-    <section class="cres-promo-banner">
-      <div>
-        <span class="badge bg-white text-primary px-3 py-2 rounded-pill fw-bold mb-2">Limited Offer</span>
-        <h3 class="fw-bold text-white mb-1">Amazing Sound. Exclusive Deals.</h3>
-        <p class="text-white-50 mb-0 small">Save up to 30% off on all premium headphones &amp; accessories.</p>
-      </div>
-      <div>
-        <a href="/products.html" class="btn btn-light rounded-pill px-4 py-2 fw-bold text-primary">Shop Now</a>
-      </div>
-    </section>
-
-    <!-- Bottom Services Trust Grid -->
-    <section class="my-5 py-3">
-      <div class="row g-4">
-        <div class="col-md-4">
-          <div class="p-4 bg-white rounded-4 border d-flex align-items-center gap-3">
-            <div class="cres-feature-icon fs-3"><i class="bi bi-box-seam"></i></div>
-            <div>
-              <h6 class="fw-bold mb-1">Free Delivery</h6>
-              <p class="text-muted small mb-0">Fast delivery on all orders</p>
+          <div class="col-lg-5 text-center">
+            <div class="p-4 border rounded bg-white shadow-sm">
+              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" class="mb-3">
+                <path d="M12 2C7 6 4 12 4 18C4 22.4183 7.58172 26 12 26C16.4183 26 20 22.4183 20 18C20 12 17 6 12 2Z" fill="#0E6251"/>
+                <circle cx="12" cy="18" rx="2" fill="#F1C40F"/>
+              </svg>
+              <div class="hn-story-quote">“Let Krishna be a part of your journey.”</div>
             </div>
           </div>
-        </div>
 
-        <div class="col-md-4">
-          <div class="p-4 bg-white rounded-4 border d-flex align-items-center gap-3">
-            <div class="cres-feature-icon fs-3"><i class="bi bi-shop"></i></div>
-            <div>
-              <h6 class="fw-bold mb-1">Pick Up In Store</h6>
-              <p class="text-muted small mb-0">Available at 100+ stores</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-4">
-          <div class="p-4 bg-white rounded-4 border d-flex align-items-center gap-3">
-            <div class="cres-feature-icon fs-3"><i class="bi bi-patch-check"></i></div>
-            <div>
-              <h6 class="fw-bold mb-1">1 Year Warranty</h6>
-              <p class="text-muted small mb-0">Direct 100% brand warranty</p>
-            </div>
-          </div>
         </div>
       </div>
     </section>
 
   </main>
 
-  <!-- Footer Placeholder -->
+  <!-- Global Footer -->
   <div id="hn-footer-placeholder"></div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
-
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       renderHeader('home');
       renderFooter();
 
-      // Render 3 Featured products matching reference image: Earbud Y168A, Pro X168A, Speaker P168A
-      const grid = document.getElementById('home-featured-grid');
-      if (grid) {
-        const featured = CRESCENDO_DATA.products.slice(0, 3);
-        grid.innerHTML = featured.map(p => `
-          <div class="col-md-4">
-            ${renderProductCard(p)}
-          </div>
-        `).join('');
+      // Render 6 Featured Product Cards
+      const grid = document.getElementById('hn-featured-grid');
+      if (grid && HARINAMA_DATA && HARINAMA_DATA.products) {
+        const featured = HARINAMA_DATA.products.slice(0, 6);
+        grid.innerHTML = featured.map(p => renderProductCard(p)).join('');
       }
     });
   </script>

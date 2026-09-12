@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CRESCENDO - Master Theme Stylesheet (Exact Source-of-Truth Visual Design)
+   HARINAMA STORE - Master Stylesheet (Exact Match to Reference Design)
    ========================================================================== */
 
 @import './variables.css';
@@ -10,816 +10,970 @@
 }
 
 body {
-  font-family: var(--cres-font-main);
-  background-color: var(--cres-body-bg);
-  color: var(--cres-secondary);
+  font-family: var(--hn-font-sans);
+  background-color: var(--hn-body-bg);
+  color: var(--hn-text-primary);
   line-height: 1.6;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4, h5, h6, .cres-heading {
-  font-family: var(--cres-font-heading);
-  font-weight: 700;
-  color: var(--cres-secondary);
-  letter-spacing: -0.02em;
+h1, h2, h3, h4, h5, h6, .hn-serif {
+  font-family: var(--hn-font-serif);
+  color: var(--hn-navy);
+  letter-spacing: -0.01em;
 }
 
 a {
-  color: var(--cres-primary);
+  color: var(--hn-navy);
   text-decoration: none;
-  transition: var(--cres-transition);
+  transition: var(--hn-transition);
 }
 
 a:hover {
-  color: var(--cres-primary-hover);
+  color: var(--hn-gold);
 }
 
 /* --------------------------------------------------------------------------
-   1. GLOBAL HEADER & NAVBAR (CRESCENDO)
+   1. TOP ANNOUNCEMENT BAR
    -------------------------------------------------------------------------- */
-.cres-header {
+.hn-topbar {
+  background-color: var(--hn-navy-dark);
+  color: #FFFFFF;
+  font-size: 0.82rem;
+  padding: 8px 16px;
+  text-align: center;
+  letter-spacing: 0.03em;
+  font-weight: 500;
+}
+
+.hn-topbar .separator {
+  margin: 0 10px;
+  opacity: 0.5;
+}
+
+/* --------------------------------------------------------------------------
+   2. GLOBAL HEADER & NAVBAR
+   -------------------------------------------------------------------------- */
+.hn-header {
   background: #FFFFFF;
-  border-bottom: 1px solid var(--cres-border-subtle);
+  border-bottom: 1px solid var(--hn-border-subtle);
   position: sticky;
   top: 0;
   z-index: 1020;
-  padding: 14px 0;
-  box-shadow: var(--cres-shadow-sm);
-  transition: var(--cres-transition);
+  padding: 12px 0;
+  box-shadow: var(--hn-shadow-sm);
 }
 
-.cres-brand {
+.hn-brand {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   text-decoration: none;
-  color: var(--cres-secondary);
-  font-family: var(--cres-font-heading);
-  font-weight: 800;
-  font-size: clamp(1.05rem, 3.5vw, 1.4rem);
-  letter-spacing: -0.03em;
-  white-space: nowrap !important;
-  flex-shrink: 0;
+  color: var(--hn-navy);
 }
 
-.cres-brand span {
-  white-space: nowrap !important;
+.hn-brand-logo {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
 }
 
-.cres-brand-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--cres-primary);
-  display: inline-block;
-  flex-shrink: 0;
+.hn-brand-text {
+  display: flex;
+  flex-direction: column;
 }
 
-.cres-nav-link {
-  color: var(--cres-secondary);
-  font-weight: 600;
-  font-size: 0.95rem;
-  padding: 8px 16px;
-  border-radius: var(--cres-radius-full);
-  transition: var(--cres-transition);
-}
-
-.cres-nav-link:hover, .cres-nav-link.active {
-  color: var(--cres-primary);
-  background-color: var(--cres-primary-light);
-}
-
-.cres-icon-btn {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  min-height: 40px;
-  border-radius: 50%;
-  background: #FFFFFF;
-  border: 1px solid var(--cres-border);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--cres-secondary);
-  font-size: 1.1rem;
-  line-height: 1;
-  position: relative;
-  transition: var(--cres-transition);
-  cursor: pointer;
-  padding: 0;
-  margin: 0;
-  text-decoration: none;
-}
-
-.cres-icon-btn i {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  font-size: 1.1rem;
-  margin: 0;
-  padding: 0;
-}
-
-.cres-icon-btn:hover {
-  border-color: var(--cres-primary);
-  color: var(--cres-primary) !important;
-  background: var(--cres-primary-light);
-  transform: translateY(-2px) !important;
-}
-
-.cres-badge-pill {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  background: var(--cres-primary);
-  color: #FFF;
-  font-size: 0.7rem;
+.hn-brand-title {
+  font-family: var(--hn-font-serif);
+  font-size: 1.35rem;
   font-weight: 700;
-  width: 20px;
-  height: 20px;
+  color: var(--hn-navy);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.hn-brand-tagline {
+  font-size: 0.68rem;
+  color: var(--hn-text-muted);
+  letter-spacing: 0.04em;
+  font-family: var(--hn-font-sans);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.hn-nav-link {
+  color: var(--hn-navy);
+  font-weight: 500;
+  font-size: 0.92rem;
+  padding: 8px 14px;
+  transition: var(--hn-transition);
+}
+
+.hn-nav-link:hover, .hn-nav-link.active {
+  color: var(--hn-gold);
+}
+
+.hn-icon-btn {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hn-navy);
+  font-size: 1.15rem;
+  border-radius: 50%;
+  position: relative;
+  transition: var(--hn-transition);
+}
+
+.hn-icon-btn:hover {
+  background-color: var(--hn-navy-subtle);
+  color: var(--hn-navy);
+}
+
+.hn-badge-pill {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background-color: var(--hn-gold);
+  color: #FFFFFF;
+  font-size: 0.65rem;
+  font-weight: 700;
+  width: 17px;
+  height: 17px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #FFF;
-}
-
-/* Primary CTA Button */
-.cres-btn-primary, .btn-cres-primary {
-  background: var(--cres-primary);
-  color: #FFFFFF;
-  font-weight: 600;
-  font-size: 0.925rem;
-  padding: 10px 24px;
-  border-radius: var(--cres-radius-full);
-  border: none;
-  box-shadow: 0 4px 14px var(--cres-primary-glow);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: var(--cres-transition);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.cres-btn-primary:hover, .btn-cres-primary:hover {
-  background: var(--cres-primary-hover);
-  color: #FFFFFF;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px var(--cres-primary-glow);
-}
-
-.cres-btn-outline, .btn-cres-outline {
-  background: #FFFFFF;
-  color: var(--cres-secondary);
-  border: 1.5px solid var(--cres-border);
-  font-weight: 600;
-  font-size: 0.925rem;
-  padding: 10px 24px;
-  border-radius: var(--cres-radius-full);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: var(--cres-transition);
-  text-decoration: none;
-}
-
-.cres-btn-outline:hover, .btn-cres-outline:hover {
-  border-color: var(--cres-primary);
-  color: var(--cres-primary);
-  background: var(--cres-primary-light);
 }
 
 /* --------------------------------------------------------------------------
-   2. HERO BANNER & HOMEPAGE SECTIONS
+   3. HERO SECTION (Exact Match)
    -------------------------------------------------------------------------- */
-.cres-hero-container {
-  background: var(--cres-hero-bg);
-  border-radius: var(--cres-radius-xl);
-  padding: 60px 50px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--cres-shadow-hero);
-  border: 1px solid rgba(91, 66, 243, 0.08);
+.hn-hero-section {
+  background-color: var(--hn-cream);
+  padding: 50px 0 30px;
+  border-bottom: 1px solid var(--hn-border);
 }
 
-.cres-hero-title {
-  font-size: 3.5rem;
+.hn-hero-eyebrow {
+  font-size: 0.9rem;
+  color: var(--hn-text-secondary);
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.hn-hero-title {
+  font-family: var(--hn-font-serif);
+  font-size: clamp(2.4rem, 4.5vw, 3.6rem);
+  font-weight: 600;
+  color: var(--hn-navy);
   line-height: 1.15;
-  font-weight: 800;
-  color: var(--cres-secondary);
   margin-bottom: 18px;
 }
 
-.cres-hero-title span.purple-accent {
-  color: var(--cres-primary);
+.hn-hero-desc {
+  font-size: 1.05rem;
+  color: var(--hn-text-secondary);
+  max-width: 480px;
+  margin-bottom: 28px;
+  line-height: 1.6;
 }
 
-.cres-hero-desc {
-  font-size: 1.1rem;
-  color: var(--cres-secondary-light);
-  max-width: 460px;
-  margin-bottom: 30px;
-}
-
-.cres-hero-img-wrap {
-  position: relative;
-  text-align: center;
-}
-
-.cres-hero-img {
-  width: 100%;
-  max-width: 440px;
-  max-height: 440px;
-  object-fit: cover;
-  border-radius: var(--cres-radius-xl);
-  box-shadow: var(--cres-shadow-hover);
-}
-
-.cres-hero-discount-badge {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  background: var(--cres-pink);
-  color: #FFF;
-  padding: 12px 18px;
-  border-radius: var(--cres-radius-lg);
-  font-weight: 800;
-  font-size: 1.1rem;
-  box-shadow: 0 8px 20px rgba(236, 72, 153, 0.35);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1.1;
-}
-
-.cres-hero-discount-badge span.sub {
-  font-size: 0.75rem;
+.hn-btn-gold {
+  background-color: var(--hn-gold);
+  color: #FFFFFF !important;
   font-weight: 600;
-  text-transform: uppercase;
-}
-
-/* Feature Strip under hero */
-.cres-feature-strip {
-  margin-top: 30px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 30px;
-}
-
-.cres-feature-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.cres-feature-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: #FFFFFF;
-  color: var(--cres-primary);
-  display: flex;
+  font-size: 0.95rem;
+  padding: 11px 26px;
+  border-radius: var(--hn-radius-sm);
+  border: 1px solid var(--hn-gold);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  transition: var(--hn-transition);
+}
+
+.hn-btn-gold:hover {
+  background-color: var(--hn-gold-hover);
+  border-color: var(--hn-gold-hover);
+  box-shadow: 0 4px 12px rgba(197, 155, 39, 0.3);
+}
+
+.hn-btn-outline-dark {
+  background-color: transparent;
+  color: var(--hn-navy) !important;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 11px 26px;
+  border-radius: var(--hn-radius-sm);
+  border: 1px solid var(--hn-navy);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--hn-transition);
+}
+
+.hn-btn-outline-dark:hover {
+  background-color: var(--hn-navy);
+  color: #FFFFFF !important;
+}
+
+.hn-hero-quote {
+  font-family: var(--hn-font-serif);
+  font-style: italic;
   font-size: 1.25rem;
-  box-shadow: var(--cres-shadow-sm);
+  color: var(--hn-navy);
+  margin-top: 30px;
+  opacity: 0.85;
+}
+
+.hn-hero-image-wrap {
+  position: relative;
+  border-radius: var(--hn-radius-md);
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(11, 37, 69, 0.1);
+  background: #FFFFFF;
+}
+
+.hn-hero-img {
+  width: 100%;
+  height: 420px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Hero Benefits 3-Strip */
+.hn-hero-benefits {
+  background: #FFFFFF;
+  border: 1px solid var(--hn-border);
+  border-radius: var(--hn-radius-md);
+  padding: 24px 20px;
+  margin-top: 40px;
+}
+
+.hn-benefit-col {
+  text-align: center;
+  padding: 10px 20px;
+  position: relative;
+}
+
+.hn-benefit-col:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 15%;
+  height: 70%;
+  width: 1px;
+  background-color: var(--hn-border);
+}
+
+.hn-benefit-icon {
+  font-size: 1.6rem;
+  color: var(--hn-gold);
+  margin-bottom: 8px;
+}
+
+.hn-benefit-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--hn-navy);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.hn-benefit-desc {
+  font-size: 0.84rem;
+  color: var(--hn-text-secondary);
+  line-height: 1.4;
+  margin: 0;
 }
 
 /* --------------------------------------------------------------------------
-   3. PRODUCT CARD (EXACT CRESCENDO REFERENCE)
+   4. SECTION HEADERS
    -------------------------------------------------------------------------- */
-.cres-product-card {
+.hn-section-header {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.hn-section-title {
+  font-family: var(--hn-font-serif);
+  font-size: 2.1rem;
+  font-weight: 600;
+  color: var(--hn-navy);
+  margin-bottom: 6px;
+}
+
+.hn-section-subtitle {
+  font-size: 0.95rem;
+  color: var(--hn-text-secondary);
+  font-style: italic;
+  font-family: var(--hn-font-serif);
+}
+
+/* --------------------------------------------------------------------------
+   5. PRODUCT CARDS (Exact Reference Proportions)
+   -------------------------------------------------------------------------- */
+.hn-product-card {
   background: #FFFFFF;
-  border-radius: var(--cres-radius-lg);
-  border: 1px solid var(--cres-border);
-  padding: 20px;
-  position: relative;
-  transition: var(--cres-transition);
+  border: 1px solid var(--hn-border);
+  border-radius: var(--hn-radius-sm);
+  padding: 14px;
   display: flex;
   flex-direction: column;
   height: 100%;
-  box-shadow: var(--cres-shadow-card);
-}
-
-.cres-product-card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--cres-shadow-hover);
-  border-color: #D8D2FB;
-}
-
-.cres-product-badge {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  padding: 4px 12px;
-  border-radius: var(--cres-radius-full);
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  z-index: 2;
-}
-
-.cres-badge-purple {
-  background: var(--cres-primary-light);
-  color: var(--cres-primary);
-}
-
-.cres-badge-pink {
-  background: var(--cres-pink-light);
-  color: var(--cres-pink);
-}
-
-.cres-badge-blue {
-  background: var(--cres-blue-light);
-  color: var(--cres-blue);
-}
-
-.cres-card-wishlist {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: #FFFFFF;
-  border: 1px solid var(--cres-border);
-  color: var(--cres-secondary-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 2;
-  transition: var(--cres-transition);
-}
-
-.cres-card-wishlist:hover, .cres-card-wishlist.active {
-  color: var(--cres-pink);
-  border-color: var(--cres-pink);
-  background: var(--cres-pink-light);
-}
-
-.cres-product-img-box {
   position: relative;
-  width: 100%;
+  transition: var(--hn-transition);
+}
+
+.hn-product-card:hover {
+  box-shadow: var(--hn-shadow-hover);
+  border-color: var(--hn-gold-border);
+  transform: translateY(-2px);
+}
+
+.hn-card-img-box {
+  background-color: var(--hn-cream);
+  border-radius: var(--hn-radius-sm);
   height: 190px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
   overflow: hidden;
-  border-radius: var(--cres-radius-md);
-  background: #FAF9FE;
+  margin-bottom: 12px;
+  position: relative;
 }
 
-.cres-product-img-box img {
-  max-width: 85%;
-  max-height: 85%;
+.hn-card-img-box img {
+  max-width: 90%;
+  max-height: 90%;
   object-fit: contain;
-  transition: transform 0.4s ease;
+  transition: transform 0.3s ease;
 }
 
-.cres-product-card:hover .cres-product-img-box img {
-  transform: scale(1.08);
+.hn-product-card:hover .hn-card-img-box img {
+  transform: scale(1.04);
 }
 
-.cres-product-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  margin-bottom: 6px;
-  color: var(--cres-secondary);
-}
-
-.cres-product-title a {
-  color: inherit;
-}
-
-.cres-product-title a:hover {
-  color: var(--cres-primary);
-}
-
-.cres-product-rating {
+.hn-card-wishlist {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--hn-border);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 4px;
-  color: var(--cres-yellow);
+  justify-content: center;
+  color: var(--hn-text-secondary);
   font-size: 0.85rem;
+  cursor: pointer;
+  z-index: 2;
+  transition: var(--hn-transition);
+}
+
+.hn-card-wishlist:hover, .hn-card-wishlist.active {
+  color: var(--hn-red);
+  border-color: var(--hn-red);
+  background: #FFFFFF;
+}
+
+.hn-card-title {
+  font-family: var(--hn-font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--hn-navy);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hn-card-price {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--hn-navy);
+  margin-bottom: 4px;
+}
+
+.hn-card-old-price {
+  font-size: 0.85rem;
+  color: var(--hn-text-muted);
+  text-decoration: line-through;
+  margin-left: 6px;
+  font-weight: normal;
+}
+
+.hn-card-rating {
+  font-size: 0.8rem;
+  color: var(--hn-yellow);
+  display: flex;
+  align-items: center;
+  gap: 3px;
   margin-bottom: 12px;
 }
 
-.cres-product-price-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: auto;
+.hn-card-rating-count {
+  color: var(--hn-text-muted);
+  font-size: 0.75rem;
+  margin-left: 3px;
 }
 
-.cres-product-price {
-  font-family: var(--cres-font-heading);
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: var(--cres-secondary);
-}
-
-.cres-card-cart-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--cres-primary);
-  color: #FFF;
+.hn-btn-card-add {
+  background-color: var(--hn-gold);
+  color: #FFFFFF;
   border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  cursor: pointer;
-  box-shadow: 0 4px 12px var(--cres-primary-glow);
-  transition: var(--cres-transition);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: var(--hn-radius-sm);
+  width: 100%;
+  margin-top: auto;
+  transition: var(--hn-transition);
 }
 
-.cres-card-cart-btn:hover {
-  background: var(--cres-primary-hover);
-  transform: scale(1.1);
+.hn-btn-card-add:hover {
+  background-color: var(--hn-gold-hover);
+  color: #FFFFFF;
 }
 
 /* --------------------------------------------------------------------------
-   4. CATEGORY CARDS
+   6. PROMOTIONAL MAHA-MANTRA SECTION (Exact Reference)
    -------------------------------------------------------------------------- */
-.cres-category-card {
+.hn-promo-banner {
+  background-color: #FFFFFF;
+  border: 1px solid var(--hn-border);
+  border-radius: var(--hn-radius-md);
+  overflow: hidden;
+  box-shadow: var(--hn-shadow-card);
+}
+
+.hn-promo-img-wrap {
+  height: 100%;
+  min-height: 280px;
+}
+
+.hn-promo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hn-promo-content {
+  padding: 36px 30px;
+}
+
+.hn-promo-title {
+  font-family: var(--hn-font-serif);
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--hn-navy);
+  margin-bottom: 6px;
+}
+
+.hn-promo-subtitle {
+  font-size: 1.05rem;
+  color: var(--hn-text-secondary);
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.hn-promo-desc {
+  font-size: 0.92rem;
+  color: var(--hn-text-secondary);
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+.hn-promo-price {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--hn-navy);
+  margin-bottom: 18px;
+}
+
+.hn-mantra-box {
+  background-color: var(--hn-cream);
+  border: 1px solid var(--hn-gold-border);
+  border-radius: var(--hn-radius-sm);
+  padding: 24px 20px;
+  text-align: center;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hn-mantra-verse {
+  font-family: var(--hn-font-serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--hn-navy);
+  line-height: 1.8;
+  letter-spacing: 0.02em;
+}
+
+.hn-mantra-chant {
+  font-family: var(--hn-font-serif);
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--hn-gold);
+  margin-top: 14px;
+}
+
+/* --------------------------------------------------------------------------
+   7. WHY HARINAMA STORE SECTION
+   -------------------------------------------------------------------------- */
+.hn-why-section {
+  background-color: var(--hn-cream);
+  padding: 60px 0;
+  border-top: 1px solid var(--hn-border);
+  border-bottom: 1px solid var(--hn-border);
+  position: relative;
+  overflow: hidden;
+}
+
+.hn-why-card {
+  text-align: center;
+  padding: 20px;
+}
+
+.hn-why-circle {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
   background: #FFFFFF;
-  border-radius: var(--cres-radius-lg);
-  border: 1px solid var(--cres-border);
-  padding: 24px;
+  border: 2px solid var(--hn-gold-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  color: var(--hn-gold);
+  margin-bottom: 16px;
+  box-shadow: var(--hn-shadow-sm);
+}
+
+.hn-why-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--hn-navy);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.hn-why-text {
+  font-size: 0.88rem;
+  color: var(--hn-text-secondary);
+  line-height: 1.45;
+}
+
+.hn-why-quote-wrap {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.hn-why-quote {
+  font-family: var(--hn-font-serif);
+  font-style: italic;
+  font-size: 1.2rem;
+  color: var(--hn-navy);
+}
+
+/* --------------------------------------------------------------------------
+   8. TAKE KRISHNA WITH YOU (Lifestyle 5-Grid)
+   -------------------------------------------------------------------------- */
+.hn-lifestyle-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+}
+
+.hn-lifestyle-item {
+  border-radius: var(--hn-radius-sm);
+  overflow: hidden;
+  box-shadow: var(--hn-shadow-sm);
+  height: 230px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--hn-border);
+}
+
+.hn-lifestyle-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.hn-lifestyle-item:hover img {
+  transform: scale(1.06);
+}
+
+/* --------------------------------------------------------------------------
+   9. GIFT SECTION (2 Large Cards)
+   -------------------------------------------------------------------------- */
+.hn-gift-card {
+  background: #FFFFFF;
+  border: 1px solid var(--hn-border);
+  border-radius: var(--hn-radius-md);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-shadow: var(--hn-shadow-card);
+}
+
+.hn-gift-img-box {
+  background-color: var(--hn-cream);
+  border-radius: var(--hn-radius-sm);
+  height: 220px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  transition: var(--cres-transition);
-  box-shadow: var(--cres-shadow-card);
-  text-decoration: none;
-  color: var(--cres-secondary);
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 16px;
 }
 
-.cres-category-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--cres-shadow-hover);
-  border-color: var(--cres-primary);
-  color: var(--cres-primary);
-}
-
-.cres-category-img {
-  width: 80px;
-  height: 80px;
+.hn-gift-img-box img {
+  max-width: 95%;
+  max-height: 95%;
   object-fit: contain;
 }
 
-/* Promotional Strip */
-.cres-promo-banner {
-  background: linear-gradient(135deg, #5B42F3 0%, #7C3AED 100%);
-  color: #FFFFFF;
-  border-radius: var(--cres-radius-xl);
-  padding: 40px 50px;
+.hn-gift-title {
+  font-family: var(--hn-font-serif);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--hn-navy);
+  margin-bottom: 8px;
+}
+
+.hn-gift-price-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 12px 30px rgba(91, 66, 243, 0.25);
-  margin: 50px 0;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.hn-gift-price {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--hn-navy);
+}
+
+.hn-gift-old-price {
+  font-size: 1rem;
+  color: var(--hn-text-muted);
+  text-decoration: line-through;
+}
+
+.hn-gift-badge {
+  background-color: var(--hn-gold-light);
+  color: var(--hn-gold-hover);
+  border: 1px solid var(--hn-gold-border);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--hn-radius-sm);
 }
 
 /* --------------------------------------------------------------------------
-   5. SPLIT AUTH PAGES (LOGIN / REGISTER / FORGOT PASSWORD)
+   10. SERVICE / TRUST BAR
    -------------------------------------------------------------------------- */
-.cres-auth-wrapper {
-  min-height: calc(100vh - 180px);
+.hn-service-bar {
+  background: #FFFFFF;
+  border-top: 1px solid var(--hn-border);
+  border-bottom: 1px solid var(--hn-border);
+  padding: 24px 0;
+}
+
+.hn-service-item {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 15px;
+  gap: 12px;
+  color: var(--hn-navy);
+  font-weight: 600;
+  font-size: 0.92rem;
 }
 
-.cres-auth-card {
-  background: #FFFFFF;
-  border-radius: var(--cres-radius-xl);
-  border: 1px solid var(--cres-border);
-  box-shadow: var(--cres-shadow-hover);
-  overflow: hidden;
-  width: 100%;
-  max-width: 960px;
-}
-
-.cres-auth-panel-left {
-  background: var(--cres-hero-bg);
-  padding: 50px 40px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  text-align: center;
-}
-
-.cres-auth-panel-right {
-  padding: 50px 40px;
+.hn-service-item i {
+  font-size: 1.4rem;
+  color: var(--hn-gold);
 }
 
 /* --------------------------------------------------------------------------
-   6. ACCOUNT DASHBOARD & ADMIN PORTAL
+   11. BRAND STORY / PURPOSE SECTION
    -------------------------------------------------------------------------- */
-.cres-dash-sidebar {
-  background: #FFFFFF;
-  border-radius: var(--cres-radius-lg);
-  border: 1px solid var(--cres-border);
-  padding: 16px;
-  box-shadow: var(--cres-shadow-card);
+.hn-story-section {
+  background-color: var(--hn-cream);
+  padding: 60px 0;
+  border-bottom: 1px solid var(--hn-border);
 }
 
-.cres-dash-nav-item {
+.hn-story-title {
+  font-family: var(--hn-font-serif);
+  font-size: 2.1rem;
+  font-weight: 600;
+  color: var(--hn-navy);
+  margin-bottom: 14px;
+}
+
+.hn-story-desc {
+  font-size: 0.98rem;
+  color: var(--hn-text-secondary);
+  line-height: 1.65;
+  margin-bottom: 24px;
+  max-width: 500px;
+}
+
+.hn-story-quote {
+  font-family: var(--hn-font-serif);
+  font-style: italic;
+  font-size: 1.3rem;
+  color: var(--hn-navy);
+  margin-top: 20px;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   12. FOOTER (Exact Reference)
+   -------------------------------------------------------------------------- */
+.hn-footer {
+  background-color: var(--hn-navy-dark);
+  color: #FFFFFF;
+  padding: 50px 0 20px;
+}
+
+.hn-footer a {
+  color: #D1D8E0;
+  font-size: 0.88rem;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.hn-footer a:hover {
+  color: var(--hn-gold);
+}
+
+.hn-footer-title {
+  font-family: var(--hn-font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 16px;
+  letter-spacing: 0.04em;
+}
+
+.hn-footer-desc {
+  color: #9EABBA;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+  max-width: 320px;
+}
+
+.hn-footer-social {
+  display: flex;
+  gap: 12px;
+}
+
+.hn-footer-social a {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  margin-bottom: 0;
+  transition: var(--hn-transition);
+}
+
+.hn-footer-social a:hover {
+  background-color: var(--hn-gold);
+  color: #FFFFFF;
+}
+
+.hn-footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin-top: 36px;
+  padding-top: 18px;
+  font-size: 0.8rem;
+  color: #8C99A8;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   13. SHOP PAGE & SIDEBAR FILTERS
+   -------------------------------------------------------------------------- */
+.hn-shop-sidebar {
+  background: #FFFFFF;
+  border: 1px solid var(--hn-border);
+  border-radius: var(--hn-radius-sm);
+  padding: 20px;
+}
+
+.hn-filter-title {
+  font-family: var(--hn-font-serif);
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--hn-navy);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--hn-border-subtle);
+}
+
+.hn-filter-link {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--hn-text-secondary);
+  padding: 5px 0;
+}
+
+.hn-filter-link:hover, .hn-filter-link.active {
+  color: var(--hn-gold-hover);
+  font-weight: 600;
+}
+
+.hn-checkbox-label {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 18px;
-  border-radius: var(--cres-radius-md);
-  color: var(--cres-secondary);
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition: var(--cres-transition);
-  text-decoration: none;
-  margin-bottom: 4px;
-}
-
-.cres-dash-nav-item:hover, .cres-dash-nav-item.active {
-  background: var(--cres-primary-light);
-  color: var(--cres-primary);
-}
-
-.cres-stat-card {
-  background: #FFFFFF;
-  border-radius: var(--cres-radius-lg);
-  border: 1px solid var(--cres-border);
-  padding: 24px;
-  box-shadow: var(--cres-shadow-card);
-  text-align: center;
-  transition: var(--cres-transition);
-}
-
-.cres-stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--cres-shadow-hover);
-}
-
-.cres-stat-number {
-  font-family: var(--cres-font-heading);
-  font-size: 2.2rem;
-  font-weight: 800;
-  color: var(--cres-primary);
-  line-height: 1.1;
-  margin-bottom: 4px;
+  gap: 8px;
+  font-size: 0.86rem;
+  color: var(--hn-text-secondary);
+  margin-bottom: 8px;
+  cursor: pointer;
 }
 
 /* --------------------------------------------------------------------------
-   7. FOOTER (CRESCENDO)
+   14. PRODUCT DETAILS PAGE
    -------------------------------------------------------------------------- */
-.cres-footer {
+.hn-detail-main-img {
+  width: 100%;
+  height: 420px;
+  object-fit: contain;
+  background-color: var(--hn-cream);
+  border: 1px solid var(--hn-border);
+  border-radius: var(--hn-radius-sm);
+  padding: 16px;
+}
+
+.hn-thumb-img {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  background-color: var(--hn-cream);
+  border: 1px solid var(--hn-border);
+  border-radius: var(--hn-radius-sm);
+  cursor: pointer;
+  padding: 4px;
+  transition: var(--hn-transition);
+}
+
+.hn-thumb-img.active, .hn-thumb-img:hover {
+  border-color: var(--hn-gold);
+}
+
+.hn-qty-box {
+  display: inline-flex;
+  border: 1px solid var(--hn-border);
+  border-radius: var(--hn-radius-sm);
+  overflow: hidden;
   background: #FFFFFF;
-  border-top: 1px solid var(--cres-border);
-  padding: 60px 0 24px;
-  margin-top: 70px;
 }
 
-.cres-footer h6 {
+.hn-qty-btn {
+  background: none;
+  border: none;
+  width: 36px;
+  height: 36px;
   font-weight: 700;
-  color: var(--cres-secondary);
-  margin-bottom: 18px;
+  color: var(--hn-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hn-qty-input {
+  width: 45px;
+  border: none;
+  text-align: center;
+  font-weight: 600;
+  color: var(--hn-navy);
+}
+
+.hn-nav-tabs .nav-link {
+  font-family: var(--hn-font-serif);
   font-size: 1rem;
+  color: var(--hn-text-secondary);
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 20px;
 }
 
-.cres-footer a:not(.cres-icon-btn) {
-  color: var(--cres-secondary-light);
-  display: block;
-  margin-bottom: 10px;
-  font-size: 0.925rem;
-  transition: var(--cres-transition);
+.hn-nav-tabs .nav-link.active {
+  color: var(--hn-navy);
+  border-bottom-color: var(--hn-gold);
+  background: none;
+  font-weight: 600;
 }
 
-.cres-footer a:not(.cres-icon-btn):hover {
-  color: var(--cres-primary);
-  transform: translateX(4px);
+/* --------------------------------------------------------------------------
+   15. CART & CHECKOUT
+   -------------------------------------------------------------------------- */
+.hn-table-cart th {
+  font-family: var(--hn-font-serif);
+  font-size: 0.92rem;
+  color: var(--hn-navy);
+  background-color: var(--hn-cream);
+  border-bottom: 1px solid var(--hn-border);
+  padding: 12px;
 }
 
-/* ==========================================================================
-   8. COMPREHENSIVE RESPONSIVE STYLES (Mobile, Tablet, Desktop)
-   ========================================================================== */
-
-/* Large Tablets & Small Laptops (992px - 1199.98px) */
-@media (max-width: 1199.98px) {
-  .cres-hero-title {
-    font-size: 2.8rem;
-  }
-  .cres-hero-container {
-    padding: 45px 35px;
-  }
-  .cres-product-img-box {
-    height: 160px;
-  }
+.hn-table-cart td {
+  padding: 16px 12px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--hn-border-subtle);
 }
 
-/* Tablets (768px - 991.98px) */
-@media (max-width: 991.98px) {
-  .cres-hero-container {
-    padding: 40px 28px;
-    text-align: center;
+.hn-summary-box {
+  background: #FFFFFF;
+  border: 1px solid var(--hn-border);
+  border-radius: var(--hn-radius-sm);
+  padding: 24px;
+  box-shadow: var(--hn-shadow-card);
+}
+
+/* --------------------------------------------------------------------------
+   16. RESPONSIVE BREAKPOINTS
+   -------------------------------------------------------------------------- */
+@media (max-width: 991px) {
+  .hn-lifestyle-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
-  .cres-hero-title {
-    font-size: 2.5rem;
-    margin-bottom: 14px;
-  }
-  .cres-hero-desc {
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .cres-hero-img-wrap {
-    margin-top: 30px;
-  }
-  .cres-hero-img {
-    max-height: 320px;
-  }
-  .cres-feature-strip {
-    justify-content: center;
-  }
-  .cres-promo-banner {
-    flex-direction: column;
-    text-align: center;
-    gap: 20px;
-    padding: 30px 24px;
-  }
-  .cres-filter-sidebar {
-    margin-bottom: 24px;
-  }
-  .cres-auth-panel-left {
-    padding: 35px 25px;
-  }
-  .cres-auth-panel-right {
-    padding: 35px 25px;
-  }
-  .cres-footer {
-    padding: 45px 0 20px;
-    margin-top: 50px;
+  .hn-benefit-col:not(:last-child)::after {
+    display: none;
   }
 }
 
-/* Landscape Mobile & Small Tablets (576px - 767.98px) */
-@media (max-width: 767.98px) {
-  .cres-header {
-    padding: 10px 0;
+@media (max-width: 576px) {
+  .hn-lifestyle-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
-  .cres-brand {
-    font-size: 1.15rem;
-    white-space: nowrap;
+  .hn-hero-title {
+    font-size: 2.1rem;
   }
-  .cres-hero-container {
-    padding: 36px 24px;
-    border-radius: var(--cres-radius-lg);
-  }
-  .cres-hero-title {
-    font-size: 2.2rem;
-    line-height: 1.2;
-  }
-  .cres-hero-desc {
-    font-size: 0.95rem;
-    margin-bottom: 24px;
-  }
-  .cres-hero-discount-badge {
-    top: 10px;
-    left: 10px;
-    padding: 8px 12px;
-    font-size: 0.9rem;
-  }
-  .cres-feature-item {
-    font-size: 0.85rem;
-  }
-  .cres-product-card {
-    padding: 14px;
-  }
-  .cres-product-img-box {
-    height: 140px;
-  }
-  .cres-product-title {
-    font-size: 0.92rem;
-  }
-  .cres-product-price {
-    font-size: 0.95rem;
-  }
-  .cres-stat-card {
-    padding: 16px 12px;
-  }
-  .cres-stat-number {
-    font-size: 1.8rem;
-  }
-  .cres-auth-card {
-    border-radius: var(--cres-radius-lg);
-  }
-  .cres-card {
-    border-radius: var(--cres-radius-md);
-  }
-  .table-responsive {
-    border-radius: var(--cres-radius-md);
+  .hn-section-title {
+    font-size: 1.7rem;
   }
 }
-
-/* Extra Small Phones (<= 575.98px down to 320px) */
-@media (max-width: 575.98px) {
-  .cres-brand {
-    font-size: 1.05rem;
-    gap: 6px;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .cres-brand-dot {
-    width: 7px;
-    height: 7px;
-  }
-  .cres-hero-container {
-    padding: 28px 16px;
-    margin: 10px 0;
-  }
-  .cres-hero-title {
-    font-size: 1.85rem;
-    line-height: 1.22;
-    letter-spacing: -0.02em;
-    margin-bottom: 14px;
-  }
-  .cres-hero-desc {
-    font-size: 0.92rem;
-    line-height: 1.5;
-    margin-bottom: 20px;
-  }
-  .cres-hero-container .btn {
-    width: 100%;
-  }
-  .cres-hero-discount-badge {
-    font-size: 0.8rem;
-    padding: 6px 10px;
-  }
-  .cres-feature-strip {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-  }
-  .cres-icon-btn {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    min-height: 36px;
-    font-size: 0.95rem;
-  }
-  .cres-category-card {
-    padding: 14px;
-  }
-  .cres-category-card h6 {
-    font-size: 0.85rem;
-  }
-  .cres-category-img {
-    width: 60px;
-    height: 60px;
-  }
-  .cres-card-cart-btn {
-    width: 34px;
-    height: 34px;
-    font-size: 0.85rem;
-  }
-  .cres-product-img-box {
-    height: 120px;
-  }
-  .cres-product-badge {
-    font-size: 0.65rem;
-    padding: 3px 8px;
-    top: 10px;
-    left: 10px;
-  }
-  .cres-card-wishlist {
-    width: 32px;
-    height: 32px;
-    top: 10px;
-    right: 10px;
-  }
-  .cres-footer form {
-    flex-direction: column;
-  }
-  .cres-footer form .btn {
-    width: 100%;
-  }
-}
-
-/* Touch Device Target Enhancements */
-@media (hover: none) and (pointer: coarse) {
-  .cres-nav-link, 
-  .cres-icon-btn, 
-  .btn, 
-  .form-control,
-  .form-select {
-    min-height: 42px;
-  }
-}
-

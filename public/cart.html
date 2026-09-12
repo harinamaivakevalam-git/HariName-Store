@@ -3,237 +3,236 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shopping Cart - Sample Store</title>
+  <title>Your Cart — Harinama Store</title>
+  <meta name="description" content="View your devotional items in cart and proceed to secure checkout.">
   
   <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/assets/css/style.css">
+  
+  <!-- Harinama Store Master Stylesheet -->
+  <link rel="stylesheet" href="/assets/css/style.css?v=4">
 </head>
 <body>
 
-  <!-- Header Placeholder -->
+  <!-- Top Announcement Bar & Header -->
   <div id="hn-header-placeholder"></div>
 
-  <main class="container my-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h1 class="display-6 fw-bold mb-1">Shopping Cart</h1>
-        <p class="text-muted" id="cart-item-count-subtitle">Loading items...</p>
+  <main class="py-5">
+    <div class="container">
+      
+      <!-- Cart Header with Continue Shopping -->
+      <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
+        <h1 class="hn-section-title mb-0" style="font-size: 2rem;">Your Cart</h1>
+        <a href="/shop.html" class="text-secondary small fw-semibold text-decoration-underline">Continue shopping</a>
       </div>
-      <div>
-        <button class="btn btn-outline-danger btn-sm rounded-pill px-3 py-2 fw-semibold" onclick="clearFullCart()">
-          <i class="bi bi-trash3 me-1"></i> Clear Cart
-        </button>
-      </div>
-    </div>
 
-    <div class="row g-5" id="cart-main-row">
-      <!-- Left: Cart Items List -->
-      <div class="col-lg-8">
-        <div class="d-flex flex-column gap-3" id="cart-items-list">
-          <!-- Injected dynamically -->
+      <div class="row g-4 g-lg-5">
+        
+        <!-- Left: Cart Items Table -->
+        <div class="col-lg-8">
+          <div class="bg-white border rounded p-3 p-md-4 shadow-sm" id="hn-cart-table-wrap">
+            <div class="table-responsive">
+              <table class="table hn-table-cart align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Subtotal</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="hn-cart-items-body">
+                  <!-- Injected dynamically from localStorage -->
+                </tbody>
+              </table>
+            </div>
+            
+            <div id="hn-empty-cart-msg" class="text-center py-5 d-none">
+              <i class="bi bi-bag-x fs-1 text-muted d-block mb-3"></i>
+              <h5 class="fw-bold">Your cart is currently empty</h5>
+              <p class="text-muted small mb-4">Add your favorite devotional reminders and gift sets to begin.</p>
+              <a href="/shop.html" class="btn hn-btn-gold">Explore Keychains</a>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <!-- Right: Summary & Coupon -->
-      <div class="col-lg-4">
-        <!-- Coupon Code Box -->
-        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-          <label class="fw-bold small mb-2">Apply Coupon Code</label>
-          <div class="d-flex gap-2">
-            <input type="text" id="cart-coupon-input" class="form-control rounded-pill px-3" placeholder="Enter coupon code">
-            <button class="btn cres-btn-primary px-4" onclick="applyCartCoupon()">Apply</button>
-          </div>
-          <div id="coupon-feedback" class="small mt-2"></div>
-        </div>
+        <!-- Right: Order Summary Box (Exact match to reference image) -->
+        <div class="col-lg-4">
+          <div class="hn-summary-box">
+            <h5 class="fw-bold mb-3" style="font-family: var(--hn-font-serif);">Order Summary</h5>
+            
+            <div class="d-flex justify-content-between mb-2 small text-secondary">
+              <span>Subtotal</span>
+              <span class="fw-semibold text-dark" id="hn-sum-subtotal">₹526</span>
+            </div>
 
-        <!-- Order Summary Box -->
-        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-          <h5 class="fw-bold mb-3">Order Summary</h5>
-          
-          <div class="d-flex justify-content-between mb-2 small text-muted">
-            <span>Subtotal</span>
-            <span class="fw-semibold text-dark" id="cart-subtotal">$1,050.00</span>
-          </div>
+            <div class="d-flex justify-content-between mb-3 small text-secondary">
+              <span>Shipping</span>
+              <span class="text-muted" style="font-size: 0.8rem;">Calculated at checkout</span>
+            </div>
 
-          <div class="d-flex justify-content-between mb-2 small text-muted" id="cart-discount-row" style="display: none;">
-            <span>Discount</span>
-            <span class="fw-semibold text-danger" id="cart-discount">-$100.00</span>
-          </div>
+            <hr class="my-3">
 
-          <div class="d-flex justify-content-between mb-3 small text-muted">
-            <span>Shipping</span>
-            <span class="fw-semibold text-success" id="cart-shipping">$0.00</span>
-          </div>
+            <div class="d-flex justify-content-between mb-4">
+              <span class="fw-bold">Total</span>
+              <span class="fs-4 fw-bold" style="color: var(--hn-navy);" id="hn-sum-total">₹526</span>
+            </div>
 
-          <hr class="my-3 opacity-25">
-
-          <div class="d-flex justify-content-between mb-4">
-            <span class="fw-bold fs-5">Total</span>
-            <span class="fw-bold fs-5 text-dark" id="cart-total">$950.00</span>
-          </div>
-
-          <div class="d-flex flex-column gap-2">
-            <a href="/checkout.html" class="btn cres-btn-primary w-100 py-3 fw-bold">
+            <a href="/checkout.html" class="btn hn-btn-gold w-100 py-3 mb-4 fw-bold" id="hn-btn-checkout">
               Proceed to Checkout
             </a>
-            <a href="/products.html" class="btn cres-btn-outline w-100 py-2 text-center">
-              Continue Shopping
-            </a>
+
+            <!-- Coupon Drawer -->
+            <div class="border rounded p-3 bg-light mb-4">
+              <div class="fw-semibold small mb-2"><i class="bi bi-ticket-perforated text-warning me-1"></i> Apply Coupon</div>
+              <div class="input-group">
+                <input type="text" class="form-control form-control-sm" id="hn-coupon-code" placeholder="WELCOME10">
+                <button class="btn btn-outline-dark btn-sm" onclick="applyCartCoupon()">Apply</button>
+              </div>
+              <div id="hn-coupon-feedback" class="small mt-2"></div>
+            </div>
+
+            <!-- Payment Badges -->
+            <div class="text-center">
+              <div class="small text-muted mb-2" style="font-size: 0.75rem;">We accept</div>
+              <div class="d-flex justify-content-center align-items-center gap-3 text-secondary fs-5">
+                <span class="badge bg-light text-dark border">UPI</span>
+                <span class="badge bg-light text-dark border">VISA</span>
+                <span class="badge bg-light text-dark border">Mastercard</span>
+                <span class="badge bg-light text-dark border">RuPay</span>
+              </div>
+            </div>
+
           </div>
         </div>
+
       </div>
+
     </div>
   </main>
 
-  <!-- Footer Placeholder -->
+  <!-- Global Footer -->
   <div id="hn-footer-placeholder"></div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
-
   <script>
-    let discountAmount = 0;
+    let cartDiscount = 0;
+
+    function getCart() {
+      let cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
+      if (!cart || cart.length === 0) {
+        // Initialize default sample cart matching reference image if fresh visit
+        cart = [
+          { id: 'prod-003', name: 'Maha-Mantra Keychain', price: 149, qty: 2, image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=400&q=80', material: 'Metal' },
+          { id: 'prod-001', name: 'Peacock Feather Keychain', price: 99, qty: 1, image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80', material: 'Acrylic' },
+          { id: 'prod-004', name: 'Radhe Radhe Keychain', price: 129, qty: 1, image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', material: 'Acrylic' }
+        ];
+        localStorage.setItem('hn_cart', JSON.stringify(cart));
+      }
+      return cart;
+    }
+
+    function renderCart() {
+      const cart = getCart();
+      const tbody = document.getElementById('hn-cart-items-body');
+      const emptyMsg = document.getElementById('hn-empty-cart-msg');
+      const tableWrap = document.getElementById('hn-cart-table-wrap');
+
+      if (!cart || cart.length === 0) {
+        if (tbody) tbody.innerHTML = '';
+        if (emptyMsg) emptyMsg.classList.remove('d-none');
+        document.getElementById('hn-sum-subtotal').innerText = '₹0';
+        document.getElementById('hn-sum-total').innerText = '₹0';
+        return;
+      }
+
+      if (emptyMsg) emptyMsg.classList.add('d-none');
+
+      let subtotal = 0;
+      tbody.innerHTML = cart.map((item, index) => {
+        const itemTotal = item.price * (item.qty || 1);
+        subtotal += itemTotal;
+        return `
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-3">
+                <img src="${item.image}" alt="${item.name}" class="rounded border" style="width: 50px; height: 50px; object-fit: cover;">
+                <div>
+                  <div class="fw-semibold text-dark">${item.name}</div>
+                  <div class="text-muted small">${item.material || 'Standard'}</div>
+                </div>
+              </div>
+            </td>
+            <td class="fw-semibold">₹${item.price}</td>
+            <td>
+              <div class="hn-qty-box" style="transform: scale(0.9); transform-origin: left center;">
+                <button type="button" class="hn-qty-btn" onclick="updateItemQty(${index}, -1)">-</button>
+                <input type="text" value="${item.qty || 1}" readonly class="hn-qty-input">
+                <button type="button" class="hn-qty-btn" onclick="updateItemQty(${index}, 1)">+</button>
+              </div>
+            </td>
+            <td class="fw-bold" style="color: var(--hn-navy);">₹${itemTotal}</td>
+            <td>
+              <button class="btn btn-sm btn-link text-muted p-0" onclick="removeCartItem(${index})" title="Remove">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      const finalTotal = Math.max(0, subtotal - cartDiscount);
+      document.getElementById('hn-sum-subtotal').innerText = `₹${subtotal}`;
+      document.getElementById('hn-sum-total').innerText = `₹${finalTotal}`;
+
+      // Update badge
+      const totalCount = cart.reduce((acc, i) => acc + (i.qty || 1), 0);
+      const badge = document.getElementById('hn-cart-badge');
+      if (badge) badge.innerText = totalCount;
+    }
+
+    function updateItemQty(index, delta) {
+      let cart = getCart();
+      if (!cart[index]) return;
+      cart[index].qty = (cart[index].qty || 1) + delta;
+      if (cart[index].qty <= 0) {
+        cart.splice(index, 1);
+      }
+      localStorage.setItem('hn_cart', JSON.stringify(cart));
+      localStorage.setItem('cres_cart', JSON.stringify(cart));
+      renderCart();
+    }
+
+    function removeCartItem(index) {
+      let cart = getCart();
+      cart.splice(index, 1);
+      localStorage.setItem('hn_cart', JSON.stringify(cart));
+      localStorage.setItem('cres_cart', JSON.stringify(cart));
+      renderCart();
+    }
+
+    function applyCartCoupon() {
+      const code = (document.getElementById('hn-coupon-code').value || '').trim().toUpperCase();
+      const feedback = document.getElementById('hn-coupon-feedback');
+      if (code === 'WELCOME10') {
+        cartDiscount = 50;
+        feedback.innerHTML = '<span class="text-success fw-semibold"><i class="bi bi-check-circle"></i> Coupon applied! ₹50 discount.</span>';
+        renderCart();
+      } else {
+        feedback.innerHTML = '<span class="text-danger small">Invalid coupon code. Try WELCOME10</span>';
+      }
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
       renderHeader('cart');
       renderFooter();
-      initDefaultCartIfEmpty();
-      renderCartUI();
+      renderCart();
     });
-
-    const initDefaultCartIfEmpty = () => {
-      let cart = JSON.parse(localStorage.getItem('cres_cart') || '[]');
-      if (cart.length === 0) {
-        // Pre-populate with 3 items matching reference: Pro X168A, Speaker P168A, Earbud Y168A
-        cart = [
-          { id: 'prod-002', name: 'Pro X168A Headphones', price: 250.00, color: 'Purple', qty: 1, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80' },
-          { id: 'prod-003', name: 'Speaker P168A', price: 340.00, color: 'Black', qty: 2, image: 'https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=400&q=80' },
-          { id: 'prod-001', name: 'Earbud Y168A', price: 270.00, color: 'Black', qty: 1, image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=400&q=80' }
-        ];
-        localStorage.setItem('cres_cart', JSON.stringify(cart));
-      }
-    };
-
-    const renderCartUI = () => {
-      const cart = JSON.parse(localStorage.getItem('cres_cart') || '[]');
-      const container = document.getElementById('cart-items-list');
-      const subtitle = document.getElementById('cart-item-count-subtitle');
-
-      const totalItems = cart.reduce((acc, i) => acc + i.qty, 0);
-      subtitle.textContent = `${totalItems} items in your cart`;
-
-      if (cart.length === 0) {
-        document.getElementById('cart-main-row').innerHTML = `
-          <div class="col-12 text-center py-5">
-            <i class="bi bi-bag-x display-1 text-muted"></i>
-            <h3 class="fw-bold mt-3">Your Cart is Empty</h3>
-            <p class="text-muted">Explore high-fidelity sound gear and add items to your cart.</p>
-            <a href="/products.html" class="btn cres-btn-primary mt-2">Browse Products</a>
-          </div>
-        `;
-        return;
-      }
-
-      let subtotal = 0;
-
-      container.innerHTML = cart.map((item, idx) => {
-        const itemTotal = item.price * item.qty;
-        subtotal += itemTotal;
-
-        return `
-          <div class="cres-card p-3 p-sm-4 mb-3 d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 position-relative">
-            <!-- Left: Product Image & Details -->
-            <div class="d-flex align-items-center gap-3 flex-grow-1" style="min-width: 200px;">
-              <div class="cres-cart-img-box rounded-4 p-2 flex-shrink-0" style="width: 72px; height: 72px; background: #FAF9FE; display: flex; align-items: center; justify-content: center;">
-                <img src="${item.image}" alt="${item.name}" style="max-width: 90%; max-height: 90%; object-fit: contain;">
-              </div>
-              <div class="flex-grow-1">
-                <h6 class="fw-bold mb-1 text-dark text-nowrap">${item.name}</h6>
-                <div class="text-muted small mb-1 text-nowrap">Color: ${item.color || 'Standard'}</div>
-                <div class="fw-bold text-muted small text-nowrap">$${Number(item.price).toFixed(2)}</div>
-              </div>
-            </div>
-
-            <!-- Middle & Right Controls -->
-            <div class="d-flex align-items-center justify-content-between justify-content-md-end w-100 w-md-auto gap-3 gap-lg-4 flex-shrink-0">
-              <!-- Stepper -->
-              <div class="d-flex align-items-center border rounded-pill px-3 py-1 bg-white shadow-sm flex-shrink-0">
-                <button class="btn btn-link text-muted p-0 text-decoration-none" onclick="updateQty(${idx}, -1)"><i class="bi bi-dash fs-5"></i></button>
-                <span class="px-3 fw-bold small text-dark">${item.qty}</span>
-                <button class="btn btn-link text-muted p-0 text-decoration-none" onclick="updateQty(${idx}, 1)"><i class="bi bi-plus fs-5"></i></button>
-              </div>
-
-              <!-- Item Total Price -->
-              <div class="fw-bold text-dark fs-6 text-end text-nowrap" style="min-width: 80px;">
-                $${Number(itemTotal).toFixed(2)}
-              </div>
-
-              <!-- Remove Icon -->
-              <button class="btn btn-sm btn-light rounded-circle text-muted p-0 flex-shrink-0" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" onclick="removeCartItem(${idx})" title="Remove item">
-                <i class="bi bi-x-lg small"></i>
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      // Update Summary Numbers
-      document.getElementById('cart-subtotal').textContent = formatPrice(subtotal);
-      
-      if (discountAmount > 0) {
-        document.getElementById('cart-discount-row').style.display = 'flex';
-        document.getElementById('cart-discount').textContent = `-${formatPrice(discountAmount)}`;
-      } else {
-        document.getElementById('cart-discount-row').style.display = 'none';
-      }
-
-      const total = Math.max(0, subtotal - discountAmount);
-      document.getElementById('cart-total').textContent = formatPrice(total);
-    };
-
-    window.updateQty = (idx, delta) => {
-      let cart = JSON.parse(localStorage.getItem('cres_cart') || '[]');
-      if (cart[idx]) {
-        cart[idx].qty += delta;
-        if (cart[idx].qty <= 0) {
-          cart.splice(idx, 1);
-        }
-        localStorage.setItem('cres_cart', JSON.stringify(cart));
-        if (window.cresUpdateCounters) window.cresUpdateCounters();
-        renderCartUI();
-      }
-    };
-
-    window.removeCartItem = (idx) => {
-      let cart = JSON.parse(localStorage.getItem('cres_cart') || '[]');
-      cart.splice(idx, 1);
-      localStorage.setItem('cres_cart', JSON.stringify(cart));
-      if (window.cresUpdateCounters) window.cresUpdateCounters();
-      renderCartUI();
-    };
-
-    window.clearFullCart = () => {
-      if (!confirm('Are you sure you want to clear your shopping cart?')) return;
-      localStorage.setItem('cres_cart', JSON.stringify([]));
-      if (window.cresUpdateCounters) window.cresUpdateCounters();
-      renderCartUI();
-    };
-
-    window.applyCartCoupon = () => {
-      const code = document.getElementById('cart-coupon-input').value.trim().toUpperCase();
-      const fb = document.getElementById('coupon-feedback');
-      if (code === 'SAVE100' || code === 'WELCOME10' || code === 'CRESCENDO' || code === 'SAMPLE10') {
-        discountAmount = 100.00;
-        fb.innerHTML = '<span class="text-success fw-bold">Coupon applied! $100.00 discount.</span>';
-        renderCartUI();
-      } else {
-        fb.innerHTML = '<span class="text-danger">Invalid coupon code. Try WELCOME10 or SAVE100</span>';
-      }
-    };
   </script>
 </body>
 </html>

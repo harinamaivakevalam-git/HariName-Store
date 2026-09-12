@@ -1,369 +1,451 @@
 /**
- * CRESCENDO - Centralized Audio & Electronics Product Catalog Data
+ * HARINAMA STORE - Centralized Product Catalog & Categories Data
+ * Complete Devotional Store: Sacred Books, Japa Malas, Keychains, Deities & Gift Sets
  */
 
-const CRESCENDO_DATA = {
+const HARINAMA_DATA = {
   categories: [
     {
-      id: 'cat-speakers',
-      name: 'Speakers',
-      slug: 'speakers',
-      count: 24,
-      image: 'https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=400&q=80',
-      description: 'Room-filling high fidelity sound'
+      id: 'cat-all',
+      name: 'All Products',
+      slug: 'all-products',
+      count: 16
     },
     {
-      id: 'cat-headphones',
-      name: 'Headphones',
-      slug: 'headphones',
-      count: 18,
-      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80',
-      description: 'Studio grade wireless ANC audio'
+      id: 'cat-keychains',
+      name: 'Devotional Keychains',
+      slug: 'devotional-keychains',
+      count: 8
     },
     {
-      id: 'cat-earbuds',
-      name: 'Earbuds',
-      slug: 'earbuds',
-      count: 12,
-      image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=400&q=80',
-      description: 'True wireless featherlight in-ear'
+      id: 'cat-books',
+      name: 'Sacred Books & Shastras',
+      slug: 'sacred-books',
+      count: 3
     },
     {
-      id: 'cat-accessories',
-      name: 'Accessories',
-      slug: 'accessories',
-      count: 12,
-      image: 'https://images.unsplash.com/photo-1625961332771-3f40b0e2bdcf?auto=format&fit=crop&w=400&q=80',
-      description: 'Cables, audio stands & cases'
+      id: 'cat-japa',
+      name: 'Japa & Chanting',
+      slug: 'japa-chanting',
+      count: 3
     },
     {
-      id: 'cat-charger',
-      name: 'Wireless Charger',
-      slug: 'wireless-charger',
-      count: 6,
-      image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=400&q=80',
-      description: 'Fast wireless magnetic charging'
+      id: 'cat-gifts',
+      name: 'Gift Sets & Bundles',
+      slug: 'gift-sets',
+      count: 2
     }
   ],
 
   products: [
+    // 1. Flagship Keychains
     {
       id: 'prod-001',
-      name: 'Earbud Y168A',
-      slug: 'earbud-y168a',
-      category: 'Earbuds',
-      category_slug: 'earbuds',
-      brand: 'Sony',
-      price: 270.00,
-      old_price: 320.00,
-      discount_percent: 16,
-      badge: 'New',
-      badge_type: 'purple',
-      rating: 5.0,
-      reviews_count: 124,
-      image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=600&q=80',
+      name: 'Peacock Feather',
+      title: 'Peacock Feather Keychain',
+      slug: 'peacock-feather-keychain',
+      category: 'Devotional Keychains',
+      category_slug: 'devotional-keychains',
+      material: 'Acrylic',
+      price: 99.00,
+      old_price: 149.00,
+      rating: 4.9,
+      reviews_count: 24,
+      image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
       gallery: [
-        'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1572536147248-ac59a8abfa4b?auto=format&fit=crop&w=800&q=80'
+        'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1609137144822-0d198f2371a5?auto=format&fit=crop&w=800&q=80'
       ],
-      stock: 45,
-      colors: ['Black', 'Silver', 'Lavender'],
-      description: 'Experience pure acoustic clarity with the Earbud Y168A. Equipped with dual dynamic drivers, active noise cancellation, and 36-hour battery life.',
+      description: "A beautiful symbol of Krishna's divine presence. Carry this peacock feather keychain as a daily reminder of His love and protection.",
       specifications: {
-        'Driver Size': '11mm Dual Dynamic Drivers',
-        'Frequency Response': '20Hz - 40kHz',
-        'Battery Life': 'Up to 36 Hours with Charging Case',
-        'Connectivity': 'Bluetooth 5.3 + Multipoint',
-        'Water Resistance': 'IPX5 Sweat & Splash Proof'
+        'Material': 'Premium Hard Acrylic / High-Gloss Resin',
+        'Ring & Chain': 'Solid Brass Gold Finish with Secure Clasp',
+        'Dimensions': '6.5 cm x 3.2 cm',
+        'Origin': 'Handcrafted in Vrindavan Dham'
       },
-      featured: true,
-      trending: true
+      stock: 45,
+      featured: true
     },
     {
       id: 'prod-002',
-      name: 'Pro X168A Headphones',
-      slug: 'pro-x168a-headphones',
-      category: 'Headphones',
-      category_slug: 'headphones',
-      brand: 'Bose',
-      price: 250.00,
-      old_price: 320.00,
-      discount_percent: 22,
-      badge: 'Best Seller',
-      badge_type: 'pink',
-      rating: 5.0,
-      reviews_count: 124,
-      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80',
+      name: 'Krishna Flute',
+      title: 'Krishna Flute Keychain (Solid Brass)',
+      slug: 'krishna-flute-keychain',
+      category: 'Devotional Keychains',
+      category_slug: 'devotional-keychains',
+      material: 'Metal',
+      price: 129.00,
+      old_price: 179.00,
+      rating: 4.8,
+      reviews_count: 16,
+      image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
       gallery: [
-        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=800&q=80'
+        'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80'
       ],
-      stock: 28,
-      colors: ['Purple', 'Black', 'White'],
-      description: 'Experience immersive sound with deep bass and crystal clear audio. Designed for music lovers and professional creators alike.',
+      description: "The melodious Bansuri of Lord Krishna crafted in pure polished brass. Keeps the divine music of the spirit in your everyday walk.",
       specifications: {
-        'Driver Size': '40mm Custom Titanium Drivers',
-        'Noise Cancellation': 'Hybrid Active Noise Cancellation (40dB)',
-        'Battery Life': '50 Hours Playtime (Quick Charge: 10 mins for 5 hrs)',
-        'Weight': '250 grams',
-        'Ear Cushions': 'Memory Foam with Protein Leather'
+        'Material': '100% Solid Cast Brass',
+        'Finish': 'Polished Antique Gold with Ghungroo bells',
+        'Length': '7.5 cm',
+        'Origin': 'Artisan Crafted in Mathura'
       },
-      featured: true,
-      trending: true
+      stock: 32,
+      featured: true
     },
     {
       id: 'prod-003',
-      name: 'Speaker P168A',
-      slug: 'speaker-p168a',
-      category: 'Speakers',
-      category_slug: 'speakers',
-      brand: 'JBL',
-      price: 340.00,
-      old_price: 399.00,
-      discount_percent: 15,
-      badge: 'Sale',
-      badge_type: 'blue',
-      rating: 4.9,
-      reviews_count: 98,
-      image: 'https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=600&q=80',
+      name: 'Maha-Mantra',
+      title: 'Maha-Mantra Keychain (Hare Krishna)',
+      slug: 'maha-mantra-keychain',
+      category: 'Devotional Keychains',
+      category_slug: 'devotional-keychains',
+      material: 'Metal',
+      price: 149.00,
+      old_price: 199.00,
+      rating: 5.0,
+      reviews_count: 52,
+      image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=600&q=80',
       gallery: [
-        'https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=800&q=80'
+        'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80'
       ],
-      stock: 15,
-      colors: ['Midnight Black', 'Space Gray'],
-      description: '360-degree omnidirectional acoustics engineered with dual passive radiators and smart acoustic room tuning.',
+      description: "Carry the Maha-Mantra with you. A simple everyday reminder to pause, remember Krishna, and chant. Deep navy enamel with gold lettering.",
       specifications: {
-        'Output Power': '60W RMS High Output',
-        'Battery': '24 Hours Continuous Playback',
-        'Connectivity': 'Bluetooth 5.2, AUX, AirPlay 2',
-        'Water Resistance': 'IP67 Waterproof & Dustproof'
+        'Material': 'Enamelled Brass & Gold Alloy',
+        'Text Front': 'Hare Krishna with Peacock Feather Motif',
+        'Text Back': 'Complete 16-word Maha-Mantra',
+        'Diameter': '4.0 cm circular medallion'
       },
-      featured: true,
-      trending: true
+      stock: 60,
+      featured: true
     },
     {
       id: 'prod-004',
-      name: 'Noise X200',
-      slug: 'noise-x200',
-      category: 'Headphones',
-      category_slug: 'headphones',
-      brand: 'Apple',
-      price: 299.00,
-      old_price: 350.00,
-      discount_percent: 14,
-      badge: 'Sale',
-      badge_type: 'blue',
-      rating: 4.8,
-      reviews_count: 88,
-      image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=600&q=80',
+      name: 'Radhe Radhe',
+      title: 'Radhe Radhe Enamel Keychain',
+      slug: 'radhe-radhe-keychain',
+      category: 'Devotional Keychains',
+      category_slug: 'devotional-keychains',
+      material: 'Acrylic',
+      price: 129.00,
+      old_price: 169.00,
+      rating: 4.9,
+      reviews_count: 31,
+      image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
       gallery: [
-        'https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=800&q=80'
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80'
       ],
-      stock: 32,
-      colors: ['Space Gray', 'Silver'],
-      description: 'Premium wireless noise cancelling headphones with spatial audio tracking and ultra-lightweight ergonomic headband.',
+      description: "Infused with the sweet chanting vibrations of Vrindavan Dham. Soft pastel rose and gold enamel finish.",
       specifications: {
-        'Driver': '40mm Neodymium Magnet',
-        'Battery': '40 Hours Playback',
-        'Microphones': '6 Beamforming Microphones for Calls'
+        'Material': 'High Grade Enamel & Acrylic',
+        'Color': 'Pastel Rose & Gold',
+        'Diameter': '3.8 cm'
       },
-      featured: false,
-      trending: true
+      stock: 28,
+      featured: true
     },
     {
       id: 'prod-005',
-      name: 'Bass Head 2.0',
-      slug: 'bass-head-2-0',
-      category: 'Headphones',
-      category_slug: 'headphones',
-      brand: 'Samsung',
-      price: 210.00,
-      old_price: 260.00,
-      discount_percent: 19,
-      badge: 'Best Seller',
-      badge_type: 'pink',
-      rating: 4.9,
-      reviews_count: 112,
-      image: 'https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=600&q=80',
+      name: 'Krishna Silhouette',
+      title: 'Krishna Silhouette Keychain',
+      slug: 'krishna-silhouette-keychain',
+      category: 'Devotional Keychains',
+      category_slug: 'devotional-keychains',
+      material: 'Acrylic',
+      price: 129.00,
+      old_price: 179.00,
+      rating: 4.8,
+      reviews_count: 27,
+      image: 'https://images.unsplash.com/photo-1609137144822-0d198f2371a5?auto=format&fit=crop&w=600&q=80',
       gallery: [
-        'https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=800&q=80'
+        'https://images.unsplash.com/photo-1609137144822-0d198f2371a5?auto=format&fit=crop&w=800&q=80'
       ],
-      stock: 18,
-      colors: ['Matte Black', 'Obsidian Blue'],
-      description: 'Enhanced low-end sub-bass resonance tuned specially for electronic, hip-hop, and dynamic cinematic listening.',
+      description: "Iconic midnight blue silhouette of Sri Krishna playing flute with gold border trim.",
       specifications: {
-        'Driver': '50mm Heavy Bass Dynamic Driver',
-        'Impedance': '32 Ohm',
-        'Cable': 'Detachable 3.5mm Gold-plated Cable Included'
+        'Material': 'Laser Cut Gloss Acrylic',
+        'Color': 'Midnight Blue & Gold',
+        'Height': '5.8 cm'
       },
-      featured: true,
-      trending: true
+      stock: 40,
+      featured: true
     },
     {
       id: 'prod-006',
-      name: 'Air Buds Pro',
-      slug: 'air-buds-pro',
-      category: 'Earbuds',
-      category_slug: 'earbuds',
-      brand: 'Apple',
-      price: 220.00,
-      old_price: 280.00,
-      discount_percent: 21,
-      badge: 'New',
-      badge_type: 'purple',
-      rating: 5.0,
-      reviews_count: 150,
-      image: 'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?auto=format&fit=crop&w=600&q=80',
+      name: 'Radha Lotus',
+      title: 'Radha Lotus Keychain',
+      slug: 'radha-lotus-keychain',
+      category: 'Devotional Keychains',
+      category_slug: 'devotional-keychains',
+      material: 'Metal',
+      price: 129.00,
+      old_price: 179.00,
+      rating: 4.9,
+      reviews_count: 19,
+      image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
       gallery: [
-        'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?auto=format&fit=crop&w=800&q=80'
+        'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80'
       ],
-      stock: 40,
-      colors: ['White', 'Matte Lavender'],
-      description: 'Effortless in-ear fit with pressure-relieving vents, adaptive audio transparency mode, and MagSafe wireless case.',
+      description: "Golden lotus flower engraving representing Srimati Radharani's pure devotion and compassion.",
       specifications: {
-        'Chip': 'H2 High-Efficiency Audio Processor',
-        'Charging': 'Wireless Qi + Lightning Fast Charge',
-        'Weight': '5.3g per bud'
+        'Material': 'Solid Brass with Pink Lotus Inlay',
+        'Dimensions': '4.2 cm x 3.8 cm'
       },
-      featured: true,
-      trending: true
+      stock: 35,
+      featured: true
     },
     {
       id: 'prod-007',
-      name: 'SoundMax 360 Speaker',
-      slug: 'soundmax-360-speaker',
-      category: 'Speakers',
-      category_slug: 'speakers',
-      brand: 'JBL',
-      price: 180.00,
-      old_price: 220.00,
-      discount_percent: 18,
-      badge: 'Sale',
-      badge_type: 'blue',
-      rating: 4.7,
-      reviews_count: 65,
-      image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=600&q=80',
+      name: 'Govinda Sandalwood',
+      title: 'Govinda Sacred Wood Keychain',
+      slug: 'govinda-wooden-keychain',
+      category: 'Devotional Keychains',
+      category_slug: 'devotional-keychains',
+      material: 'Wood',
+      price: 129.00,
+      old_price: 169.00,
+      rating: 4.8,
+      reviews_count: 18,
+      image: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=600&q=80',
       gallery: [
-        'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=800&q=80'
+        'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=800&q=80'
       ],
-      stock: 20,
-      colors: ['Midnight Black', 'Forest Green'],
-      description: 'Portable cylindrical party speaker with dynamic RGB ambient pulse lights and dual woofer radiators.',
+      description: "Carved from natural fragrant sandalwood with 'Govinda' calligraphy in ancient Devanagari script.",
       specifications: {
-        'Power': '40W RMS',
-        'Battery': '16 Hours Playtime'
+        'Material': 'Natural Sacred Sandalwood',
+        'Dimensions': '4.5 cm x 3.0 cm'
       },
-      featured: false,
-      trending: false
+      stock: 25,
+      featured: false
     },
     {
       id: 'prod-008',
-      name: 'Wireless Magnetic Pad Q1',
-      slug: 'wireless-magnetic-pad-q1',
-      category: 'Wireless Charger',
-      category_slug: 'wireless-charger',
-      brand: 'Apple',
-      price: 89.00,
-      old_price: 110.00,
-      discount_percent: 19,
-      badge: 'New',
-      badge_type: 'purple',
+      name: 'Lotus Bloom',
+      title: 'Lotus Bloom Keychain',
+      slug: 'lotus-bloom-keychain',
+      category: 'Devotional Keychains',
+      category_slug: 'devotional-keychains',
+      material: 'Acrylic',
+      price: 99.00,
+      old_price: 139.00,
       rating: 4.9,
-      reviews_count: 42,
-      image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=600&q=80',
+      reviews_count: 22,
+      image: 'https://images.unsplash.com/photo-1582560475093-ba66accbc424?auto=format&fit=crop&w=600&q=80',
       gallery: [
-        'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=800&q=80'
+        'https://images.unsplash.com/photo-1582560475093-ba66accbc424?auto=format&fit=crop&w=800&q=80'
       ],
-      stock: 50,
-      colors: ['Silver Aluminum', 'Midnight'],
-      description: 'Ultra slim aerospace aluminum magnetic wireless charger pad compatible with Qi devices and modern smartphones.',
+      description: "Symbol of purity, transcendental devotion, and detachment from material illusion.",
       specifications: {
-        'Fast Charge': '15W Peak Output',
-        'Cable': 'Braided 1.5m USB-C Cable'
+        'Material': 'Multi-layer Enamel & Acrylic',
+        'Diameter': '3.5 cm'
       },
-      featured: false,
-      trending: false
-    }
-  ],
+      stock: 50,
+      featured: false
+    },
 
-  orders: [
+    // 2. Sacred Books & Shastras
     {
-      id: 'ord-12345',
-      order_number: '#ORD12345',
-      date: 'Mar 30, 2024',
-      total: 250.00,
-      status: 'delivered',
-      product_name: 'Pro X168A Headphones',
-      product_image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=200&q=80',
-      color: 'Purple',
-      quantity: 1,
-      customer_name: 'John Doe',
-      customer_email: 'john@example.com'
+      id: 'prod-011',
+      name: 'Bhagavad Gita As It Is',
+      title: 'Bhagavad Gita As It Is (Deluxe Hardbound Edition)',
+      slug: 'bhagavad-gita-as-it-is-deluxe',
+      category: 'Sacred Books & Shastras',
+      category_slug: 'sacred-books',
+      material: 'Hardbound Book',
+      price: 349.00,
+      old_price: 499.00,
+      rating: 5.0,
+      reviews_count: 148,
+      image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
+      gallery: [
+        'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80'
+      ],
+      description: "The complete Sanskrit text, Roman transliteration, word-for-word English equivalences, translation, and elaborate purports by A.C. Bhaktivedanta Swami Prabhupada.",
+      specifications: {
+        'Pages': '900+ Pages with color plates',
+        'Binding': 'Gold Embossed Deluxe Hardcover',
+        'Language': 'English / Sanskrit'
+      },
+      stock: 40,
+      featured: true
     },
     {
-      id: 'ord-12344',
-      order_number: '#ORD12344',
-      date: 'Mar 25, 2024',
-      total: 450.00,
-      status: 'processing',
-      product_name: 'Speaker P168A',
-      product_image: 'https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=200&q=80',
-      color: 'Black',
-      quantity: 2,
-      customer_name: 'Sarah Smith',
-      customer_email: 'sarah@example.com'
+      id: 'prod-012',
+      name: 'Teachings of Queen Kunti',
+      title: 'Teachings of Queen Kunti (Spiritual Classics)',
+      slug: 'teachings-of-queen-kunti',
+      category: 'Sacred Books & Shastras',
+      category_slug: 'sacred-books',
+      material: 'Paperback',
+      price: 199.00,
+      old_price: 275.00,
+      rating: 4.9,
+      reviews_count: 36,
+      image: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=600&q=80',
+      gallery: [
+        'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=800&q=80'
+      ],
+      description: "Queen Kunti's heartfelt prayers of surrender, bhakti, and divine shelter amidst life's greatest tribulations.",
+      specifications: {
+        'Author': 'A.C. Bhaktivedanta Swami Prabhupada',
+        'Pages': '240 Pages'
+      },
+      stock: 25,
+      featured: false
     },
     {
-      id: 'ord-12343',
-      order_number: '#ORD12343',
-      date: 'Feb 28, 2024',
-      total: 270.00,
-      status: 'shipped',
-      product_name: 'Earbud Y168A',
-      product_image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=200&q=80',
-      color: 'Black',
-      quantity: 1,
-      customer_name: 'Mike Johnson',
-      customer_email: 'mike@example.com'
+      id: 'prod-013',
+      name: 'Sri Isopanisad',
+      title: 'Sri Isopanisad — The Knowledge That Brings One Nearer to the Supreme',
+      slug: 'sri-isopanisad',
+      category: 'Sacred Books & Shastras',
+      category_slug: 'sacred-books',
+      material: 'Pocket Book',
+      price: 120.00,
+      old_price: 160.00,
+      rating: 5.0,
+      reviews_count: 44,
+      image: 'https://images.unsplash.com/photo-1532012164546-f432f2e3777f?auto=format&fit=crop&w=600&q=80',
+      gallery: [
+        'https://images.unsplash.com/photo-1532012164546-f432f2e3777f?auto=format&fit=crop&w=800&q=80'
+      ],
+      description: "One of the topmost Upanishads establishing the divine personality and universal ownership of Krishna.",
+      specifications: {
+        'Pages': '160 Pages',
+        'Format': 'Pocket Devotional Edition'
+      },
+      stock: 35,
+      featured: false
     },
-    {
-      id: 'ord-12342',
-      order_number: '#ORD12342',
-      date: 'Feb 20, 2024',
-      total: 199.00,
-      status: 'cancelled',
-      product_name: 'Noise X200',
-      product_image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=200&q=80',
-      color: 'Silver',
-      quantity: 1,
-      customer_name: 'Emily Davis',
-      customer_email: 'emily@example.com'
-    }
-  ],
 
-  addresses: [
+    // 3. Japa & Chanting Essentials
     {
-      id: 'addr-01',
-      type: 'Home',
-      is_default: true,
-      name: 'John Doe',
-      street: '123 Music Street',
-      city_state: 'New York, NY 10001, USA',
-      phone: '+1 234 567 890'
+      id: 'prod-014',
+      name: 'Neem Japa Mala',
+      title: 'Sacred Neem Japa Mala (108 Chanting Beads)',
+      slug: 'sacred-neem-japa-mala',
+      category: 'Japa & Chanting',
+      category_slug: 'japa-chanting',
+      material: 'Sacred Neem Wood',
+      price: 199.00,
+      old_price: 280.00,
+      rating: 5.0,
+      reviews_count: 89,
+      image: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=600&q=80',
+      gallery: [
+        'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=800&q=80'
+      ],
+      description: "Hand-carved 108 beads from sacred Neem wood with Meru bead and counter tassel. Perfect for daily Maha-Mantra japa.",
+      specifications: {
+        'Beads Count': '108 + 1 Guru Bead',
+        'Cord': 'Durable Pure Cotton Twine',
+        'Origin': 'Mayapur Dham'
+      },
+      stock: 50,
+      featured: true
     },
     {
-      id: 'addr-02',
-      type: 'Office',
-      is_default: false,
-      name: 'John Doe',
-      street: '456 Tech Avenue',
-      city_state: 'San Francisco, CA 94107, USA',
-      phone: '+1 234 567 890'
+      id: 'prod-015',
+      name: 'Embroidered Bead Bag',
+      title: 'Embroidered Hare Krishna Japa Bead Bag (Gomukhi)',
+      slug: 'embroidered-japa-bead-bag',
+      category: 'Japa & Chanting',
+      category_slug: 'japa-chanting',
+      material: 'Pure Cotton',
+      price: 149.00,
+      old_price: 220.00,
+      rating: 4.9,
+      reviews_count: 62,
+      image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80',
+      gallery: [
+        'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80'
+      ],
+      description: "Traditional cotton Gomukhi japa bag with Hare Krishna Maha-Mantra embroidered in gold thread. Features inner zipper pocket for counting beads.",
+      specifications: {
+        'Material': '100% Breathable Cotton',
+        'Color': 'Saffron / Navy with Gold Zari'
+      },
+      stock: 45,
+      featured: true
+    },
+    {
+      id: 'prod-016',
+      name: 'Tulasi Japa Mala (Silver Caps)',
+      title: 'Authentic Vrindavan Tulasi Japa Mala with Silver Caps',
+      slug: 'vrindavan-tulasi-japa-mala',
+      category: 'Japa & Chanting',
+      category_slug: 'japa-chanting',
+      material: 'Sacred Tulasi Wood',
+      price: 499.00,
+      old_price: 699.00,
+      rating: 5.0,
+      reviews_count: 58,
+      image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
+      gallery: [
+        'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80'
+      ],
+      description: "Made from naturally seasoned Vrindavan Tulasi stems, hand-knotted between each bead with sterling silver caps on the Guru bead.",
+      specifications: {
+        'Material': 'Vrindavan Tulasi Wood & 925 Silver',
+        'Beads': '108 Knotted Beads'
+      },
+      stock: 18,
+      featured: true
+    },
+
+    // 4. Gift Sets & Bundles
+    {
+      id: 'prod-009',
+      name: '3-Keychain Gift Set',
+      title: '3-Keychain Devotional Gift Set',
+      slug: '3-keychain-gift-set',
+      category: 'Gift Sets & Bundles',
+      category_slug: 'gift-sets',
+      material: 'Metal & Acrylic',
+      price: 299.00,
+      old_price: 357.00,
+      save_amount: 58,
+      rating: 5.0,
+      reviews_count: 42,
+      image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80',
+      gallery: [
+        'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80'
+      ],
+      description: "Includes Peacock Feather, Maha-Mantra, and Krishna Flute in a luxury satin-lined gift box with holy blessings card.",
+      specifications: {
+        'Set Contains': '3 Mastercrafted Keychains',
+        'Packaging': 'Deluxe Gold Embossed Gift Box'
+      },
+      stock: 20,
+      featured: true
+    },
+    {
+      id: 'prod-010',
+      name: '5-Keychain Collection',
+      title: '5-Keychain Complete Collection Set',
+      slug: '5-keychain-collection-set',
+      category: 'Gift Sets & Bundles',
+      category_slug: 'gift-sets',
+      material: 'Metal & Acrylic',
+      price: 499.00,
+      old_price: 645.00,
+      save_amount: 146,
+      rating: 5.0,
+      reviews_count: 64,
+      image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80',
+      gallery: [
+        'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=800&q=80'
+      ],
+      description: "Complete Harinama reminder gift box containing all 5 flagship designs: Peacock Feather, Maha-Mantra, Flute, Radhe Radhe, and Radha Lotus.",
+      specifications: {
+        'Set Contains': '5 Flagship Keychains',
+        'Packaging': 'Collector Wood Finish Display Box'
+      },
+      stock: 15,
+      featured: true
     }
   ]
 };
 
-window.CRESCENDO_DATA = CRESCENDO_DATA;
+// Expose alias for compatibility
+const CRESCENDO_DATA = HARINAMA_DATA;

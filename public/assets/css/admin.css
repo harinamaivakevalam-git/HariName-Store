@@ -1,225 +1,403 @@
 /* ==========================================================================
-   Sample Store - Admin Dashboard Stylesheet
+   HARINAMA STORE - Professional Luxury Admin Portal Stylesheet
    ========================================================================== */
 
 @import './variables.css';
 
-.hn-admin-layout {
-  display: flex;
+body.hn-admin-body-bg {
+  background-color: #F8F5EE;
+  font-family: var(--hn-font-sans);
+  color: var(--hn-text-primary);
   min-height: 100vh;
-  background-color: #F1F5F9;
 }
 
-/* Admin Sidebar */
-.hn-admin-sidebar {
-  width: 260px;
-  background: #0F172A;
-  color: #94A3B8;
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  transition: var(--hn-transition);
-  z-index: 1040;
-}
-
-.hn-admin-brand {
-  padding: 24px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: #FFF;
-  text-decoration: none;
-}
-
-.hn-admin-nav {
-  padding: 20px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex-grow: 1;
-}
-
-.hn-admin-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: var(--hn-radius-md);
-  color: #94A3B8;
-  font-weight: 500;
-  font-size: 0.925rem;
-  transition: var(--hn-transition-fast);
-  cursor: pointer;
-  border: none;
-  background: transparent;
-  width: 100%;
-  text-align: left;
-}
-
-.hn-admin-nav-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #FFF;
-}
-
-.hn-admin-nav-item.active {
-  background: var(--hn-primary);
-  color: #FFF;
-  font-weight: 600;
-  box-shadow: 0 4px 12px var(--hn-primary-glow);
-}
-
-.hn-admin-nav-item i {
-  font-size: 1.15rem;
-}
-
-/* Admin Main Content */
-.hn-admin-main {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
+/* ==========================================================================
+   Admin Top Bar
+   ========================================================================== */
 .hn-admin-topbar {
-  background: #FFF;
+  background: #FFFFFF;
   border-bottom: 1px solid var(--hn-border);
-  padding: 16px 30px;
+  box-shadow: 0 1px 3px rgba(11, 37, 69, 0.04);
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+}
+
+.hn-admin-brand-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--hn-navy);
+}
+
+.hn-admin-brand-title {
+  font-family: var(--hn-font-serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--hn-navy);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.hn-admin-badge-portal {
+  background: var(--hn-gold-light);
+  color: var(--hn-gold);
+  border: 1px solid var(--hn-gold-border);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+/* ==========================================================================
+   Admin Navigation Tabs (Luxury Pill Design)
+   ========================================================================== */
+.hn-admin-nav-bar {
+  background: #FFFFFF;
+  border: 1px solid var(--hn-border);
+  border-radius: 8px;
+  padding: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(11, 37, 69, 0.03);
+}
+
+.hn-admin-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #4A5568;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.hn-admin-tab:hover {
+  background: var(--hn-cream);
+  color: var(--hn-navy);
+  border-color: var(--hn-border-subtle);
+}
+
+.hn-admin-tab.active {
+  background: var(--hn-navy);
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(11, 37, 69, 0.18);
+}
+
+.hn-admin-tab.active i {
+  color: var(--hn-gold);
+}
+
+.hn-admin-tab-danger {
+  color: #DC2626;
+  margin-left: auto;
+}
+
+.hn-admin-tab-danger:hover {
+  background: #FEF2F2;
+  color: #B91C1C;
+  border-color: #FECACA;
+}
+
+/* ==========================================================================
+   KPI Summary Cards
+   ========================================================================== */
+.hn-kpi-card {
+  background: #FFFFFF;
+  border: 1px solid var(--hn-border);
+  border-radius: 10px;
+  padding: 22px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.hn-admin-body {
-  padding: 30px;
-  flex-grow: 1;
-}
-
-/* KPI Cards */
-.hn-kpi-card {
-  background: #FFF;
-  border-radius: var(--hn-radius-lg);
-  padding: 22px;
-  border: 1px solid var(--hn-border);
-  box-shadow: var(--hn-shadow-xs);
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  transition: var(--hn-transition);
-}
-
-.hn-kpi-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--hn-shadow-md);
-}
-
-.hn-kpi-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: var(--hn-radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.6rem;
-  flex-shrink: 0;
-}
-
-.hn-kpi-val {
-  font-size: 1.65rem;
-  font-weight: 800;
-  font-family: var(--hn-font-heading);
-  color: var(--hn-secondary);
-  line-height: 1.1;
-  margin-bottom: 2px;
-}
-
-.hn-kpi-label {
-  font-size: 0.85rem;
-  color: var(--hn-text-muted);
-  font-weight: 500;
-}
-
-/* Admin Table Styles */
-.hn-admin-table-card {
-  background: #FFF;
-  border-radius: var(--hn-radius-lg);
-  border: 1px solid var(--hn-border);
-  box-shadow: var(--hn-shadow-xs);
+  box-shadow: 0 2px 10px rgba(11, 37, 69, 0.03);
+  transition: all 0.25s ease;
+  position: relative;
   overflow: hidden;
 }
 
-.hn-admin-table-header {
-  padding: 20px 24px;
+.hn-kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--hn-gold);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.hn-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(11, 37, 69, 0.06);
+  border-color: #D6CCA9;
+}
+
+.hn-kpi-card:hover::before {
+  opacity: 1;
+}
+
+.hn-kpi-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #718096;
+  margin-bottom: 6px;
+}
+
+.hn-kpi-num {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--hn-navy);
+  line-height: 1.15;
+  font-family: var(--hn-font-sans);
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.hn-kpi-trend {
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hn-kpi-icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  background: #FAF5E8;
+  color: var(--hn-gold);
+  border: 1px solid rgba(197, 155, 39, 0.2);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Admin Tables & Cards
+   ========================================================================== */
+.hn-admin-card {
+  background: #FFFFFF;
+  border: 1px solid var(--hn-border);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(11, 37, 69, 0.03);
+  overflow: hidden;
+}
+
+.hn-admin-card-header {
+  padding: 18px 24px;
   border-bottom: 1px solid var(--hn-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
+  background: #FFFFFF;
 }
 
-.hn-admin-table {
-  width: 100%;
+.hn-admin-card-title {
+  font-family: var(--hn-font-serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--hn-navy);
   margin-bottom: 0;
 }
 
-.hn-admin-table th {
-  background: #F8FAFC;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--hn-text-muted);
-  font-weight: 700;
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--hn-border);
+.hn-table {
+  width: 100%;
+  margin-bottom: 0;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
-.hn-admin-table td {
-  padding: 16px 20px;
+.hn-table th {
+  background: #FAF7F0;
+  color: var(--hn-navy);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--hn-border);
+  white-space: nowrap;
+}
+
+.hn-table td {
+  padding: 14px 20px;
   vertical-align: middle;
-  border-bottom: 1px solid var(--hn-border-subtle);
+  border-bottom: 1px solid #F0EAE0;
+  color: #2D3748;
   font-size: 0.9rem;
 }
 
-/* Status Badges */
+.hn-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.hn-table tbody tr:hover {
+  background-color: #FAF8F3;
+}
+
+.hn-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.hn-table-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid var(--hn-border);
+  background-color: #FAF7F0;
+}
+
+/* ==========================================================================
+   Refined Status Badges
+   ========================================================================== */
 .hn-status-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  border-radius: var(--hn-radius-full);
-  font-size: 0.775rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
   font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
-.status-active, .status-delivered, .status-paid, .status-approved {
-  background: #ECFDF5;
-  color: #065F46;
+.hn-status-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
 }
 
-.status-pending, .status-processing, .status-confirmed {
-  background: #FEF3C7;
-  color: #92400E;
+.hn-status-delivered {
+  background-color: #DEF7EC;
+  color: #03543F;
+}
+.hn-status-delivered::before { background-color: #0E9F6E; }
+
+.hn-status-dispatched {
+  background-color: #E1EFFE;
+  color: #1E429F;
+}
+.hn-status-dispatched::before { background-color: #3F83F8; }
+
+.hn-status-packed {
+  background-color: #FEF08A;
+  color: #713F12;
+}
+.hn-status-packed::before { background-color: #CA8A04; }
+
+.hn-status-confirmed {
+  background-color: #E0E7FF;
+  color: #3730A3;
+}
+.hn-status-confirmed::before { background-color: #6366F1; }
+
+.hn-status-cancelled {
+  background-color: #FDE8E8;
+  color: #9B1C1C;
+}
+.hn-status-cancelled::before { background-color: #F05252; }
+
+/* ==========================================================================
+   Admin Filter & Action Bars
+   ========================================================================== */
+.hn-admin-filter-bar {
+  background: #FFFFFF;
+  border: 1px solid var(--hn-border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 8px rgba(11, 37, 69, 0.03);
+  margin-bottom: 24px;
 }
 
-.status-shipped, .status-out_for_delivery {
-  background: #EFF6FF;
-  color: #1E40AF;
+/* ==========================================================================
+   Quick Actions List
+   ========================================================================== */
+.hn-quick-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #FFFFFF;
+  border: 1px solid var(--hn-border);
+  border-radius: 8px;
+  color: var(--hn-navy);
+  font-weight: 600;
+  font-size: 0.92rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
 }
 
-.status-cancelled, .status-rejected, .status-suspended, .status-failed {
-  background: #FEF2F2;
-  color: #991B1B;
+.hn-quick-action-btn:hover {
+  background: var(--hn-cream);
+  border-color: var(--hn-gold);
+  color: var(--hn-gold-hover);
+  transform: translateX(3px);
 }
 
-@media (max-width: 991.98px) {
-  .hn-admin-sidebar {
-    position: fixed;
-    left: -260px;
-    top: 0;
-    bottom: 0;
-  }
-  .hn-admin-sidebar.show {
-    left: 0;
-  }
+.hn-quick-action-btn.primary {
+  background: var(--hn-gold);
+  border-color: var(--hn-gold);
+  color: #FFFFFF;
+}
+
+.hn-quick-action-btn.primary:hover {
+  background: var(--hn-gold-hover);
+  border-color: var(--hn-gold-hover);
+  color: #FFFFFF;
+}
+
+/* ==========================================================================
+   Admin Modals
+   ========================================================================== */
+.hn-admin-modal .modal-content {
+  border: 1px solid var(--hn-border);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(11, 37, 69, 0.12);
+  overflow: hidden;
+}
+
+.hn-admin-modal .modal-header {
+  background: var(--hn-navy);
+  color: #FFFFFF;
+  padding: 18px 24px;
+  border-bottom: 2px solid var(--hn-gold);
+}
+
+.hn-admin-modal .modal-title {
+  font-family: var(--hn-font-serif);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.hn-admin-modal .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+.hn-admin-modal .modal-body {
+  background-color: #FAF8F4;
+  padding: 24px;
+}
+
+.hn-admin-modal .modal-footer {
+  background: #FFFFFF;
+  border-top: 1px solid var(--hn-border);
+  padding: 14px 24px;
 }

@@ -3,157 +3,152 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Settings - Sample Store</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <title>Store Settings — Harinama Store Admin</title>
+  
+  <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/assets/css/variables.css">
-  <link rel="stylesheet" href="/assets/css/style.css">
-  <style>
-    .admin-layout { min-height: 100vh; background: var(--cres-body-bg); }
-    .admin-sidebar { width: 260px; background: #FFFFFF; border-right: 1px solid var(--cres-border); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; padding: 24px 16px; }
-    .admin-main { flex: 1; padding: 30px 40px; }
-    @media (max-width: 991.98px) {
-      .admin-sidebar { position: fixed; left: -280px; z-index: 1050; transition: left 0.3s ease; }
-      .admin-sidebar.show { left: 0; }
-      .admin-main { padding: 20px 15px; }
-    }
-  </style>
+  
+  <!-- Harinama Store Master Stylesheet -->
+  <link rel="stylesheet" href="/assets/css/style.css?v=6">
+  <link rel="stylesheet" href="/assets/css/admin.css?v=6">
 </head>
-<body>
+<body class="hn-admin-body-bg">
 
-  <!-- Reusable CRESCENDO Header -->
-  <div id="cres-header-placeholder"></div>
-
-  <div class="d-flex admin-layout">
-    <!-- Admin Sidebar -->
-    <aside class="admin-sidebar">
-      <div class="d-flex align-items-center gap-2 mb-4 px-2">
-        <span class="cres-brand-dot"></span>
-        <h5 class="fw-bold mb-0 text-dark">Admin Portal</h5>
-      </div>
-
-      <nav class="nav flex-column gap-1 flex-grow-1">
-        <a href="/admin.html" class="cres-dash-nav-item">
-          <i class="bi bi-grid-fill"></i> Dashboard
-        </a>
-        <a href="/admin-products.html" class="cres-dash-nav-item">
-          <i class="bi bi-box-seam"></i> Products
-        </a>
-        <a href="/admin-categories.html" class="cres-dash-nav-item">
-          <i class="bi bi-tags"></i> Categories
-        </a>
-        <a href="/admin-orders.html" class="cres-dash-nav-item">
-          <i class="bi bi-receipt"></i> Orders
-        </a>
-        <a href="/admin-customers.html" class="cres-dash-nav-item">
-          <i class="bi bi-people"></i> Customers
-        </a>
-        <a href="/admin-coupons.html" class="cres-dash-nav-item">
-          <i class="bi bi-ticket-perforated"></i> Coupons
-        </a>
-        <a href="/admin-reviews.html" class="cres-dash-nav-item">
-          <i class="bi bi-star"></i> Reviews
-        </a>
-        <a href="/admin-analytics.html" class="cres-dash-nav-item">
-          <i class="bi bi-graph-up-arrow"></i> Analytics
-        </a>
-        <a href="/admin-settings.html" class="cres-dash-nav-item active">
-          <i class="bi bi-gear"></i> Settings
-        </a>
-      </nav>
-
-      <div class="pt-3 border-top">
-        <a href="/login.html" class="cres-dash-nav-item text-danger">
-          <i class="bi bi-box-arrow-right"></i> Logout
-        </a>
-      </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="admin-main">
-      <div class="mb-4">
-        <h2 class="cres-page-title mb-1">Store Settings & Configuration</h2>
-        <p class="text-muted small mb-0">Manage global store metadata, payments, and shipping rules</p>
-      </div>
-
-      <div class="row g-4">
-        <div class="col-lg-8">
-          <div class="cres-card p-4 p-md-5 mb-4">
-            <h5 class="fw-bold mb-4">General Information</h5>
-            <form onsubmit="handleSettingsSave(event)">
-              <div class="mb-3">
-                <label class="form-label small fw-semibold">Store Brand Name</label>
-                <input type="text" class="form-control rounded-pill px-3" id="settingStoreName" value="Sample Store" required>
-              </div>
-              <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                  <label class="form-label small fw-semibold">Support Email</label>
-                  <input type="email" class="form-control rounded-pill px-3" id="settingStoreEmail" value="support@samplestore.com" required>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label small fw-semibold">Support Phone</label>
-                  <input type="tel" class="form-control rounded-pill px-3" id="settingStorePhone" value="+1 (555) 234-5678">
-                </div>
-              </div>
-              <div class="row g-3 mb-4">
-                <div class="col-md-6">
-                  <label class="form-label small fw-semibold">Store Currency</label>
-                  <select class="form-select rounded-pill px-3" id="settingCurrency">
-                    <option value="USD" selected>USD ($ - US Dollar)</option>
-                    <option value="EUR">EUR (€ - Euro)</option>
-                    <option value="GBP">GBP (£ - British Pound)</option>
-                    <option value="CAD">CAD ($ - Canadian Dollar)</option>
-                  </select>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label small fw-semibold">Free Shipping Threshold ($)</label>
-                  <input type="number" class="form-control rounded-pill px-3" id="settingFreeShip" value="0.00">
-                </div>
-              </div>
-
-              <h6 class="fw-bold mb-3 pt-3 border-top">Payment Gateways</h6>
-              <div class="d-flex flex-column gap-3 mb-4">
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="gateCard" checked>
-                  <label class="form-check-label fw-semibold" for="gateCard">Credit & Debit Cards (Stripe / 256-bit SSL)</label>
-                </div>
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="gatePaypal" checked>
-                  <label class="form-check-label fw-semibold" for="gatePaypal">PayPal Express Checkout</label>
-                </div>
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="gateCod" checked>
-                  <label class="form-check-label fw-semibold" for="gateCod">Cash on Delivery (COD)</label>
-                </div>
-              </div>
-
-              <button type="submit" class="btn btn-cres-primary rounded-pill px-5 py-3 fw-bold">
-                Save All Settings
-              </button>
-            </form>
-          </div>
+  <!-- Admin Top Bar Header -->
+  <header class="hn-admin-topbar py-2 px-3 px-md-4">
+    <div class="container-fluid d-flex align-items-center justify-content-between">
+      
+      <!-- Brand & Admin Tag -->
+      <a href="/admin.html" class="hn-admin-brand-link">
+        <svg width="28" height="32" viewBox="0 0 24 30" fill="none">
+          <path d="M12 2C7 6 4 12 4 18C4 22.4183 7.58172 26 12 26C16.4183 26 20 22.4183 20 18C20 12 17 6 12 2Z" fill="#0E6251"/>
+          <path d="M12 6C9 9 7 14 7 18C7 20.7614 9.23858 23 12 23C14.7614 23 17 20.7614 17 18C17 14 15 9 12 6Z" fill="#1B4D3E"/>
+          <circle cx="12" cy="18" r="4" fill="#0B2545"/>
+          <circle cx="12" cy="18" r="2" fill="#F1C40F"/>
+        </svg>
+        <div>
+          <span class="hn-admin-brand-title">Harinama Store</span>
+          <span class="hn-admin-badge-portal ms-2">Admin Portal</span>
         </div>
+      </a>
 
-        <div class="col-lg-4">
-          <div class="cres-card p-4">
-            <h6 class="fw-bold mb-3">System Information</h6>
-            <div class="d-flex flex-column gap-2 small text-muted">
-              <div class="d-flex justify-content-between"><span>Version:</span> <strong class="text-dark">2.4.0 (Enterprise)</strong></div>
-              <div class="d-flex justify-content-between"><span>Database:</span> <strong class="text-success">Connected</strong></div>
-              <div class="d-flex justify-content-between"><span>Cache Engine:</span> <strong class="text-dark">LocalStorage Active</strong></div>
-              <div class="d-flex justify-content-between"><span>SSL Protection:</span> <strong class="text-success">Active (TLS 1.3)</strong></div>
+      <!-- Right Controls -->
+      <div class="d-flex align-items-center gap-3">
+        <a href="/shop.html" target="_blank" class="btn btn-sm btn-outline-dark d-none d-sm-inline-flex align-items-center gap-1">
+          <i class="bi bi-box-arrow-up-right"></i> Live Store
+        </a>
+
+        <div class="d-flex align-items-center gap-2 border-start ps-3">
+          <div class="rounded-circle bg-navy text-white d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px; background-color: var(--hn-navy); font-size: 0.85rem;">
+            AD
+          </div>
+          <div class="d-none d-md-block text-start">
+            <div class="small fw-bold text-navy lh-1">Store Admin</div>
+            <div class="text-muted" style="font-size: 0.72rem;">admin@harinama.com</div>
+          </div>
+          <a href="/login.html" class="btn btn-sm btn-outline-danger ms-2" title="Sign Out">
+            <i class="bi bi-box-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <div class="container-fluid px-3 px-md-4 py-4" style="max-width: 1400px;">
+    
+    <!-- Admin Navigation Bar Strip -->
+    <div class="hn-admin-nav-bar mb-4">
+      <a href="/admin.html" class="hn-admin-tab"><i class="bi bi-speedometer2"></i> Dashboard</a>
+      <a href="/admin-products.html" class="hn-admin-tab"><i class="bi bi-box-seam"></i> Products</a>
+      <a href="/admin-orders.html" class="hn-admin-tab"><i class="bi bi-bag-check"></i> Orders</a>
+      <a href="/admin-categories.html" class="hn-admin-tab"><i class="bi bi-tags"></i> Categories</a>
+      <a href="/admin-coupons.html" class="hn-admin-tab"><i class="bi bi-ticket-perforated"></i> Coupons</a>
+      <a href="/admin-reviews.html" class="hn-admin-tab"><i class="bi bi-star"></i> Reviews</a>
+      <a href="/admin-customers.html" class="hn-admin-tab"><i class="bi bi-people"></i> Customers</a>
+      <a href="/admin-analytics.html" class="hn-admin-tab"><i class="bi bi-graph-up-arrow"></i> Analytics</a>
+      <a href="/admin-settings.html" class="hn-admin-tab active"><i class="bi bi-gear"></i> Settings</a>
+    </div>
+
+    <form onsubmit="saveStoreSettings(event)">
+      <div class="row g-4 mb-4">
+        
+        <!-- General Store Info -->
+        <div class="col-lg-6">
+          <div class="hn-admin-card p-4 h-100">
+            <h5 class="hn-admin-card-title pb-3 mb-3 border-bottom">
+              <i class="bi bi-shop me-2"></i> General Store Information
+            </h5>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Store Brand Name</label>
+              <input type="text" id="setting-store-name" class="form-control" value="Harinama Store" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Spiritual Tagline</label>
+              <input type="text" id="setting-tagline" class="form-control" value="Carry Krishna. Remember Krishna. Share Krishna.">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Support WhatsApp Number</label>
+              <input type="text" id="setting-whatsapp" class="form-control" value="+91 98765 43210">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Support Email Address</label>
+              <input type="email" id="setting-email" class="form-control" value="support@harinamastore.in">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Physical Fulfillment Hub</label>
+              <textarea id="setting-address" class="form-control" rows="2">Sri Vrindavan Dham, Mathura, Uttar Pradesh, India - 281121</textarea>
             </div>
           </div>
         </div>
-      </div>
-    </main>
-  </div>
 
-  <!-- Reusable CRESCENDO Footer -->
-  <div id="cres-footer-placeholder"></div>
+        <!-- Shipping, Delivery & Policy -->
+        <div class="col-lg-6">
+          <div class="hn-admin-card p-4 h-100">
+            <h5 class="hn-admin-card-title pb-3 mb-3 border-bottom">
+              <i class="bi bi-truck me-2"></i> Shipping & Indian Payment Rules
+            </h5>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Free Shipping Threshold (₹)</label>
+              <input type="number" id="setting-free-shipping" class="form-control" value="499" min="0">
+              <small class="text-muted">Orders at or above this amount receive automatic 100% free delivery across India.</small>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Standard Shipping Fee (₹)</label>
+              <input type="number" id="setting-shipping-fee" class="form-control" value="40" min="0">
+              <small class="text-muted">Applied to orders below the free shipping threshold.</small>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Default Store Currency</label>
+              <input type="text" class="form-control" value="₹ INR (Indian Rupee)" readonly disabled>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Top Announcement Bar Text</label>
+              <input type="text" id="setting-announcement" class="form-control" value="Free shipping on orders above ₹499 | Carry Krishna, Remember Krishna, Share Krishna!">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mb-5">
+        <button type="submit" class="btn btn-gold px-5 py-2 fw-bold">
+          <i class="bi bi-save me-2"></i> Save All Settings
+        </button>
+      </div>
+    </form>
+
+  </div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -161,34 +156,37 @@
   <script src="/assets/js/components.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      renderHeader('');
-      renderFooter();
-      loadSettings();
-    });
-
-    function loadSettings() {
-      const stored = localStorage.getItem('cres_admin_settings');
+      const stored = localStorage.getItem('harinama_store_settings');
       if (stored) {
         try {
           const s = JSON.parse(stored);
-          if (s.name) document.getElementById('settingStoreName').value = s.name;
-          if (s.email) document.getElementById('settingStoreEmail').value = s.email;
-          if (s.phone) document.getElementById('settingStorePhone').value = s.phone;
-          if (s.currency) document.getElementById('settingCurrency').value = s.currency;
+          if (s.storeName) document.getElementById('setting-store-name').value = s.storeName;
+          if (s.tagline) document.getElementById('setting-tagline').value = s.tagline;
+          if (s.whatsapp) document.getElementById('setting-whatsapp').value = s.whatsapp;
+          if (s.email) document.getElementById('setting-email').value = s.email;
+          if (s.address) document.getElementById('setting-address').value = s.address;
+          if (s.freeShipping) document.getElementById('setting-free-shipping').value = s.freeShipping;
+          if (s.shippingFee) document.getElementById('setting-shipping-fee').value = s.shippingFee;
+          if (s.announcement) document.getElementById('setting-announcement').value = s.announcement;
         } catch(e) {}
       }
-    }
+    });
 
-    function handleSettingsSave(e) {
+    function saveStoreSettings(e) {
       e.preventDefault();
       const settings = {
-        name: document.getElementById('settingStoreName').value.trim(),
-        email: document.getElementById('settingStoreEmail').value.trim(),
-        phone: document.getElementById('settingStorePhone').value.trim(),
-        currency: document.getElementById('settingCurrency').value
+        storeName: document.getElementById('setting-store-name').value,
+        tagline: document.getElementById('setting-tagline').value,
+        whatsapp: document.getElementById('setting-whatsapp').value,
+        email: document.getElementById('setting-email').value,
+        address: document.getElementById('setting-address').value,
+        freeShipping: document.getElementById('setting-free-shipping').value,
+        shippingFee: document.getElementById('setting-shipping-fee').value,
+        announcement: document.getElementById('setting-announcement').value
       };
-      localStorage.setItem('cres_admin_settings', JSON.stringify(settings));
-      showToast('Store settings saved successfully! ⚙️', 'success');
+
+      localStorage.setItem('harinama_store_settings', JSON.stringify(settings));
+      showToast('Store settings saved successfully!');
     }
   </script>
 </body>

@@ -100,13 +100,49 @@ class DatabaseStore {
 
     this.data.categories = [
       {
+        id: 'cat-krishna',
+        name: 'Krishna Collection',
+        slug: 'krishna-collection',
+        description: 'Authentic Krishna silhouetted, flute, and peacock feather keychains.',
+        image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
+        status: 'active',
+        sort_order: 1
+      },
+      {
+        id: 'cat-radha',
+        name: 'Radha Collection',
+        slug: 'radha-collection',
+        description: 'Pastel Radhe Radhe and blooming lotus devotional keychains.',
+        image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+        status: 'active',
+        sort_order: 2
+      },
+      {
+        id: 'cat-mantra',
+        name: 'Maha-Mantra Collection',
+        slug: 'maha-mantra-collection',
+        description: 'Enamelled brass medallions featuring the complete 16-word Maha-Mantra.',
+        image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=600&q=80',
+        status: 'active',
+        sort_order: 3
+      },
+      {
+        id: 'cat-gifts',
+        name: 'Gift Sets',
+        slug: 'gift-sets',
+        description: 'Deluxe gift collections and multi-keychain boxes with holy blessings card.',
+        image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80',
+        status: 'active',
+        sort_order: 4
+      },
+      {
         id: catBooks,
         name: 'Sacred Books & Scriptures',
         slug: 'sacred-books',
         description: 'Authentic translations and commentaries of ancient Vedic scriptures, Bhagavad Gita, and philosophy.',
         image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
         status: 'active',
-        sort_order: 1
+        sort_order: 5
       },
       {
         id: catMala,
@@ -114,42 +150,6 @@ class DatabaseStore {
         slug: 'japa-mala-beads',
         description: 'Handcrafted authentic Tulasi, Neem, Sandalwood, and Rosewood prayer beads with handcrafted japa bags.',
         image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=600&q=80',
-        status: 'active',
-        sort_order: 2
-      },
-      {
-        id: catApparel,
-        name: 'Devotional Apparel',
-        slug: 'devotional-apparel',
-        description: 'Pure Ahimsa Silk Kurtas, hand-woven Khadi dhotis, designer sarees, and Harinama print chadhars.',
-        image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
-        status: 'active',
-        sort_order: 3
-      },
-      {
-        id: catPuja,
-        name: 'Puja & Altar Decor',
-        slug: 'puja-altar-decor',
-        description: 'Pure brass aarti lamps, deity thrones, silver thalis, bell chimes, and sacred altar furnishings.',
-        image: 'https://images.unsplash.com/photo-1609137144822-0d198f2371a5?auto=format&fit=crop&w=600&q=80',
-        status: 'active',
-        sort_order: 4
-      },
-      {
-        id: catWellness,
-        name: 'Natural Wellness & Aromas',
-        slug: 'natural-wellness',
-        description: 'Pure Vrindavan Sandalwood paste, natural temple dhoop, organic Ghee, and botanical essential oils.',
-        image: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=600&q=80',
-        status: 'active',
-        sort_order: 5
-      },
-      {
-        id: catMusic,
-        name: 'Kirtan Instruments & Accs',
-        slug: 'kirtan-instruments',
-        description: 'Hand-beaten brass Kartals, premium clay Mridangas, harmoniums, and sacred jewelry.',
-        image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
         status: 'active',
         sort_order: 6
       }

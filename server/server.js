@@ -43,20 +43,35 @@ app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, '../public/adm
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`
+if (require.main === module) {
+  let currentPort = parseInt(PORT, 10);
+
+  const startServer = (portToTry) => {
+    const server = app.listen(portToTry, () => {
+      console.log(`
 =====================================================
-   🌸 Sample Store - Commercial Server Live 🌸
+   🌸 HariNama Store - Commercial Server Live 🌸
 =====================================================
-   URL:         http://localhost:${PORT}
-   API Base:    http://localhost:${PORT}/api
-   Storefront:  http://localhost:${PORT}/index.html
-   Admin:       http://localhost:${PORT}/admin.html
+   URL:         http://localhost:${portToTry}
+   API Base:    http://localhost:${portToTry}/api
+   Storefront:  http://localhost:${portToTry}/index.html
+   Admin:       http://localhost:${portToTry}/admin.html
    Environment: ${process.env.NODE_ENV || 'development'}
 =====================================================
-    `);
-  });
+      `);
+    });
+
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.warn(`[Server] Port ${portToTry} is already in use. Retrying on port ${portToTry + 1}...`);
+        startServer(portToTry + 1);
+      } else {
+        console.error('[Server] Fatal listen error:', err);
+      }
+    });
+  };
+
+  startServer(currentPort);
 }
 
 module.exports = app;

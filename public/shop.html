@@ -3,341 +3,225 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>All Products - Sample Store</title>
-  <script>
-    const search = window.location.search || '';
-    window.location.replace('/products.html' + search);
-  </script>
+  <title>Shop Devotional Products — Harinama Store</title>
+  <meta name="description" content="Shop authentic handcrafted devotional products from Harinama Store: Sacred Books, Japa Malas, Devotional Keychains, and Gift Sets.">
+  
+  <!-- Bootstrap 5 CSS & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <!-- Harinama Store Master Stylesheet -->
+  <link rel="stylesheet" href="/assets/css/style.css?v=5">
 </head>
 <body>
 
-  <!-- Header Placeholder -->
+  <!-- Top Announcement Bar & Header -->
   <div id="hn-header-placeholder"></div>
 
-  <main class="container my-4">
-    <!-- Breadcrumbs -->
-    <nav aria-label="breadcrumb" class="mb-3">
-      <ol class="breadcrumb small">
-        <li class="breadcrumb-item"><a href="/index.html">Home</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Sacred Catalog</li>
-      </ol>
-    </nav>
-
-    <div class="row g-4">
-      <!-- Left Filter Sidebar -->
-      <div class="col-lg-3">
-        <!-- Mobile Filter Toggle Button -->
-        <button class="btn btn-outline-secondary w-100 d-lg-none mb-3 d-flex align-items-center justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#filterSidebar">
-          <span><i class="bi bi-funnel me-2"></i> Filter Products</span>
-          <i class="bi bi-chevron-down"></i>
-        </button>
-
-        <div class="collapse d-lg-block" id="filterSidebar">
-          <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h5 class="fw-bold mb-0">Filters</h5>
-              <button class="btn btn-link text-danger p-0 small text-decoration-none fw-semibold" onclick="clearAllFilters()">
-                Clear All
-              </button>
-            </div>
-
-            <!-- Categories Filter -->
-            <div class="mb-4">
-              <label class="fw-bold small text-uppercase text-muted mb-2 d-block">Categories</label>
-              <div class="d-flex flex-column gap-2" id="filter-categories-list">
-                <!-- Injected dynamically -->
-              </div>
-            </div>
-
-            <hr class="my-3 text-muted opacity-25">
-
-            <!-- Price Range Filter -->
-            <div class="mb-4">
-              <label class="fw-bold small text-uppercase text-muted mb-2 d-block">Max Price: <span id="price-val-display" class="text-primary fw-bold">₹20,000</span></label>
-              <input type="range" class="form-range" id="filter-price-range" min="200" max="20000" step="100" value="20000">
-              <div class="d-flex justify-content-between small text-muted">
-                <span>₹200</span>
-                <span>₹20,000+</span>
-              </div>
-            </div>
-
-            <hr class="my-3 text-muted opacity-25">
-
-            <!-- Rating Filter -->
-            <div class="mb-4">
-              <label class="fw-bold small text-uppercase text-muted mb-2 d-block">Customer Rating</label>
-              <div class="d-flex flex-column gap-2">
-                <label class="form-check d-flex align-items-center gap-2 cursor-pointer">
-                  <input class="form-check-input" type="radio" name="ratingFilter" value="4.5" onchange="applyFilters()">
-                  <span class="small text-warning"><i class="bi bi-star-fill"></i> 4.5 &amp; above</span>
-                </label>
-                <label class="form-check d-flex align-items-center gap-2 cursor-pointer">
-                  <input class="form-check-input" type="radio" name="ratingFilter" value="4.0" onchange="applyFilters()">
-                  <span class="small text-warning"><i class="bi bi-star-fill"></i> 4.0 &amp; above</span>
-                </label>
-                <label class="form-check d-flex align-items-center gap-2 cursor-pointer">
-                  <input class="form-check-input" type="radio" name="ratingFilter" value="" checked onchange="applyFilters()">
-                  <span class="small text-muted">All Ratings</span>
-                </label>
-              </div>
-            </div>
-
-            <hr class="my-3 text-muted opacity-25">
-
-            <!-- Availability & Discount -->
-            <div>
-              <label class="fw-bold small text-uppercase text-muted mb-2 d-block">Preferences</label>
-              <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" id="filter-in-stock" onchange="applyFilters()">
-                <label class="form-check-label small" for="filter-in-stock">In Stock Only</label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="filter-has-discount" onchange="applyFilters()">
-                <label class="form-check-label small" for="filter-has-discount">Special Discounts Only</label>
-              </div>
-            </div>
-
-          </div>
-        </div>
+  <main class="py-4">
+    <div class="container">
+      
+      <!-- Page Header -->
+      <div class="text-center my-4">
+        <h1 class="hn-section-title">Shop Devotional Products</h1>
+        <div class="hn-section-subtitle">Sacred books, chanting malas, spiritual keychains, and holy reminders.</div>
       </div>
 
-      <!-- Right Products Grid & Toolbar -->
-      <div class="col-lg-9">
-        <!-- Top Toolbar -->
-        <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
-          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-            <div>
-              <span id="products-count-badge" class="fw-bold text-dark">Showing all products</span>
-              <div id="active-filter-pills" class="d-flex flex-wrap gap-2 mt-2"></div>
-            </div>
+      <div class="row g-4 mt-2">
+        
+        <!-- Left Sidebar Filters -->
+        <div class="col-lg-3">
+          <div class="hn-shop-sidebar">
             
-            <div class="d-flex align-items-center gap-3">
-              <label class="small text-muted text-nowrap" for="sort-select">Sort By:</label>
-              <select class="form-select form-select-sm border-secondary-subtle" id="sort-select" style="min-width: 170px;" onchange="applyFilters()">
+            <!-- Collections Filter -->
+            <div class="mb-4">
+              <div class="hn-filter-title">Collections & Categories</div>
+              <a href="#" class="hn-filter-link active" onclick="filterByCollection('all', this); return false;">All Products</a>
+              <a href="#" class="hn-filter-link" onclick="filterByCollection('devotional-keychains', this); return false;">Devotional Keychains</a>
+              <a href="#" class="hn-filter-link" onclick="filterByCollection('sacred-books', this); return false;">Sacred Books & Shastras</a>
+              <a href="#" class="hn-filter-link" onclick="filterByCollection('japa-chanting', this); return false;">Japa & Chanting</a>
+              <a href="#" class="hn-filter-link" onclick="filterByCollection('gift-sets', this); return false;">Gift Sets & Bundles</a>
+            </div>
+
+            <!-- Price Filter -->
+            <div class="mb-4">
+              <div class="hn-filter-title">Price Range</div>
+              <label class="hn-checkbox-label">
+                <input type="checkbox" onchange="applyFilters()" value="under-150" class="filter-price">
+                <span>Under ₹150</span>
+              </label>
+              <label class="hn-checkbox-label">
+                <input type="checkbox" onchange="applyFilters()" value="150-300" class="filter-price">
+                <span>₹150 – ₹300</span>
+              </label>
+              <label class="hn-checkbox-label">
+                <input type="checkbox" onchange="applyFilters()" value="300-600" class="filter-price">
+                <span>₹300 – ₹600</span>
+              </label>
+            </div>
+
+            <!-- Material Filter -->
+            <div class="mb-4">
+              <div class="hn-filter-title">Material / Type</div>
+              <label class="hn-checkbox-label">
+                <input type="checkbox" onchange="applyFilters()" value="Acrylic" class="filter-material">
+                <span>Acrylic / Resin</span>
+              </label>
+              <label class="hn-checkbox-label">
+                <input type="checkbox" onchange="applyFilters()" value="Metal" class="filter-material">
+                <span>Solid Brass / Metal</span>
+              </label>
+              <label class="hn-checkbox-label">
+                <input type="checkbox" onchange="applyFilters()" value="Wood" class="filter-material">
+                <span>Neem & Tulasi Wood</span>
+              </label>
+              <label class="hn-checkbox-label">
+                <input type="checkbox" onchange="applyFilters()" value="Hardbound Book" class="filter-material">
+                <span>Books & Shastras</span>
+              </label>
+            </div>
+
+            <!-- Sort By -->
+            <div>
+              <div class="hn-filter-title">Sort by</div>
+              <select class="form-select form-select-sm" id="hn-sort-select" onchange="applyFilters()">
                 <option value="featured">Featured First</option>
-                <option value="newest">Newest Arrivals</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-                <option value="rating">Highest Rated</option>
-                <option value="popular">Most Popular</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="rating">Best Rating</option>
               </select>
             </div>
+
           </div>
         </div>
 
-        <!-- Products Container -->
-        <div class="row g-4" id="shop-products-grid">
-          <!-- Injected dynamically -->
+        <!-- Right Product Grid -->
+        <div class="col-lg-9">
+          <div class="row g-3" id="hn-shop-grid">
+            <!-- Dynamically populated from HARINAMA_DATA -->
+          </div>
         </div>
 
-        <!-- Pagination Controls -->
-        <div class="d-flex justify-content-center mt-5" id="pagination-wrapper">
-          <!-- Injected dynamically -->
-        </div>
       </div>
+
     </div>
   </main>
 
-  <!-- Footer Placeholder -->
+  <!-- Global Footer -->
   <div id="hn-footer-placeholder"></div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/assets/js/api.js"></script>
-  <script src="/assets/js/state.js"></script>
+  <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
-  <script src="/assets/js/main.js"></script>
-
   <script>
-    let currentPage = 1;
-    let selectedCategory = '';
-    let searchQuery = '';
+    let activeCollection = 'all';
 
-    const getUrlParams = () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      selectedCategory = urlParams.get('category') || '';
-      searchQuery = urlParams.get('search') || '';
-      const featured = urlParams.get('featured');
-      const trending = urlParams.get('trending');
-      return { selectedCategory, searchQuery, featured, trending };
-    };
-
-    const fetchCategories = async () => {
-      try {
-        const res = await api.get('/categories');
-        const container = document.getElementById('filter-categories-list');
-        if (res.success && container) {
-          container.innerHTML = `
-            <label class="form-check d-flex align-items-center justify-content-between cursor-pointer">
-              <span class="d-flex align-items-center gap-2">
-                <input class="form-check-input" type="radio" name="catFilter" value="" ${!selectedCategory ? 'checked' : ''} onchange="onCategorySelect('')">
-                <span class="small">All Categories</span>
-              </span>
-            </label>
-          ` + res.data.map(c => `
-            <label class="form-check d-flex align-items-center justify-content-between cursor-pointer">
-              <span class="d-flex align-items-center gap-2">
-                <input class="form-check-input" type="radio" name="catFilter" value="${c.slug}" ${selectedCategory === c.slug ? 'checked' : ''} onchange="onCategorySelect('${c.slug}')">
-                <span class="small">${c.name}</span>
-              </span>
-              <span class="badge bg-light text-muted small">${c.product_count || 0}</span>
-            </label>
-          `).join('');
-        }
-      } catch (e) {}
-    };
-
-    const loadProducts = async () => {
-      const grid = document.getElementById('shop-products-grid');
+    function renderShopProducts(items) {
+      const grid = document.getElementById('hn-shop-grid');
       if (!grid) return;
-
-      grid.innerHTML = Array(6).fill(0).map(() => `
-        <div class="col-6 col-md-4">
-          <div class="hn-product-card hn-skeleton" style="height: 380px;"></div>
-        </div>
-      `).join('');
-
-      const priceMax = document.getElementById('filter-price-range').value;
-      const inStock = document.getElementById('filter-in-stock').checked;
-      const hasDiscount = document.getElementById('filter-has-discount').checked;
-      const sort = document.getElementById('sort-select').value;
-      const rating = document.querySelector('input[name="ratingFilter"]:checked')?.value || '';
-
-      const { featured, trending } = getUrlParams();
-
-      const params = {
-        page: currentPage,
-        limit: 9,
-        category: selectedCategory,
-        search: searchQuery,
-        max_price: priceMax < 20000 ? priceMax : undefined,
-        in_stock: inStock ? 'true' : undefined,
-        has_discount: hasDiscount ? 'true' : undefined,
-        rating: rating || undefined,
-        featured: featured || undefined,
-        trending: trending || undefined,
-        sort: sort
-      };
-
-      try {
-        const res = await api.get('/products', params);
-        if (res.success) {
-          const totalEl = document.getElementById('products-count-badge');
-          if (totalEl) totalEl.textContent = `Showing ${res.data.length} of ${res.total} divine products`;
-
-          renderFilterPills();
-
-          if (res.data.length === 0) {
-            grid.innerHTML = `
-              <div class="col-12 text-center py-5">
-                <i class="bi bi-search display-3 text-muted"></i>
-                <h4 class="mt-3 fw-bold">No Products Found</h4>
-                <p class="text-muted small">Try broadening your search or clearing active filters.</p>
-                <button class="btn hn-btn-primary" onclick="clearAllFilters()">Reset All Filters</button>
-              </div>
-            `;
-            document.getElementById('pagination-wrapper').innerHTML = '';
-            return;
-          }
-
-          grid.innerHTML = res.data.map(p => `
-            <div class="col-6 col-md-4">
-              ${renderProductCard(p)}
-            </div>
-          `).join('');
-
-          renderPagination(res.page, res.totalPages);
-        }
-      } catch (err) {
-        grid.innerHTML = `<div class="col-12 alert alert-danger">Error loading products: ${err.message}</div>`;
-      }
-    };
-
-    const renderPagination = (page, totalPages) => {
-      const wrapper = document.getElementById('pagination-wrapper');
-      if (!wrapper || totalPages <= 1) {
-        if (wrapper) wrapper.innerHTML = '';
+      if (!items || items.length === 0) {
+        grid.innerHTML = '<div class="col-12 py-5 text-center text-muted"><i class="bi bi-box-seam fs-1 d-block mb-2 text-gold"></i>No products found matching your selected filters.</div>';
         return;
       }
+      grid.innerHTML = items.map(p => {
+        return `
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="hn-product-card" data-product-id="${p.id}">
+              
+              <button class="hn-card-wishlist" onclick="toggleWishlist('${p.id}', this)" title="Wishlist">
+                <i class="bi bi-heart"></i>
+              </button>
 
-      let html = '<ul class="pagination shadow-sm rounded-pill overflow-hidden">';
-      html += `<li class="page-item ${page === 1 ? 'disabled' : ''}">
-        <button class="page-link" onclick="goToPage(${page - 1})"><i class="bi bi-chevron-left"></i></button>
-      </li>`;
+              <a href="/product-details.html?id=${p.id}" class="hn-card-img-box">
+                <img src="${p.image}" alt="${p.name}" loading="lazy">
+              </a>
 
-      for (let i = 1; i <= totalPages; i++) {
-        html += `<li class="page-item ${i === page ? 'active' : ''}">
-          <button class="page-link" onclick="goToPage(${i})">${i}</button>
-        </li>`;
-      }
+              <div class="hn-card-title">
+                <a href="/product-details.html?id=${p.id}">${p.name}</a>
+              </div>
 
-      html += `<li class="page-item ${page === totalPages ? 'disabled' : ''}">
-        <button class="page-link" onclick="goToPage(${page + 1})"><i class="bi bi-chevron-right"></i></button>
-      </li>`;
-      html += '</ul>';
+              <div class="hn-card-price">
+                ${formatPrice(p.price)}
+              </div>
 
-      wrapper.innerHTML = html;
-    };
+              ${renderRatingStars(p.rating, p.reviews_count)}
 
-    const renderFilterPills = () => {
-      const pillsContainer = document.getElementById('active-filter-pills');
-      if (!pillsContainer) return;
+              <button class="hn-btn-card-add" onclick="handleAddToCart('${p.id}')">
+                Add to Cart
+              </button>
 
-      let pills = [];
-      if (selectedCategory) {
-        pills.push(`<span class="badge bg-primary-subtle text-primary p-2 rounded-pill">Category: ${selectedCategory} <i class="bi bi-x ms-1 cursor-pointer" onclick="onCategorySelect('')"></i></span>`);
-      }
-      if (searchQuery) {
-        pills.push(`<span class="badge bg-primary-subtle text-primary p-2 rounded-pill">Search: "${searchQuery}" <i class="bi bi-x ms-1 cursor-pointer" onclick="searchQuery=''; applyFilters();"></i></span>`);
-      }
-      pillsContainer.innerHTML = pills.join('');
-    };
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
 
-    window.goToPage = (page) => {
-      currentPage = page;
-      loadProducts();
-      window.scrollTo({ top: 120, behavior: 'smooth' });
-    };
-
-    window.applyFilters = () => {
-      currentPage = 1;
-      loadProducts();
-    };
-
-    window.onCategorySelect = (slug) => {
-      selectedCategory = slug;
-      currentPage = 1;
-      loadProducts();
-    };
-
-    window.clearAllFilters = () => {
-      selectedCategory = '';
-      searchQuery = '';
-      document.getElementById('filter-price-range').value = 20000;
-      document.getElementById('price-val-display').textContent = '₹20,000';
-      document.getElementById('filter-in-stock').checked = false;
-      document.getElementById('filter-has-discount').checked = false;
-      const defaultRating = document.querySelector('input[name="ratingFilter"][value=""]');
-      if (defaultRating) defaultRating.checked = true;
-      document.getElementById('sort-select').value = 'featured';
-      
-      const defaultCat = document.querySelector('input[name="catFilter"][value=""]');
-      if (defaultCat) defaultCat.checked = true;
-
-      window.history.pushState({}, '', '/shop.html');
-      currentPage = 1;
-      loadProducts();
-    };
-
-    document.getElementById('filter-price-range')?.addEventListener('input', (e) => {
-      document.getElementById('price-val-display').textContent = '₹' + parseInt(e.target.value).toLocaleString('en-IN');
+    function filterByCollection(col, el) {
+      activeCollection = col;
+      document.querySelectorAll('.hn-filter-link').forEach(a => a.classList.remove('active'));
+      if (el) el.classList.add('active');
       applyFilters();
-    });
+    }
+
+    function applyFilters() {
+      let filtered = [...HARINAMA_DATA.products];
+
+      // Collection filter
+      if (activeCollection !== 'all') {
+        filtered = filtered.filter(p => p.category_slug === activeCollection);
+      }
+
+      // Price filters
+      const checkedPrices = Array.from(document.querySelectorAll('.filter-price:checked')).map(cb => cb.value);
+      if (checkedPrices.length > 0) {
+        filtered = filtered.filter(p => {
+          return checkedPrices.some(range => {
+            if (range === 'under-150') return p.price < 150;
+            if (range === '150-300') return p.price >= 150 && p.price <= 300;
+            if (range === '300-600') return p.price > 300 && p.price <= 600;
+            return false;
+          });
+        });
+      }
+
+      // Material filters
+      const checkedMaterials = Array.from(document.querySelectorAll('.filter-material:checked')).map(cb => cb.value);
+      if (checkedMaterials.length > 0) {
+        filtered = filtered.filter(p => {
+          if (!p.material) return false;
+          return checkedMaterials.some(m => p.material.toLowerCase().includes(m.toLowerCase()));
+        });
+      }
+
+      // Sort
+      const sortVal = document.getElementById('hn-sort-select').value;
+      if (sortVal === 'price-low') filtered.sort((a, b) => a.price - b.price);
+      else if (sortVal === 'price-high') filtered.sort((a, b) => b.price - a.price);
+      else if (sortVal === 'rating') filtered.sort((a, b) => b.rating - a.rating);
+
+      renderShopProducts(filtered);
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
-      getUrlParams();
-      fetchCategories();
-      loadProducts();
+      renderHeader('shop');
+      renderFooter();
+
+      // Check URL parameters for category
+      const urlParams = new URLSearchParams(window.location.search);
+      const catParam = urlParams.get('category');
+      if (catParam) {
+        activeCollection = catParam;
+        document.querySelectorAll('.hn-filter-link').forEach(a => {
+          if (a.getAttribute('onclick') && a.getAttribute('onclick').includes(catParam)) {
+            a.classList.add('active');
+          } else {
+            a.classList.remove('active');
+          }
+        });
+      }
+
+      applyFilters();
     });
   </script>
 </body>

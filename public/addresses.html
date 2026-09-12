@@ -3,256 +3,92 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Addresses - Sample Store</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <title>My Addresses — Harinama Store</title>
+  
+  <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/assets/css/variables.css">
-  <link rel="stylesheet" href="/assets/css/style.css">
+  
+  <!-- Harinama Store Master Stylesheet -->
+  <link rel="stylesheet" href="/assets/css/style.css?v=4">
 </head>
 <body>
 
-  <!-- Reusable CRESCENDO Header -->
-  <div id="cres-header-placeholder"></div>
+  <!-- Top Announcement Bar & Header -->
+  <div id="hn-header-placeholder"></div>
 
-  <!-- Main Container -->
-  <main class="container py-4">
-    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
-      <div>
-        <h2 class="cres-page-title mb-1">My Addresses</h2>
-        <p class="text-muted">Manage your delivery addresses</p>
+  <main class="py-5">
+    <div class="container">
+      
+      <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom">
+        <h1 class="hn-section-title mb-0" style="font-size: 2rem;">Saved Addresses</h1>
+        <button class="btn hn-btn-gold btn-sm" onclick="showToast('Add address modal')">
+          <i class="bi bi-plus me-1"></i> Add New Address
+        </button>
       </div>
-      <button class="btn btn-cres-primary rounded-pill px-4 py-2 fw-semibold" onclick="openAddressModal()">
-        <i class="bi bi-plus-lg me-1"></i> Add New Address
-      </button>
-    </div>
 
-    <!-- Address Cards Grid -->
-    <div class="row g-4" id="address-cards-container">
-      <!-- Injected dynamically -->
+      <div class="row g-4">
+        
+        <!-- Left Sidebar Navigation -->
+        <div class="col-lg-3">
+          <div class="bg-white border rounded p-3 shadow-sm">
+            <div class="d-flex flex-column gap-1">
+              <a href="/account.html" class="p-2 rounded text-secondary d-flex align-items-center gap-2">
+                <i class="bi bi-person"></i> Profile Overview
+              </a>
+              <a href="/orders.html" class="p-2 rounded text-secondary d-flex align-items-center gap-2">
+                <i class="bi bi-box-seam"></i> My Orders
+              </a>
+              <a href="/wishlist.html" class="p-2 rounded text-secondary d-flex align-items-center gap-2">
+                <i class="bi bi-heart"></i> Wishlist
+              </a>
+              <a href="/addresses.html" class="p-2 rounded text-navy fw-bold bg-light d-flex align-items-center gap-2">
+                <i class="bi bi-geo-alt"></i> Addresses
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Addresses Grid -->
+        <div class="col-lg-9">
+          <div class="row g-4">
+            
+            <div class="col-md-6">
+              <div class="card border rounded p-4 shadow-sm bg-white position-relative">
+                <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-3">Default</span>
+                <h6 class="fw-bold mb-2 text-navy">Gauranga Das (Home)</h6>
+                <p class="text-secondary small mb-3">
+                  Flat 402, Radharani Kripa Apartments,<br>
+                  Near ISKCON Temple Road, Raman Reti,<br>
+                  Vrindavan, Uttar Pradesh - 281121<br>
+                  Phone: +91 91234 56789
+                </p>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-outline-dark btn-sm" onclick="showToast('Edit address')">Edit</button>
+                  <button class="btn btn-outline-danger btn-sm" onclick="showToast('Cannot delete default address')">Delete</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
     </div>
   </main>
 
-  <!-- Add/Edit Address Modal -->
-  <div class="modal fade" id="addressModal" tabindex="-1" aria-labelledby="addressModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content rounded-4 border-0 shadow">
-        <div class="modal-header border-bottom p-4">
-          <h5 class="modal-title fw-bold" id="addressModalLabel">Add New Address</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body p-4">
-          <form id="addressForm" onsubmit="handleSaveAddress(event)">
-            <input type="hidden" id="addrEditId">
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">Address Title</label>
-              <input type="text" class="form-control rounded-pill px-3 py-2" id="addrTitle" placeholder="e.g. Home, Office, Studio" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">Full Name</label>
-              <input type="text" class="form-control rounded-pill px-3 py-2" id="addrName" value="John Doe" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">Street Address</label>
-              <input type="text" class="form-control rounded-pill px-3 py-2" id="addrStreet" placeholder="123 Music Boulevard" required>
-            </div>
-            <div class="row g-2 mb-3">
-              <div class="col-6">
-                <label class="form-label small fw-semibold">City</label>
-                <input type="text" class="form-control rounded-pill px-3 py-2" id="addrCity" placeholder="New York" required>
-              </div>
-              <div class="col-6">
-                <label class="form-label small fw-semibold">Postal Code</label>
-                <input type="text" class="form-control rounded-pill px-3 py-2" id="addrZip" placeholder="10001" required>
-              </div>
-            </div>
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">Phone Number</label>
-              <input type="tel" class="form-control rounded-pill px-3 py-2" id="addrPhone" placeholder="+1 234 567 890" required>
-            </div>
-            <div class="form-check mb-4">
-              <input class="form-check-input" type="checkbox" id="addrDefault">
-              <label class="form-check-label small" for="addrDefault">
-                Set as default delivery address
-              </label>
-            </div>
-            <button type="submit" class="btn btn-cres-primary rounded-pill w-100 py-2 fw-semibold">Save Address</button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Reusable CRESCENDO Footer -->
-  <div id="cres-footer-placeholder"></div>
+  <!-- Global Footer -->
+  <div id="hn-footer-placeholder"></div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
-    let addrModalInstance = null;
-
-    function getAddresses() {
-      const stored = localStorage.getItem('cres_addresses');
-      if (stored) {
-        try { return JSON.parse(stored); } catch (e) {}
-      }
-      return [
-        { id: 'addr-01', title: 'Home', name: 'John Doe', street: '123 Music Street', city: 'New York', zip: '10001', phone: '+1 234 567 890', isDefault: true, icon: 'bi-house-door' },
-        { id: 'addr-02', title: 'Office', name: 'John Doe', street: '456 Tech Avenue', city: 'San Francisco', zip: '94107', phone: '+1 234 567 890', isDefault: false, icon: 'bi-briefcase' }
-      ];
-    }
-
-    function saveAddresses(list) {
-      localStorage.setItem('cres_addresses', JSON.stringify(list));
-      renderAddressCards();
-    }
-
-    function renderAddressCards() {
-      const container = document.getElementById('address-cards-container');
-      if (!container) return;
-
-      const list = getAddresses();
-      if (list.length === 0) {
-        container.innerHTML = `
-          <div class="col-12 text-center py-5 text-muted">
-            <i class="bi bi-geo-alt display-4 mb-2 d-block opacity-50"></i>
-            <p>No saved addresses yet.</p>
-          </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = list.map(addr => `
-        <div class="col-md-6 col-lg-5">
-          <div class="cres-card p-4 h-100 position-relative">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-              <div class="d-flex align-items-center gap-2">
-                <h5 class="fw-bold mb-0">${addr.title}</h5>
-                ${addr.isDefault ? '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small">Default</span>' : ''}
-              </div>
-              <i class="bi ${addr.icon || 'bi-geo-alt'} text-primary fs-5"></i>
-            </div>
-
-            <div class="text-secondary mb-4">
-              <div class="fw-bold text-dark mb-1"><i class="bi bi-person me-2 text-muted"></i>${addr.name}</div>
-              <div class="mb-1 text-muted"><i class="bi bi-geo-alt me-2 text-muted"></i>${addr.street}, ${addr.city}, ${addr.zip}, USA</div>
-              <div class="text-muted"><i class="bi bi-telephone me-2 text-muted"></i>${addr.phone}</div>
-            </div>
-
-            <div class="d-flex align-items-center justify-content-between pt-3 border-top">
-              <div class="d-flex align-items-center gap-3">
-                <button class="btn btn-sm btn-link text-primary p-0 fw-semibold text-decoration-none" onclick="editAddress('${addr.id}')">
-                  <i class="bi bi-pencil me-1"></i> Edit
-                </button>
-                <span class="text-muted opacity-50">|</span>
-                <button class="btn btn-sm btn-link text-danger p-0 fw-semibold text-decoration-none" onclick="deleteAddress('${addr.id}')">
-                  <i class="bi bi-trash me-1"></i> Delete
-                </button>
-              </div>
-              ${!addr.isDefault ? `
-                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 small" onclick="setDefaultAddress('${addr.id}')">
-                  Set as Default
-                </button>
-              ` : ''}
-            </div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function openAddressModal() {
-      if (!addrModalInstance) {
-        addrModalInstance = new bootstrap.Modal(document.getElementById('addressModal'));
-      }
-      document.getElementById('addressForm').reset();
-      document.getElementById('addrEditId').value = '';
-      document.getElementById('addressModalLabel').innerText = 'Add New Address';
-      addrModalInstance.show();
-    }
-
-    function editAddress(id) {
-      if (!addrModalInstance) {
-        addrModalInstance = new bootstrap.Modal(document.getElementById('addressModal'));
-      }
-      const list = getAddresses();
-      const addr = list.find(a => a.id === id);
-      if (!addr) return;
-
-      document.getElementById('addressModalLabel').innerText = 'Edit Address';
-      document.getElementById('addrEditId').value = addr.id;
-      document.getElementById('addrTitle').value = addr.title;
-      document.getElementById('addrName').value = addr.name;
-      document.getElementById('addrStreet').value = addr.street;
-      document.getElementById('addrCity').value = addr.city;
-      document.getElementById('addrZip').value = addr.zip;
-      document.getElementById('addrPhone').value = addr.phone;
-      document.getElementById('addrDefault').checked = addr.isDefault;
-      addrModalInstance.show();
-    }
-
-    function deleteAddress(id) {
-      if (confirm('Are you sure you want to remove this address?')) {
-        let list = getAddresses();
-        list = list.filter(a => a.id !== id);
-        saveAddresses(list);
-        window.cresShowToast('Address removed successfully.');
-      }
-    }
-
-    function setDefaultAddress(id) {
-      let list = getAddresses();
-      list.forEach(a => a.isDefault = (a.id === id));
-      saveAddresses(list);
-      window.cresShowToast('Default delivery address updated.');
-    }
-
-    function handleSaveAddress(e) {
-      e.preventDefault();
-      const editId = document.getElementById('addrEditId').value;
-      const title = document.getElementById('addrTitle').value.trim();
-      const name = document.getElementById('addrName').value.trim();
-      const street = document.getElementById('addrStreet').value.trim();
-      const city = document.getElementById('addrCity').value.trim();
-      const zip = document.getElementById('addrZip').value.trim();
-      const phone = document.getElementById('addrPhone').value.trim();
-      const isDefault = document.getElementById('addrDefault').checked;
-
-      let list = getAddresses();
-      if (isDefault) {
-        list.forEach(a => a.isDefault = false);
-      }
-
-      if (editId) {
-        const item = list.find(a => a.id === editId);
-        if (item) {
-          item.title = title;
-          item.name = name;
-          item.street = street;
-          item.city = city;
-          item.zip = zip;
-          item.phone = phone;
-          item.isDefault = isDefault;
-        }
-      } else {
-        const newAddr = {
-          id: 'addr-' + Date.now(),
-          title, name, street, city, zip, phone, isDefault,
-          icon: title.toLowerCase().includes('office') ? 'bi-briefcase' : 'bi-house-door'
-        };
-        list.push(newAddr);
-      }
-
-      saveAddresses(list);
-      if (addrModalInstance) addrModalInstance.hide();
-      window.cresShowToast('Address saved successfully!');
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
-      renderAddressCards();
+      renderHeader('account');
+      renderFooter();
     });
   </script>
 </body>

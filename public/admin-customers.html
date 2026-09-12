@@ -3,335 +3,236 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Customers - Sample Store</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <title>Manage Customers — Harinama Store Admin</title>
+  
+  <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/assets/css/variables.css">
-  <link rel="stylesheet" href="/assets/css/style.css">
-  <style>
-    .admin-layout { min-height: 100vh; background: var(--cres-body-bg); }
-    .admin-sidebar { width: 260px; background: #FFFFFF; border-right: 1px solid var(--cres-border); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; padding: 24px 16px; }
-    .admin-main { flex: 1; padding: 30px 40px; }
-    @media (max-width: 991.98px) {
-      .admin-sidebar { position: fixed; left: -280px; z-index: 1050; transition: left 0.3s ease; }
-      .admin-sidebar.show { left: 0; }
-      .admin-main { padding: 20px 15px; }
-    }
-  </style>
+  
+  <!-- Harinama Store Master Stylesheet -->
+  <link rel="stylesheet" href="/assets/css/style.css?v=6">
+  <link rel="stylesheet" href="/assets/css/admin.css?v=6">
 </head>
-<body>
+<body class="hn-admin-body-bg">
 
-  <!-- Reusable CRESCENDO Header -->
-  <div id="cres-header-placeholder"></div>
-
-  <div class="d-flex admin-layout">
-    <!-- Admin Sidebar -->
-    <aside class="admin-sidebar">
-      <div class="d-flex align-items-center gap-2 mb-4 px-2">
-        <span class="cres-brand-dot"></span>
-        <h5 class="fw-bold mb-0 text-dark">Admin Portal</h5>
-      </div>
-
-      <nav class="nav flex-column gap-1 flex-grow-1">
-        <a href="/admin.html" class="cres-dash-nav-item">
-          <i class="bi bi-grid-fill"></i> Dashboard
-        </a>
-        <a href="/admin-products.html" class="cres-dash-nav-item">
-          <i class="bi bi-box-seam"></i> Products
-        </a>
-        <a href="/admin-categories.html" class="cres-dash-nav-item">
-          <i class="bi bi-tags"></i> Categories
-        </a>
-        <a href="/admin-orders.html" class="cres-dash-nav-item">
-          <i class="bi bi-receipt"></i> Orders
-        </a>
-        <a href="/admin-customers.html" class="cres-dash-nav-item active">
-          <i class="bi bi-people"></i> Customers
-        </a>
-        <a href="/admin-coupons.html" class="cres-dash-nav-item">
-          <i class="bi bi-ticket-perforated"></i> Coupons
-        </a>
-        <a href="/admin-reviews.html" class="cres-dash-nav-item">
-          <i class="bi bi-star"></i> Reviews
-        </a>
-        <a href="/admin-analytics.html" class="cres-dash-nav-item">
-          <i class="bi bi-graph-up-arrow"></i> Analytics
-        </a>
-        <a href="/admin-settings.html" class="cres-dash-nav-item">
-          <i class="bi bi-gear"></i> Settings
-        </a>
-      </nav>
-
-      <div class="pt-3 border-top">
-        <a href="/login.html" class="cres-dash-nav-item text-danger">
-          <i class="bi bi-box-arrow-right"></i> Logout
-        </a>
-      </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="admin-main">
-      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+  <!-- Admin Top Bar Header -->
+  <header class="hn-admin-topbar py-2 px-3 px-md-4">
+    <div class="container-fluid d-flex align-items-center justify-content-between">
+      
+      <!-- Brand & Admin Tag -->
+      <a href="/admin.html" class="hn-admin-brand-link">
+        <svg width="28" height="32" viewBox="0 0 24 30" fill="none">
+          <path d="M12 2C7 6 4 12 4 18C4 22.4183 7.58172 26 12 26C16.4183 26 20 22.4183 20 18C20 12 17 6 12 2Z" fill="#0E6251"/>
+          <path d="M12 6C9 9 7 14 7 18C7 20.7614 9.23858 23 12 23C14.7614 23 17 20.7614 17 18C17 14 15 9 12 6Z" fill="#1B4D3E"/>
+          <circle cx="12" cy="18" r="4" fill="#0B2545"/>
+          <circle cx="12" cy="18" r="2" fill="#F1C40F"/>
+        </svg>
         <div>
-          <h2 class="cres-page-title mb-1">Customer Accounts</h2>
-          <p class="text-muted small mb-0">Manage customer profiles, order histories & verification</p>
+          <span class="hn-admin-brand-title">Harinama Store</span>
+          <span class="hn-admin-badge-portal ms-2">Admin Portal</span>
         </div>
-        <div>
-          <button class="btn btn-cres-primary rounded-pill px-4 fw-semibold" onclick="openAddCustomerModal()">
-            <i class="bi bi-person-plus me-1"></i> Add Customer
-          </button>
-        </div>
-      </div>
+      </a>
 
-      <!-- Search & Filters -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-6">
-          <div class="input-group">
-            <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3"><i class="bi bi-search text-muted"></i></span>
-            <input type="text" class="form-control border-start-0 rounded-end-pill" id="customerSearchInput" placeholder="Search by name, email or phone..." oninput="filterCustomers()">
+      <!-- Right Controls -->
+      <div class="d-flex align-items-center gap-3">
+        <a href="/shop.html" target="_blank" class="btn btn-sm btn-outline-dark d-none d-sm-inline-flex align-items-center gap-1">
+          <i class="bi bi-box-arrow-up-right"></i> Live Store
+        </a>
+
+        <div class="d-flex align-items-center gap-2 border-start ps-3">
+          <div class="rounded-circle bg-navy text-white d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px; background-color: var(--hn-navy); font-size: 0.85rem;">
+            AD
           </div>
-        </div>
-        <div class="col-md-3">
-          <select class="form-select rounded-pill px-3" id="customerStatusFilter" onchange="filterCustomers()">
-            <option value="">All Statuses</option>
-            <option value="Active">Active</option>
-            <option value="VIP">VIP</option>
-            <option value="Inactive">Inactive</option>
-          </select>
+          <div class="d-none d-md-block text-start">
+            <div class="small fw-bold text-navy lh-1">Store Admin</div>
+            <div class="text-muted" style="font-size: 0.72rem;">admin@harinama.com</div>
+          </div>
+          <a href="/login.html" class="btn btn-sm btn-outline-danger ms-2" title="Sign Out">
+            <i class="bi bi-box-arrow-right"></i>
+          </a>
         </div>
       </div>
 
-      <!-- Customers Table Card -->
-      <div class="cres-card p-4">
-        <div class="table-responsive">
-          <table class="table align-middle mb-0">
-            <thead class="text-muted small text-uppercase">
-              <tr>
-                <th>Customer</th>
-                <th>Contact</th>
-                <th>Orders Placed</th>
-                <th>Total Spent</th>
-                <th>Status</th>
-                <th class="text-end">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="customers-tbody">
-              <!-- Injected dynamically -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </main>
-  </div>
+    </div>
+  </header>
 
-  <!-- Customer Modal -->
-  <div class="modal fade" id="customerModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content rounded-4 border-0 shadow">
-        <div class="modal-header border-bottom p-4">
-          <h5 class="modal-title fw-bold" id="custModalTitle">Add Customer</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body p-4">
-          <form id="customerForm" onsubmit="handleCustomerSave(event)">
-            <input type="hidden" id="custEditId">
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">Full Name</label>
-              <input type="text" class="form-control rounded-pill px-3" id="custName" required placeholder="e.g. John Doe">
-            </div>
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">Email Address</label>
-              <input type="email" class="form-control rounded-pill px-3" id="custEmail" required placeholder="e.g. john@example.com">
-            </div>
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">Phone Number</label>
-              <input type="tel" class="form-control rounded-pill px-3" id="custPhone" placeholder="e.g. +1 234 567 890">
-            </div>
-            <div class="mb-4">
-              <label class="form-label small fw-semibold">Customer Tier / Status</label>
-              <select class="form-select rounded-pill px-3" id="custStatus">
-                <option value="Active">Active</option>
-                <option value="VIP">VIP</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </div>
-            <button type="submit" class="btn btn-cres-primary rounded-pill w-100 py-2 fw-semibold">Save Profile</button>
-          </form>
-        </div>
+  <div class="container-fluid px-3 px-md-4 py-4" style="max-width: 1400px;">
+    
+    <!-- Admin Navigation Bar Strip -->
+    <div class="hn-admin-nav-bar mb-4">
+      <a href="/admin.html" class="hn-admin-tab"><i class="bi bi-speedometer2"></i> Dashboard</a>
+      <a href="/admin-products.html" class="hn-admin-tab"><i class="bi bi-box-seam"></i> Products</a>
+      <a href="/admin-orders.html" class="hn-admin-tab"><i class="bi bi-bag-check"></i> Orders</a>
+      <a href="/admin-categories.html" class="hn-admin-tab"><i class="bi bi-tags"></i> Categories</a>
+      <a href="/admin-coupons.html" class="hn-admin-tab"><i class="bi bi-ticket-perforated"></i> Coupons</a>
+      <a href="/admin-reviews.html" class="hn-admin-tab"><i class="bi bi-star"></i> Reviews</a>
+      <a href="/admin-customers.html" class="hn-admin-tab active"><i class="bi bi-people"></i> Customers</a>
+      <a href="/admin-analytics.html" class="hn-admin-tab"><i class="bi bi-graph-up-arrow"></i> Analytics</a>
+      <a href="/admin-settings.html" class="hn-admin-tab"><i class="bi bi-gear"></i> Settings</a>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="hn-admin-filter-bar d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div class="input-group" style="max-width: 360px;">
+        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" id="customer-search" class="form-control" placeholder="Search by name, email, phone, city..." oninput="filterCustomers()">
+      </div>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-dark btn-sm" onclick="exportCustomersCSV()"><i class="bi bi-download me-1"></i> Export Customers</button>
       </div>
     </div>
-  </div>
 
-  <!-- View Customer Details Modal -->
-  <div class="modal fade" id="customerDetailsModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content rounded-4 border-0 shadow">
-        <div class="modal-header border-bottom p-4">
-          <h5 class="modal-title fw-bold">Customer Overview</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body p-4" id="custDetailsBody">
-          <!-- Details injected -->
-        </div>
+    <!-- Customers Table Card -->
+    <div class="hn-admin-card mb-4">
+      <div class="table-responsive">
+        <table class="table hn-table align-middle mb-0">
+          <thead>
+            <tr>
+              <th style="min-width: 180px;">Customer Name</th>
+              <th style="min-width: 200px;">Contact Details</th>
+              <th style="min-width: 160px;">Location</th>
+              <th style="min-width: 120px;">Orders</th>
+              <th style="min-width: 120px;">Total Spent</th>
+              <th style="min-width: 140px;">Member Since</th>
+              <th style="min-width: 100px;">Status</th>
+              <th style="min-width: 100px;" class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="customers-table-body">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
       </div>
     </div>
-  </div>
 
-  <!-- Reusable CRESCENDO Footer -->
-  <div id="cres-footer-placeholder"></div>
+  </div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
-    let customersList = [];
-    let custModal = null;
-    let custDetailsModal = null;
-
-    const defaultCustomers = [
-      { id: 'cust-1', name: 'John Doe', email: 'john@example.com', phone: '+1 (555) 234-5678', orders: 4, spent: 890.00, status: 'VIP', joined: 'Jan 2026' },
-      { id: 'cust-2', name: 'Sophia Bennett', email: 'sophia.b@domain.com', phone: '+1 (555) 876-5432', orders: 2, spent: 480.00, status: 'Active', joined: 'Feb 2026' },
-      { id: 'cust-3', name: 'Alex Turner', email: 'alex.t@soundhub.io', phone: '+1 (555) 345-6789', orders: 6, spent: 1450.00, status: 'VIP', joined: 'Dec 2025' },
-      { id: 'cust-4', name: 'Emma Watson', email: 'emma.w@musiclover.org', phone: '+1 (555) 901-2345', orders: 1, spent: 149.99, status: 'Active', joined: 'Mar 2026' },
-      { id: 'cust-5', name: 'David Miller', email: 'david.m@audio.net', phone: '+1 (555) 432-1098', orders: 0, spent: 0.00, status: 'Inactive', joined: 'Mar 2026' }
+    let localCustomers = [
+      {
+        id: 'cust-1',
+        name: 'Gauranga Das',
+        email: 'gauranga.das@iskcon.org',
+        phone: '+91 98765 11223',
+        city: 'Vrindavan, UP',
+        orders_count: 5,
+        total_spent: 1490,
+        joined: '2026-01-15',
+        status: 'Active'
+      },
+      {
+        id: 'cust-2',
+        name: 'Radharani Devi Dasi',
+        email: 'radha.dasi@gmail.com',
+        phone: '+91 98234 55667',
+        city: 'Mumbai, MH',
+        orders_count: 3,
+        total_spent: 897,
+        joined: '2026-03-20',
+        status: 'Active'
+      },
+      {
+        id: 'cust-3',
+        name: 'Krishna Chaitanya Das',
+        email: 'kchaitanya@devotee.in',
+        phone: '+91 97112 33445',
+        city: 'Bengaluru, KA',
+        orders_count: 2,
+        total_spent: 526,
+        joined: '2026-05-10',
+        status: 'Active'
+      },
+      {
+        id: 'cust-4',
+        name: 'Ananya Sharma',
+        email: 'ananya.sharma@yahoo.com',
+        phone: '+91 99887 76655',
+        city: 'New Delhi, DL',
+        orders_count: 4,
+        total_spent: 1996,
+        joined: '2026-02-28',
+        status: 'Active'
+      }
     ];
 
     document.addEventListener('DOMContentLoaded', () => {
-      renderHeader('');
-      renderFooter();
-      custModal = new bootstrap.Modal(document.getElementById('customerModal'));
-      custDetailsModal = new bootstrap.Modal(document.getElementById('customerDetailsModal'));
-      loadCustomers();
+      const stored = localStorage.getItem('harinama_admin_customers');
+      if (stored) {
+        try { localCustomers = JSON.parse(stored); } catch(e) {}
+      }
+
+      renderCustomersTable(localCustomers);
     });
 
-    function loadCustomers() {
-      const stored = localStorage.getItem('cres_admin_customers');
-      customersList = stored ? JSON.parse(stored) : defaultCustomers;
-      renderCustomersTable(customersList);
-    }
+    function renderCustomersTable(customers) {
+      const tbody = document.getElementById('customers-table-body');
+      if (!tbody) return;
 
-    function renderCustomersTable(list) {
-      const tbody = document.getElementById('customers-tbody');
-      if (!list || list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No customers found.</td></tr>';
+      if (customers.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="text-center py-5 text-muted">
+              <i class="bi bi-people fs-1 d-block mb-2 text-gold"></i>
+              No customers found.
+            </td>
+          </tr>
+        `;
         return;
       }
 
-      tbody.innerHTML = list.map((c, idx) => `
+      tbody.innerHTML = customers.map(c => `
         <tr>
           <td>
-            <div class="d-flex align-items-center gap-3">
-              <div class="rounded-circle bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                ${c.name.charAt(0)}
-              </div>
-              <div>
-                <div class="fw-bold text-dark">${c.name}</div>
-                <div class="text-muted small">Joined ${c.joined || '2026'}</div>
-              </div>
-            </div>
+            <div class="fw-bold text-navy text-nowrap">${c.name}</div>
           </td>
           <td>
-            <div>${c.email}</div>
-            <div class="text-muted small">${c.phone || 'N/A'}</div>
+            <div class="small text-nowrap"><i class="bi bi-envelope me-1 text-muted"></i>${c.email}</div>
+            <div class="small text-muted text-nowrap"><i class="bi bi-telephone me-1 text-muted"></i>${c.phone}</div>
           </td>
-          <td><span class="badge bg-light text-dark border px-3 py-2 rounded-pill">${c.orders} Orders</span></td>
-          <td class="fw-bold text-dark">$${Number(c.spent).toFixed(2)}</td>
-          <td><span class="badge ${c.status === 'VIP' ? 'bg-warning-subtle text-warning' : (c.status === 'Active' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary')} rounded-pill px-3 py-2">${c.status}</span></td>
-          <td class="text-end">
-            <button class="btn btn-sm btn-outline-secondary rounded-pill me-1" onclick="viewCustomerDetails(${idx})"><i class="bi bi-eye"></i></button>
-            <button class="btn btn-sm btn-outline-primary rounded-pill me-1" onclick="editCustomer(${idx})"><i class="bi bi-pencil"></i></button>
-            <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="deleteCustomer(${idx})"><i class="bi bi-trash"></i></button>
+          <td class="text-nowrap"><i class="bi bi-geo-alt me-1 text-danger"></i>${c.city}</td>
+          <td class="text-nowrap"><span class="badge bg-light text-dark border">${c.orders_count} orders</span></td>
+          <td class="fw-bold text-navy text-nowrap">₹${c.total_spent}</td>
+          <td class="small text-muted text-nowrap">${c.joined}</td>
+          <td class="text-nowrap"><span class="badge bg-success-subtle text-success">${c.status}</span></td>
+          <td class="text-end text-nowrap">
+            <a href="https://wa.me/${c.phone.replace(/[^0-9]/g, '')}?text=Hare%20Krishna%20${encodeURIComponent(c.name)}%2C%20greetings%20from%20Harinama%20Store!" target="_blank" class="btn btn-sm btn-outline-success me-1" title="Message on WhatsApp">
+              <i class="bi bi-whatsapp"></i>
+            </a>
+            <button class="btn btn-sm btn-outline-dark" onclick="showToast('Customer profile opened')" title="View Orders">
+              <i class="bi bi-eye"></i>
+            </button>
           </td>
         </tr>
       `).join('');
     }
 
     function filterCustomers() {
-      const q = document.getElementById('customerSearchInput').value.toLowerCase();
-      const status = document.getElementById('customerStatusFilter').value;
-      const filtered = customersList.filter(c => {
-        const matchesQ = c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || (c.phone && c.phone.includes(q));
-        const matchesStatus = !status || c.status === status;
-        return matchesQ && matchesStatus;
+      const query = document.getElementById('customer-search').value.toLowerCase();
+      let filtered = localCustomers.filter(c => {
+        return c.name.toLowerCase().includes(query) || c.email.toLowerCase().includes(query) || c.phone.includes(query) || c.city.toLowerCase().includes(query);
       });
       renderCustomersTable(filtered);
     }
 
-    function openAddCustomerModal() {
-      document.getElementById('customerForm').reset();
-      document.getElementById('custEditId').value = '';
-      document.getElementById('custModalTitle').textContent = 'Add Customer';
-      custModal.show();
-    }
-
-    function editCustomer(idx) {
-      const c = customersList[idx];
-      document.getElementById('custEditId').value = idx;
-      document.getElementById('custName').value = c.name;
-      document.getElementById('custEmail').value = c.email;
-      document.getElementById('custPhone').value = c.phone || '';
-      document.getElementById('custStatus').value = c.status || 'Active';
-      document.getElementById('custModalTitle').textContent = 'Edit Customer';
-      custModal.show();
-    }
-
-    function handleCustomerSave(e) {
-      e.preventDefault();
-      const editIdx = document.getElementById('custEditId').value;
-      const custData = {
-        id: editIdx !== '' ? customersList[editIdx].id : 'cust-' + Date.now(),
-        name: document.getElementById('custName').value.trim(),
-        email: document.getElementById('custEmail').value.trim(),
-        phone: document.getElementById('custPhone').value.trim(),
-        status: document.getElementById('custStatus').value,
-        orders: editIdx !== '' ? customersList[editIdx].orders : 0,
-        spent: editIdx !== '' ? customersList[editIdx].spent : 0.00,
-        joined: editIdx !== '' ? customersList[editIdx].joined : 'Just now'
-      };
-
-      if (editIdx !== '') {
-        customersList[editIdx] = custData;
-        showToast('Customer profile updated.', 'success');
-      } else {
-        customersList.unshift(custData);
-        showToast('Customer created successfully.', 'success');
-      }
-
-      localStorage.setItem('cres_admin_customers', JSON.stringify(customersList));
-      filterCustomers();
-      custModal.hide();
-    }
-
-    function viewCustomerDetails(idx) {
-      const c = customersList[idx];
-      document.getElementById('custDetailsBody').innerHTML = `
-        <div class="text-center mb-4">
-          <div class="rounded-circle bg-primary-subtle text-primary fw-bold mx-auto mb-2 d-flex align-items-center justify-content-center" style="width:64px; height:64px; font-size: 1.5rem;">
-            ${c.name.charAt(0)}
-          </div>
-          <h5 class="fw-bold mb-1">${c.name}</h5>
-          <span class="badge ${c.status === 'VIP' ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success'} rounded-pill px-3 py-2">${c.status} Member</span>
-        </div>
-        <div class="d-flex flex-column gap-2 border-top pt-3">
-          <div class="d-flex justify-content-between"><span class="text-muted">Email:</span> <strong>${c.email}</strong></div>
-          <div class="d-flex justify-content-between"><span class="text-muted">Phone:</span> <strong>${c.phone || 'N/A'}</strong></div>
-          <div class="d-flex justify-content-between"><span class="text-muted">Orders Count:</span> <strong>${c.orders}</strong></div>
-          <div class="d-flex justify-content-between"><span class="text-muted">Lifetime Value:</span> <strong class="text-primary">$${Number(c.spent).toFixed(2)}</strong></div>
-        </div>
-      `;
-      custDetailsModal.show();
-    }
-
-    function deleteCustomer(idx) {
-      if (!confirm(`Are you sure you want to delete customer "${customersList[idx].name}"?`)) return;
-      customersList.splice(idx, 1);
-      localStorage.setItem('cres_admin_customers', JSON.stringify(customersList));
-      filterCustomers();
-      showToast('Customer deleted.', 'info');
+    function exportCustomersCSV() {
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "Name,Email,Phone,City,Orders,Total Spent,Member Since,Status\n";
+      localCustomers.forEach(c => {
+        csvContent += `"${c.name}","${c.email}","${c.phone}","${c.city}","${c.orders_count}","₹${c.total_spent}","${c.joined}","${c.status}"\n`;
+      });
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Harinama_Customers_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("Customers exported successfully!");
     }
   </script>
 </body>

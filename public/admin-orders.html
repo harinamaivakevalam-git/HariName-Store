@@ -3,348 +3,623 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Orders - Sample Store</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <title>Manage Orders — Harinama Store Admin</title>
+  
+  <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/assets/css/variables.css">
-  <link rel="stylesheet" href="/assets/css/style.css">
-  <style>
-    .admin-layout {
-      min-height: 100vh;
-      background: var(--cres-body-bg);
-    }
-    .admin-sidebar {
-      width: 260px;
-      background: #FFFFFF;
-      border-right: 1px solid var(--cres-border);
-      display: flex;
-      flex-direction: column;
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      padding: 24px 16px;
-    }
-    .admin-main {
-      flex: 1;
-      padding: 30px 40px;
-    }
-    @media (max-width: 991.98px) {
-      .admin-sidebar {
-        position: fixed;
-        left: -280px;
-        z-index: 1050;
-        transition: left 0.3s ease;
-      }
-      .admin-sidebar.show {
-        left: 0;
-      }
-      .admin-main {
-        padding: 20px 15px;
-      }
-    }
-  </style>
+  
+  <!-- Harinama Store Master Stylesheet -->
+  <link rel="stylesheet" href="/assets/css/style.css?v=6">
+  <link rel="stylesheet" href="/assets/css/admin.css?v=6">
 </head>
-<body>
+<body class="hn-admin-body-bg">
 
-  <!-- Reusable CRESCENDO Header -->
-  <div id="cres-header-placeholder"></div>
-
-  <div class="d-flex admin-layout">
-    <!-- Admin Sidebar -->
-    <aside class="admin-sidebar">
-      <div class="d-flex align-items-center gap-2 mb-4 px-2">
-        <span class="cres-brand-dot"></span>
-        <h5 class="fw-bold mb-0 text-dark">Admin Portal</h5>
-      </div>
-
-      <nav class="nav flex-column gap-1 flex-grow-1">
-        <a href="/admin.html" class="cres-dash-nav-item">
-          <i class="bi bi-grid-fill"></i> Dashboard
-        </a>
-        <a href="/admin-products.html" class="cres-dash-nav-item">
-          <i class="bi bi-box-seam"></i> Products
-        </a>
-        <a href="/admin-categories.html" class="cres-dash-nav-item">
-          <i class="bi bi-tags"></i> Categories
-        </a>
-        <a href="/admin-orders.html" class="cres-dash-nav-item active">
-          <i class="bi bi-receipt"></i> Orders
-        </a>
-        <a href="/admin-customers.html" class="cres-dash-nav-item">
-          <i class="bi bi-people"></i> Customers
-        </a>
-        <a href="/admin-coupons.html" class="cres-dash-nav-item">
-          <i class="bi bi-ticket-perforated"></i> Coupons
-        </a>
-        <a href="/admin-reviews.html" class="cres-dash-nav-item">
-          <i class="bi bi-star"></i> Reviews
-        </a>
-        <a href="/admin-analytics.html" class="cres-dash-nav-item">
-          <i class="bi bi-graph-up-arrow"></i> Analytics
-        </a>
-        <a href="/admin-settings.html" class="cres-dash-nav-item">
-          <i class="bi bi-gear"></i> Settings
-        </a>
-      </nav>
-
-      <div class="pt-3 border-top">
-        <a href="/login.html" class="cres-dash-nav-item text-danger">
-          <i class="bi bi-box-arrow-right"></i> Logout
-        </a>
-      </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="admin-main">
-      <div class="d-flex align-items-center justify-content-between mb-4">
+  <!-- Admin Top Bar Header -->
+  <header class="hn-admin-topbar py-2 px-3 px-md-4">
+    <div class="container-fluid d-flex align-items-center justify-content-between">
+      
+      <!-- Brand & Admin Tag -->
+      <a href="/admin.html" class="hn-admin-brand-link">
+        <svg width="28" height="32" viewBox="0 0 24 30" fill="none">
+          <path d="M12 2C7 6 4 12 4 18C4 22.4183 7.58172 26 12 26C16.4183 26 20 22.4183 20 18C20 12 17 6 12 2Z" fill="#0E6251"/>
+          <path d="M12 6C9 9 7 14 7 18C7 20.7614 9.23858 23 12 23C14.7614 23 17 20.7614 17 18C17 14 15 9 12 6Z" fill="#1B4D3E"/>
+          <circle cx="12" cy="18" r="4" fill="#0B2545"/>
+          <circle cx="12" cy="18" r="2" fill="#F1C40F"/>
+        </svg>
         <div>
-          <h2 class="cres-page-title mb-1">Orders</h2>
-          <p class="text-muted small mb-0">Track and manage customer fulfillment</p>
+          <span class="hn-admin-brand-title">Harinama Store</span>
+          <span class="hn-admin-badge-portal ms-2">Admin Portal</span>
+        </div>
+      </a>
+
+      <!-- Right Controls -->
+      <div class="d-flex align-items-center gap-3">
+        <a href="/shop.html" target="_blank" class="btn btn-sm btn-outline-dark d-none d-sm-inline-flex align-items-center gap-1">
+          <i class="bi bi-box-arrow-up-right"></i> Live Store
+        </a>
+
+        <div class="d-flex align-items-center gap-2 border-start ps-3">
+          <div class="rounded-circle bg-navy text-white d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px; background-color: var(--hn-navy); font-size: 0.85rem;">
+            AD
+          </div>
+          <div class="d-none d-md-block text-start">
+            <div class="small fw-bold text-navy lh-1">Store Admin</div>
+            <div class="text-muted" style="font-size: 0.72rem;">admin@harinama.com</div>
+          </div>
+          <a href="/login.html" class="btn btn-sm btn-outline-danger ms-2" title="Sign Out">
+            <i class="bi bi-box-arrow-right"></i>
+          </a>
         </div>
       </div>
 
-      <!-- Filters & Search Card -->
-      <div class="cres-card p-4 mb-4">
-        <div class="row g-3 align-items-center">
-          <div class="col-md-7">
-            <div class="input-group">
-              <span class="input-group-text bg-light border-0 ps-3 text-muted"><i class="bi bi-search"></i></span>
-              <input type="text" id="adminOrderSearch" class="form-control bg-light border-0 py-2" placeholder="Search orders..." oninput="filterAdminOrders()">
-            </div>
+    </div>
+  </header>
+
+  <div class="container-fluid px-3 px-md-4 py-4" style="max-width: 1400px;">
+    
+    <!-- Admin Navigation Bar Strip -->
+    <div class="hn-admin-nav-bar mb-4">
+      <a href="/admin.html" class="hn-admin-tab"><i class="bi bi-speedometer2"></i> Dashboard</a>
+      <a href="/admin-products.html" class="hn-admin-tab"><i class="bi bi-box-seam"></i> Products</a>
+      <a href="/admin-orders.html" class="hn-admin-tab active"><i class="bi bi-bag-check"></i> Orders</a>
+      <a href="/admin-categories.html" class="hn-admin-tab"><i class="bi bi-tags"></i> Categories</a>
+      <a href="/admin-coupons.html" class="hn-admin-tab"><i class="bi bi-ticket-perforated"></i> Coupons</a>
+      <a href="/admin-reviews.html" class="hn-admin-tab"><i class="bi bi-star"></i> Reviews</a>
+      <a href="/admin-customers.html" class="hn-admin-tab"><i class="bi bi-people"></i> Customers</a>
+      <a href="/admin-analytics.html" class="hn-admin-tab"><i class="bi bi-graph-up-arrow"></i> Analytics</a>
+      <a href="/admin-settings.html" class="hn-admin-tab"><i class="bi bi-gear"></i> Settings</a>
+    </div>
+
+    <!-- 4 Order Metric Counters -->
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-lg-3">
+        <div class="hn-kpi-card">
+          <div>
+            <div class="hn-kpi-label">All Orders</div>
+            <div class="hn-kpi-num" id="count-all">148</div>
+            <div class="hn-kpi-trend text-muted">Total devotional orders</div>
           </div>
-          <div class="col-md-5">
-            <select class="form-select bg-light border-0 py-2" id="adminOrderStatusFilter" onchange="filterAdminOrders()">
-              <option value="">All Status</option>
-              <option value="delivered">Delivered</option>
-              <option value="processing">Processing</option>
-              <option value="shipped">Shipped</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </div>
+          <div class="hn-kpi-icon-box"><i class="bi bi-bag-check"></i></div>
         </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="hn-kpi-card">
+          <div>
+            <div class="hn-kpi-label">Pending Packing</div>
+            <div class="hn-kpi-num text-warning-emphasis" id="count-pending">8</div>
+            <div class="hn-kpi-trend text-warning-emphasis">Needs courier pickup</div>
+          </div>
+          <div class="hn-kpi-icon-box" style="background-color: #FEF3C7; color: #D97706;"><i class="bi bi-box-seam"></i></div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="hn-kpi-card">
+          <div>
+            <div class="hn-kpi-label">In Transit</div>
+            <div class="hn-kpi-num text-primary" id="count-dispatched">14</div>
+            <div class="hn-kpi-trend text-primary">Speed Post / Express</div>
+          </div>
+          <div class="hn-kpi-icon-box" style="background-color: #EFF6FF; color: #2563EB;"><i class="bi bi-truck"></i></div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="hn-kpi-card">
+          <div>
+            <div class="hn-kpi-label">Delivered</div>
+            <div class="hn-kpi-num text-success" id="count-delivered">126</div>
+            <div class="hn-kpi-trend text-success"><i class="bi bi-check-circle me-1"></i> 98.4% success rate</div>
+          </div>
+          <div class="hn-kpi-icon-box" style="background-color: #DEF7EC; color: #0E9F6E;"><i class="bi bi-gift"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="hn-admin-filter-bar d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div class="d-flex flex-wrap align-items-center gap-2 flex-grow-1">
+        <div class="input-group" style="max-width: 340px;">
+          <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" id="order-search" class="form-control" placeholder="Search Order ID, Customer, Phone..." oninput="filterOrders()">
+        </div>
+        
+        <select id="status-filter" class="form-select" style="max-width: 200px;" onchange="filterOrders()">
+          <option value="all">All Statuses</option>
+          <option value="Confirmed">Confirmed</option>
+          <option value="Packed">Packed</option>
+          <option value="Dispatched">Dispatched</option>
+          <option value="Delivered">Delivered</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
       </div>
 
-      <!-- Orders Table Card -->
-      <div class="cres-card p-4">
-        <div class="table-responsive">
-          <table class="table align-middle mb-0">
-            <thead class="text-muted small text-uppercase fw-bold border-bottom">
-              <tr>
-                <th scope="col" class="py-3">Order ID</th>
-                <th scope="col" class="py-3">Customer</th>
-                <th scope="col" class="py-3">Date</th>
-                <th scope="col" class="py-3">Total</th>
-                <th scope="col" class="py-3">Status</th>
-                <th scope="col" class="py-3 text-end">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="adminOrdersTableBody">
-              <!-- Rendered by JS -->
-            </tbody>
-          </table>
-        </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-dark btn-sm" onclick="exportOrdersCSV()"><i class="bi bi-download me-1"></i> Export Orders CSV</button>
       </div>
-    </main>
+    </div>
+
+    <!-- Orders Table Card -->
+    <div class="hn-admin-card mb-4">
+      <div class="table-responsive">
+        <table class="table hn-table align-middle mb-0">
+          <thead>
+            <tr>
+              <th style="min-width: 150px;">Order ID</th>
+              <th style="min-width: 140px;">Date</th>
+              <th style="min-width: 180px;">Customer & Contact</th>
+              <th style="min-width: 220px;">Items Ordered</th>
+              <th style="min-width: 150px;">Payment</th>
+              <th style="min-width: 100px;">Amount</th>
+              <th style="min-width: 120px;">Status</th>
+              <th style="min-width: 150px;" class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="orders-table-body">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Admin View Order Modal -->
-  <div class="modal fade" id="adminOrderViewModal" tabindex="-1" aria-labelledby="adminOrderViewModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content rounded-4 border-0 shadow">
-        <div class="modal-header border-bottom p-4">
-          <h5 class="modal-title fw-bold" id="adminOrderViewModalLabel">Order Details</h5>
+  <!-- 1. View Order Details Modal -->
+  <div class="modal fade hn-admin-modal" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="orderModalTitle">Order Details</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body p-4" id="admin-order-modal-body">
-          <!-- Injected dynamically -->
+        <div class="modal-body p-4" id="orderModalBody">
+          <!-- Populated by JS -->
+        </div>
+        <div class="modal-footer bg-white border-top d-flex justify-content-between">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+          <div>
+            <button type="button" class="btn btn-outline-dark me-2" onclick="switchToEditModal()"><i class="bi bi-pencil-square me-1"></i> Edit Order Details</button>
+            <button type="button" class="btn btn-gold" onclick="updateOrderStatusFromModal()"><i class="bi bi-check2-circle me-1"></i> Update Status</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Admin Change Status Modal -->
-  <div class="modal fade" id="adminOrderStatusModal" tabindex="-1" aria-labelledby="adminOrderStatusModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-      <div class="modal-content rounded-4 border-0 shadow">
-        <div class="modal-header border-bottom p-3">
-          <h6 class="modal-title fw-bold" id="adminOrderStatusModalLabel">Update Order Status</h6>
+  <!-- 2. Full Edit Order Details Modal -->
+  <div class="modal fade hn-admin-modal" id="editOrderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editOrderModalTitle">Edit Order Details</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body p-4">
-          <input type="hidden" id="statusTargetOrderId">
-          <label class="form-label small fw-semibold">Fulfillment Status</label>
-          <select class="form-select rounded-pill px-3 mb-4" id="statusSelectorInput">
-            <option value="processing">Processing</option>
-            <option value="shipped">Shipped</option>
-            <option value="delivered">Delivered</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-          <button type="button" class="btn btn-cres-primary rounded-pill w-100 py-2 fw-semibold" onclick="saveAdminOrderStatus()">Update Status</button>
+          <form id="editOrderForm" onsubmit="saveOrderChanges(event)">
+            <input type="hidden" id="edit-order-id">
+            
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy">Customer Full Name *</label>
+                <input type="text" id="edit-order-customer" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy">Mobile / WhatsApp Number *</label>
+                <input type="text" id="edit-order-phone" class="form-control" required>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy">Customer Email</label>
+                <input type="email" id="edit-order-email" class="form-control">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy">Order Dispatch Status *</label>
+                <select id="edit-order-status" class="form-select" required>
+                  <option value="Confirmed">Confirmed (Order Placed)</option>
+                  <option value="Packed">Packed (Ready for Courier)</option>
+                  <option value="Dispatched">Dispatched (In Transit)</option>
+                  <option value="Delivered">Delivered to Devotee</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-bold text-navy">Complete Shipping Address *</label>
+              <textarea id="edit-order-address" class="form-control" rows="2" required></textarea>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy">Payment Method</label>
+                <select id="edit-order-payment-method" class="form-select">
+                  <option value="UPI (Google Pay / PhonePe)">UPI (Google Pay / PhonePe)</option>
+                  <option value="Credit / Debit Card (Visa/Mastercard)">Credit / Debit Card (Visa/Mastercard)</option>
+                  <option value="Net Banking">Net Banking</option>
+                  <option value="Cash on Delivery (COD)">Cash on Delivery (COD)</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy">Payment Status</label>
+                <select id="edit-order-payment-status" class="form-select">
+                  <option value="Paid">Paid</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Refunded">Refunded</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy">Courier / Shipping Partner</label>
+                <input type="text" id="edit-order-courier" class="form-control" placeholder="e.g. India Post Speed Post, BlueDart">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy">AWB / Courier Tracking Number</label>
+                <input type="text" id="edit-order-tracking" class="form-control" placeholder="e.g. IN2026884192">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-bold text-navy">Admin Notes / Special Instructions</label>
+              <input type="text" id="edit-order-notes" class="form-control" placeholder="e.g. Temple blessing card included with package.">
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-gold px-4"><i class="bi bi-save me-1"></i> Save Order Changes</button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- Reusable CRESCENDO Footer -->
-  <div id="cres-footer-placeholder"></div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
-    let viewModalInstance = null;
-    let statusModalInstance = null;
-
-    function getAdminOrders() {
-      const stored = localStorage.getItem('cres_orders');
-      if (stored) {
-        try { return JSON.parse(stored); } catch (e) {}
+    let localOrders = [
+      {
+        id: "HN-2026-98124",
+        date: "2026-09-12 07:30 AM",
+        customer: "Gauranga Das",
+        phone: "+91 98765 11223",
+        email: "gauranga.das@iskcon.org",
+        address: "Sri Sri Krishna Balaram Mandir, Raman Reti, Vrindavan, UP - 281121",
+        items: [
+          { name: "Maha-Mantra Keychain", qty: 2, price: 149 }
+        ],
+        subtotal: 298,
+        shipping: 0,
+        total: 298,
+        payment_method: "UPI (Google Pay / PhonePe)",
+        payment_status: "Paid",
+        status: "Delivered",
+        courier: "India Post Speed Post",
+        tracking_number: "IN20269812401",
+        notes: "Temple prasadam card included."
+      },
+      {
+        id: "HN-2026-88219",
+        date: "2026-09-11 04:15 PM",
+        customer: "Radharani Devi Dasi",
+        phone: "+91 98234 55667",
+        email: "radha.dasi@gmail.com",
+        address: "Bhakti Vedanta Swami Marg, Juhu, Mumbai, MH - 400049",
+        items: [
+          { name: "3-Keychain Gift Set", qty: 1, price: 299 }
+        ],
+        subtotal: 299,
+        shipping: 40,
+        total: 339,
+        payment_method: "Credit / Debit Card (Visa/Mastercard)",
+        payment_status: "Paid",
+        status: "Dispatched",
+        courier: "BlueDart Express",
+        tracking_number: "BD882190034",
+        notes: "Gift wrap requested."
+      },
+      {
+        id: "HN-2026-77312",
+        date: "2026-09-11 02:40 PM",
+        customer: "Krishna Chaitanya Das",
+        phone: "+91 97112 33445",
+        email: "kchaitanya@devotee.in",
+        address: "Hare Krishna Hill, Rajajinagar, Bengaluru, KA - 560010",
+        items: [
+          { name: "Peacock Feather Keychain", qty: 1, price: 99 },
+          { name: "Krishna Flute Keychain", qty: 1, price: 129 }
+        ],
+        subtotal: 228,
+        shipping: 40,
+        total: 268,
+        payment_method: "UPI (Google Pay / PhonePe)",
+        payment_status: "Paid",
+        status: "Packed",
+        courier: "Delhivery Logistics",
+        tracking_number: "DL773129841",
+        notes: "Ready for evening courier pickup."
+      },
+      {
+        id: "HN-2026-66415",
+        date: "2026-09-10 11:20 AM",
+        customer: "Ananya Sharma",
+        phone: "+91 99887 76655",
+        email: "ananya.sharma@yahoo.com",
+        address: "Flat 402, Vrindavan Enclave, East of Kailash, New Delhi - 110065",
+        items: [
+          { name: "Bhagavad Gita As It Is Deluxe", qty: 1, price: 349 }
+        ],
+        subtotal: 349,
+        shipping: 0,
+        total: 349,
+        payment_method: "Net Banking",
+        payment_status: "Paid",
+        status: "Confirmed",
+        courier: "India Post Speed Post",
+        tracking_number: "",
+        notes: ""
       }
-      return window.CRESCENDO_DATA.orders;
+    ];
+
+    let currentSelectedOrderId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const stored = localStorage.getItem('harinama_admin_orders');
+      if (stored) {
+        try { localOrders = JSON.parse(stored); } catch(e) {}
+      }
+
+      updateMetricCounters();
+      renderOrdersTable(localOrders);
+    });
+
+    function updateMetricCounters() {
+      const allCount = localOrders.length;
+      const pendingCount = localOrders.filter(o => o.status === 'Packed' || o.status === 'Confirmed').length;
+      const dispatchedCount = localOrders.filter(o => o.status === 'Dispatched').length;
+      const deliveredCount = localOrders.filter(o => o.status === 'Delivered').length;
+
+      const cAll = document.getElementById('count-all');
+      const cPending = document.getElementById('count-pending');
+      const cDisp = document.getElementById('count-dispatched');
+      const cDel = document.getElementById('count-delivered');
+
+      if (cAll) cAll.innerText = allCount;
+      if (cPending) cPending.innerText = pendingCount;
+      if (cDisp) cDisp.innerText = dispatchedCount;
+      if (cDel) cDel.innerText = deliveredCount;
     }
 
-    function renderAdminOrdersTable(ordersToRender) {
-      const tbody = document.getElementById('adminOrdersTableBody');
+    function getStatusBadge(status) {
+      switch(status) {
+        case 'Delivered': return '<span class="hn-status-badge hn-status-delivered">Delivered</span>';
+        case 'Dispatched': return '<span class="hn-status-badge hn-status-dispatched">Dispatched</span>';
+        case 'Packed': return '<span class="hn-status-badge hn-status-packed">Packed</span>';
+        case 'Confirmed': return '<span class="hn-status-badge hn-status-confirmed">Confirmed</span>';
+        case 'Cancelled': return '<span class="hn-status-badge hn-status-cancelled">Cancelled</span>';
+        default: return `<span class="badge bg-secondary">${status}</span>`;
+      }
+    }
+
+    function renderOrdersTable(orders) {
+      const tbody = document.getElementById('orders-table-body');
       if (!tbody) return;
 
-      const ords = ordersToRender || getAdminOrders();
-
-      tbody.innerHTML = ords.map(ord => {
-        let badgeClass = 'bg-success-subtle text-success border border-success-subtle';
-        let statusName = 'Delivered';
-        if (ord.status === 'processing') {
-          badgeClass = 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
-          statusName = 'Processing';
-        } else if (ord.status === 'shipped') {
-          badgeClass = 'bg-info-subtle text-info-emphasis border border-info-subtle';
-          statusName = 'Shipped';
-        } else if (ord.status === 'cancelled') {
-          badgeClass = 'bg-danger-subtle text-danger border border-danger-subtle';
-          statusName = 'Cancelled';
-        }
-
-        return `
+      if (orders.length === 0) {
+        tbody.innerHTML = `
           <tr>
-            <td class="fw-bold font-monospace text-dark">${ord.order_number}</td>
-            <td>
-              <div class="fw-bold text-dark">${ord.customer_name}</div>
-              <div class="text-muted small">${ord.customer_email}</div>
-            </td>
-            <td class="text-muted">${ord.date}</td>
-            <td class="fw-bold text-dark">$${Number(ord.total).toFixed(2)}</td>
-            <td>
-              <span class="badge ${badgeClass} rounded-pill px-3 py-1 fw-semibold small">${statusName}</span>
-            </td>
-            <td class="text-end">
-              <div class="d-flex align-items-center justify-content-end gap-2">
-                <button class="btn btn-sm btn-light rounded-circle shadow-sm" title="View details" onclick="openAdminOrderView('${ord.id || ord.order_number}')" style="width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;">
-                  <i class="bi bi-eye text-dark fs-6"></i>
-                </button>
-                <button class="btn btn-sm btn-light rounded-circle shadow-sm" title="Change Status" onclick="openAdminOrderStatusModal('${ord.id || ord.order_number}', '${ord.status || ord.order_status || 'processing'}')" style="width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;">
-                  <i class="bi bi-pencil text-primary fs-6"></i>
-                </button>
-              </div>
+            <td colspan="8" class="text-center py-5 text-muted">
+              <i class="bi bi-box-seam fs-1 d-block mb-2 text-gold"></i>
+              No orders found matching your criteria.
             </td>
           </tr>
         `;
-      }).join('');
+        return;
+      }
+
+      tbody.innerHTML = orders.map(o => `
+        <tr>
+          <td class="fw-bold text-navy text-nowrap">
+            ${o.id}
+          </td>
+          <td class="small text-muted text-nowrap">${o.date}</td>
+          <td>
+            <div class="fw-bold text-navy text-nowrap">${o.customer}</div>
+            <div class="small text-muted text-nowrap"><i class="bi bi-telephone me-1"></i>${o.phone}</div>
+          </td>
+          <td>
+            ${o.items.map(i => `<span class="badge bg-light text-dark border me-1">${i.name} × ${i.qty}</span>`).join('')}
+          </td>
+          <td class="text-nowrap">
+            <span class="small fw-semibold text-success"><i class="bi bi-shield-check me-1"></i>${o.payment_method}</span>
+          </td>
+          <td class="fw-bold text-navy text-nowrap">₹${o.total}</td>
+          <td class="text-nowrap">
+            ${getStatusBadge(o.status)}
+          </td>
+          <td class="text-end text-nowrap">
+            <button class="btn btn-sm btn-outline-dark me-1" onclick="viewOrderDetails('${o.id}')" title="View Order Details">
+              <i class="bi bi-eye"></i> View
+            </button>
+            <button class="btn btn-sm btn-gold" onclick="editOrderDetails('${o.id}')" title="Edit Order Details">
+              <i class="bi bi-pencil-square"></i> Edit
+            </button>
+          </td>
+        </tr>
+      `).join('');
     }
 
-    function filterAdminOrders() {
-      const q = (document.getElementById('adminOrderSearch').value || '').toLowerCase();
-      const status = document.getElementById('adminOrderStatusFilter').value;
-      const allOrders = getAdminOrders();
+    function filterOrders() {
+      const query = document.getElementById('order-search').value.toLowerCase();
+      const status = document.getElementById('status-filter').value;
 
-      const filtered = allOrders.filter(o => {
-        const orderNum = (o.order_number || o.id || '').toLowerCase();
-        const custName = (o.customer_name || (o.shipping_address && o.shipping_address.name) || '').toLowerCase();
-        const custEmail = (o.customer_email || '').toLowerCase();
-        const matchesQuery = orderNum.includes(q) || custName.includes(q) || custEmail.includes(q);
-        const ordStatus = (o.status || o.order_status || 'processing').toLowerCase();
-        const matchesStatus = !status || ordStatus === status;
+      let filtered = localOrders.filter(o => {
+        const matchesQuery = o.id.toLowerCase().includes(query) || o.customer.toLowerCase().includes(query) || o.phone.includes(query);
+        const matchesStatus = status === 'all' || o.status === status;
         return matchesQuery && matchesStatus;
       });
 
-      renderAdminOrdersTable(filtered);
+      renderOrdersTable(filtered);
     }
 
-    function openAdminOrderView(id) {
-      if (!viewModalInstance) viewModalInstance = new bootstrap.Modal(document.getElementById('adminOrderViewModal'));
-      const allOrders = getAdminOrders();
-      const ord = allOrders.find(o => (o.id === id || o.order_number === id || String(o.id) === String(id)));
-      if (!ord) return;
+    function viewOrderDetails(id) {
+      const o = localOrders.find(item => item.id === id);
+      if (!o) return;
+      currentSelectedOrderId = id;
 
-      const body = document.getElementById('admin-order-modal-body');
-      const status = ord.status || ord.order_status || 'processing';
-      const items = ord.items && ord.items.length > 0 ? ord.items : [{
-        name: ord.product_name || 'Pro X168A Headphones',
-        color: ord.color || 'Standard',
-        quantity: ord.quantity || ord.qty || 1,
-        price: ord.total || 250.00,
-        image: ord.product_image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=80&q=80'
-      }];
+      document.getElementById('orderModalTitle').innerText = 'Order Details — ' + o.id;
+      document.getElementById('orderModalBody').innerHTML = `
+        <div class="row g-4">
+          <div class="col-md-6 border-end">
+            <h6 class="fw-bold text-navy mb-2"><i class="bi bi-person me-2"></i>Devotee Information</h6>
+            <p class="mb-1"><strong>Name:</strong> ${o.customer}</p>
+            <p class="mb-1"><strong>Phone:</strong> ${o.phone}</p>
+            <p class="mb-1"><strong>Email:</strong> ${o.email || '—'}</p>
+            <p class="mb-3"><strong>Shipping Address:</strong><br><span class="text-muted">${o.address}</span></p>
 
-      body.innerHTML = `
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <div>
-            <h5 class="fw-bold mb-0">${ord.order_number || ord.id}</h5>
-            <span class="text-muted small">Placed on ${ord.date || (ord.created_at ? new Date(ord.created_at).toLocaleDateString() : 'Today')}</span>
+            <h6 class="fw-bold text-navy mb-2"><i class="bi bi-credit-card me-2"></i>Payment Details</h6>
+            <p class="mb-1"><strong>Method:</strong> ${o.payment_method}</p>
+            <p class="mb-1"><strong>Status:</strong> <span class="badge bg-success-subtle text-success">${o.payment_status}</span></p>
+            ${o.courier ? `<p class="mb-1"><strong>Courier:</strong> ${o.courier}</p>` : ''}
+            ${o.tracking_number ? `<p class="mb-1"><strong>Tracking / AWB:</strong> <code>${o.tracking_number}</code></p>` : ''}
+            ${o.notes ? `<p class="mb-1 text-muted small"><strong>Notes:</strong> ${o.notes}</p>` : ''}
           </div>
-          <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 text-capitalize">${status}</span>
-        </div>
-        <div class="d-flex flex-column gap-2 mb-3">
-          ${items.map(item => `
-            <div class="p-3 bg-light rounded-3 d-flex align-items-center gap-3">
-              <img src="${item.image || item.product_image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=80&q=80'}" style="width: 48px; height: 48px; object-fit: contain;">
-              <div class="flex-grow-1">
-                <div class="fw-bold text-dark">${item.name || item.product_name || 'Audio Item'}</div>
-                <div class="text-muted small">Color: ${item.color || 'Standard'} | Qty: ${item.quantity || item.qty || 1}</div>
+
+          <div class="col-md-6">
+            <h6 class="fw-bold text-navy mb-2"><i class="bi bi-cart me-2"></i>Ordered Items</h6>
+            <div class="border rounded p-3 mb-3 bg-white">
+              ${o.items.map(i => `
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                  <span>${i.name} (×${i.qty})</span>
+                  <span class="fw-bold">₹${i.price * i.qty}</span>
+                </div>
+              `).join('')}
+              <div class="d-flex justify-content-between pt-2">
+                <span>Shipping:</span>
+                <span>${o.shipping === 0 ? '<span class="text-success">FREE</span>' : '₹' + o.shipping}</span>
               </div>
-              <div class="fw-bold fs-6 text-primary">$${Number(item.total || item.price || 0).toFixed(2)}</div>
+              <div class="d-flex justify-content-between pt-2 border-top fw-bold text-navy fs-6">
+                <span>Total:</span>
+                <span>₹${o.total}</span>
+              </div>
             </div>
-          `).join('')}
-        </div>
-        <div class="small bg-white p-3 border rounded-3">
-          <div class="d-flex justify-content-between py-1 text-muted"><span>Customer:</span> <strong class="text-dark">${ord.customer_name || (ord.shipping_address && ord.shipping_address.name) || 'Customer'}</strong></div>
-          <div class="d-flex justify-content-between py-1 text-muted"><span>Email:</span> <strong class="text-dark">${ord.customer_email || 'customer@example.com'}</strong></div>
-          <div class="d-flex justify-content-between py-1 text-muted"><span>Payment:</span> <strong class="text-dark">${ord.payment_method || 'Verified Online Payment'}</strong></div>
-          <div class="d-flex justify-content-between py-1 text-muted"><span>Delivery:</span> <strong class="text-success">Express Tracked Carrier</strong></div>
+
+            <div class="mb-3">
+              <label class="form-label fw-bold text-navy">Quick Update Status</label>
+              <select id="modal-order-status" class="form-select">
+                <option value="Confirmed" ${o.status === 'Confirmed' ? 'selected' : ''}>Confirmed (Order Placed)</option>
+                <option value="Packed" ${o.status === 'Packed' ? 'selected' : ''}>Packed (Ready for Courier)</option>
+                <option value="Dispatched" ${o.status === 'Dispatched' ? 'selected' : ''}>Dispatched (In Transit)</option>
+                <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered to Devotee</option>
+                <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+              </select>
+            </div>
+          </div>
         </div>
       `;
-      viewModalInstance.show();
+
+      const modal = new bootstrap.Modal(document.getElementById('orderModal'));
+      modal.show();
     }
 
-    function openAdminOrderStatusModal(id, currentStatus) {
-      if (!statusModalInstance) statusModalInstance = new bootstrap.Modal(document.getElementById('adminOrderStatusModal'));
-      document.getElementById('statusTargetOrderId').value = id;
-      document.getElementById('statusSelectorInput').value = (currentStatus || 'processing').toLowerCase();
-      statusModalInstance.show();
-    }
+    function switchToEditModal() {
+      const modalEl = document.getElementById('orderModal');
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
 
-    function saveAdminOrderStatus() {
-      const id = document.getElementById('statusTargetOrderId').value;
-      const newStatus = document.getElementById('statusSelectorInput').value;
-
-      let allOrders = getAdminOrders();
-      const target = allOrders.find(o => (o.id === id || o.order_number === id || String(o.id) === String(id)));
-      if (target) {
-        target.status = newStatus;
-        target.order_status = newStatus;
-        localStorage.setItem('cres_orders', JSON.stringify(allOrders));
-        if (window.CRESCENDO_DATA) window.CRESCENDO_DATA.orders = allOrders;
-        if (statusModalInstance) statusModalInstance.hide();
-        filterAdminOrders();
-        showToast(`Order status updated to "${newStatus}".`, 'success');
+      if (currentSelectedOrderId) {
+        editOrderDetails(currentSelectedOrderId);
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      renderAdminOrdersTable();
-    });
+    function editOrderDetails(id) {
+      const o = localOrders.find(item => item.id === id);
+      if (!o) return;
+      currentSelectedOrderId = id;
+
+      document.getElementById('edit-order-id').value = o.id;
+      document.getElementById('edit-order-customer').value = o.customer;
+      document.getElementById('edit-order-phone').value = o.phone;
+      document.getElementById('edit-order-email').value = o.email || '';
+      document.getElementById('edit-order-address').value = o.address;
+      document.getElementById('edit-order-status').value = o.status;
+      document.getElementById('edit-order-payment-method').value = o.payment_method;
+      document.getElementById('edit-order-payment-status').value = o.payment_status || 'Paid';
+      document.getElementById('edit-order-courier').value = o.courier || '';
+      document.getElementById('edit-order-tracking').value = o.tracking_number || '';
+      document.getElementById('edit-order-notes').value = o.notes || '';
+
+      document.getElementById('editOrderModalTitle').innerText = 'Edit Order Details — ' + o.id;
+
+      const editModal = new bootstrap.Modal(document.getElementById('editOrderModal'));
+      editModal.show();
+    }
+
+    function saveOrderChanges(e) {
+      e.preventDefault();
+      const id = document.getElementById('edit-order-id').value;
+      const idx = localOrders.findIndex(o => o.id === id);
+      if (idx === -1) return;
+
+      localOrders[idx].customer = document.getElementById('edit-order-customer').value.trim();
+      localOrders[idx].phone = document.getElementById('edit-order-phone').value.trim();
+      localOrders[idx].email = document.getElementById('edit-order-email').value.trim();
+      localOrders[idx].address = document.getElementById('edit-order-address').value.trim();
+      localOrders[idx].status = document.getElementById('edit-order-status').value;
+      localOrders[idx].payment_method = document.getElementById('edit-order-payment-method').value;
+      localOrders[idx].payment_status = document.getElementById('edit-order-payment-status').value;
+      localOrders[idx].courier = document.getElementById('edit-order-courier').value.trim();
+      localOrders[idx].tracking_number = document.getElementById('edit-order-tracking').value.trim();
+      localOrders[idx].notes = document.getElementById('edit-order-notes').value.trim();
+
+      localStorage.setItem('harinama_admin_orders', JSON.stringify(localOrders));
+      showToast(`Order ${id} updated successfully!`);
+
+      const editModalEl = document.getElementById('editOrderModal');
+      const editModal = bootstrap.Modal.getInstance(editModalEl);
+      if (editModal) editModal.hide();
+
+      updateMetricCounters();
+      filterOrders();
+    }
+
+    function updateOrderStatusFromModal() {
+      if (!currentSelectedOrderId) return;
+      const newStatus = document.getElementById('modal-order-status').value;
+      const idx = localOrders.findIndex(o => o.id === currentSelectedOrderId);
+      if (idx > -1) {
+        localOrders[idx].status = newStatus;
+        localStorage.setItem('harinama_admin_orders', JSON.stringify(localOrders));
+        showToast(`Order ${currentSelectedOrderId} status updated to ${newStatus}`);
+      }
+
+      const modalEl = document.getElementById('orderModal');
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
+
+      updateMetricCounters();
+      filterOrders();
+    }
+
+    function exportOrdersCSV() {
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "Order ID,Date,Customer,Phone,Total,Payment,Status,Address\n";
+      localOrders.forEach(o => {
+        csvContent += `"${o.id}","${o.date}","${o.customer}","${o.phone}","₹${o.total}","${o.payment_method}","${o.status}","${o.address.replace(/"/g, '""')}"\n`;
+      });
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Harinama_Orders_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("Orders exported successfully!");
+    }
   </script>
 </body>
 </html>

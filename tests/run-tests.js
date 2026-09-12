@@ -41,8 +41,11 @@ const request = (method, path, body = null, token = null) => {
   });
 };
 
+const db = require('../server/models/db');
+
 async function runTests() {
   console.log('--- STARTING HARINAMA STORE AUTOMATED TESTS ---');
+  db.seedInitialData();
   let passed = 0;
   let failed = 0;
 
@@ -153,6 +156,53 @@ async function runTests() {
 
     const authorizedAdmin = await request('GET', '/admin/dashboard-stats', null, adminToken);
     assert(authorizedAdmin.status === 200 && authorizedAdmin.body.data.totalProducts > 0, '17. Admin Dashboard Analytics & Sales Data KPI retrieval');
+
+    // 12. Address Management CRUD
+    const addAddress = await request('POST', '/addresses', {
+      name: 'Radha Raman Das',
+      phone: '+91 99887 76655',
+      address_line_1: 'Sri Sri Radha Madhav Temple Marg',
+      city: 'Mayapur',
+      state: 'West Bengal',
+      postal_code: '741313',
+      country: 'India',
+      address_type: 'Temple'
+    }, userToken);
+    assert(addAddress.status === 201 && addAddress.body.data.city === 'Mayapur', '18. Customer Address Creation');
+
+    const addressList = await request('GET', '/addresses', null, userToken);
+    assert(addressList.status === 200 && addressList.body.data.length >= 1, '19. Customer Address List Retrieval');
+
+    // 13. Review Creation & Moderation
+    const createReview = await request('POST', '/reviews', {
+      product_id: 'prod-003',
+      rating: 5,
+      title: 'Supreme Ahimsa Silk Kurta',
+      comment: 'An absolute masterpiece of craftsmanship and divine comfort for temple festivities.'
+    }, userToken);
+    assert(createReview.status === 201 && createReview.body.data.rating === 5, '20. Customer Product Review Submission');
+
+    // 14. Payment Order Creation & Verification
+    const createPayment = await request('POST', '/payments/create-order', {
+      amount: 1500,
+      provider: 'razorpay'
+    }, userToken);
+    assert(createPayment.status === 200 && createPayment.body.order.amount === 150000, '21. Razorpay/Stripe Payment Order Creation in Currency Sub-units');
+
+    // 15. Notification Retrieval
+    const notifs = await request('GET', '/notifications', null, userToken);
+    assert(notifs.status === 200 && Array.isArray(notifs.body.data), '22. Real-time Customer Notifications Stream');
+
+    // 16. Admin Category & Coupon Management
+    const adminCoupons = await request('GET', '/coupons', null, adminToken);
+    assert(adminCoupons.status === 200 && adminCoupons.body.data.length >= 1, '23. Admin Coupon Management Listing');
+
+    const adminOrders = await request('GET', '/orders/admin/all', null, adminToken);
+    assert(adminOrders.status === 200 && adminOrders.body.data.length >= 1, '24. Admin Order Management and Tracking View');
+
+    // 17. Categories Listing
+    const categories = await request('GET', '/categories');
+    assert(categories.status === 200 && categories.body.data.length > 0, '25. Public Active Category Hierarchy');
 
     console.log(`\n==============================================`);
     console.log(`TEST RESULTS: ${passed} Passed, ${failed} Failed`);

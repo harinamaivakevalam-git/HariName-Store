@@ -1,0 +1,55 @@
+/* ==========================================================================
+   CRESCENDO - Design Tokens & Custom CSS Variables (Audio / Electronics UI)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* CRESCENDO Purple / Lavender Palette */
+  --cres-primary: #5B42F3;           /* Primary Vibrant Purple */
+  --cres-primary-hover: #4930DF;     /* Darker Purple */
+  --cres-primary-light: #F3F0FF;    /* Ultra Soft Lavender Tint */
+  --cres-primary-glow: rgba(91, 66, 243, 0.25);
+
+  --cres-secondary: #0F172A;         /* Deep Navy / Text */
+  --cres-secondary-light: #334155;
+
+  --cres-lavender-bg: #F4F1FD;       /* Soft Lavender Container Background */
+  --cres-hero-bg: linear-gradient(135deg, #F3F0FF 0%, #ECE6FE 50%, #E4EDFF 100%);
+  --cres-card-bg: #FFFFFF;
+  --cres-body-bg: #FAF9FE;          /* Very subtle pastel background */
+
+  /* Badges & Accents */
+  --cres-pink: #EC4899;              /* Best Seller / 30% Off badge */
+  --cres-pink-light: #FDF2F8;
+  --cres-blue: #3B82F6;              /* Sale badge */
+  --cres-blue-light: #EFF6FF;
+  --cres-green: #10B981;             /* In Stock / Delivered badge */
+  --cres-green-light: #ECFDF5;
+  --cres-yellow: #F59E0B;            /* Rating star */
+  --cres-orange: #F97316;            /* Processing badge */
+  --cres-red: #EF4444;               /* Cancelled badge */
+  --cres-red-light: #FEF2F2;
+
+  /* Typography */
+  --cres-font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --cres-font-heading: 'Outfit', sans-serif;
+
+  /* Borders & Shadows */
+  --cres-border: #EAE6FA;
+  --cres-border-subtle: #F1EFFC;
+  --cres-shadow-sm: 0 2px 8px rgba(91, 66, 243, 0.04);
+  --cres-shadow-card: 0 4px 20px rgba(91, 66, 243, 0.06);
+  --cres-shadow-hover: 0 12px 30px rgba(91, 66, 243, 0.12);
+  --cres-shadow-hero: 0 20px 40px rgba(91, 66, 243, 0.08);
+
+  /* Border Radii */
+  --cres-radius-sm: 8px;
+  --cres-radius-md: 14px;
+  --cres-radius-lg: 20px;
+  --cres-radius-xl: 28px;
+  --cres-radius-full: 9999px;
+
+  /* Transitions */
+  --cres-transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}

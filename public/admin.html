@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Hari Nama Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/assets/css/variables.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <style>
+    .admin-layout {
+      min-height: 100vh;
+      background: var(--cres-body-bg);
+    }
+    .admin-sidebar {
+      width: 260px;
+      background: #FFFFFF;
+      border-right: 1px solid var(--cres-border);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 24px 16px;
+    }
+    .admin-main {
+      flex: 1;
+      padding: 30px 40px;
+    }
+    @media (max-width: 991.98px) {
+      .admin-sidebar {
+        position: fixed;
+        left: -280px;
+        z-index: 1050;
+        transition: left 0.3s ease;
+      }
+      .admin-sidebar.show {
+        left: 0;
+      }
+      .admin-main {
+        padding: 20px 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Reusable CRESCENDO Header -->
+  <div id="cres-header-placeholder"></div>
+
+  <div class="d-flex admin-layout">
+    <!-- Admin Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="d-flex align-items-center gap-2 mb-4 px-2">
+        <span class="cres-brand-dot"></span>
+        <h5 class="fw-bold mb-0 text-dark">Admin Portal</h5>
+      </div>
+
+      <nav class="nav flex-column gap-1 flex-grow-1">
+        <a href="/admin.html" class="cres-dash-nav-item active">
+          <i class="bi bi-grid-fill"></i> Dashboard
+        </a>
+        <a href="/admin-products.html" class="cres-dash-nav-item">
+          <i class="bi bi-box-seam"></i> Products
+        </a>
+        <a href="#" class="cres-dash-nav-item">
+          <i class="bi bi-tags"></i> Categories
+        </a>
+        <a href="/admin-orders.html" class="cres-dash-nav-item">
+          <i class="bi bi-receipt"></i> Orders
+        </a>
+        <a href="#" class="cres-dash-nav-item">
+          <i class="bi bi-people"></i> Customers
+        </a>
+        <a href="#" class="cres-dash-nav-item">
+          <i class="bi bi-ticket-perforated"></i> Coupons
+        </a>
+        <a href="#" class="cres-dash-nav-item">
+          <i class="bi bi-star"></i> Reviews
+        </a>
+        <a href="#" class="cres-dash-nav-item">
+          <i class="bi bi-graph-up-arrow"></i> Analytics
+        </a>
+        <a href="#" class="cres-dash-nav-item">
+          <i class="bi bi-gear"></i> Settings
+        </a>
+      </nav>
+
+      <div class="pt-3 border-top">
+        <a href="/login.html" class="cres-dash-nav-item text-danger">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+      </div>
+    </aside>
+
+    <!-- Admin Main Content -->
+    <main class="admin-main">
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+          <h2 class="cres-page-title mb-1">Dashboard</h2>
+          <p class="text-muted small mb-0">Overview of store performance & sales</p>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="/admin-products.html" class="btn btn-cres-primary rounded-pill px-4 fw-semibold">
+            <i class="bi bi-plus-lg me-1"></i> Add Product
+          </a>
+        </div>
+      </div>
+
+      <!-- 4 KPI Stats Cards Matching Reference -->
+      <div class="row g-4 mb-4">
+        <div class="col-sm-6 col-xl-3">
+          <div class="cres-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-muted small fw-semibold">Total Sales</span>
+              <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 small">+12.5%</span>
+            </div>
+            <div class="cres-stat-number text-dark">$12,450</div>
+            <div class="text-muted small">Updated 5m ago</div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="cres-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-muted small fw-semibold">Orders</span>
+              <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1 small">+8.2%</span>
+            </div>
+            <div class="cres-stat-number text-primary">320</div>
+            <div class="text-muted small">34 awaiting dispatch</div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="cres-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-muted small fw-semibold">Customers</span>
+              <span class="badge bg-info-subtle text-info rounded-pill px-2 py-1 small">+18%</span>
+            </div>
+            <div class="cres-stat-number text-info">1,245</div>
+            <div class="text-muted small">Active accounts</div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="cres-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-muted small fw-semibold">Products</span>
+              <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2 py-1 small">Active</span>
+            </div>
+            <div class="cres-stat-number text-warning-emphasis">56</div>
+            <div class="text-muted small">6 low stock alerts</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sales Chart & Top Products Row -->
+      <div class="row g-4 mb-4">
+        <!-- Sales Overview Chart Area -->
+        <div class="col-lg-8">
+          <div class="cres-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h5 class="fw-bold mb-0">Sales Overview</h5>
+              <select class="form-select form-select-sm rounded-pill border-0 bg-light fw-semibold" style="width: 140px;">
+                <option>This Month</option>
+                <option>Last 30 Days</option>
+                <option>This Year</option>
+              </select>
+            </div>
+
+            <!-- Stylized Lavender Chart Visual -->
+            <div class="p-4 rounded-4" style="background: linear-gradient(180deg, #F9F7FE 0%, #FFFFFF 100%); border: 1px solid var(--cres-border-subtle);">
+              <svg viewBox="0 0 700 240" class="w-100" style="overflow: visible;">
+                <defs>
+                  <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#5B42F3" stop-opacity="0.3"/>
+                    <stop offset="100%" stop-color="#5B42F3" stop-opacity="0.0"/>
+                  </linearGradient>
+                </defs>
+                <!-- Grid Lines -->
+                <line x1="0" y1="40" x2="700" y2="40" stroke="#E9E5F5" stroke-dasharray="4"/>
+                <line x1="0" y1="90" x2="700" y2="90" stroke="#E9E5F5" stroke-dasharray="4"/>
+                <line x1="0" y1="140" x2="700" y2="140" stroke="#E9E5F5" stroke-dasharray="4"/>
+                <line x1="0" y1="190" x2="700" y2="190" stroke="#E9E5F5" stroke-dasharray="4"/>
+                
+                <!-- Area Fill -->
+                <path d="M 0 170 Q 100 130 200 140 T 400 80 T 600 60 L 700 40 L 700 200 L 0 200 Z" fill="url(#chartGrad)" />
+                
+                <!-- Smooth Curve Line -->
+                <path d="M 0 170 Q 100 130 200 140 T 400 80 T 600 60 L 700 40" fill="none" stroke="#5B42F3" stroke-width="4" stroke-linecap="round" />
+                
+                <!-- Data Nodes -->
+                <circle cx="200" cy="140" r="5" fill="#FFFFFF" stroke="#5B42F3" stroke-width="3" />
+                <circle cx="400" cy="80" r="5" fill="#FFFFFF" stroke="#5B42F3" stroke-width="3" />
+                <circle cx="600" cy="60" r="5" fill="#FFFFFF" stroke="#5B42F3" stroke-width="3" />
+                <circle cx="700" cy="40" r="6" fill="#5B42F3" stroke="#FFFFFF" stroke-width="2" />
+              </svg>
+
+              <div class="d-flex justify-content-between text-muted small mt-3 fw-semibold">
+                <span>Week 1</span>
+                <span>Week 2</span>
+                <span>Week 3</span>
+                <span>Week 4</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Products List -->
+        <div class="col-lg-4">
+          <div class="cres-card p-4 h-100">
+            <h5 class="fw-bold mb-4">Top Products</h5>
+
+            <div class="d-flex flex-column gap-3">
+              <!-- Item 1 -->
+              <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="cres-cart-img-box" style="width: 46px; height: 46px; border-radius: 10px; background: #f4f5f8; display: flex; align-items: center; justify-content: center;">
+                    <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=80&q=80" style="width: 80%; height: 80%; object-fit: contain;">
+                  </div>
+                  <div>
+                    <div class="fw-bold small text-dark">Pro X168A</div>
+                    <div class="text-muted small">$250.00</div>
+                  </div>
+                </div>
+                <div class="fw-bold text-primary small">120 sold</div>
+              </div>
+
+              <!-- Item 2 -->
+              <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="cres-cart-img-box" style="width: 46px; height: 46px; border-radius: 10px; background: #f4f5f8; display: flex; align-items: center; justify-content: center;">
+                    <img src="https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=80&q=80" style="width: 80%; height: 80%; object-fit: contain;">
+                  </div>
+                  <div>
+                    <div class="fw-bold small text-dark">Speaker P168A</div>
+                    <div class="text-muted small">$240.00</div>
+                  </div>
+                </div>
+                <div class="fw-bold text-primary small">95 sold</div>
+              </div>
+
+              <!-- Item 3 -->
+              <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="cres-cart-img-box" style="width: 46px; height: 46px; border-radius: 10px; background: #f4f5f8; display: flex; align-items: center; justify-content: center;">
+                    <img src="https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=80&q=80" style="width: 80%; height: 80%; object-fit: contain;">
+                  </div>
+                  <div>
+                    <div class="fw-bold small text-dark">Earbud Y168A</div>
+                    <div class="text-muted small">$270.00</div>
+                  </div>
+                </div>
+                <div class="fw-bold text-primary small">78 sold</div>
+              </div>
+
+              <!-- Item 4 -->
+              <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="cres-cart-img-box" style="width: 46px; height: 46px; border-radius: 10px; background: #f4f5f8; display: flex; align-items: center; justify-content: center;">
+                    <img src="https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=80&q=80" style="width: 80%; height: 80%; object-fit: contain;">
+                  </div>
+                  <div>
+                    <div class="fw-bold small text-dark">Noise X200</div>
+                    <div class="text-muted small">$199.00</div>
+                  </div>
+                </div>
+                <div class="fw-bold text-primary small">54 sold</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Orders on Dashboard -->
+      <div class="cres-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0">Recent Orders</h5>
+          <a href="/admin-orders.html" class="text-primary small fw-semibold text-decoration-none">
+            View All Orders <i class="bi bi-chevron-right"></i>
+          </a>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead class="text-muted small text-uppercase fw-bold border-bottom">
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="fw-bold font-monospace">#ORD12345</td>
+                <td>John Doe</td>
+                <td class="text-muted">Mar 30, 2024</td>
+                <td class="fw-bold">$250.00</td>
+                <td><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">Delivered</span></td>
+              </tr>
+              <tr>
+                <td class="fw-bold font-monospace">#ORD12344</td>
+                <td>Sarah Smith</td>
+                <td class="text-muted">Mar 25, 2024</td>
+                <td class="fw-bold">$450.00</td>
+                <td><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-3 py-1">Processing</span></td>
+              </tr>
+              <tr>
+                <td class="fw-bold font-monospace">#ORD12343</td>
+                <td>Mike Johnson</td>
+                <td class="text-muted">Feb 28, 2024</td>
+                <td class="fw-bold">$270.00</td>
+                <td><span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-3 py-1">Shipped</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Reusable CRESCENDO Footer -->
+  <div id="cres-footer-placeholder"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/data.js"></script>
+  <script src="/assets/js/components.js"></script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Addresses - Hari Nama Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/assets/css/variables.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+
+  <!-- Reusable CRESCENDO Header -->
+  <div id="cres-header-placeholder"></div>
+
+  <!-- Main Container -->
+  <main class="container py-4">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+      <div>
+        <h2 class="cres-page-title mb-1">My Addresses</h2>
+        <p class="text-muted">Manage your delivery addresses</p>
+      </div>
+      <button class="btn btn-cres-primary rounded-pill px-4 py-2 fw-semibold" onclick="openAddressModal()">
+        <i class="bi bi-plus-lg me-1"></i> Add New Address
+      </button>
+    </div>
+
+    <!-- Address Cards Grid -->
+    <div class="row g-4" id="address-cards-container">
+      <!-- Address Card 1: Home (Default) -->
+      <div class="col-md-6 col-lg-5">
+        <div class="cres-card p-4 h-100">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="d-flex align-items-center gap-2">
+              <h5 class="fw-bold mb-0">Home</h5>
+              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small">Default</span>
+            </div>
+            <i class="bi bi-house-door text-primary fs-5"></i>
+          </div>
+
+          <div class="text-secondary mb-4">
+            <div class="fw-bold text-dark mb-1"><i class="bi bi-person me-2 text-muted"></i>John Doe</div>
+            <div class="mb-1 text-muted"><i class="bi bi-geo-alt me-2 text-muted"></i>123 Music Street, New York, NY 10001, USA</div>
+            <div class="text-muted"><i class="bi bi-telephone me-2 text-muted"></i>+1 234 567 890</div>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 pt-3 border-top">
+            <button class="btn btn-sm btn-link text-primary p-0 fw-semibold text-decoration-none" onclick="editAddress('addr-01')">
+              <i class="bi bi-pencil me-1"></i> Edit
+            </button>
+            <span class="text-muted opacity-50">|</span>
+            <button class="btn btn-sm btn-link text-danger p-0 fw-semibold text-decoration-none" onclick="deleteAddress('addr-01')">
+              <i class="bi bi-trash me-1"></i> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Address Card 2: Office -->
+      <div class="col-md-6 col-lg-5">
+        <div class="cres-card p-4 h-100">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="d-flex align-items-center gap-2">
+              <h5 class="fw-bold mb-0">Office</h5>
+            </div>
+            <i class="bi bi-briefcase text-primary fs-5"></i>
+          </div>
+
+          <div class="text-secondary mb-4">
+            <div class="fw-bold text-dark mb-1"><i class="bi bi-person me-2 text-muted"></i>John Doe</div>
+            <div class="mb-1 text-muted"><i class="bi bi-geo-alt me-2 text-muted"></i>456 Tech Avenue, San Francisco, CA 94107, USA</div>
+            <div class="text-muted"><i class="bi bi-telephone me-2 text-muted"></i>+1 234 567 890</div>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 pt-3 border-top">
+            <button class="btn btn-sm btn-link text-primary p-0 fw-semibold text-decoration-none" onclick="editAddress('addr-02')">
+              <i class="bi bi-pencil me-1"></i> Edit
+            </button>
+            <span class="text-muted opacity-50">|</span>
+            <button class="btn btn-sm btn-link text-danger p-0 fw-semibold text-decoration-none" onclick="deleteAddress('addr-02')">
+              <i class="bi bi-trash me-1"></i> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add/Edit Address Modal -->
+  <div class="modal fade" id="addressModal" tabindex="-1" aria-labelledby="addressModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 border-0 shadow">
+        <div class="modal-header border-bottom p-4">
+          <h5 class="modal-title fw-bold" id="addressModalLabel">Add New Address</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="addressForm" onsubmit="handleSaveAddress(event)">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Address Title</label>
+              <input type="text" class="form-control rounded-pill px-3 py-2" id="addrTitle" placeholder="e.g. Home, Office, Studio" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Full Name</label>
+              <input type="text" class="form-control rounded-pill px-3 py-2" id="addrName" value="John Doe" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Street Address</label>
+              <input type="text" class="form-control rounded-pill px-3 py-2" id="addrStreet" placeholder="123 Music Boulevard" required>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label small fw-semibold">City</label>
+                <input type="text" class="form-control rounded-pill px-3 py-2" id="addrCity" placeholder="New York" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Postal Code</label>
+                <input type="text" class="form-control rounded-pill px-3 py-2" id="addrZip" placeholder="10001" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Phone Number</label>
+              <input type="tel" class="form-control rounded-pill px-3 py-2" id="addrPhone" placeholder="+1 234 567 890" required>
+            </div>
+            <div class="form-check mb-4">
+              <input class="form-check-input" type="checkbox" id="addrDefault">
+              <label class="form-check-label small" for="addrDefault">
+                Set as default delivery address
+              </label>
+            </div>
+            <button type="submit" class="btn btn-cres-primary rounded-pill w-100 py-2 fw-semibold">Save Address</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reusable CRESCENDO Footer -->
+  <div id="cres-footer-placeholder"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/data.js"></script>
+  <script src="/assets/js/components.js"></script>
+  <script>
+    let addrModalInstance = null;
+
+    function openAddressModal() {
+      if (!addrModalInstance) {
+        addrModalInstance = new bootstrap.Modal(document.getElementById('addressModal'));
+      }
+      document.getElementById('addressForm').reset();
+      document.getElementById('addressModalLabel').innerText = 'Add New Address';
+      addrModalInstance.show();
+    }
+
+    function editAddress(id) {
+      if (!addrModalInstance) {
+        addrModalInstance = new bootstrap.Modal(document.getElementById('addressModal'));
+      }
+      document.getElementById('addressModalLabel').innerText = 'Edit Address';
+      document.getElementById('addrTitle').value = id === 'addr-01' ? 'Home' : 'Office';
+      document.getElementById('addrName').value = 'John Doe';
+      document.getElementById('addrStreet').value = id === 'addr-01' ? '123 Music Street' : '456 Tech Avenue';
+      document.getElementById('addrCity').value = id === 'addr-01' ? 'New York' : 'San Francisco';
+      document.getElementById('addrZip').value = id === 'addr-01' ? '10001' : '94107';
+      document.getElementById('addrPhone').value = '+1 234 567 890';
+      document.getElementById('addrDefault').checked = (id === 'addr-01');
+      addrModalInstance.show();
+    }
+
+    function deleteAddress(id) {
+      if (confirm('Are you sure you want to remove this address?')) {
+        window.cresShowToast('Address removed successfully.');
+      }
+    }
+
+    function handleSaveAddress(e) {
+      e.preventDefault();
+      if (addrModalInstance) addrModalInstance.hide();
+      window.cresShowToast('Address saved successfully!');
+    }
+  </script>
+</body>
+</html>

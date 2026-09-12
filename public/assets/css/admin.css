@@ -1,0 +1,225 @@
+/* ==========================================================================
+   HariNama Store - Admin Dashboard Stylesheet
+   ========================================================================== */
+
+@import './variables.css';
+
+.hn-admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #F1F5F9;
+}
+
+/* Admin Sidebar */
+.hn-admin-sidebar {
+  width: 260px;
+  background: #0F172A;
+  color: #94A3B8;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: var(--hn-transition);
+  z-index: 1040;
+}
+
+.hn-admin-brand {
+  padding: 24px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #FFF;
+  text-decoration: none;
+}
+
+.hn-admin-nav {
+  padding: 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-grow: 1;
+}
+
+.hn-admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--hn-radius-md);
+  color: #94A3B8;
+  font-weight: 500;
+  font-size: 0.925rem;
+  transition: var(--hn-transition-fast);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.hn-admin-nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #FFF;
+}
+
+.hn-admin-nav-item.active {
+  background: var(--hn-primary);
+  color: #FFF;
+  font-weight: 600;
+  box-shadow: 0 4px 12px var(--hn-primary-glow);
+}
+
+.hn-admin-nav-item i {
+  font-size: 1.15rem;
+}
+
+/* Admin Main Content */
+.hn-admin-main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hn-admin-topbar {
+  background: #FFF;
+  border-bottom: 1px solid var(--hn-border);
+  padding: 16px 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hn-admin-body {
+  padding: 30px;
+  flex-grow: 1;
+}
+
+/* KPI Cards */
+.hn-kpi-card {
+  background: #FFF;
+  border-radius: var(--hn-radius-lg);
+  padding: 22px;
+  border: 1px solid var(--hn-border);
+  box-shadow: var(--hn-shadow-xs);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  transition: var(--hn-transition);
+}
+
+.hn-kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--hn-shadow-md);
+}
+
+.hn-kpi-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--hn-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.hn-kpi-val {
+  font-size: 1.65rem;
+  font-weight: 800;
+  font-family: var(--hn-font-heading);
+  color: var(--hn-secondary);
+  line-height: 1.1;
+  margin-bottom: 2px;
+}
+
+.hn-kpi-label {
+  font-size: 0.85rem;
+  color: var(--hn-text-muted);
+  font-weight: 500;
+}
+
+/* Admin Table Styles */
+.hn-admin-table-card {
+  background: #FFF;
+  border-radius: var(--hn-radius-lg);
+  border: 1px solid var(--hn-border);
+  box-shadow: var(--hn-shadow-xs);
+  overflow: hidden;
+}
+
+.hn-admin-table-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--hn-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.hn-admin-table {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.hn-admin-table th {
+  background: #F8FAFC;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--hn-text-muted);
+  font-weight: 700;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--hn-border);
+}
+
+.hn-admin-table td {
+  padding: 16px 20px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--hn-border-subtle);
+  font-size: 0.9rem;
+}
+
+/* Status Badges */
+.hn-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--hn-radius-full);
+  font-size: 0.775rem;
+  font-weight: 600;
+}
+
+.status-active, .status-delivered, .status-paid, .status-approved {
+  background: #ECFDF5;
+  color: #065F46;
+}
+
+.status-pending, .status-processing, .status-confirmed {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.status-shipped, .status-out_for_delivery {
+  background: #EFF6FF;
+  color: #1E40AF;
+}
+
+.status-cancelled, .status-rejected, .status-suspended, .status-failed {
+  background: #FEF2F2;
+  color: #991B1B;
+}
+
+@media (max-width: 991.98px) {
+  .hn-admin-sidebar {
+    position: fixed;
+    left: -260px;
+    top: 0;
+    bottom: 0;
+  }
+  .hn-admin-sidebar.show {
+    left: 0;
+  }
+}

@@ -1,0 +1,795 @@
+/* ==========================================================================
+   CRESCENDO - Master Theme Stylesheet (Exact Source-of-Truth Visual Design)
+   ========================================================================== */
+
+@import './variables.css';
+
+/* Global Reset & Base */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--cres-font-main);
+  background-color: var(--cres-body-bg);
+  color: var(--cres-secondary);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6, .cres-heading {
+  font-family: var(--cres-font-heading);
+  font-weight: 700;
+  color: var(--cres-secondary);
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: var(--cres-primary);
+  text-decoration: none;
+  transition: var(--cres-transition);
+}
+
+a:hover {
+  color: var(--cres-primary-hover);
+}
+
+/* --------------------------------------------------------------------------
+   1. GLOBAL HEADER & NAVBAR (CRESCENDO)
+   -------------------------------------------------------------------------- */
+.cres-header {
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--cres-border-subtle);
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  padding: 14px 0;
+  box-shadow: var(--cres-shadow-sm);
+  transition: var(--cres-transition);
+}
+
+.cres-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--cres-secondary);
+  font-family: var(--cres-font-heading);
+  font-weight: 800;
+  font-size: 1.45rem;
+  letter-spacing: -0.03em;
+}
+
+.cres-brand-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--cres-primary);
+  display: inline-block;
+}
+
+.cres-nav-link {
+  color: var(--cres-secondary);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 8px 16px;
+  border-radius: var(--cres-radius-full);
+  transition: var(--cres-transition);
+}
+
+.cres-nav-link:hover, .cres-nav-link.active {
+  color: var(--cres-primary);
+  background-color: var(--cres-primary-light);
+}
+
+.cres-icon-btn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 1px solid var(--cres-border);
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  color: var(--cres-secondary);
+  font-size: 1.1rem;
+  line-height: 1;
+  position: relative;
+  transition: var(--cres-transition);
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  text-decoration: none;
+}
+
+.cres-icon-btn i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 1.1rem;
+  margin: 0;
+  padding: 0;
+}
+
+.cres-icon-btn:hover {
+  border-color: var(--cres-primary);
+  color: var(--cres-primary) !important;
+  background: var(--cres-primary-light);
+  transform: translateY(-2px) !important;
+}
+
+.cres-badge-pill {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--cres-primary);
+  color: #FFF;
+  font-size: 0.7rem;
+  font-weight: 700;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #FFF;
+}
+
+/* Primary CTA Button */
+.cres-btn-primary {
+  background: var(--cres-primary);
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 0.925rem;
+  padding: 10px 24px;
+  border-radius: var(--cres-radius-full);
+  border: none;
+  box-shadow: 0 4px 14px var(--cres-primary-glow);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: var(--cres-transition);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cres-btn-primary:hover {
+  background: var(--cres-primary-hover);
+  color: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--cres-primary-glow);
+}
+
+.cres-btn-outline {
+  background: #FFFFFF;
+  color: var(--cres-secondary);
+  border: 1.5px solid var(--cres-border);
+  font-weight: 600;
+  font-size: 0.925rem;
+  padding: 10px 24px;
+  border-radius: var(--cres-radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: var(--cres-transition);
+  text-decoration: none;
+}
+
+.cres-btn-outline:hover {
+  border-color: var(--cres-primary);
+  color: var(--cres-primary);
+  background: var(--cres-primary-light);
+}
+
+/* --------------------------------------------------------------------------
+   2. HERO BANNER & HOMEPAGE SECTIONS
+   -------------------------------------------------------------------------- */
+.cres-hero-container {
+  background: var(--cres-hero-bg);
+  border-radius: var(--cres-radius-xl);
+  padding: 60px 50px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--cres-shadow-hero);
+  border: 1px solid rgba(91, 66, 243, 0.08);
+}
+
+.cres-hero-title {
+  font-size: 3.5rem;
+  line-height: 1.15;
+  font-weight: 800;
+  color: var(--cres-secondary);
+  margin-bottom: 18px;
+}
+
+.cres-hero-title span.purple-accent {
+  color: var(--cres-primary);
+}
+
+.cres-hero-desc {
+  font-size: 1.1rem;
+  color: var(--cres-secondary-light);
+  max-width: 460px;
+  margin-bottom: 30px;
+}
+
+.cres-hero-img-wrap {
+  position: relative;
+  text-align: center;
+}
+
+.cres-hero-img {
+  width: 100%;
+  max-width: 440px;
+  max-height: 440px;
+  object-fit: cover;
+  border-radius: var(--cres-radius-xl);
+  box-shadow: var(--cres-shadow-hover);
+}
+
+.cres-hero-discount-badge {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: var(--cres-pink);
+  color: #FFF;
+  padding: 12px 18px;
+  border-radius: var(--cres-radius-lg);
+  font-weight: 800;
+  font-size: 1.1rem;
+  box-shadow: 0 8px 20px rgba(236, 72, 153, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.cres-hero-discount-badge span.sub {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Feature Strip under hero */
+.cres-feature-strip {
+  margin-top: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+}
+
+.cres-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cres-feature-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: var(--cres-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  box-shadow: var(--cres-shadow-sm);
+}
+
+/* --------------------------------------------------------------------------
+   3. PRODUCT CARD (EXACT CRESCENDO REFERENCE)
+   -------------------------------------------------------------------------- */
+.cres-product-card {
+  background: #FFFFFF;
+  border-radius: var(--cres-radius-lg);
+  border: 1px solid var(--cres-border);
+  padding: 20px;
+  position: relative;
+  transition: var(--cres-transition);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-shadow: var(--cres-shadow-card);
+}
+
+.cres-product-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--cres-shadow-hover);
+  border-color: #D8D2FB;
+}
+
+.cres-product-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 4px 12px;
+  border-radius: var(--cres-radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+.cres-badge-purple {
+  background: var(--cres-primary-light);
+  color: var(--cres-primary);
+}
+
+.cres-badge-pink {
+  background: var(--cres-pink-light);
+  color: var(--cres-pink);
+}
+
+.cres-badge-blue {
+  background: var(--cres-blue-light);
+  color: var(--cres-blue);
+}
+
+.cres-card-wishlist {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 1px solid var(--cres-border);
+  color: var(--cres-secondary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: var(--cres-transition);
+}
+
+.cres-card-wishlist:hover, .cres-card-wishlist.active {
+  color: var(--cres-pink);
+  border-color: var(--cres-pink);
+  background: var(--cres-pink-light);
+}
+
+.cres-product-img-box {
+  position: relative;
+  width: 100%;
+  height: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  overflow: hidden;
+  border-radius: var(--cres-radius-md);
+  background: #FAF9FE;
+}
+
+.cres-product-img-box img {
+  max-width: 85%;
+  max-height: 85%;
+  object-fit: contain;
+  transition: transform 0.4s ease;
+}
+
+.cres-product-card:hover .cres-product-img-box img {
+  transform: scale(1.08);
+}
+
+.cres-product-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--cres-secondary);
+}
+
+.cres-product-title a {
+  color: inherit;
+}
+
+.cres-product-title a:hover {
+  color: var(--cres-primary);
+}
+
+.cres-product-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--cres-yellow);
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+
+.cres-product-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.cres-product-price {
+  font-family: var(--cres-font-heading);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--cres-secondary);
+}
+
+.cres-card-cart-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--cres-primary);
+  color: #FFF;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px var(--cres-primary-glow);
+  transition: var(--cres-transition);
+}
+
+.cres-card-cart-btn:hover {
+  background: var(--cres-primary-hover);
+  transform: scale(1.1);
+}
+
+/* --------------------------------------------------------------------------
+   4. CATEGORY CARDS
+   -------------------------------------------------------------------------- */
+.cres-category-card {
+  background: #FFFFFF;
+  border-radius: var(--cres-radius-lg);
+  border: 1px solid var(--cres-border);
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  transition: var(--cres-transition);
+  box-shadow: var(--cres-shadow-card);
+  text-decoration: none;
+  color: var(--cres-secondary);
+}
+
+.cres-category-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--cres-shadow-hover);
+  border-color: var(--cres-primary);
+  color: var(--cres-primary);
+}
+
+.cres-category-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+}
+
+/* Promotional Strip */
+.cres-promo-banner {
+  background: linear-gradient(135deg, #5B42F3 0%, #7C3AED 100%);
+  color: #FFFFFF;
+  border-radius: var(--cres-radius-xl);
+  padding: 40px 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 12px 30px rgba(91, 66, 243, 0.25);
+  margin: 50px 0;
+}
+
+/* --------------------------------------------------------------------------
+   5. SPLIT AUTH PAGES (LOGIN / REGISTER / FORGOT PASSWORD)
+   -------------------------------------------------------------------------- */
+.cres-auth-wrapper {
+  min-height: calc(100vh - 180px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 15px;
+}
+
+.cres-auth-card {
+  background: #FFFFFF;
+  border-radius: var(--cres-radius-xl);
+  border: 1px solid var(--cres-border);
+  box-shadow: var(--cres-shadow-hover);
+  overflow: hidden;
+  width: 100%;
+  max-width: 960px;
+}
+
+.cres-auth-panel-left {
+  background: var(--cres-hero-bg);
+  padding: 50px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+}
+
+.cres-auth-panel-right {
+  padding: 50px 40px;
+}
+
+/* --------------------------------------------------------------------------
+   6. ACCOUNT DASHBOARD & ADMIN PORTAL
+   -------------------------------------------------------------------------- */
+.cres-dash-sidebar {
+  background: #FFFFFF;
+  border-radius: var(--cres-radius-lg);
+  border: 1px solid var(--cres-border);
+  padding: 16px;
+  box-shadow: var(--cres-shadow-card);
+}
+
+.cres-dash-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: var(--cres-radius-md);
+  color: var(--cres-secondary);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: var(--cres-transition);
+  text-decoration: none;
+  margin-bottom: 4px;
+}
+
+.cres-dash-nav-item:hover, .cres-dash-nav-item.active {
+  background: var(--cres-primary-light);
+  color: var(--cres-primary);
+}
+
+.cres-stat-card {
+  background: #FFFFFF;
+  border-radius: var(--cres-radius-lg);
+  border: 1px solid var(--cres-border);
+  padding: 24px;
+  box-shadow: var(--cres-shadow-card);
+  text-align: center;
+  transition: var(--cres-transition);
+}
+
+.cres-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--cres-shadow-hover);
+}
+
+.cres-stat-number {
+  font-family: var(--cres-font-heading);
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--cres-primary);
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   7. FOOTER (CRESCENDO)
+   -------------------------------------------------------------------------- */
+.cres-footer {
+  background: #FFFFFF;
+  border-top: 1px solid var(--cres-border);
+  padding: 60px 0 24px;
+  margin-top: 70px;
+}
+
+.cres-footer h6 {
+  font-weight: 700;
+  color: var(--cres-secondary);
+  margin-bottom: 18px;
+  font-size: 1rem;
+}
+
+.cres-footer a:not(.cres-icon-btn) {
+  color: var(--cres-secondary-light);
+  display: block;
+  margin-bottom: 10px;
+  font-size: 0.925rem;
+  transition: var(--cres-transition);
+}
+
+.cres-footer a:not(.cres-icon-btn):hover {
+  color: var(--cres-primary);
+  transform: translateX(4px);
+}
+
+/* ==========================================================================
+   8. COMPREHENSIVE RESPONSIVE STYLES (Mobile, Tablet, Desktop)
+   ========================================================================== */
+
+/* Large Tablets & Small Laptops (992px - 1199.98px) */
+@media (max-width: 1199.98px) {
+  .cres-hero-title {
+    font-size: 2.8rem;
+  }
+  .cres-hero-container {
+    padding: 45px 35px;
+  }
+  .cres-product-img-box {
+    height: 160px;
+  }
+}
+
+/* Tablets (768px - 991.98px) */
+@media (max-width: 991.98px) {
+  .cres-hero-container {
+    padding: 40px 28px;
+    text-align: center;
+  }
+  .cres-hero-title {
+    font-size: 2.5rem;
+    margin-bottom: 14px;
+  }
+  .cres-hero-desc {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .cres-hero-img-wrap {
+    margin-top: 30px;
+  }
+  .cres-hero-img {
+    max-height: 320px;
+  }
+  .cres-feature-strip {
+    justify-content: center;
+  }
+  .cres-promo-banner {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+    padding: 30px 24px;
+  }
+  .cres-filter-sidebar {
+    margin-bottom: 24px;
+  }
+  .cres-auth-panel-left {
+    padding: 35px 25px;
+  }
+  .cres-auth-panel-right {
+    padding: 35px 25px;
+  }
+  .cres-footer {
+    padding: 45px 0 20px;
+    margin-top: 50px;
+  }
+}
+
+/* Landscape Mobile & Small Tablets (576px - 767.98px) */
+@media (max-width: 767.98px) {
+  .cres-header {
+    padding: 10px 0;
+  }
+  .cres-brand {
+    font-size: 1.25rem;
+  }
+  .cres-hero-container {
+    padding: 30px 18px;
+    border-radius: var(--cres-radius-lg);
+  }
+  .cres-hero-title {
+    font-size: 2rem;
+  }
+  .cres-hero-desc {
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+  }
+  .cres-hero-discount-badge {
+    top: 10px;
+    left: 10px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+  }
+  .cres-feature-item {
+    font-size: 0.85rem;
+  }
+  .cres-product-card {
+    padding: 14px;
+  }
+  .cres-product-img-box {
+    height: 140px;
+  }
+  .cres-product-title {
+    font-size: 0.92rem;
+  }
+  .cres-product-price {
+    font-size: 0.95rem;
+  }
+  .cres-stat-card {
+    padding: 16px 12px;
+  }
+  .cres-stat-number {
+    font-size: 1.8rem;
+  }
+  .cres-auth-card {
+    border-radius: var(--cres-radius-lg);
+  }
+  .cres-card {
+    border-radius: var(--cres-radius-md);
+  }
+  .table-responsive {
+    border-radius: var(--cres-radius-md);
+  }
+}
+
+/* Extra Small Phones (<= 575.98px down to 320px) */
+@media (max-width: 575.98px) {
+  .cres-hero-title {
+    font-size: 1.7rem;
+    line-height: 1.2;
+  }
+  .cres-hero-container .btn {
+    width: 100%;
+  }
+  .cres-hero-discount-badge {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+  }
+  .cres-feature-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  .cres-icon-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 0.95rem;
+  }
+  .cres-category-card {
+    padding: 14px;
+  }
+  .cres-category-card h6 {
+    font-size: 0.85rem;
+  }
+  .cres-category-img {
+    width: 60px;
+    height: 60px;
+  }
+  .cres-card-cart-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 0.85rem;
+  }
+  .cres-product-img-box {
+    height: 120px;
+  }
+  .cres-product-badge {
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    top: 10px;
+    left: 10px;
+  }
+  .cres-card-wishlist {
+    width: 32px;
+    height: 32px;
+    top: 10px;
+    right: 10px;
+  }
+  .cres-footer form {
+    flex-direction: column;
+  }
+  .cres-footer form .btn {
+    width: 100%;
+  }
+}
+
+/* Touch Device Target Enhancements */
+@media (hover: none) and (pointer: coarse) {
+  .cres-nav-link, 
+  .cres-icon-btn, 
+  .btn, 
+  .form-control,
+  .form-select {
+    min-height: 42px;
+  }
+}
+

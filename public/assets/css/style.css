@@ -11,13 +11,15 @@
 
 html, body, button, input, select, textarea, .btn, .form-control, .form-select,
 h1, h2, h3, h4, h5, h6, p, span, a, label, table, th, td, .hn-serif, .hn-display, .hn-script, .hn-brand-title {
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-family: 'San Francisco', 'SF Pro Display', 'SF Pro Text', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+  letter-spacing: -0.012em;
 }
 
 body {
+  font-family: 'San Francisco', 'SF Pro Display', 'SF Pro Text', 'SF Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
   background-color: var(--hn-body-bg);
   color: var(--hn-text-primary);
-  line-height: 1.65;
+  line-height: 1.6;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

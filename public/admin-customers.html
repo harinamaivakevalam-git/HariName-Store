@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Customers - Sample Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/assets/css/variables.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <style>
+    .admin-layout { min-height: 100vh; background: var(--cres-body-bg); }
+    .admin-sidebar { width: 260px; background: #FFFFFF; border-right: 1px solid var(--cres-border); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; padding: 24px 16px; }
+    .admin-main { flex: 1; padding: 30px 40px; }
+    @media (max-width: 991.98px) {
+      .admin-sidebar { position: fixed; left: -280px; z-index: 1050; transition: left 0.3s ease; }
+      .admin-sidebar.show { left: 0; }
+      .admin-main { padding: 20px 15px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Reusable CRESCENDO Header -->
+  <div id="cres-header-placeholder"></div>
+
+  <div class="d-flex admin-layout">
+    <!-- Admin Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="d-flex align-items-center gap-2 mb-4 px-2">
+        <span class="cres-brand-dot"></span>
+        <h5 class="fw-bold mb-0 text-dark">Admin Portal</h5>
+      </div>
+
+      <nav class="nav flex-column gap-1 flex-grow-1">
+        <a href="/admin.html" class="cres-dash-nav-item">
+          <i class="bi bi-grid-fill"></i> Dashboard
+        </a>
+        <a href="/admin-products.html" class="cres-dash-nav-item">
+          <i class="bi bi-box-seam"></i> Products
+        </a>
+        <a href="/admin-categories.html" class="cres-dash-nav-item">
+          <i class="bi bi-tags"></i> Categories
+        </a>
+        <a href="/admin-orders.html" class="cres-dash-nav-item">
+          <i class="bi bi-receipt"></i> Orders
+        </a>
+        <a href="/admin-customers.html" class="cres-dash-nav-item active">
+          <i class="bi bi-people"></i> Customers
+        </a>
+        <a href="/admin-coupons.html" class="cres-dash-nav-item">
+          <i class="bi bi-ticket-perforated"></i> Coupons
+        </a>
+        <a href="/admin-reviews.html" class="cres-dash-nav-item">
+          <i class="bi bi-star"></i> Reviews
+        </a>
+        <a href="/admin-analytics.html" class="cres-dash-nav-item">
+          <i class="bi bi-graph-up-arrow"></i> Analytics
+        </a>
+        <a href="/admin-settings.html" class="cres-dash-nav-item">
+          <i class="bi bi-gear"></i> Settings
+        </a>
+      </nav>
+
+      <div class="pt-3 border-top">
+        <a href="/login.html" class="cres-dash-nav-item text-danger">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+          <h2 class="cres-page-title mb-1">Customer Accounts</h2>
+          <p class="text-muted small mb-0">Manage customer profiles, order histories & verification</p>
+        </div>
+        <div>
+          <button class="btn btn-cres-primary rounded-pill px-4 fw-semibold" onclick="openAddCustomerModal()">
+            <i class="bi bi-person-plus me-1"></i> Add Customer
+          </button>
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" class="form-control border-start-0 rounded-end-pill" id="customerSearchInput" placeholder="Search by name, email or phone..." oninput="filterCustomers()">
+          </div>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select rounded-pill px-3" id="customerStatusFilter" onchange="filterCustomers()">
+            <option value="">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="VIP">VIP</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Customers Table Card -->
+      <div class="cres-card p-4">
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead class="text-muted small text-uppercase">
+              <tr>
+                <th>Customer</th>
+                <th>Contact</th>
+                <th>Orders Placed</th>
+                <th>Total Spent</th>
+                <th>Status</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="customers-tbody">
+              <!-- Injected dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Customer Modal -->
+  <div class="modal fade" id="customerModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 border-0 shadow">
+        <div class="modal-header border-bottom p-4">
+          <h5 class="modal-title fw-bold" id="custModalTitle">Add Customer</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="customerForm" onsubmit="handleCustomerSave(event)">
+            <input type="hidden" id="custEditId">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Full Name</label>
+              <input type="text" class="form-control rounded-pill px-3" id="custName" required placeholder="e.g. John Doe">
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Email Address</label>
+              <input type="email" class="form-control rounded-pill px-3" id="custEmail" required placeholder="e.g. john@example.com">
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Phone Number</label>
+              <input type="tel" class="form-control rounded-pill px-3" id="custPhone" placeholder="e.g. +1 234 567 890">
+            </div>
+            <div class="mb-4">
+              <label class="form-label small fw-semibold">Customer Tier / Status</label>
+              <select class="form-select rounded-pill px-3" id="custStatus">
+                <option value="Active">Active</option>
+                <option value="VIP">VIP</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-cres-primary rounded-pill w-100 py-2 fw-semibold">Save Profile</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Customer Details Modal -->
+  <div class="modal fade" id="customerDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 border-0 shadow">
+        <div class="modal-header border-bottom p-4">
+          <h5 class="modal-title fw-bold">Customer Overview</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4" id="custDetailsBody">
+          <!-- Details injected -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reusable CRESCENDO Footer -->
+  <div id="cres-footer-placeholder"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/data.js"></script>
+  <script src="/assets/js/components.js"></script>
+  <script>
+    let customersList = [];
+    let custModal = null;
+    let custDetailsModal = null;
+
+    const defaultCustomers = [
+      { id: 'cust-1', name: 'John Doe', email: 'john@example.com', phone: '+1 (555) 234-5678', orders: 4, spent: 890.00, status: 'VIP', joined: 'Jan 2026' },
+      { id: 'cust-2', name: 'Sophia Bennett', email: 'sophia.b@domain.com', phone: '+1 (555) 876-5432', orders: 2, spent: 480.00, status: 'Active', joined: 'Feb 2026' },
+      { id: 'cust-3', name: 'Alex Turner', email: 'alex.t@soundhub.io', phone: '+1 (555) 345-6789', orders: 6, spent: 1450.00, status: 'VIP', joined: 'Dec 2025' },
+      { id: 'cust-4', name: 'Emma Watson', email: 'emma.w@musiclover.org', phone: '+1 (555) 901-2345', orders: 1, spent: 149.99, status: 'Active', joined: 'Mar 2026' },
+      { id: 'cust-5', name: 'David Miller', email: 'david.m@audio.net', phone: '+1 (555) 432-1098', orders: 0, spent: 0.00, status: 'Inactive', joined: 'Mar 2026' }
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderHeader('');
+      renderFooter();
+      custModal = new bootstrap.Modal(document.getElementById('customerModal'));
+      custDetailsModal = new bootstrap.Modal(document.getElementById('customerDetailsModal'));
+      loadCustomers();
+    });
+
+    function loadCustomers() {
+      const stored = localStorage.getItem('cres_admin_customers');
+      customersList = stored ? JSON.parse(stored) : defaultCustomers;
+      renderCustomersTable(customersList);
+    }
+
+    function renderCustomersTable(list) {
+      const tbody = document.getElementById('customers-tbody');
+      if (!list || list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No customers found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = list.map((c, idx) => `
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                ${c.name.charAt(0)}
+              </div>
+              <div>
+                <div class="fw-bold text-dark">${c.name}</div>
+                <div class="text-muted small">Joined ${c.joined || '2026'}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div>${c.email}</div>
+            <div class="text-muted small">${c.phone || 'N/A'}</div>
+          </td>
+          <td><span class="badge bg-light text-dark border px-3 py-2 rounded-pill">${c.orders} Orders</span></td>
+          <td class="fw-bold text-dark">$${Number(c.spent).toFixed(2)}</td>
+          <td><span class="badge ${c.status === 'VIP' ? 'bg-warning-subtle text-warning' : (c.status === 'Active' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary')} rounded-pill px-3 py-2">${c.status}</span></td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-secondary rounded-pill me-1" onclick="viewCustomerDetails(${idx})"><i class="bi bi-eye"></i></button>
+            <button class="btn btn-sm btn-outline-primary rounded-pill me-1" onclick="editCustomer(${idx})"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="deleteCustomer(${idx})"><i class="bi bi-trash"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function filterCustomers() {
+      const q = document.getElementById('customerSearchInput').value.toLowerCase();
+      const status = document.getElementById('customerStatusFilter').value;
+      const filtered = customersList.filter(c => {
+        const matchesQ = c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || (c.phone && c.phone.includes(q));
+        const matchesStatus = !status || c.status === status;
+        return matchesQ && matchesStatus;
+      });
+      renderCustomersTable(filtered);
+    }
+
+    function openAddCustomerModal() {
+      document.getElementById('customerForm').reset();
+      document.getElementById('custEditId').value = '';
+      document.getElementById('custModalTitle').textContent = 'Add Customer';
+      custModal.show();
+    }
+
+    function editCustomer(idx) {
+      const c = customersList[idx];
+      document.getElementById('custEditId').value = idx;
+      document.getElementById('custName').value = c.name;
+      document.getElementById('custEmail').value = c.email;
+      document.getElementById('custPhone').value = c.phone || '';
+      document.getElementById('custStatus').value = c.status || 'Active';
+      document.getElementById('custModalTitle').textContent = 'Edit Customer';
+      custModal.show();
+    }
+
+    function handleCustomerSave(e) {
+      e.preventDefault();
+      const editIdx = document.getElementById('custEditId').value;
+      const custData = {
+        id: editIdx !== '' ? customersList[editIdx].id : 'cust-' + Date.now(),
+        name: document.getElementById('custName').value.trim(),
+        email: document.getElementById('custEmail').value.trim(),
+        phone: document.getElementById('custPhone').value.trim(),
+        status: document.getElementById('custStatus').value,
+        orders: editIdx !== '' ? customersList[editIdx].orders : 0,
+        spent: editIdx !== '' ? customersList[editIdx].spent : 0.00,
+        joined: editIdx !== '' ? customersList[editIdx].joined : 'Just now'
+      };
+
+      if (editIdx !== '') {
+        customersList[editIdx] = custData;
+        showToast('Customer profile updated.', 'success');
+      } else {
+        customersList.unshift(custData);
+        showToast('Customer created successfully.', 'success');
+      }
+
+      localStorage.setItem('cres_admin_customers', JSON.stringify(customersList));
+      filterCustomers();
+      custModal.hide();
+    }
+
+    function viewCustomerDetails(idx) {
+      const c = customersList[idx];
+      document.getElementById('custDetailsBody').innerHTML = `
+        <div class="text-center mb-4">
+          <div class="rounded-circle bg-primary-subtle text-primary fw-bold mx-auto mb-2 d-flex align-items-center justify-content-center" style="width:64px; height:64px; font-size: 1.5rem;">
+            ${c.name.charAt(0)}
+          </div>
+          <h5 class="fw-bold mb-1">${c.name}</h5>
+          <span class="badge ${c.status === 'VIP' ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success'} rounded-pill px-3 py-2">${c.status} Member</span>
+        </div>
+        <div class="d-flex flex-column gap-2 border-top pt-3">
+          <div class="d-flex justify-content-between"><span class="text-muted">Email:</span> <strong>${c.email}</strong></div>
+          <div class="d-flex justify-content-between"><span class="text-muted">Phone:</span> <strong>${c.phone || 'N/A'}</strong></div>
+          <div class="d-flex justify-content-between"><span class="text-muted">Orders Count:</span> <strong>${c.orders}</strong></div>
+          <div class="d-flex justify-content-between"><span class="text-muted">Lifetime Value:</span> <strong class="text-primary">$${Number(c.spent).toFixed(2)}</strong></div>
+        </div>
+      `;
+      custDetailsModal.show();
+    }
+
+    function deleteCustomer(idx) {
+      if (!confirm(`Are you sure you want to delete customer "${customersList[idx].name}"?`)) return;
+      customersList.splice(idx, 1);
+      localStorage.setItem('cres_admin_customers', JSON.stringify(customersList));
+      filterCustomers();
+      showToast('Customer deleted.', 'info');
+    }
+  </script>
+</body>
+</html>

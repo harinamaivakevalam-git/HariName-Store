@@ -1,23 +1,22 @@
 {
-  "name": "harinama-store",
+  "name": "sample-store",
   "version": "1.0.0",
-  "description": "Premium Commercial E-Commerce Platform",
+  "description": "Sample Store - Full Stack Commercial eCommerce Platform",
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
-    "dev": "node --watch server/server.js",
+    "dev": "nodemon server/server.js",
     "seed": "node database/seed.js",
     "test": "node tests/run-tests.js"
   },
   "keywords": [
     "ecommerce",
-    "store",
-    "supabase",
+    "shopping-cart",
+    "sqlite",
     "express",
-    "bootstrap5",
-    "postgresql"
+    "full-stack"
   ],
-  "author": "HariNama Store",
+  "author": "Sample Store",
   "license": "MIT",
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",

@@ -1,5 +1,5 @@
 /**
- * HariNama Store - Unified API Client
+ * Sample Store - Unified API Client
  */
 
 const API_BASE = '/api';

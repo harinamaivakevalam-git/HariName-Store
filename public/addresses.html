@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Addresses - Hari Nama Store</title>
+  <title>My Addresses - Sample Store</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -31,62 +31,7 @@
 
     <!-- Address Cards Grid -->
     <div class="row g-4" id="address-cards-container">
-      <!-- Address Card 1: Home (Default) -->
-      <div class="col-md-6 col-lg-5">
-        <div class="cres-card p-4 h-100">
-          <div class="d-flex align-items-center justify-content-between mb-3">
-            <div class="d-flex align-items-center gap-2">
-              <h5 class="fw-bold mb-0">Home</h5>
-              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small">Default</span>
-            </div>
-            <i class="bi bi-house-door text-primary fs-5"></i>
-          </div>
-
-          <div class="text-secondary mb-4">
-            <div class="fw-bold text-dark mb-1"><i class="bi bi-person me-2 text-muted"></i>John Doe</div>
-            <div class="mb-1 text-muted"><i class="bi bi-geo-alt me-2 text-muted"></i>123 Music Street, New York, NY 10001, USA</div>
-            <div class="text-muted"><i class="bi bi-telephone me-2 text-muted"></i>+1 234 567 890</div>
-          </div>
-
-          <div class="d-flex align-items-center gap-3 pt-3 border-top">
-            <button class="btn btn-sm btn-link text-primary p-0 fw-semibold text-decoration-none" onclick="editAddress('addr-01')">
-              <i class="bi bi-pencil me-1"></i> Edit
-            </button>
-            <span class="text-muted opacity-50">|</span>
-            <button class="btn btn-sm btn-link text-danger p-0 fw-semibold text-decoration-none" onclick="deleteAddress('addr-01')">
-              <i class="bi bi-trash me-1"></i> Delete
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Address Card 2: Office -->
-      <div class="col-md-6 col-lg-5">
-        <div class="cres-card p-4 h-100">
-          <div class="d-flex align-items-center justify-content-between mb-3">
-            <div class="d-flex align-items-center gap-2">
-              <h5 class="fw-bold mb-0">Office</h5>
-            </div>
-            <i class="bi bi-briefcase text-primary fs-5"></i>
-          </div>
-
-          <div class="text-secondary mb-4">
-            <div class="fw-bold text-dark mb-1"><i class="bi bi-person me-2 text-muted"></i>John Doe</div>
-            <div class="mb-1 text-muted"><i class="bi bi-geo-alt me-2 text-muted"></i>456 Tech Avenue, San Francisco, CA 94107, USA</div>
-            <div class="text-muted"><i class="bi bi-telephone me-2 text-muted"></i>+1 234 567 890</div>
-          </div>
-
-          <div class="d-flex align-items-center gap-3 pt-3 border-top">
-            <button class="btn btn-sm btn-link text-primary p-0 fw-semibold text-decoration-none" onclick="editAddress('addr-02')">
-              <i class="bi bi-pencil me-1"></i> Edit
-            </button>
-            <span class="text-muted opacity-50">|</span>
-            <button class="btn btn-sm btn-link text-danger p-0 fw-semibold text-decoration-none" onclick="deleteAddress('addr-02')">
-              <i class="bi bi-trash me-1"></i> Delete
-            </button>
-          </div>
-        </div>
-      </div>
+      <!-- Injected dynamically -->
     </div>
   </main>
 
@@ -100,6 +45,7 @@
         </div>
         <div class="modal-body p-4">
           <form id="addressForm" onsubmit="handleSaveAddress(event)">
+            <input type="hidden" id="addrEditId">
             <div class="mb-3">
               <label class="form-label small fw-semibold">Address Title</label>
               <input type="text" class="form-control rounded-pill px-3 py-2" id="addrTitle" placeholder="e.g. Home, Office, Studio" required>
@@ -149,11 +95,81 @@
   <script>
     let addrModalInstance = null;
 
+    function getAddresses() {
+      const stored = localStorage.getItem('cres_addresses');
+      if (stored) {
+        try { return JSON.parse(stored); } catch (e) {}
+      }
+      return [
+        { id: 'addr-01', title: 'Home', name: 'John Doe', street: '123 Music Street', city: 'New York', zip: '10001', phone: '+1 234 567 890', isDefault: true, icon: 'bi-house-door' },
+        { id: 'addr-02', title: 'Office', name: 'John Doe', street: '456 Tech Avenue', city: 'San Francisco', zip: '94107', phone: '+1 234 567 890', isDefault: false, icon: 'bi-briefcase' }
+      ];
+    }
+
+    function saveAddresses(list) {
+      localStorage.setItem('cres_addresses', JSON.stringify(list));
+      renderAddressCards();
+    }
+
+    function renderAddressCards() {
+      const container = document.getElementById('address-cards-container');
+      if (!container) return;
+
+      const list = getAddresses();
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="col-12 text-center py-5 text-muted">
+            <i class="bi bi-geo-alt display-4 mb-2 d-block opacity-50"></i>
+            <p>No saved addresses yet.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(addr => `
+        <div class="col-md-6 col-lg-5">
+          <div class="cres-card p-4 h-100 position-relative">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="d-flex align-items-center gap-2">
+                <h5 class="fw-bold mb-0">${addr.title}</h5>
+                ${addr.isDefault ? '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small">Default</span>' : ''}
+              </div>
+              <i class="bi ${addr.icon || 'bi-geo-alt'} text-primary fs-5"></i>
+            </div>
+
+            <div class="text-secondary mb-4">
+              <div class="fw-bold text-dark mb-1"><i class="bi bi-person me-2 text-muted"></i>${addr.name}</div>
+              <div class="mb-1 text-muted"><i class="bi bi-geo-alt me-2 text-muted"></i>${addr.street}, ${addr.city}, ${addr.zip}, USA</div>
+              <div class="text-muted"><i class="bi bi-telephone me-2 text-muted"></i>${addr.phone}</div>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+              <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-sm btn-link text-primary p-0 fw-semibold text-decoration-none" onclick="editAddress('${addr.id}')">
+                  <i class="bi bi-pencil me-1"></i> Edit
+                </button>
+                <span class="text-muted opacity-50">|</span>
+                <button class="btn btn-sm btn-link text-danger p-0 fw-semibold text-decoration-none" onclick="deleteAddress('${addr.id}')">
+                  <i class="bi bi-trash me-1"></i> Delete
+                </button>
+              </div>
+              ${!addr.isDefault ? `
+                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 small" onclick="setDefaultAddress('${addr.id}')">
+                  Set as Default
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
     function openAddressModal() {
       if (!addrModalInstance) {
         addrModalInstance = new bootstrap.Modal(document.getElementById('addressModal'));
       }
       document.getElementById('addressForm').reset();
+      document.getElementById('addrEditId').value = '';
       document.getElementById('addressModalLabel').innerText = 'Add New Address';
       addrModalInstance.show();
     }
@@ -162,28 +178,82 @@
       if (!addrModalInstance) {
         addrModalInstance = new bootstrap.Modal(document.getElementById('addressModal'));
       }
+      const list = getAddresses();
+      const addr = list.find(a => a.id === id);
+      if (!addr) return;
+
       document.getElementById('addressModalLabel').innerText = 'Edit Address';
-      document.getElementById('addrTitle').value = id === 'addr-01' ? 'Home' : 'Office';
-      document.getElementById('addrName').value = 'John Doe';
-      document.getElementById('addrStreet').value = id === 'addr-01' ? '123 Music Street' : '456 Tech Avenue';
-      document.getElementById('addrCity').value = id === 'addr-01' ? 'New York' : 'San Francisco';
-      document.getElementById('addrZip').value = id === 'addr-01' ? '10001' : '94107';
-      document.getElementById('addrPhone').value = '+1 234 567 890';
-      document.getElementById('addrDefault').checked = (id === 'addr-01');
+      document.getElementById('addrEditId').value = addr.id;
+      document.getElementById('addrTitle').value = addr.title;
+      document.getElementById('addrName').value = addr.name;
+      document.getElementById('addrStreet').value = addr.street;
+      document.getElementById('addrCity').value = addr.city;
+      document.getElementById('addrZip').value = addr.zip;
+      document.getElementById('addrPhone').value = addr.phone;
+      document.getElementById('addrDefault').checked = addr.isDefault;
       addrModalInstance.show();
     }
 
     function deleteAddress(id) {
       if (confirm('Are you sure you want to remove this address?')) {
+        let list = getAddresses();
+        list = list.filter(a => a.id !== id);
+        saveAddresses(list);
         window.cresShowToast('Address removed successfully.');
       }
     }
 
+    function setDefaultAddress(id) {
+      let list = getAddresses();
+      list.forEach(a => a.isDefault = (a.id === id));
+      saveAddresses(list);
+      window.cresShowToast('Default delivery address updated.');
+    }
+
     function handleSaveAddress(e) {
       e.preventDefault();
+      const editId = document.getElementById('addrEditId').value;
+      const title = document.getElementById('addrTitle').value.trim();
+      const name = document.getElementById('addrName').value.trim();
+      const street = document.getElementById('addrStreet').value.trim();
+      const city = document.getElementById('addrCity').value.trim();
+      const zip = document.getElementById('addrZip').value.trim();
+      const phone = document.getElementById('addrPhone').value.trim();
+      const isDefault = document.getElementById('addrDefault').checked;
+
+      let list = getAddresses();
+      if (isDefault) {
+        list.forEach(a => a.isDefault = false);
+      }
+
+      if (editId) {
+        const item = list.find(a => a.id === editId);
+        if (item) {
+          item.title = title;
+          item.name = name;
+          item.street = street;
+          item.city = city;
+          item.zip = zip;
+          item.phone = phone;
+          item.isDefault = isDefault;
+        }
+      } else {
+        const newAddr = {
+          id: 'addr-' + Date.now(),
+          title, name, street, city, zip, phone, isDefault,
+          icon: title.toLowerCase().includes('office') ? 'bi-briefcase' : 'bi-house-door'
+        };
+        list.push(newAddr);
+      }
+
+      saveAddresses(list);
       if (addrModalInstance) addrModalInstance.hide();
       window.cresShowToast('Address saved successfully!');
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAddressCards();
+    });
   </script>
 </body>
 </html>

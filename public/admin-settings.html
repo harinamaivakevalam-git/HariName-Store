@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Settings - Sample Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/assets/css/variables.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <style>
+    .admin-layout { min-height: 100vh; background: var(--cres-body-bg); }
+    .admin-sidebar { width: 260px; background: #FFFFFF; border-right: 1px solid var(--cres-border); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; padding: 24px 16px; }
+    .admin-main { flex: 1; padding: 30px 40px; }
+    @media (max-width: 991.98px) {
+      .admin-sidebar { position: fixed; left: -280px; z-index: 1050; transition: left 0.3s ease; }
+      .admin-sidebar.show { left: 0; }
+      .admin-main { padding: 20px 15px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Reusable CRESCENDO Header -->
+  <div id="cres-header-placeholder"></div>
+
+  <div class="d-flex admin-layout">
+    <!-- Admin Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="d-flex align-items-center gap-2 mb-4 px-2">
+        <span class="cres-brand-dot"></span>
+        <h5 class="fw-bold mb-0 text-dark">Admin Portal</h5>
+      </div>
+
+      <nav class="nav flex-column gap-1 flex-grow-1">
+        <a href="/admin.html" class="cres-dash-nav-item">
+          <i class="bi bi-grid-fill"></i> Dashboard
+        </a>
+        <a href="/admin-products.html" class="cres-dash-nav-item">
+          <i class="bi bi-box-seam"></i> Products
+        </a>
+        <a href="/admin-categories.html" class="cres-dash-nav-item">
+          <i class="bi bi-tags"></i> Categories
+        </a>
+        <a href="/admin-orders.html" class="cres-dash-nav-item">
+          <i class="bi bi-receipt"></i> Orders
+        </a>
+        <a href="/admin-customers.html" class="cres-dash-nav-item">
+          <i class="bi bi-people"></i> Customers
+        </a>
+        <a href="/admin-coupons.html" class="cres-dash-nav-item">
+          <i class="bi bi-ticket-perforated"></i> Coupons
+        </a>
+        <a href="/admin-reviews.html" class="cres-dash-nav-item">
+          <i class="bi bi-star"></i> Reviews
+        </a>
+        <a href="/admin-analytics.html" class="cres-dash-nav-item">
+          <i class="bi bi-graph-up-arrow"></i> Analytics
+        </a>
+        <a href="/admin-settings.html" class="cres-dash-nav-item active">
+          <i class="bi bi-gear"></i> Settings
+        </a>
+      </nav>
+
+      <div class="pt-3 border-top">
+        <a href="/login.html" class="cres-dash-nav-item text-danger">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <div class="mb-4">
+        <h2 class="cres-page-title mb-1">Store Settings & Configuration</h2>
+        <p class="text-muted small mb-0">Manage global store metadata, payments, and shipping rules</p>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-lg-8">
+          <div class="cres-card p-4 p-md-5 mb-4">
+            <h5 class="fw-bold mb-4">General Information</h5>
+            <form onsubmit="handleSettingsSave(event)">
+              <div class="mb-3">
+                <label class="form-label small fw-semibold">Store Brand Name</label>
+                <input type="text" class="form-control rounded-pill px-3" id="settingStoreName" value="Sample Store" required>
+              </div>
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold">Support Email</label>
+                  <input type="email" class="form-control rounded-pill px-3" id="settingStoreEmail" value="support@samplestore.com" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold">Support Phone</label>
+                  <input type="tel" class="form-control rounded-pill px-3" id="settingStorePhone" value="+1 (555) 234-5678">
+                </div>
+              </div>
+              <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold">Store Currency</label>
+                  <select class="form-select rounded-pill px-3" id="settingCurrency">
+                    <option value="USD" selected>USD ($ - US Dollar)</option>
+                    <option value="EUR">EUR (€ - Euro)</option>
+                    <option value="GBP">GBP (£ - British Pound)</option>
+                    <option value="CAD">CAD ($ - Canadian Dollar)</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold">Free Shipping Threshold ($)</label>
+                  <input type="number" class="form-control rounded-pill px-3" id="settingFreeShip" value="0.00">
+                </div>
+              </div>
+
+              <h6 class="fw-bold mb-3 pt-3 border-top">Payment Gateways</h6>
+              <div class="d-flex flex-column gap-3 mb-4">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="gateCard" checked>
+                  <label class="form-check-label fw-semibold" for="gateCard">Credit & Debit Cards (Stripe / 256-bit SSL)</label>
+                </div>
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="gatePaypal" checked>
+                  <label class="form-check-label fw-semibold" for="gatePaypal">PayPal Express Checkout</label>
+                </div>
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="gateCod" checked>
+                  <label class="form-check-label fw-semibold" for="gateCod">Cash on Delivery (COD)</label>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-cres-primary rounded-pill px-5 py-3 fw-bold">
+                Save All Settings
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="cres-card p-4">
+            <h6 class="fw-bold mb-3">System Information</h6>
+            <div class="d-flex flex-column gap-2 small text-muted">
+              <div class="d-flex justify-content-between"><span>Version:</span> <strong class="text-dark">2.4.0 (Enterprise)</strong></div>
+              <div class="d-flex justify-content-between"><span>Database:</span> <strong class="text-success">Connected</strong></div>
+              <div class="d-flex justify-content-between"><span>Cache Engine:</span> <strong class="text-dark">LocalStorage Active</strong></div>
+              <div class="d-flex justify-content-between"><span>SSL Protection:</span> <strong class="text-success">Active (TLS 1.3)</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Reusable CRESCENDO Footer -->
+  <div id="cres-footer-placeholder"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/data.js"></script>
+  <script src="/assets/js/components.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      renderHeader('');
+      renderFooter();
+      loadSettings();
+    });
+
+    function loadSettings() {
+      const stored = localStorage.getItem('cres_admin_settings');
+      if (stored) {
+        try {
+          const s = JSON.parse(stored);
+          if (s.name) document.getElementById('settingStoreName').value = s.name;
+          if (s.email) document.getElementById('settingStoreEmail').value = s.email;
+          if (s.phone) document.getElementById('settingStorePhone').value = s.phone;
+          if (s.currency) document.getElementById('settingCurrency').value = s.currency;
+        } catch(e) {}
+      }
+    }
+
+    function handleSettingsSave(e) {
+      e.preventDefault();
+      const settings = {
+        name: document.getElementById('settingStoreName').value.trim(),
+        email: document.getElementById('settingStoreEmail').value.trim(),
+        phone: document.getElementById('settingStorePhone').value.trim(),
+        currency: document.getElementById('settingCurrency').value
+      };
+      localStorage.setItem('cres_admin_settings', JSON.stringify(settings));
+      showToast('Store settings saved successfully! ⚙️', 'success');
+    }
+  </script>
+</body>
+</html>

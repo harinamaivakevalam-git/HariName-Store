@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>All Products - Hari Nama Store</title>
+  <title>All Products - Sample Store</title>
   
   <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -145,14 +145,8 @@
         </div>
 
         <!-- Pagination Controls -->
-        <div class="d-flex justify-content-center mt-5">
-          <ul class="pagination shadow-sm rounded-pill overflow-hidden">
-            <li class="page-item disabled"><a class="page-link" href="#">&laquo;</a></li>
-            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-            <li class="page-item"><a class="page-link" href="#">2</a></li>
-            <li class="page-item"><a class="page-link" href="#">3</a></li>
-            <li class="page-item"><a class="page-link" href="#">&raquo;</a></li>
-          </ul>
+        <div class="d-flex justify-content-center mt-5" id="catalog-pagination-container">
+          <!-- Injected dynamically -->
         </div>
 
       </div>
@@ -169,6 +163,8 @@
 
   <script>
     let selectedCategory = '';
+    let currentPage = 1;
+    const PAGE_SIZE = 6;
 
     document.addEventListener('DOMContentLoaded', () => {
       renderHeader('products');
@@ -204,7 +200,14 @@
 
     window.onSelectCategory = (slug) => {
       selectedCategory = slug;
+      currentPage = 1;
       applyCatalogFilters();
+    };
+
+    window.goToPage = (page) => {
+      currentPage = page;
+      applyCatalogFilters();
+      window.scrollTo({ top: 120, behavior: 'smooth' });
     };
 
     window.applyCatalogFilters = () => {
@@ -214,6 +217,8 @@
       const selectedBrands = Array.from(document.querySelectorAll('input[type="checkbox"][value]:checked')).map(cb => cb.value);
       const rating = document.querySelector('input[name="catRating"]:checked')?.value;
       const sort = document.getElementById('catalog-sort').value;
+      const inStockOnly = document.getElementById('avail-in-stock').checked;
+      const outStockOnly = document.getElementById('avail-out-stock').checked;
 
       let filtered = [...CRESCENDO_DATA.products];
 
@@ -231,6 +236,12 @@
         filtered = filtered.filter(p => p.rating >= parseFloat(rating));
       }
 
+      if (inStockOnly && !outStockOnly) {
+        filtered = filtered.filter(p => p.stock > 0);
+      } else if (!inStockOnly && outStockOnly) {
+        filtered = filtered.filter(p => p.stock === 0);
+      }
+
       if (sort === 'price-asc') {
         filtered.sort((a, b) => a.price - b.price);
       } else if (sort === 'price-desc') {
@@ -239,19 +250,43 @@
         filtered.sort((a, b) => b.rating - a.rating);
       }
 
-      const grid = document.getElementById('catalog-products-grid');
-      document.getElementById('catalog-count-text').textContent = `Showing 1-${filtered.length} of ${filtered.length} products`;
+      const totalItems = filtered.length;
+      const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
 
-      if (filtered.length === 0) {
+      const startIndex = (currentPage - 1) * PAGE_SIZE;
+      const endIndex = Math.min(startIndex + PAGE_SIZE, totalItems);
+      const paginatedItems = filtered.slice(startIndex, endIndex);
+
+      const grid = document.getElementById('catalog-products-grid');
+      const countText = document.getElementById('catalog-count-text');
+      const pagContainer = document.getElementById('catalog-pagination-container');
+
+      if (totalItems === 0) {
+        countText.textContent = `Showing 0 products`;
         grid.innerHTML = '<div class="col-12 text-center py-5 text-muted"><i class="bi bi-search display-3"></i><p class="mt-3">No products match your filters.</p></div>';
+        pagContainer.innerHTML = '';
         return;
       }
 
-      grid.innerHTML = filtered.map(p => `
+      countText.textContent = `Showing ${startIndex + 1}-${endIndex} of ${totalItems} products`;
+
+      grid.innerHTML = paginatedItems.map(p => `
         <div class="col-6 col-md-4">
           ${renderProductCard(p)}
         </div>
       `).join('');
+
+      // Render Pagination Buttons
+      let pagHtml = '<ul class="pagination shadow-sm rounded-pill overflow-hidden mb-0">';
+      pagHtml += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}"><button class="page-link" onclick="goToPage(${currentPage - 1})" aria-label="Previous">&laquo;</button></li>`;
+      for (let i = 1; i <= totalPages; i++) {
+        pagHtml += `<li class="page-item ${i === currentPage ? 'active' : ''}"><button class="page-link" onclick="goToPage(${i})">${i}</button></li>`;
+      }
+      pagHtml += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}"><button class="page-link" onclick="goToPage(${currentPage + 1})" aria-label="Next">&raquo;</button></li>`;
+      pagHtml += '</ul>';
+
+      pagContainer.innerHTML = pagHtml;
     };
   </script>
 </body>

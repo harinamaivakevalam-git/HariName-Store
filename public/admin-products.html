@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Products - Hari Nama Store</title>
+  <title>Admin Products - Sample Store</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -67,25 +67,25 @@
         <a href="/admin-products.html" class="cres-dash-nav-item active">
           <i class="bi bi-box-seam"></i> Products
         </a>
-        <a href="#" class="cres-dash-nav-item">
+        <a href="/admin-categories.html" class="cres-dash-nav-item">
           <i class="bi bi-tags"></i> Categories
         </a>
         <a href="/admin-orders.html" class="cres-dash-nav-item">
           <i class="bi bi-receipt"></i> Orders
         </a>
-        <a href="#" class="cres-dash-nav-item">
+        <a href="/admin-customers.html" class="cres-dash-nav-item">
           <i class="bi bi-people"></i> Customers
         </a>
-        <a href="#" class="cres-dash-nav-item">
+        <a href="/admin-coupons.html" class="cres-dash-nav-item">
           <i class="bi bi-ticket-perforated"></i> Coupons
         </a>
-        <a href="#" class="cres-dash-nav-item">
+        <a href="/admin-reviews.html" class="cres-dash-nav-item">
           <i class="bi bi-star"></i> Reviews
         </a>
-        <a href="#" class="cres-dash-nav-item">
+        <a href="/admin-analytics.html" class="cres-dash-nav-item">
           <i class="bi bi-graph-up-arrow"></i> Analytics
         </a>
-        <a href="#" class="cres-dash-nav-item">
+        <a href="/admin-settings.html" class="cres-dash-nav-item">
           <i class="bi bi-gear"></i> Settings
         </a>
       </nav>
@@ -249,10 +249,10 @@
             <td class="fw-bold text-dark">$${p.price.toFixed(2)}</td>
             <td>${stockBadge}</td>
             <td class="text-end">
-              <div class="btn-group">
-                <a href="/product-details.html?id=${p.id}" target="_blank" class="btn btn-sm btn-light rounded-circle me-1" title="View"><i class="bi bi-eye"></i></a>
-                <button class="btn btn-sm btn-light rounded-circle me-1" title="Edit" onclick="editProduct('${p.id}')"><i class="bi bi-pencil text-primary"></i></button>
-                <button class="btn btn-sm btn-light rounded-circle" title="Delete" onclick="deleteProduct('${p.id}')"><i class="bi bi-trash text-danger"></i></button>
+              <div class="d-flex align-items-center justify-content-end gap-2">
+                <a href="/product-details.html?id=${p.id}" target="_blank" class="btn btn-sm btn-light rounded-circle shadow-sm" title="View in Store" style="width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-eye text-dark fs-6"></i></a>
+                <button class="btn btn-sm btn-light rounded-circle shadow-sm" title="Edit Product" onclick="editProduct('${p.id}')" style="width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-pencil text-primary fs-6"></i></button>
+                <button class="btn btn-sm btn-light rounded-circle shadow-sm" title="Delete Product" onclick="deleteProduct('${p.id}')" style="width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash text-danger fs-6"></i></button>
               </div>
             </td>
           </tr>
@@ -275,9 +275,12 @@
       renderAdminProductsTable(filtered);
     }
 
+    let editProductId = null;
+
     function openAddProductModal() {
       if (!pModal) pModal = new bootstrap.Modal(document.getElementById('productModal'));
       document.getElementById('productForm').reset();
+      editProductId = null;
       document.getElementById('productModalLabel').innerText = 'Add New Product';
       pModal.show();
     }
@@ -287,6 +290,7 @@
       const p = window.CRESCENDO_DATA.products.find(item => item.id === id);
       if (!p) return;
 
+      editProductId = p.id;
       document.getElementById('productModalLabel').innerText = 'Edit Product';
       document.getElementById('pName').value = p.name;
       document.getElementById('pCategory').value = p.category;
@@ -299,14 +303,55 @@
 
     function deleteProduct(id) {
       if (confirm('Are you sure you want to delete this product?')) {
-        window.cresShowToast('Product deleted.');
+        const idx = window.CRESCENDO_DATA.products.findIndex(p => p.id === id);
+        if (idx > -1) {
+          window.CRESCENDO_DATA.products.splice(idx, 1);
+          filterAdminProducts();
+          window.cresShowToast('Product deleted.');
+        }
       }
     }
 
     function handleSaveProduct(e) {
       e.preventDefault();
+      const name = document.getElementById('pName').value.trim();
+      const category = document.getElementById('pCategory').value;
+      const price = parseFloat(document.getElementById('pPrice').value) || 0;
+      const stock = parseInt(document.getElementById('pStock').value, 10) || 0;
+      const image = document.getElementById('pImage').value.trim();
+      const description = document.getElementById('pDesc').value.trim();
+
+      if (editProductId) {
+        const prod = window.CRESCENDO_DATA.products.find(p => p.id === editProductId);
+        if (prod) {
+          prod.name = name;
+          prod.category = category;
+          prod.price = price;
+          prod.stock = stock;
+          prod.image = image;
+          prod.description = description;
+        }
+      } else {
+        const newProd = {
+          id: 'prod-' + Date.now(),
+          name,
+          slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          brand: 'Sample Audio',
+          category,
+          category_slug: category.toLowerCase(),
+          price,
+          stock,
+          image,
+          description,
+          rating: 5.0,
+          reviews_count: 1
+        };
+        window.CRESCENDO_DATA.products.unshift(newProd);
+      }
+
       if (pModal) pModal.hide();
-      window.cresShowToast('Product saved successfully!');
+      filterAdminProducts();
+      window.cresShowToast(editProductId ? 'Product updated successfully!' : 'New product created successfully!');
     }
 
     document.addEventListener('DOMContentLoaded', () => {

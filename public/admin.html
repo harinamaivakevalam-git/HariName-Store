@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - Hari Nama Store</title>
+  <title>Admin Dashboard - Sample Store</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -67,25 +67,25 @@
         <a href="/admin-products.html" class="cres-dash-nav-item">
           <i class="bi bi-box-seam"></i> Products
         </a>
-        <a href="#" class="cres-dash-nav-item">
+        <a href="/admin-categories.html" class="cres-dash-nav-item">
           <i class="bi bi-tags"></i> Categories
         </a>
         <a href="/admin-orders.html" class="cres-dash-nav-item">
           <i class="bi bi-receipt"></i> Orders
         </a>
-        <a href="#" class="cres-dash-nav-item">
+        <a href="/admin-customers.html" class="cres-dash-nav-item">
           <i class="bi bi-people"></i> Customers
         </a>
-        <a href="#" class="cres-dash-nav-item">
+        <a href="/admin-coupons.html" class="cres-dash-nav-item">
           <i class="bi bi-ticket-perforated"></i> Coupons
         </a>
-        <a href="#" class="cres-dash-nav-item">
+        <a href="/admin-reviews.html" class="cres-dash-nav-item">
           <i class="bi bi-star"></i> Reviews
         </a>
-        <a href="#" class="cres-dash-nav-item">
+        <a href="/admin-analytics.html" class="cres-dash-nav-item">
           <i class="bi bi-graph-up-arrow"></i> Analytics
         </a>
-        <a href="#" class="cres-dash-nav-item">
+        <a href="/admin-settings.html" class="cres-dash-nav-item">
           <i class="bi bi-gear"></i> Settings
         </a>
       </nav>
@@ -294,35 +294,54 @@
                 <th>Date</th>
                 <th>Total</th>
                 <th>Status</th>
+                <th class="text-end">ACTIONS</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td class="fw-bold font-monospace">#ORD12345</td>
-                <td>John Doe</td>
-                <td class="text-muted">Mar 30, 2024</td>
-                <td class="fw-bold">$250.00</td>
-                <td><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">Delivered</span></td>
-              </tr>
-              <tr>
-                <td class="fw-bold font-monospace">#ORD12344</td>
-                <td>Sarah Smith</td>
-                <td class="text-muted">Mar 25, 2024</td>
-                <td class="fw-bold">$450.00</td>
-                <td><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-3 py-1">Processing</span></td>
-              </tr>
-              <tr>
-                <td class="fw-bold font-monospace">#ORD12343</td>
-                <td>Mike Johnson</td>
-                <td class="text-muted">Feb 28, 2024</td>
-                <td class="fw-bold">$270.00</td>
-                <td><span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-3 py-1">Shipped</span></td>
-              </tr>
+            <tbody id="adminRecentOrdersTbody">
+              <!-- Rendered dynamically -->
             </tbody>
           </table>
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- Admin View Order Modal -->
+  <div class="modal fade" id="adminOrderViewModal" tabindex="-1" aria-labelledby="adminOrderViewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 border-0 shadow">
+        <div class="modal-header border-bottom p-4">
+          <h5 class="modal-title fw-bold" id="adminOrderViewModalLabel">Order Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4" id="admin-order-modal-body">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Change Status Modal -->
+  <div class="modal fade" id="adminOrderStatusModal" tabindex="-1" aria-labelledby="adminOrderStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content rounded-4 border-0 shadow">
+        <div class="modal-header border-bottom p-3">
+          <h6 class="modal-title fw-bold" id="adminOrderStatusModalLabel">Update Order Status</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <input type="hidden" id="statusTargetOrderId">
+          <label class="form-label small fw-semibold">Fulfillment Status</label>
+          <select class="form-select rounded-pill px-3 mb-4" id="statusSelectorInput">
+            <option value="processing">Processing</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <button type="button" class="btn btn-cres-primary rounded-pill w-100 py-2 fw-semibold" onclick="saveAdminOrderStatus()">Update Status</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Reusable CRESCENDO Footer -->
@@ -332,5 +351,143 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
+  <script>
+    let viewModalInstance = null;
+    let statusModalInstance = null;
+
+    function getAdminOrders() {
+      const stored = localStorage.getItem('cres_orders');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        } catch (e) {}
+      }
+      return window.CRESCENDO_DATA && window.CRESCENDO_DATA.orders ? window.CRESCENDO_DATA.orders : [];
+    }
+
+    function renderRecentOrders() {
+      const tbody = document.getElementById('adminRecentOrdersTbody');
+      if (!tbody) return;
+
+      const orders = getAdminOrders().slice(0, 5);
+      tbody.innerHTML = orders.map(ord => {
+        const status = (ord.status || ord.order_status || 'processing').toLowerCase();
+        let badgeClass = 'bg-success-subtle text-success border border-success-subtle';
+        let statusName = 'Delivered';
+        if (status === 'processing') {
+          badgeClass = 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
+          statusName = 'Processing';
+        } else if (status === 'shipped') {
+          badgeClass = 'bg-info-subtle text-info-emphasis border border-info-subtle';
+          statusName = 'Shipped';
+        } else if (status === 'cancelled') {
+          badgeClass = 'bg-danger-subtle text-danger border border-danger-subtle';
+          statusName = 'Cancelled';
+        }
+
+        const ordId = ord.id || ord.order_number;
+
+        return `
+          <tr>
+            <td class="fw-bold font-monospace text-dark">${ord.order_number || ordId}</td>
+            <td>
+              <div class="fw-bold text-dark">${ord.customer_name || (ord.shipping_address && ord.shipping_address.name) || 'Customer'}</div>
+              <div class="text-muted small">${ord.customer_email || 'Verified Buyer'}</div>
+            </td>
+            <td class="text-muted">${ord.date || (ord.created_at ? new Date(ord.created_at).toLocaleDateString() : 'Today')}</td>
+            <td class="fw-bold text-dark">$${Number(ord.total || 0).toFixed(2)}</td>
+            <td>
+              <span class="badge ${badgeClass} rounded-pill px-3 py-1 fw-semibold small">${statusName}</span>
+            </td>
+            <td class="text-end">
+              <div class="d-flex align-items-center justify-content-end gap-2">
+                <button class="btn btn-sm btn-light rounded-circle shadow-sm" title="View details" onclick="openAdminOrderView('${ordId}')" style="width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;">
+                  <i class="bi bi-eye text-dark fs-6"></i>
+                </button>
+                <button class="btn btn-sm btn-light rounded-circle shadow-sm" title="Change Status" onclick="openAdminOrderStatusModal('${ordId}', '${status}')" style="width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;">
+                  <i class="bi bi-pencil text-primary fs-6"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openAdminOrderView(id) {
+      if (!viewModalInstance) viewModalInstance = new bootstrap.Modal(document.getElementById('adminOrderViewModal'));
+      const allOrders = getAdminOrders();
+      const ord = allOrders.find(o => (o.id === id || o.order_number === id));
+      if (!ord) return;
+
+      const body = document.getElementById('admin-order-modal-body');
+      const status = ord.status || ord.order_status || 'processing';
+      const items = ord.items || [{
+        name: ord.product_name || 'Premium Audio Device',
+        color: ord.color || 'Standard',
+        quantity: ord.quantity || 1,
+        price: ord.total || 250.00,
+        image: ord.product_image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=80&q=80'
+      }];
+
+      body.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="fw-bold mb-0">${ord.order_number || ord.id}</h5>
+            <span class="text-muted small">Placed on ${ord.date || (ord.created_at ? new Date(ord.created_at).toLocaleDateString() : 'Today')}</span>
+          </div>
+          <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 text-capitalize">${status}</span>
+        </div>
+        <div class="d-flex flex-column gap-2 mb-3">
+          ${items.map(item => `
+            <div class="p-3 bg-light rounded-3 d-flex align-items-center gap-3">
+              <img src="${item.image || item.product_image || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=80&q=80'}" style="width: 48px; height: 48px; object-fit: contain;">
+              <div class="flex-grow-1">
+                <div class="fw-bold text-dark">${item.name || item.product_name || 'Audio Item'}</div>
+                <div class="text-muted small">Color: ${item.color || 'Standard'} | Qty: ${item.quantity || item.qty || 1}</div>
+              </div>
+              <div class="fw-bold fs-6 text-primary">$${Number(item.total || item.price || 0).toFixed(2)}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="small bg-white p-3 border rounded-3">
+          <div class="d-flex justify-content-between py-1 text-muted"><span>Customer:</span> <strong class="text-dark">${ord.customer_name || (ord.shipping_address && ord.shipping_address.name) || 'Customer'}</strong></div>
+          <div class="d-flex justify-content-between py-1 text-muted"><span>Email:</span> <strong class="text-dark">${ord.customer_email || 'customer@example.com'}</strong></div>
+          <div class="d-flex justify-content-between py-1 text-muted"><span>Payment:</span> <strong class="text-dark">${ord.payment_method || 'Verified Online Payment'}</strong></div>
+          <div class="d-flex justify-content-between py-1 text-muted"><span>Delivery:</span> <strong class="text-success">Express Tracked Carrier</strong></div>
+        </div>
+      `;
+      viewModalInstance.show();
+    }
+
+    function openAdminOrderStatusModal(id, currentStatus) {
+      if (!statusModalInstance) statusModalInstance = new bootstrap.Modal(document.getElementById('adminOrderStatusModal'));
+      document.getElementById('statusTargetOrderId').value = id;
+      document.getElementById('statusSelectorInput').value = currentStatus || 'processing';
+      statusModalInstance.show();
+    }
+
+    function saveAdminOrderStatus() {
+      const id = document.getElementById('statusTargetOrderId').value;
+      const newStatus = document.getElementById('statusSelectorInput').value;
+
+      let allOrders = getAdminOrders();
+      const target = allOrders.find(o => (o.id === id || o.order_number === id));
+      if (target) {
+        target.status = newStatus;
+        target.order_status = newStatus;
+        localStorage.setItem('cres_orders', JSON.stringify(allOrders));
+        if (window.CRESCENDO_DATA) window.CRESCENDO_DATA.orders = allOrders;
+        if (statusModalInstance) statusModalInstance.hide();
+        renderRecentOrders();
+        showToast(`Order status updated to "${newStatus}".`, 'success');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderRecentOrders();
+    });
+  </script>
 </body>
 </html>

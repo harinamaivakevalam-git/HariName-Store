@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Orders - Hari Nama Store</title>
+  <title>My Orders - Sample Store</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -93,11 +93,26 @@
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
+    let activeFilter = 'all';
+
+    function getOrdersList() {
+      const stored = localStorage.getItem('cres_orders');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        } catch (e) {}
+      }
+      return window.CRESCENDO_DATA.orders;
+    }
+
     function renderOrders(filter = 'all') {
+      activeFilter = filter;
       const tbody = document.getElementById('orders-table-body');
       if (!tbody) return;
 
-      const orders = window.CRESCENDO_DATA.orders.filter(o => filter === 'all' || o.status === filter);
+      const allOrders = getOrdersList();
+      const orders = allOrders.filter(o => filter === 'all' || o.status === filter);
 
       if (orders.length === 0) {
         tbody.innerHTML = `
@@ -129,14 +144,19 @@
           <tr>
             <td class="fw-bold text-dark font-monospace">${ord.order_number}</td>
             <td class="text-muted">${ord.date}</td>
-            <td class="fw-bold text-dark">$${ord.total.toFixed(2)}</td>
+            <td class="fw-bold text-dark">$${Number(ord.total).toFixed(2)}</td>
             <td>
               <span class="badge ${badgeClass} rounded-pill px-3 py-1 fw-semibold small">${statusName}</span>
             </td>
             <td class="text-end">
-              <button class="btn btn-sm btn-link text-primary fw-semibold text-decoration-none p-0" onclick="showOrderDetails('${ord.id}')">
-                View Details
-              </button>
+              <div class="d-flex justify-content-end gap-2">
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-semibold" onclick="showOrderDetails('${ord.id}')">
+                  View
+                </button>
+                <button class="btn btn-sm btn-light rounded-pill px-3 py-1 fw-semibold" onclick="trackOrderPopup('${ord.order_number}')">
+                  <i class="bi bi-truck me-1"></i> Track
+                </button>
+              </div>
             </td>
           </tr>
         `;
@@ -150,10 +170,13 @@
     }
 
     function showOrderDetails(orderId) {
-      const ord = window.CRESCENDO_DATA.orders.find(o => o.id === orderId);
+      const allOrders = getOrdersList();
+      const ord = allOrders.find(o => o.id === orderId);
       if (!ord) return;
 
       const content = document.getElementById('order-modal-content');
+      const canCancel = ord.status === 'processing';
+
       content.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-3">
           <div>
@@ -169,18 +192,44 @@
             <div class="fw-bold">${ord.product_name}</div>
             <div class="text-muted small">Color: ${ord.color} | Qty: ${ord.quantity}</div>
           </div>
-          <div class="fw-bold">$${ord.total.toFixed(2)}</div>
+          <div class="fw-bold">$${Number(ord.total).toFixed(2)}</div>
         </div>
-        <div class="small">
+        <div class="small mb-3">
           <div class="d-flex justify-content-between py-1 text-muted"><span>Customer:</span> <strong class="text-dark">${ord.customer_name}</strong></div>
           <div class="d-flex justify-content-between py-1 text-muted"><span>Email:</span> <strong class="text-dark">${ord.customer_email}</strong></div>
-          <div class="d-flex justify-content-between py-1 text-muted"><span>Payment Method:</span> <strong class="text-dark">Credit Card (•••• 4242)</strong></div>
-          <div class="d-flex justify-content-between py-1 text-muted"><span>Shipping:</span> <strong class="text-success">Free Express</strong></div>
+          <div class="d-flex justify-content-between py-1 text-muted"><span>Payment Method:</span> <strong class="text-dark">Encrypted Secure Checkout</strong></div>
+          <div class="d-flex justify-content-between py-1 text-muted"><span>Shipping:</span> <strong class="text-success">Free Express Logistics</strong></div>
         </div>
+
+        ${canCancel ? `
+          <div class="pt-2 border-top text-end">
+            <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="cancelCustomerOrder('${ord.id}')">
+              <i class="bi bi-x-circle me-1"></i> Cancel Order
+            </button>
+          </div>
+        ` : ''}
       `;
 
       const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
       modal.show();
+    }
+
+    function cancelCustomerOrder(orderId) {
+      if (!confirm('Are you sure you want to cancel this order?')) return;
+      let allOrders = getOrdersList();
+      const target = allOrders.find(o => o.id === orderId);
+      if (target) {
+        target.status = 'cancelled';
+        localStorage.setItem('cres_orders', JSON.stringify(allOrders));
+        window.CRESCENDO_DATA.orders = allOrders;
+        bootstrap.Modal.getInstance(document.getElementById('orderDetailsModal'))?.hide();
+        showToast('Order ' + target.order_number + ' has been cancelled.', 'info');
+        renderOrders(activeFilter);
+      }
+    }
+
+    function trackOrderPopup(orderNumber) {
+      showToast(`Tracking status for ${orderNumber}: Package In-Transit with Express Logistics 🚚`, 'info');
     }
 
     document.addEventListener('DOMContentLoaded', () => {

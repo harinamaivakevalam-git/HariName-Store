@@ -1,5 +1,5 @@
 -- ============================================================================
--- HariNama Store - Complete PostgreSQL & Supabase Database Schema
+-- Sample Store - Complete PostgreSQL & Supabase Database Schema
 -- Production Ready with Full Constraints, Indexes, Triggers & RLS Policies
 -- ============================================================================
 

@@ -1,5 +1,5 @@
 /**
- * HariNama Store - Reactive State Management
+ * Sample Store - Reactive State Management
  */
 
 class AppState {

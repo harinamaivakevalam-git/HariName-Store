@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shopping Cart - Hari Nama Store</title>
+  <title>Shopping Cart - Sample Store</title>
   
   <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -16,9 +16,16 @@
   <div id="hn-header-placeholder"></div>
 
   <main class="container my-5">
-    <div class="mb-4">
-      <h2 class="fw-bold mb-1">Your Cart</h2>
-      <p class="text-muted small" id="cart-item-count-subtitle">3 items in your cart</p>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="display-6 fw-bold mb-1">Shopping Cart</h1>
+        <p class="text-muted" id="cart-item-count-subtitle">Loading items...</p>
+      </div>
+      <div>
+        <button class="btn btn-outline-danger btn-sm rounded-pill px-3 py-2 fw-semibold" onclick="clearFullCart()">
+          <i class="bi bi-trash3 me-1"></i> Clear Cart
+        </button>
+      </div>
     </div>
 
     <div class="row g-5" id="cart-main-row">
@@ -138,33 +145,37 @@
         subtotal += itemTotal;
 
         return `
-          <div class="card border-0 shadow-sm rounded-4 p-3 p-sm-4 bg-white d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3">
-            <div class="d-flex align-items-center gap-3">
-              <div class="rounded-4 p-2 flex-shrink-0" style="width: 64px; height: 64px; background: #FAF9FE;">
-                <img src="${item.image}" class="img-fluid w-100 h-100" style="object-fit: contain;">
+          <div class="cres-card p-3 p-sm-4 mb-3 d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 position-relative">
+            <!-- Left: Product Image & Details -->
+            <div class="d-flex align-items-center gap-3 flex-grow-1" style="min-width: 200px;">
+              <div class="cres-cart-img-box rounded-4 p-2 flex-shrink-0" style="width: 72px; height: 72px; background: #FAF9FE; display: flex; align-items: center; justify-content: center;">
+                <img src="${item.image}" alt="${item.name}" style="max-width: 90%; max-height: 90%; object-fit: contain;">
               </div>
-              <div>
-                <h6 class="fw-bold mb-1">${item.name}</h6>
-                <div class="small text-muted mb-1">Color: ${item.color || 'Standard'}</div>
-                <div class="fw-bold text-dark small">${formatPrice(item.price)}</div>
+              <div class="flex-grow-1">
+                <h6 class="fw-bold mb-1 text-dark text-nowrap">${item.name}</h6>
+                <div class="text-muted small mb-1 text-nowrap">Color: ${item.color || 'Standard'}</div>
+                <div class="fw-bold text-muted small text-nowrap">$${Number(item.price).toFixed(2)}</div>
               </div>
             </div>
 
-            <div class="d-flex align-items-center justify-content-between w-100 w-sm-auto gap-3 pt-2 pt-sm-0 border-top border-sm-top-0">
+            <!-- Middle & Right Controls -->
+            <div class="d-flex align-items-center justify-content-between justify-content-md-end w-100 w-md-auto gap-3 gap-lg-4 flex-shrink-0">
               <!-- Stepper -->
-              <div class="d-flex align-items-center border rounded-pill px-2 py-1 bg-white">
+              <div class="d-flex align-items-center border rounded-pill px-3 py-1 bg-white shadow-sm flex-shrink-0">
                 <button class="btn btn-link text-muted p-0 text-decoration-none" onclick="updateQty(${idx}, -1)"><i class="bi bi-dash fs-5"></i></button>
-                <span class="px-3 fw-bold small">${item.qty}</span>
+                <span class="px-3 fw-bold small text-dark">${item.qty}</span>
                 <button class="btn btn-link text-muted p-0 text-decoration-none" onclick="updateQty(${idx}, 1)"><i class="bi bi-plus fs-5"></i></button>
               </div>
 
-              <!-- Subtotal & Remove -->
-              <div class="d-flex align-items-center gap-3">
-                <div class="fw-bold text-dark text-end" style="min-width: 70px;">${formatPrice(itemTotal)}</div>
-                <button class="btn btn-link text-danger p-0 text-decoration-none" onclick="removeCartItem(${idx})" title="Remove">
-                  <i class="bi bi-trash fs-5"></i>
-                </button>
+              <!-- Item Total Price -->
+              <div class="fw-bold text-dark fs-6 text-end text-nowrap" style="min-width: 80px;">
+                $${Number(itemTotal).toFixed(2)}
               </div>
+
+              <!-- Remove Icon -->
+              <button class="btn btn-sm btn-light rounded-circle text-muted p-0 flex-shrink-0" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" onclick="removeCartItem(${idx})" title="Remove item">
+                <i class="bi bi-x-lg small"></i>
+              </button>
             </div>
           </div>
         `;
@@ -192,6 +203,7 @@
           cart.splice(idx, 1);
         }
         localStorage.setItem('cres_cart', JSON.stringify(cart));
+        if (window.cresUpdateCounters) window.cresUpdateCounters();
         renderCartUI();
       }
     };
@@ -200,18 +212,26 @@
       let cart = JSON.parse(localStorage.getItem('cres_cart') || '[]');
       cart.splice(idx, 1);
       localStorage.setItem('cres_cart', JSON.stringify(cart));
+      if (window.cresUpdateCounters) window.cresUpdateCounters();
+      renderCartUI();
+    };
+
+    window.clearFullCart = () => {
+      if (!confirm('Are you sure you want to clear your shopping cart?')) return;
+      localStorage.setItem('cres_cart', JSON.stringify([]));
+      if (window.cresUpdateCounters) window.cresUpdateCounters();
       renderCartUI();
     };
 
     window.applyCartCoupon = () => {
       const code = document.getElementById('cart-coupon-input').value.trim().toUpperCase();
       const fb = document.getElementById('coupon-feedback');
-      if (code === 'SAVE100' || code === 'WELCOME10' || code === 'CRESCENDO') {
+      if (code === 'SAVE100' || code === 'WELCOME10' || code === 'CRESCENDO' || code === 'SAMPLE10') {
         discountAmount = 100.00;
         fb.innerHTML = '<span class="text-success fw-bold">Coupon applied! $100.00 discount.</span>';
         renderCartUI();
       } else {
-        fb.innerHTML = '<span class="text-danger">Invalid coupon code. Try WELCOME10</span>';
+        fb.innerHTML = '<span class="text-danger">Invalid coupon code. Try WELCOME10 or SAVE100</span>';
       }
     };
   </script>

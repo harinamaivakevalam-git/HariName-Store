@@ -147,7 +147,7 @@ a:hover {
 }
 
 /* Primary CTA Button */
-.cres-btn-primary {
+.cres-btn-primary, .btn-cres-primary {
   background: var(--cres-primary);
   color: #FFFFFF;
   font-weight: 600;
@@ -165,14 +165,14 @@ a:hover {
   cursor: pointer;
 }
 
-.cres-btn-primary:hover {
+.cres-btn-primary:hover, .btn-cres-primary:hover {
   background: var(--cres-primary-hover);
   color: #FFFFFF;
   transform: translateY(-2px);
   box-shadow: 0 6px 20px var(--cres-primary-glow);
 }
 
-.cres-btn-outline {
+.cres-btn-outline, .btn-cres-outline {
   background: #FFFFFF;
   color: var(--cres-secondary);
   border: 1.5px solid var(--cres-border);
@@ -188,7 +188,7 @@ a:hover {
   text-decoration: none;
 }
 
-.cres-btn-outline:hover {
+.cres-btn-outline:hover, .btn-cres-outline:hover {
   border-color: var(--cres-primary);
   color: var(--cres-primary);
   background: var(--cres-primary-light);

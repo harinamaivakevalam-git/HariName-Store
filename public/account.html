@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Account - Hari Nama Store</title>
+  <title>My Account - Sample Store</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -37,19 +37,16 @@
           <a href="/addresses.html" class="cres-dash-nav-item">
             <i class="bi bi-geo-alt"></i> Addresses
           </a>
-          <a href="#" class="cres-dash-nav-item">
+          <a href="#" class="cres-dash-nav-item" onclick="openProfileModal()">
+            <i class="bi bi-person-gear"></i> Profile Settings
+          </a>
+          <a href="#" class="cres-dash-nav-item" onclick="showToast('Payment methods are securely managed at checkout.', 'info')">
             <i class="bi bi-credit-card"></i> Payments
           </a>
-          <a href="#" class="cres-dash-nav-item">
-            <i class="bi bi-star"></i> Reviews
-          </a>
-          <a href="#" class="cres-dash-nav-item">
+          <a href="#" class="cres-dash-nav-item" onclick="showToast('Notification preferences saved.', 'success')">
             <i class="bi bi-bell"></i> Notifications
           </a>
-          <a href="#" class="cres-dash-nav-item">
-            <i class="bi bi-gear"></i> Account Settings
-          </a>
-          <a href="/login.html" class="cres-dash-nav-item text-danger mt-3 pt-3 border-top">
+          <a href="#" class="cres-dash-nav-item text-danger mt-3 pt-3 border-top" onclick="handleLogout()">
             <i class="bi bi-box-arrow-right"></i> Logout
           </a>
         </div>
@@ -58,34 +55,45 @@
       <!-- Main Dashboard Content -->
       <div class="col-lg-9">
         <!-- Account Overview Header -->
-        <div class="mb-4">
-          <h4 class="fw-bold mb-1">Account Overview</h4>
-          <p class="text-muted small">Welcome back, John!</p>
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+          <div>
+            <h4 class="fw-bold mb-1" id="account-welcome-name">Account Overview</h4>
+            <p class="text-muted small mb-0">Welcome back, <span id="account-name-span">John Doe</span>!</p>
+          </div>
+          <button class="btn btn-outline-primary rounded-pill px-4 py-2 small fw-semibold" onclick="openProfileModal()">
+            <i class="bi bi-pencil me-1"></i> Edit Profile
+          </button>
         </div>
 
         <!-- 4 Stats Cards -->
         <div class="row g-3 mb-4">
           <div class="col-6 col-md-3">
-            <div class="cres-stat-card">
-              <div class="cres-stat-number">5</div>
-              <div class="text-muted small fw-semibold">Orders</div>
-            </div>
+            <a href="/orders.html" class="text-decoration-none">
+              <div class="cres-stat-card">
+                <div class="cres-stat-number" id="acc-stat-orders">5</div>
+                <div class="text-muted small fw-semibold">Orders</div>
+              </div>
+            </a>
+          </div>
+          <div class="col-6 col-md-3">
+            <a href="/wishlist.html" class="text-decoration-none">
+              <div class="cres-stat-card">
+                <div class="cres-stat-number text-success" id="acc-stat-wish">12</div>
+                <div class="text-muted small fw-semibold">Wishlist</div>
+              </div>
+            </a>
+          </div>
+          <div class="col-6 col-md-3">
+            <a href="/addresses.html" class="text-decoration-none">
+              <div class="cres-stat-card">
+                <div class="cres-stat-number text-primary" id="acc-stat-addr">2</div>
+                <div class="text-muted small fw-semibold">Addresses</div>
+              </div>
+            </a>
           </div>
           <div class="col-6 col-md-3">
             <div class="cres-stat-card">
-              <div class="cres-stat-number text-success">12</div>
-              <div class="text-muted small fw-semibold">Wishlist</div>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="cres-stat-card">
-              <div class="cres-stat-number text-primary">3</div>
-              <div class="text-muted small fw-semibold">Addresses</div>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="cres-stat-card">
-              <div class="cres-stat-number text-warning">2</div>
+              <div class="cres-stat-number text-warning">28</div>
               <div class="text-muted small fw-semibold">Reviews</div>
             </div>
           </div>
@@ -102,57 +110,8 @@
 
           <div class="table-responsive">
             <table class="table align-middle mb-0">
-              <tbody>
-                <!-- Order Row 1 -->
-                <tr>
-                  <td style="width: 70px;">
-                    <div class="cres-cart-img-box" style="width: 60px; height: 60px; border-radius: 12px; background: #f4f5f8; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                      <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=120&q=80" alt="Pro X168A" style="width: 80%; height: 80%; object-fit: contain;">
-                    </div>
-                  </td>
-                  <td>
-                    <div class="fw-bold text-dark">Pro X168A</div>
-                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small">Delivered</span>
-                  </td>
-                  <td class="text-muted font-monospace small">#ORD12345</td>
-                  <td class="text-end">
-                    <a href="/orders.html" class="btn btn-sm btn-light rounded-pill px-3 fw-semibold text-primary">View Details</a>
-                  </td>
-                </tr>
-
-                <!-- Order Row 2 -->
-                <tr>
-                  <td>
-                    <div class="cres-cart-img-box" style="width: 60px; height: 60px; border-radius: 12px; background: #f4f5f8; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                      <img src="https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=120&q=80" alt="Speaker P168A" style="width: 80%; height: 80%; object-fit: contain;">
-                    </div>
-                  </td>
-                  <td>
-                    <div class="fw-bold text-dark">Speaker P168A</div>
-                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2 py-1 small">Processing</span>
-                  </td>
-                  <td class="text-muted font-monospace small">#ORD12344</td>
-                  <td class="text-end">
-                    <a href="/orders.html" class="btn btn-sm btn-light rounded-pill px-3 fw-semibold text-primary">View Details</a>
-                  </td>
-                </tr>
-
-                <!-- Order Row 3 -->
-                <tr>
-                  <td>
-                    <div class="cres-cart-img-box" style="width: 60px; height: 60px; border-radius: 12px; background: #f4f5f8; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                      <img src="https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=120&q=80" alt="Earbud Y168A" style="width: 80%; height: 80%; object-fit: contain;">
-                    </div>
-                  </td>
-                  <td>
-                    <div class="fw-bold text-dark">Earbud Y168A</div>
-                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-2 py-1 small">Shipped</span>
-                  </td>
-                  <td class="text-muted font-monospace small">#ORD12343</td>
-                  <td class="text-end">
-                    <a href="/orders.html" class="btn btn-sm btn-light rounded-pill px-3 fw-semibold text-primary">View Details</a>
-                  </td>
-                </tr>
+              <tbody id="account-recent-orders-tbody">
+                <!-- Injected dynamically -->
               </tbody>
             </table>
           </div>
@@ -161,6 +120,35 @@
     </div>
   </main>
 
+  <!-- Edit Profile Modal -->
+  <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 border-0 shadow">
+        <div class="modal-header border-bottom p-4">
+          <h5 class="modal-title fw-bold" id="profileModalLabel">Edit Profile</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="profileForm" onsubmit="handleSaveProfile(event)">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Full Name</label>
+              <input type="text" class="form-control rounded-pill px-3 py-2" id="profName" value="John Doe" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Email Address</label>
+              <input type="email" class="form-control rounded-pill px-3 py-2" id="profEmail" value="john@example.com" required>
+            </div>
+            <div class="mb-4">
+              <label class="form-label small fw-semibold">Phone Number</label>
+              <input type="tel" class="form-control rounded-pill px-3 py-2" id="profPhone" value="+1 234 567 890" required>
+            </div>
+            <button type="submit" class="btn btn-cres-primary rounded-pill w-100 py-2 fw-semibold">Save Profile</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Reusable CRESCENDO Footer -->
   <div id="cres-footer-placeholder"></div>
 
@@ -168,5 +156,95 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
+  <script>
+    let profileModalInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderHeader('account');
+      renderFooter();
+      syncAccountStats();
+      renderAccountRecentOrders();
+    });
+
+    function syncAccountStats() {
+      const orders = JSON.parse(localStorage.getItem('cres_orders') || '[]') || window.CRESCENDO_DATA.orders;
+      const wishlist = JSON.parse(localStorage.getItem('cres_wishlist') || '[]') || [];
+      const addresses = JSON.parse(localStorage.getItem('cres_addresses') || '[]') || [];
+
+      document.getElementById('acc-stat-orders').textContent = orders.length || 4;
+      document.getElementById('acc-stat-wish').textContent = wishlist.length || 3;
+      document.getElementById('acc-stat-addr').textContent = addresses.length || 2;
+
+      const profile = JSON.parse(localStorage.getItem('cres_profile') || 'null');
+      if (profile) {
+        document.getElementById('account-name-span').textContent = profile.name;
+        document.getElementById('profName').value = profile.name;
+        document.getElementById('profEmail').value = profile.email;
+        document.getElementById('profPhone').value = profile.phone;
+      }
+    }
+
+    function renderAccountRecentOrders() {
+      const tbody = document.getElementById('account-recent-orders-tbody');
+      if (!tbody) return;
+
+      const stored = localStorage.getItem('cres_orders');
+      let orders = window.CRESCENDO_DATA.orders;
+      if (stored) {
+        try { orders = JSON.parse(stored); } catch (e) {}
+      }
+
+      const recent = orders.slice(0, 3);
+      tbody.innerHTML = recent.map(ord => {
+        let badgeClass = ord.status === 'delivered' ? 'bg-success-subtle text-success' : (ord.status === 'processing' ? 'bg-warning-subtle text-warning-emphasis' : 'bg-info-subtle text-info-emphasis');
+        return `
+          <tr>
+            <td style="width: 70px;">
+              <div class="cres-cart-img-box" style="width: 50px; height: 50px; border-radius: 12px; background: #FAF9FE; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                <img src="${ord.product_image}" alt="${ord.product_name}" style="width: 80%; height: 80%; object-fit: contain;">
+              </div>
+            </td>
+            <td>
+              <div class="fw-bold text-dark">${ord.product_name}</div>
+              <span class="badge ${badgeClass} border rounded-pill px-2 py-1 small text-capitalize">${ord.status}</span>
+            </td>
+            <td class="text-muted font-monospace small">${ord.order_number}</td>
+            <td class="text-end">
+              <a href="/orders.html" class="btn btn-sm btn-light rounded-pill px-3 fw-semibold text-primary">View Details</a>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openProfileModal() {
+      if (!profileModalInstance) {
+        profileModalInstance = new bootstrap.Modal(document.getElementById('profileModal'));
+      }
+      profileModalInstance.show();
+    }
+
+    function handleSaveProfile(e) {
+      e.preventDefault();
+      const profile = {
+        name: document.getElementById('profName').value.trim(),
+        email: document.getElementById('profEmail').value.trim(),
+        phone: document.getElementById('profPhone').value.trim()
+      };
+      localStorage.setItem('cres_profile', JSON.stringify(profile));
+      if (profileModalInstance) profileModalInstance.hide();
+      syncAccountStats();
+      showToast('Profile updated successfully! ✨', 'success');
+    }
+
+    function handleLogout() {
+      if (confirm('Are you sure you want to log out?')) {
+        showToast('Logged out successfully.', 'info');
+        setTimeout(() => {
+          window.location.href = '/login.html';
+        }, 600);
+      }
+    }
+  </script>
 </body>
 </html>

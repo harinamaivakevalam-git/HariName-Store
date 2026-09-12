@@ -47,7 +47,7 @@ if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`
 =====================================================
-   🌸 HariNama Store - Commercial Server Live 🌸
+   🌸 Sample Store - Commercial Server Live 🌸
 =====================================================
    URL:         http://localhost:${PORT}
    API Base:    http://localhost:${PORT}/api

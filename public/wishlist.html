@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Wishlist - Hari Nama Store</title>
+  <title>My Wishlist - Sample Store</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -19,9 +19,19 @@
 
   <!-- Main Container -->
   <main class="container py-4">
-    <div class="mb-4">
-      <h2 class="cres-page-title mb-1">My Wishlist</h2>
-      <p class="text-muted">Your saved products</p>
+    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3 mb-4">
+      <div>
+        <h2 class="cres-page-title mb-1">My Wishlist</h2>
+        <p class="text-muted mb-0">Your saved products</p>
+      </div>
+      <div class="d-flex gap-2" id="wishlist-header-actions">
+        <button class="btn btn-outline-secondary rounded-pill px-3 py-2 small fw-semibold" onclick="clearAllWishlist()">
+          <i class="bi bi-trash me-1"></i> Clear Wishlist
+        </button>
+        <button class="btn btn-cres-primary rounded-pill px-4 py-2 small fw-semibold" onclick="addAllWishlistToCart()">
+          <i class="bi bi-bag-plus me-1"></i> Add All to Cart
+        </button>
+      </div>
     </div>
 
     <!-- Wishlist Grid -->
@@ -102,6 +112,27 @@
     function removeWishlistItem(productId) {
       window.cresToggleWishlist(productId);
       renderWishlistPage();
+    }
+
+    function clearAllWishlist() {
+      if (!confirm('Are you sure you want to clear your wishlist?')) return;
+      window.crescendoWishlist = [];
+      localStorage.setItem('cres_wishlist', JSON.stringify([]));
+      window.cresUpdateCounters();
+      renderWishlistPage();
+      window.cresShowToast('Wishlist cleared.');
+    }
+
+    function addAllWishlistToCart() {
+      const wishlistIds = window.crescendoWishlist || [];
+      if (wishlistIds.length === 0) {
+        window.cresShowToast('Wishlist is empty.');
+        return;
+      }
+      wishlistIds.forEach(id => {
+        window.cresAddToCart(id, 1, 'Standard');
+      });
+      window.cresShowToast('All wishlist items added to shopping cart! 🛒');
     }
 
     document.addEventListener('DOMContentLoaded', () => {

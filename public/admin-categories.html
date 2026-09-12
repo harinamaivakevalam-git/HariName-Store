@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Categories - Sample Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/assets/css/variables.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <style>
+    .admin-layout { min-height: 100vh; background: var(--cres-body-bg); }
+    .admin-sidebar { width: 260px; background: #FFFFFF; border-right: 1px solid var(--cres-border); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; padding: 24px 16px; }
+    .admin-main { flex: 1; padding: 30px 40px; }
+    @media (max-width: 991.98px) {
+      .admin-sidebar { position: fixed; left: -280px; z-index: 1050; transition: left 0.3s ease; }
+      .admin-sidebar.show { left: 0; }
+      .admin-main { padding: 20px 15px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Reusable CRESCENDO Header -->
+  <div id="cres-header-placeholder"></div>
+
+  <div class="d-flex admin-layout">
+    <!-- Admin Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="d-flex align-items-center gap-2 mb-4 px-2">
+        <span class="cres-brand-dot"></span>
+        <h5 class="fw-bold mb-0 text-dark">Admin Portal</h5>
+      </div>
+
+      <nav class="nav flex-column gap-1 flex-grow-1">
+        <a href="/admin.html" class="cres-dash-nav-item">
+          <i class="bi bi-grid-fill"></i> Dashboard
+        </a>
+        <a href="/admin-products.html" class="cres-dash-nav-item">
+          <i class="bi bi-box-seam"></i> Products
+        </a>
+        <a href="/admin-categories.html" class="cres-dash-nav-item active">
+          <i class="bi bi-tags"></i> Categories
+        </a>
+        <a href="/admin-orders.html" class="cres-dash-nav-item">
+          <i class="bi bi-receipt"></i> Orders
+        </a>
+        <a href="/admin-customers.html" class="cres-dash-nav-item">
+          <i class="bi bi-people"></i> Customers
+        </a>
+        <a href="/admin-coupons.html" class="cres-dash-nav-item">
+          <i class="bi bi-ticket-perforated"></i> Coupons
+        </a>
+        <a href="/admin-reviews.html" class="cres-dash-nav-item">
+          <i class="bi bi-star"></i> Reviews
+        </a>
+        <a href="/admin-analytics.html" class="cres-dash-nav-item">
+          <i class="bi bi-graph-up-arrow"></i> Analytics
+        </a>
+        <a href="/admin-settings.html" class="cres-dash-nav-item">
+          <i class="bi bi-gear"></i> Settings
+        </a>
+      </nav>
+
+      <div class="pt-3 border-top">
+        <a href="/login.html" class="cres-dash-nav-item text-danger">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+          <h2 class="cres-page-title mb-1">Categories Management</h2>
+          <p class="text-muted small mb-0">Organize and structure store product categories</p>
+        </div>
+        <div>
+          <button class="btn btn-cres-primary rounded-pill px-4 fw-semibold" onclick="openAddCategoryModal()">
+            <i class="bi bi-plus-lg me-1"></i> Add Category
+          </button>
+        </div>
+      </div>
+
+      <!-- Categories Table Card -->
+      <div class="cres-card p-4">
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead class="text-muted small text-uppercase">
+              <tr>
+                <th>Category</th>
+                <th>Slug</th>
+                <th>Products Count</th>
+                <th>Status</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="categories-tbody">
+              <!-- Categories injected dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add/Edit Category Modal -->
+  <div class="modal fade" id="categoryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 border-0 shadow">
+        <div class="modal-header border-bottom p-4">
+          <h5 class="modal-title fw-bold" id="catModalTitle">Add New Category</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="categoryForm" onsubmit="handleCategorySave(event)">
+            <input type="hidden" id="catEditId">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Category Name</label>
+              <input type="text" class="form-control rounded-pill px-3" id="catName" required placeholder="e.g. Smart Audio">
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Slug</label>
+              <input type="text" class="form-control rounded-pill px-3" id="catSlug" required placeholder="e.g. smart-audio">
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Description</label>
+              <input type="text" class="form-control rounded-pill px-3" id="catDesc" placeholder="e.g. High-tech smart speakers & soundbars">
+            </div>
+            <div class="mb-4">
+              <label class="form-label small fw-semibold">Status</label>
+              <select class="form-select rounded-pill px-3" id="catStatus">
+                <option value="Active">Active</option>
+                <option value="Hidden">Hidden</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-cres-primary rounded-pill w-100 py-2 fw-semibold">Save Category</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reusable CRESCENDO Footer -->
+  <div id="cres-footer-placeholder"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/data.js"></script>
+  <script src="/assets/js/components.js"></script>
+  <script>
+    let categoriesList = [];
+    let catModal = null;
+
+    const defaultCats = [
+      { id: 'cat-speakers', name: 'Speakers', slug: 'speakers', count: 24, status: 'Active', desc: 'Room-filling high fidelity sound' },
+      { id: 'cat-headphones', name: 'Headphones', slug: 'headphones', count: 18, status: 'Active', desc: 'Studio grade wireless ANC audio' },
+      { id: 'cat-earbuds', name: 'Earbuds', slug: 'earbuds', count: 12, status: 'Active', desc: 'True wireless featherlight in-ear' },
+      { id: 'cat-accessories', name: 'Accessories', slug: 'accessories', count: 12, status: 'Active', desc: 'Cables, audio stands & cases' },
+      { id: 'cat-charger', name: 'Wireless Charger', slug: 'wireless-charger', count: 6, status: 'Active', desc: 'Fast wireless magnetic charging' }
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderHeader('');
+      renderFooter();
+      catModal = new bootstrap.Modal(document.getElementById('categoryModal'));
+      loadCategories();
+    });
+
+    function loadCategories() {
+      const stored = localStorage.getItem('cres_admin_categories');
+      categoriesList = stored ? JSON.parse(stored) : defaultCats;
+      renderCategoriesTable();
+    }
+
+    function renderCategoriesTable() {
+      const tbody = document.getElementById('categories-tbody');
+      tbody.innerHTML = categoriesList.map((c, idx) => `
+        <tr>
+          <td>
+            <div class="fw-bold text-dark">${c.name}</div>
+            <div class="text-muted small">${c.desc || ''}</div>
+          </td>
+          <td><code>${c.slug}</code></td>
+          <td><span class="badge bg-light text-dark border px-3 py-2 rounded-pill">${c.count || 0} Products</span></td>
+          <td><span class="badge ${c.status === 'Active' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'} rounded-pill px-3 py-2">${c.status || 'Active'}</span></td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-primary rounded-pill me-1" onclick="editCategory(${idx})"><i class="bi bi-pencil me-1"></i> Edit</button>
+            <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="deleteCategory(${idx})"><i class="bi bi-trash"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openAddCategoryModal() {
+      document.getElementById('categoryForm').reset();
+      document.getElementById('catEditId').value = '';
+      document.getElementById('catModalTitle').textContent = 'Add New Category';
+      catModal.show();
+    }
+
+    function editCategory(idx) {
+      const c = categoriesList[idx];
+      document.getElementById('catEditId').value = idx;
+      document.getElementById('catName').value = c.name;
+      document.getElementById('catSlug').value = c.slug;
+      document.getElementById('catDesc').value = c.desc || '';
+      document.getElementById('catStatus').value = c.status || 'Active';
+      document.getElementById('catModalTitle').textContent = 'Edit Category';
+      catModal.show();
+    }
+
+    function handleCategorySave(e) {
+      e.preventDefault();
+      const editIdx = document.getElementById('catEditId').value;
+      const catData = {
+        id: editIdx !== '' ? categoriesList[editIdx].id : 'cat-' + Date.now(),
+        name: document.getElementById('catName').value.trim(),
+        slug: document.getElementById('catSlug').value.trim(),
+        desc: document.getElementById('catDesc').value.trim(),
+        status: document.getElementById('catStatus').value,
+        count: editIdx !== '' ? categoriesList[editIdx].count : 0
+      };
+
+      if (editIdx !== '') {
+        categoriesList[editIdx] = catData;
+        showToast('Category updated successfully!', 'success');
+      } else {
+        categoriesList.push(catData);
+        showToast('Category added successfully!', 'success');
+      }
+
+      localStorage.setItem('cres_admin_categories', JSON.stringify(categoriesList));
+      renderCategoriesTable();
+      catModal.hide();
+    }
+
+    function deleteCategory(idx) {
+      if (!confirm(`Are you sure you want to delete category "${categoriesList[idx].name}"?`)) return;
+      categoriesList.splice(idx, 1);
+      localStorage.setItem('cres_admin_categories', JSON.stringify(categoriesList));
+      renderCategoriesTable();
+      showToast('Category deleted.', 'info');
+    }
+  </script>
+</body>
+</html>

@@ -22,7 +22,7 @@ router.get('/health', (req, res) => {
   res.json({
     status: 'online',
     timestamp: new Date().toISOString(),
-    service: 'HariNama Store Commercial API',
+    service: 'Sample Store Commercial API',
     version: '1.0.0'
   });
 });

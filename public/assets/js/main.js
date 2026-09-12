@@ -1,5 +1,5 @@
 /**
- * HariNama Store - Main Entrypoint & Initialization
+ * Sample Store - Main Entrypoint & Initialization
  */
 
 document.addEventListener('DOMContentLoaded', async () => {

@@ -80,7 +80,7 @@ const renderHeader = (activePage = '') => {
           <!-- Logo -->
           <a href="/index.html" class="cres-brand">
             <span class="cres-brand-dot"></span>
-            <span>HARI NAMA STORE</span>
+            <span>SAMPLE STORE</span>
           </a>
 
           <!-- Desktop Navigation -->
@@ -103,8 +103,14 @@ const renderHeader = (activePage = '') => {
                 <li><a class="dropdown-item py-2" href="/404.html"><i class="bi bi-exclamation-triangle me-2"></i>404 Error Page</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin.html"><i class="bi bi-shield-lock me-2"></i>Admin Dashboard</a></li>
-                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-products.html"><i class="bi bi-boxes me-2"></i>Admin Products</a></li>
+                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-products.html"><i class="bi bi-box-seam me-2"></i>Admin Products</a></li>
+                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-categories.html"><i class="bi bi-tags me-2"></i>Admin Categories</a></li>
                 <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-orders.html"><i class="bi bi-receipt me-2"></i>Admin Orders</a></li>
+                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-customers.html"><i class="bi bi-people me-2"></i>Admin Customers</a></li>
+                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-coupons.html"><i class="bi bi-ticket-perforated me-2"></i>Admin Coupons</a></li>
+                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-reviews.html"><i class="bi bi-star me-2"></i>Admin Reviews</a></li>
+                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-analytics.html"><i class="bi bi-graph-up-arrow me-2"></i>Admin Analytics</a></li>
+                <li><a class="dropdown-item py-2 fw-semibold text-primary" href="/admin-settings.html"><i class="bi bi-gear me-2"></i>Admin Settings</a></li>
               </ul>
             </div>
             <a href="/contact.html" class="cres-nav-link ${active === 'contact' ? 'active' : ''}">Contact</a>
@@ -128,10 +134,6 @@ const renderHeader = (activePage = '') => {
 
             <a href="/account.html" class="cres-icon-btn d-none d-md-inline-flex" title="Account">
               <i class="bi bi-person"></i>
-            </a>
-
-            <a href="/products.html" class="btn cres-btn-primary d-none d-xl-inline-flex">
-              Buy Template
             </a>
 
             <!-- Mobile Menu Toggle -->
@@ -174,7 +176,7 @@ const renderFooter = () => {
           <div class="col-lg-4">
             <a href="/index.html" class="cres-brand mb-3 d-inline-block">
               <span class="cres-brand-dot"></span>
-              <span>HARI NAMA STORE</span>
+              <span>SAMPLE STORE</span>
             </a>
             <p class="text-muted small mb-4 pe-lg-4">
               Premium quality audio gear and lifestyle store designed for those who love pure acoustics, high fidelity, and modern design.
@@ -221,7 +223,7 @@ const renderFooter = () => {
         <hr class="my-4 text-muted opacity-25">
 
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 small text-muted">
-          <div>© ${new Date().getFullYear()} HARI NAMA STORE. All rights reserved.</div>
+          <div>© ${new Date().getFullYear()} SAMPLE STORE. All rights reserved.</div>
           <div class="d-flex gap-3">
             <a href="/terms.html" class="text-muted">Privacy Policy</a>
             <a href="/terms.html" class="text-muted">Terms of Service</a>
@@ -268,54 +270,85 @@ const renderProductCard = (p) => {
 };
 
 // Cart & Wishlist local state helpers
-window.addToCart = (productId, qty = 1, color = 'Standard') => {
-  const p = window.CRESCENDO_DATA && window.CRESCENDO_DATA.products.find(prod => prod.id === productId);
-  if (!p) return;
+window.findProductByIdOrSlug = (identifier) => {
+  if (!identifier) return null;
+  const idStr = String(identifier);
 
+  // Check base catalog
+  if (typeof CRESCENDO_DATA !== 'undefined' && Array.isArray(CRESCENDO_DATA.products)) {
+    const found = CRESCENDO_DATA.products.find(p => p.id === idStr || p.slug === idStr || String(p.id) === idStr);
+    if (found) return found;
+  }
+
+  // Check dynamically created admin products
+  try {
+    const adminProds = JSON.parse(localStorage.getItem('cres_admin_products') || '[]');
+    const adminFound = adminProds.find(p => p.id === idStr || p.slug === idStr || String(p.id) === idStr);
+    if (adminFound) return adminFound;
+  } catch (e) {}
+
+  return null;
+};
+
+window.addToCart = (productId, qty = 1, color = 'Standard') => {
+  const p = window.findProductByIdOrSlug(productId) || (typeof activeProduct !== 'undefined' && activeProduct ? activeProduct : null);
+  if (!p) {
+    console.warn('Product not found:', productId);
+    return;
+  }
+
+  const quantity = Math.max(1, parseInt(qty, 10) || 1);
   let cart = JSON.parse(localStorage.getItem('cres_cart') || '[]');
-  const existing = cart.find(i => i.id === p.id && i.color === color);
+  const pId = p.id || productId;
+  const existing = cart.find(i => (i.id === pId || i.id === p.slug) && (i.color === color || (!i.color && !color)));
+  
   if (existing) {
-    existing.qty += qty;
+    existing.qty += quantity;
   } else {
     cart.push({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      price: p.price,
-      image: p.image,
-      color: color,
-      qty: qty
+      id: pId,
+      name: p.name || 'Sample Product',
+      slug: p.slug || pId,
+      price: Number(p.price) || 99.00,
+      image: p.image || (p.gallery && p.gallery[0]) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80',
+      color: color || 'Standard',
+      qty: quantity
     });
   }
 
   localStorage.setItem('cres_cart', JSON.stringify(cart));
-  const badge = document.getElementById('cres-cart-badge');
-  if (badge) badge.textContent = cart.reduce((acc, i) => acc + i.qty, 0);
+  if (window.cresUpdateCounters) window.cresUpdateCounters();
 
-  showToast(`Added "${p.name}" to cart! 🛍️`, 'success');
+  showToast(`Added "${p.name || 'Item'}" to cart! 🛍️`, 'success');
+};
+
+window.buyNow = (productId, qty = 1, color = 'Standard') => {
+  window.addToCart(productId, qty, color);
+  setTimeout(() => {
+    window.location.href = '/checkout.html';
+  }, 200);
 };
 
 window.toggleWishlist = (productId, btnEl) => {
-  const p = window.CRESCENDO_DATA && window.CRESCENDO_DATA.products.find(prod => prod.id === productId);
-  if (!p) return;
+  const p = window.findProductByIdOrSlug(productId) || (typeof activeProduct !== 'undefined' && activeProduct ? activeProduct : null);
+  const pId = p ? p.id : productId;
+  if (!pId) return;
 
   let wishlist = JSON.parse(localStorage.getItem('cres_wishlist') || '[]');
-  const index = wishlist.findIndex(item => (typeof item === 'object' ? item.id === p.id : item === p.id));
+  const index = wishlist.findIndex(item => (typeof item === 'object' ? item.id === pId : item === pId));
   let isAdded = false;
 
   if (index > -1) {
     wishlist.splice(index, 1);
-    showToast(`Removed "${p.name}" from wishlist.`, 'info');
+    showToast(`Removed "${p ? p.name : 'Item'}" from wishlist.`, 'info');
   } else {
-    wishlist.push(p.id);
+    wishlist.push(pId);
     isAdded = true;
-    showToast(`Added "${p.name}" to wishlist! 💖`, 'success');
+    showToast(`Added "${p ? p.name : 'Item'}" to wishlist! 💖`, 'success');
   }
 
   localStorage.setItem('cres_wishlist', JSON.stringify(wishlist));
-  window.crescendoWishlist = wishlist;
-  const badge = document.getElementById('cres-wishlist-badge');
-  if (badge) badge.textContent = wishlist.length;
+  if (window.cresUpdateCounters) window.cresUpdateCounters();
 
   if (btnEl) {
     btnEl.classList.toggle('active', isAdded);

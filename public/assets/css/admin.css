@@ -4,11 +4,16 @@
 
 @import './variables.css';
 
+html, body, button, input, select, textarea, .btn, .form-control, .form-select, table, th, td, h1, h2, h3, h4, h5, h6, .hn-admin-brand-title {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+}
+
 body.hn-admin-body-bg {
   background-color: #F8F5EE;
-  font-family: var(--hn-font-sans);
   color: var(--hn-text-primary);
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ==========================================================================
@@ -32,7 +37,7 @@ body.hn-admin-body-bg {
 }
 
 .hn-admin-brand-title {
-  font-family: var(--hn-font-serif);
+  font-family: var(--hn-font-display);
   font-size: 1.35rem;
   font-weight: 700;
   color: var(--hn-navy);

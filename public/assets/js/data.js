@@ -449,3 +449,80 @@ const HARINAMA_DATA = {
 
 // Expose alias for compatibility
 const CRESCENDO_DATA = HARINAMA_DATA;
+
+// Retain initial static products for robust fallbacks
+HARINAMA_DATA._staticProducts = [...HARINAMA_DATA.products];
+
+// Dynamic Sync with Live Supabase API
+HARINAMA_DATA.syncWithApi = async function() {
+  try {
+    const [prodRes, catRes] = await Promise.allSettled([
+      fetch('/api/products?limit=50').then(r => r.json()),
+      fetch('/api/categories').then(r => r.json())
+    ]);
+
+    if (prodRes.status === 'fulfilled' && prodRes.value && prodRes.value.success && Array.isArray(prodRes.value.data) && prodRes.value.data.length > 0) {
+      const apiProducts = prodRes.value.data.map((p, idx) => ({
+        id: p.id,
+        legacy_id: p.sku || `prod-${String(idx + 1).padStart(3, '0')}`,
+        name: p.name,
+        title: p.title || p.name,
+        slug: p.slug,
+        category: p.category_name || p.category || 'Devotional Items',
+        category_slug: p.category_slug || '',
+        material: p.material || 'Sacred Material',
+        price: parseFloat(p.price) || 0,
+        old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+        save_amount: (p.compare_price && p.compare_price > p.price) ? Math.round(p.compare_price - p.price) : 0,
+        rating: parseFloat(p.rating) || 5.0,
+        reviews_count: p.reviews_count || 0,
+        image: p.primary_image || p.image,
+        primary_image: p.primary_image || p.image,
+        secondary_image: p.secondary_image || p.primary_image || p.image,
+        gallery: (p.images && p.images.length > 0) ? p.images.map(img => (typeof img === 'string' ? img : img.image_url)) : [p.primary_image || p.image],
+        description: p.description || '',
+        short_description: p.short_description || '',
+        specifications: p.specifications || {},
+        stock: p.stock !== undefined ? p.stock : 10,
+        featured: Boolean(p.featured),
+        trending: Boolean(p.trending),
+        variants: p.variants || []
+      }));
+
+      // Merge with remaining static catalog items so all 16 devotional items remain accessible
+      const apiSlugs = new Set(apiProducts.map(p => p.slug));
+      const remainingStatic = (HARINAMA_DATA._staticProducts || []).filter(p => !apiSlugs.has(p.slug));
+      HARINAMA_DATA.products = [...apiProducts, ...remainingStatic];
+    }
+
+    if (catRes.status === 'fulfilled' && catRes.value && catRes.value.success && Array.isArray(catRes.value.data) && catRes.value.data.length > 0) {
+      const allCount = HARINAMA_DATA.products.length;
+      HARINAMA_DATA.categories = [
+        { id: 'cat-all', name: 'All Products', slug: 'all-products', count: allCount },
+        ...catRes.value.data.map(c => ({
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          count: c.product_count || 0,
+          image: c.image || c.image_url
+        }))
+      ];
+    }
+
+    // Notify pages that live catalog data is ready
+    window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
+      detail: { products: HARINAMA_DATA.products, categories: HARINAMA_DATA.categories }
+    }));
+  } catch (err) {
+    console.warn('[HARINAMA_DATA] Could not sync with live API, retaining offline catalog:', err);
+  }
+};
+
+// Immediately invoke API sync in browser
+if (typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => HARINAMA_DATA.syncWithApi());
+  } else {
+    HARINAMA_DATA.syncWithApi();
+  }
+}

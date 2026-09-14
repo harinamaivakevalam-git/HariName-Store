@@ -16,7 +16,11 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   
   <!-- Harinama Store Master Stylesheet -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=5">
+  <link rel="stylesheet" href="/assets/css/style.css?v=12">
+  <!-- Brand Favicon -->
+  <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/assets/images/krishna-logo.jpg">
 </head>
 <body>
 
@@ -126,7 +130,7 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
-  <script src="/assets/js/components.js"></script>
+  <script src="/assets/js/components.js?v=15"></script>
   <script>
     let activeCollection = 'all';
 
@@ -141,17 +145,17 @@
       const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
 
       grid.innerHTML = items.map(p => {
-        const isWish = wishlist.includes(p.id);
+        const isWish = wishlist.includes(p.id) || (p.legacy_id && wishlist.includes(p.legacy_id)) || (p.slug && wishlist.includes(p.slug));
         return `
           <div class="col-6 col-md-4 col-lg-3">
-            <div class="hn-product-card" data-product-id="${p.id}">
+            <div class="hn-product-card" data-product-id="${p.id}" data-legacy-id="${p.legacy_id || ''}">
               
-              <button class="hn-card-wishlist ${isWish ? 'active text-danger' : ''}" onclick="toggleWishlist('${p.id}', this)" title="Wishlist">
+              <button type="button" class="hn-card-wishlist ${isWish ? 'active text-danger' : ''}" onclick="toggleWishlist('${p.id}', this)" title="Wishlist" aria-label="Toggle wishlist">
                 <i class="bi ${isWish ? 'bi-heart-fill text-danger' : 'bi-heart'}"></i>
               </button>
 
               <a href="/product-details.html?id=${p.id}" class="hn-card-img-box">
-                <img src="${p.image}" alt="${p.name || p.title}" loading="lazy">
+                <img src="${p.image || p.primary_image}" alt="${p.name || p.title}" loading="lazy">
               </a>
 
               <div class="hn-card-title">
@@ -165,7 +169,7 @@
               ${renderRatingStars(p.rating, p.reviews_count)}
 
               <div class="d-flex flex-column gap-1 mt-auto pt-2">
-                <button class="hn-btn-card-add w-100" onclick="handleAddToCart('${p.id}')">
+                <button type="button" class="hn-btn-card-add w-100" onclick="handleAddToCart('${p.id}')">
                   Add to Cart
                 </button>
               </div>
@@ -241,6 +245,8 @@
       }
 
       applyFilters();
+      window.addEventListener('hn:catalog-loaded', () => applyFilters());
+      window.addEventListener('hn_wishlist_updated', () => applyFilters());
     });
   </script>
 </body>

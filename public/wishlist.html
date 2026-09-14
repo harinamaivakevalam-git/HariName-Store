@@ -15,7 +15,11 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   
   <!-- Harinama Store Master Stylesheet -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=4">
+  <link rel="stylesheet" href="/assets/css/style.css?v=12">
+  <!-- Brand Favicon -->
+  <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/assets/images/krishna-logo.jpg">
 </head>
 <body>
 
@@ -70,7 +74,7 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
-  <script src="/assets/js/components.js"></script>
+  <script src="/assets/js/components.js?v=15"></script>
   <script>
     function renderWishlist() {
       const grid = document.getElementById('hn-wishlist-grid');
@@ -97,7 +101,23 @@
         }
       }
 
-      const products = (HARINAMA_DATA.products || []).filter(p => wishlistIds.includes(p.id));
+      const allCatalog = [...(HARINAMA_DATA.products || []), ...(HARINAMA_DATA._staticProducts || [])];
+      const seen = new Set();
+      const uniqueCatalog = [];
+      for (const p of allCatalog) {
+        if (!p) continue;
+        const key = p.slug || p.id;
+        if (!seen.has(key)) {
+          seen.add(key);
+          uniqueCatalog.push(p);
+        }
+      }
+
+      const products = uniqueCatalog.filter(p => 
+        wishlistIds.includes(p.id) || 
+        (p.legacy_id && wishlistIds.includes(p.legacy_id)) || 
+        (p.slug && wishlistIds.includes(p.slug))
+      );
 
       if (products.length === 0) {
         grid.innerHTML = `
@@ -116,12 +136,12 @@
           <div class="col-6 col-md-4">
             <div class="hn-product-card" id="wish-card-${p.id}">
               
-              <button class="hn-card-wishlist active text-danger" onclick="removeFromWishlistPage('${p.id}')" title="Remove from Wishlist">
+              <button type="button" class="hn-card-wishlist active text-danger" onclick="removeFromWishlistPage('${p.id}')" title="Remove from Wishlist" aria-label="Remove item">
                 <i class="bi bi-trash"></i>
               </button>
 
               <a href="/product-details.html?id=${p.id}" class="hn-card-img-box">
-                <img src="${p.image}" alt="${p.name || p.title}">
+                <img src="${p.image || p.primary_image}" alt="${p.name || p.title}">
               </a>
 
               <div class="hn-card-title">
@@ -133,10 +153,10 @@
               ${renderRatingStars(p.rating, p.reviews_count)}
 
               <div class="d-flex flex-column gap-2 mt-auto pt-2">
-                <button class="hn-btn-card-add w-100" onclick="handleAddToCart('${p.id}')">
+                <button type="button" class="hn-btn-card-add w-100" onclick="handleAddToCart('${p.id}')">
                   <i class="bi bi-bag-plus me-1"></i> Add to Cart
                 </button>
-                <button class="btn btn-sm btn-outline-dark w-100" onclick="handleBuyNow('${p.id}')">
+                <button type="button" class="btn btn-sm btn-outline-dark w-100" onclick="handleBuyNow('${p.id}')">
                   Buy Now
                 </button>
               </div>
@@ -148,11 +168,17 @@
     }
 
     function removeFromWishlistPage(prodId) {
+      const prod = findCatalogProduct(prodId);
+      const canonId = prod ? prod.id : prodId;
+      const legId = prod ? prod.legacy_id : null;
+      const slug = prod ? prod.slug : null;
+
       let wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
-      wishlist = wishlist.filter(id => id !== prodId);
+      wishlist = wishlist.filter(id => id !== prodId && id !== canonId && id !== legId && id !== slug);
       localStorage.setItem('hn_wishlist', JSON.stringify(wishlist));
       showToast('Item removed from wishlist.');
       renderWishlist();
+      window.dispatchEvent(new CustomEvent('hn_wishlist_updated', { detail: wishlist }));
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -160,6 +186,7 @@
       renderFooter();
       renderWishlist();
       window.addEventListener('hn_wishlist_updated', renderWishlist);
+      window.addEventListener('hn:catalog-loaded', renderWishlist);
     });
   </script>
 </body>

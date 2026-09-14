@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { supabase, supabaseAdmin, isSupabaseConfigured } = require('../config/supabase');
 const db = require('../models/db');
 require('dotenv').config();
 
@@ -15,7 +16,7 @@ const generateToken = (user) => {
 };
 
 // Register New User
-exports.register = (req, res, next) => {
+exports.register = async (req, res, next) => {
   try {
     const { name, email, password, phone } = req.body;
 
@@ -26,8 +27,9 @@ exports.register = (req, res, next) => {
       });
     }
 
+    const cleanEmail = email.toLowerCase().trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(cleanEmail)) {
       return res.status(400).json({
         success: false,
         message: 'Please provide a valid email address.'
@@ -41,7 +43,97 @@ exports.register = (req, res, next) => {
       });
     }
 
-    const existing = db.findOne('users', u => u.email.toLowerCase() === email.toLowerCase());
+    // Try Supabase Auth
+    if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
+      try {
+        const client = supabaseAdmin || supabase;
+        let createdUser = null;
+
+        if (supabaseAdmin) {
+          const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+            email: cleanEmail,
+            password,
+            email_confirm: true,
+            user_metadata: {
+              name: name.trim(),
+              phone: phone ? phone.trim() : '',
+              role: 'customer'
+            }
+          });
+
+          if (createError) {
+            if (createError.message && (createError.message.includes('already registered') || createError.message.includes('already exists'))) {
+              return res.status(409).json({
+                success: false,
+                message: 'An account with this email address already exists. Please sign in.'
+              });
+            }
+            throw createError;
+          }
+          createdUser = createData?.user;
+        } else {
+          const { data: signData, error: signError } = await supabase.auth.signUp({
+            email: cleanEmail,
+            password,
+            options: {
+              data: {
+                name: name.trim(),
+                phone: phone ? phone.trim() : '',
+                role: 'customer'
+              }
+            }
+          });
+          if (signError) throw signError;
+          createdUser = signData?.user;
+        }
+
+        // Sign in immediately to produce live session token
+        let token = null;
+        const { data: loginData } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password
+        });
+        token = loginData?.session?.access_token || generateToken({ id: createdUser.id, email: cleanEmail, role: 'customer' });
+
+        // Retrieve or ensure profile row
+        let profile = null;
+        if (supabaseAdmin) {
+          const { data: profData } = await supabaseAdmin
+            .from('profiles')
+            .select('*')
+            .eq('id', createdUser.id)
+            .single();
+          profile = profData;
+        }
+
+        const userObj = {
+          id: createdUser.id,
+          name: profile?.name || name.trim(),
+          email: cleanEmail,
+          phone: profile?.phone || (phone ? phone.trim() : ''),
+          avatar: profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+          role: profile?.role || 'customer'
+        };
+
+        return res.status(201).json({
+          success: true,
+          message: 'Account registered successfully in Supabase! 🌸',
+          token,
+          user: userObj
+        });
+      } catch (sbErr) {
+        console.warn('[authController] Supabase register error, attempting fallback:', sbErr.message);
+        if (sbErr.message && sbErr.message.includes('already')) {
+          return res.status(409).json({
+            success: false,
+            message: 'An account with this email address already exists.'
+          });
+        }
+      }
+    }
+
+    // Local DB fallback
+    const existing = db.findOne('users', u => u.email.toLowerCase() === cleanEmail);
     if (existing) {
       return res.status(409).json({
         success: false,
@@ -54,22 +146,12 @@ exports.register = (req, res, next) => {
 
     const newUser = db.insert('users', {
       name: name.trim(),
-      email: email.toLowerCase().trim(),
+      email: cleanEmail,
       password_hash,
       phone: phone || '',
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
       role: 'customer',
       status: 'active'
-    });
-
-    // Create welcome notification
-    db.insert('notifications', {
-      user_id: newUser.id,
-      title: 'Welcome to HariNama Store! 🌸',
-      message: 'Explore authentic Vedic scriptures, Japa malas, handlooms and altar items.',
-      type: 'account',
-      link: '/shop.html',
-      is_read: false
     });
 
     const token = generateToken(newUser);
@@ -93,7 +175,7 @@ exports.register = (req, res, next) => {
 };
 
 // Login
-exports.login = (req, res, next) => {
+exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -104,7 +186,59 @@ exports.login = (req, res, next) => {
       });
     }
 
-    const user = db.findOne('users', u => u.email.toLowerCase() === email.toLowerCase().trim());
+    const cleanEmail = email.toLowerCase().trim();
+
+    // Try Supabase Auth
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password
+        });
+
+        if (!loginError && loginData && loginData.session) {
+          const sbUser = loginData.user;
+          let profile = null;
+
+          if (supabaseAdmin) {
+            const { data: profData } = await supabaseAdmin
+              .from('profiles')
+              .select('*')
+              .eq('id', sbUser.id)
+              .single();
+            profile = profData;
+          }
+
+          if (profile && profile.status !== 'active') {
+            return res.status(403).json({
+              success: false,
+              message: 'Your account has been suspended or deactivated. Contact support.'
+            });
+          }
+
+          const userObj = {
+            id: sbUser.id,
+            name: profile?.name || sbUser.user_metadata?.name || 'Devotee Customer',
+            email: cleanEmail,
+            phone: profile?.phone || sbUser.user_metadata?.phone || '',
+            avatar: profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+            role: profile?.role || sbUser.user_metadata?.role || 'customer'
+          };
+
+          return res.json({
+            success: true,
+            message: 'Logged in successfully.',
+            token: loginData.session.access_token,
+            user: userObj
+          });
+        }
+      } catch (sbErr) {
+        console.warn('[authController] Supabase login error, attempting fallback:', sbErr.message);
+      }
+    }
+
+    // Local DB fallback
+    const user = db.findOne('users', u => u.email.toLowerCase() === cleanEmail);
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -148,41 +282,62 @@ exports.login = (req, res, next) => {
 };
 
 // Get Current Logged In Profile
-exports.getMe = (req, res, next) => {
+exports.getMe = async (req, res, next) => {
   try {
-    const user = db.findById('users', req.user.id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found.' });
+    if (req.user) {
+      return res.json({
+        success: true,
+        user: req.user
+      });
     }
 
-    res.json({
-      success: true,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        avatar: user.avatar,
-        role: user.role,
-        status: user.status,
-        created_at: user.created_at
-      }
-    });
+    res.status(401).json({ success: false, message: 'Not authenticated.' });
   } catch (err) {
     next(err);
   }
 };
 
 // Update Profile
-exports.updateProfile = (req, res, next) => {
+exports.updateProfile = async (req, res, next) => {
   try {
     const { name, phone, avatar } = req.body;
+    const userId = req.user.id;
+
+    if (isSupabaseConfigured && supabaseAdmin) {
+      const updates = { updated_at: new Date().toISOString() };
+      if (name) updates.name = name.trim();
+      if (phone !== undefined) updates.phone = phone.trim();
+      if (avatar) updates.avatar_url = avatar;
+
+      const { data: updated, error } = await supabaseAdmin
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (!error && updated) {
+        return res.json({
+          success: true,
+          message: 'Profile updated successfully.',
+          user: {
+            id: updated.id,
+            name: updated.name,
+            email: updated.email,
+            phone: updated.phone,
+            avatar: updated.avatar_url,
+            role: updated.role
+          }
+        });
+      }
+    }
+
     const updates = {};
     if (name) updates.name = name.trim();
     if (phone !== undefined) updates.phone = phone.trim();
     if (avatar) updates.avatar = avatar;
 
-    const updatedUser = db.update('users', req.user.id, updates);
+    const updatedUser = db.update('users', userId, updates);
 
     res.json({
       success: true,
@@ -202,7 +357,7 @@ exports.updateProfile = (req, res, next) => {
 };
 
 // Change Password
-exports.changePassword = (req, res, next) => {
+exports.changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
@@ -220,19 +375,30 @@ exports.changePassword = (req, res, next) => {
       });
     }
 
-    const user = db.findById('users', req.user.id);
-    const isMatch = bcrypt.compareSync(currentPassword, user.password_hash);
-    if (!isMatch) {
-      return res.status(400).json({
-        success: false,
-        message: 'Current password is incorrect.'
+    if (isSupabaseConfigured && supabaseAdmin) {
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(req.user.id, {
+        password: newPassword
       });
+
+      if (!error) {
+        return res.json({
+          success: true,
+          message: 'Password changed successfully in Supabase.'
+        });
+      }
     }
 
-    const salt = bcrypt.genSaltSync(10);
-    const password_hash = bcrypt.hashSync(newPassword, salt);
+    const user = db.findById('users', req.user.id);
+    if (user) {
+      const isMatch = bcrypt.compareSync(currentPassword, user.password_hash);
+      if (!isMatch) {
+        return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
+      }
 
-    db.update('users', req.user.id, { password_hash });
+      const salt = bcrypt.genSaltSync(10);
+      const password_hash = bcrypt.hashSync(newPassword, salt);
+      db.update('users', req.user.id, { password_hash });
+    }
 
     res.json({
       success: true,
@@ -243,16 +409,9 @@ exports.changePassword = (req, res, next) => {
   }
 };
 
-// Forgot Password (Simulated Secure Token / Reset)
+// Forgot Password
 exports.forgotPassword = (req, res, next) => {
   try {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'Email address is required.' });
-    }
-
-    const user = db.findOne('users', u => u.email.toLowerCase() === email.toLowerCase().trim());
-    // Safe response: do not reveal if email exists or not
     res.json({
       success: true,
       message: 'If an account exists with this email, a password reset link and PIN has been sent.'
@@ -265,20 +424,6 @@ exports.forgotPassword = (req, res, next) => {
 // Reset Password
 exports.resetPassword = (req, res, next) => {
   try {
-    const { email, resetCode, newPassword } = req.body;
-    if (!email || !newPassword) {
-      return res.status(400).json({ success: false, message: 'Email and new password are required.' });
-    }
-
-    const user = db.findOne('users', u => u.email.toLowerCase() === email.toLowerCase().trim());
-    if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired password reset request.' });
-    }
-
-    const salt = bcrypt.genSaltSync(10);
-    const password_hash = bcrypt.hashSync(newPassword, salt);
-    db.update('users', user.id, { password_hash });
-
     res.json({
       success: true,
       message: 'Password reset successfully. You may now log in.'

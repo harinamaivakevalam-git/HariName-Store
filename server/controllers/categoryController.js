@@ -1,7 +1,39 @@
+const { supabase, supabaseAdmin, isSupabaseConfigured } = require('../config/supabase');
 const db = require('../models/db');
 
-exports.getCategories = (req, res, next) => {
+exports.getCategories = async (req, res, next) => {
   try {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*, products(id, status)')
+        .eq('status', 'active')
+        .order('sort_order', { ascending: true });
+
+      if (!error && data) {
+        const categories = data.map(c => {
+          const productCount = (c.products || []).filter(p => p.status === 'active').length;
+          return {
+            id: c.id,
+            name: c.name,
+            slug: c.slug,
+            description: c.description || '',
+            image: c.image_url || c.image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
+            image_url: c.image_url || c.image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
+            status: c.status,
+            sort_order: c.sort_order || 0,
+            product_count: productCount
+          };
+        });
+
+        return res.json({
+          success: true,
+          data: categories
+        });
+      }
+    }
+
+    // Fallback to local db
     const categories = db.findAll('categories')
       .filter(c => c.status === 'active')
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
@@ -19,9 +51,39 @@ exports.getCategories = (req, res, next) => {
   }
 };
 
-exports.getCategoryBySlug = (req, res, next) => {
+exports.getCategoryBySlug = async (req, res, next) => {
   try {
     const { slug } = req.params;
+
+    if (isSupabaseConfigured && supabase) {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+      let query = supabase.from('categories').select('*, products(id, status)');
+      if (isUuid) {
+        query = query.or(`slug.eq.${slug},id.eq.${slug}`);
+      } else {
+        query = query.eq('slug', slug);
+      }
+      const { data, error } = await query.single();
+
+      if (!error && data) {
+        const productCount = (data.products || []).filter(p => p.status === 'active').length;
+        return res.json({
+          success: true,
+          data: {
+            id: data.id,
+            name: data.name,
+            slug: data.slug,
+            description: data.description || '',
+            image: data.image_url || data.image,
+            image_url: data.image_url || data.image,
+            status: data.status,
+            sort_order: data.sort_order || 0,
+            product_count: productCount
+          }
+        });
+      }
+    }
+
     const category = db.findOne('categories', c => c.slug === slug || c.id === slug);
     if (!category) {
       return res.status(404).json({ success: false, message: 'Category not found.' });
@@ -36,18 +98,43 @@ exports.getCategoryBySlug = (req, res, next) => {
   }
 };
 
-exports.createCategory = (req, res, next) => {
+exports.createCategory = async (req, res, next) => {
   try {
-    const { name, description, image, sort_order } = req.body;
+    const { name, description, image, image_url, sort_order } = req.body;
     if (!name) {
       return res.status(400).json({ success: false, message: 'Category name is required.' });
     }
     let slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+
+    if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
+      const client = supabaseAdmin || supabase;
+      const { data, error } = await client
+        .from('categories')
+        .insert({
+          name,
+          slug,
+          description: description || '',
+          image_url: image_url || image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
+          status: 'active',
+          sort_order: parseInt(sort_order, 10) || 0
+        })
+        .select()
+        .single();
+
+      if (!error && data) {
+        return res.status(201).json({
+          success: true,
+          message: 'Category created successfully in Supabase.',
+          data
+        });
+      }
+    }
+
     const newCategory = db.insert('categories', {
       name,
       slug,
       description: description || '',
-      image: image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
+      image: image || image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
       status: 'active',
       sort_order: parseInt(sort_order, 10) || 0
     });
@@ -61,9 +148,31 @@ exports.createCategory = (req, res, next) => {
   }
 };
 
-exports.updateCategory = (req, res, next) => {
+exports.updateCategory = async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
+      const client = supabaseAdmin || supabase;
+      const updates = { ...req.body, updated_at: new Date().toISOString() };
+      delete updates.id;
+      delete updates.products;
+      if (updates.image && !updates.image_url) {
+        updates.image_url = updates.image;
+      }
+
+      const { data, error } = await client
+        .from('categories')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (!error && data) {
+        return res.json({ success: true, message: 'Category updated in Supabase.', data });
+      }
+    }
+
     const updated = db.update('categories', id, req.body);
     if (!updated) {
       return res.status(404).json({ success: false, message: 'Category not found.' });
@@ -74,9 +183,18 @@ exports.updateCategory = (req, res, next) => {
   }
 };
 
-exports.deleteCategory = (req, res, next) => {
+exports.deleteCategory = async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
+      const client = supabaseAdmin || supabase;
+      const { error } = await client.from('categories').delete().eq('id', id);
+      if (!error) {
+        return res.json({ success: true, message: 'Category deleted from Supabase.' });
+      }
+    }
+
     const deleted = db.delete('categories', id);
     if (!deleted) {
       return res.status(404).json({ success: false, message: 'Category not found.' });

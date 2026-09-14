@@ -1,7 +1,8 @@
+const { supabase, supabaseAdmin, isSupabaseConfigured } = require('../config/supabase');
 const db = require('../models/db');
 
 // Validate and Calculate Coupon Discount
-exports.validateCoupon = (req, res, next) => {
+exports.validateCoupon = async (req, res, next) => {
   try {
     const { code, subtotal = 0 } = req.body;
 
@@ -9,7 +10,28 @@ exports.validateCoupon = (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Coupon code is required.' });
     }
 
-    const coupon = db.findOne('coupons', c => c.code.toUpperCase() === code.toUpperCase().trim());
+    const cleanCode = code.toUpperCase().trim();
+    let coupon = null;
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('coupons')
+          .select('*')
+          .eq('code', cleanCode)
+          .single();
+
+        if (!error && data) {
+          coupon = data;
+        }
+      } catch (sbErr) {
+        console.warn('[couponController] Supabase coupon fetch fallback:', sbErr.message);
+      }
+    }
+
+    if (!coupon) {
+      coupon = db.findOne('coupons', c => c.code.toUpperCase() === cleanCode);
+    }
 
     if (!coupon) {
       return res.status(404).json({ success: false, message: 'Invalid coupon code.' });
@@ -19,7 +41,7 @@ exports.validateCoupon = (req, res, next) => {
       return res.status(400).json({ success: false, message: 'This coupon is no longer active.' });
     }
 
-    if (new Date(coupon.expiry_date) < new Date()) {
+    if (coupon.expiry_date && new Date(coupon.expiry_date) < new Date()) {
       return res.status(400).json({ success: false, message: 'This coupon code has expired.' });
     }
 
@@ -65,8 +87,16 @@ exports.validateCoupon = (req, res, next) => {
 };
 
 // Admin: Get all coupons
-exports.getCoupons = (req, res, next) => {
+exports.getCoupons = async (req, res, next) => {
   try {
+    if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
+      const client = supabaseAdmin || supabase;
+      const { data, error } = await client.from('coupons').select('*').order('created_at', { ascending: false });
+      if (!error && data) {
+        return res.json({ success: true, data });
+      }
+    }
+
     const coupons = db.findAll('coupons').sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     res.json({ success: true, data: coupons });
   } catch (err) {
@@ -75,7 +105,7 @@ exports.getCoupons = (req, res, next) => {
 };
 
 // Admin: Create Coupon
-exports.createCoupon = (req, res, next) => {
+exports.createCoupon = async (req, res, next) => {
   try {
     const { code, description, discount_type, discount_value, minimum_order, maximum_discount, expiry_date, usage_limit } = req.body;
 
@@ -83,13 +113,39 @@ exports.createCoupon = (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Code, type, value, and expiry date are required.' });
     }
 
-    const existing = db.findOne('coupons', c => c.code.toUpperCase() === code.toUpperCase().trim());
+    const cleanCode = code.toUpperCase().trim();
+
+    if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
+      const client = supabaseAdmin || supabase;
+      const { data: newCoupon, error } = await client
+        .from('coupons')
+        .insert({
+          code: cleanCode,
+          description: description || '',
+          discount_type,
+          discount_value: parseFloat(discount_value),
+          minimum_order: minimum_order ? parseFloat(minimum_order) : 0,
+          maximum_discount: maximum_discount ? parseFloat(maximum_discount) : null,
+          expiry_date: new Date(expiry_date).toISOString(),
+          usage_limit: usage_limit ? parseInt(usage_limit, 10) : 100,
+          times_used: 0,
+          status: 'active'
+        })
+        .select()
+        .single();
+
+      if (!error && newCoupon) {
+        return res.status(201).json({ success: true, message: 'Coupon created in Supabase.', data: newCoupon });
+      }
+    }
+
+    const existing = db.findOne('coupons', c => c.code.toUpperCase() === cleanCode);
     if (existing) {
       return res.status(409).json({ success: false, message: 'A coupon with this code already exists.' });
     }
 
     const newCoupon = db.insert('coupons', {
-      code: code.toUpperCase().trim(),
+      code: cleanCode,
       description: description || '',
       discount_type,
       discount_value: parseFloat(discount_value),
@@ -108,9 +164,24 @@ exports.createCoupon = (req, res, next) => {
 };
 
 // Admin: Update Coupon
-exports.updateCoupon = (req, res, next) => {
+exports.updateCoupon = async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
+      const client = supabaseAdmin || supabase;
+      const { data, error } = await client
+        .from('coupons')
+        .update({ ...req.body, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (!error && data) {
+        return res.json({ success: true, message: 'Coupon updated in Supabase.', data });
+      }
+    }
+
     const updated = db.update('coupons', id, req.body);
     if (!updated) return res.status(404).json({ success: false, message: 'Coupon not found.' });
     res.json({ success: true, message: 'Coupon updated.', data: updated });
@@ -120,9 +191,18 @@ exports.updateCoupon = (req, res, next) => {
 };
 
 // Admin: Delete Coupon
-exports.deleteCoupon = (req, res, next) => {
+exports.deleteCoupon = async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
+      const client = supabaseAdmin || supabase;
+      const { error } = await client.from('coupons').delete().eq('id', id);
+      if (!error) {
+        return res.json({ success: true, message: 'Coupon deleted from Supabase.' });
+      }
+    }
+
     const deleted = db.delete('coupons', id);
     if (!deleted) return res.status(404).json({ success: false, message: 'Coupon not found.' });
     res.json({ success: true, message: 'Coupon deleted.' });

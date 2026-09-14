@@ -16,7 +16,11 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   
   <!-- Harinama Store Master Stylesheet -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=4">
+  <link rel="stylesheet" href="/assets/css/style.css?v=12">
+  <!-- Brand Favicon -->
+  <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/assets/images/krishna-logo.jpg">
 </head>
 <body>
 
@@ -92,12 +96,15 @@
           </div>
 
           <!-- Action Buttons -->
-          <div class="d-flex flex-column flex-sm-row gap-3 mb-4">
-            <button class="btn hn-btn-gold flex-grow-1 py-3" onclick="detailAddToCart()">
+          <div class="d-flex flex-column flex-sm-row gap-3 mb-4 align-items-stretch">
+            <button type="button" class="btn hn-btn-gold flex-grow-1 py-3" onclick="detailAddToCart()">
               <i class="bi bi-bag-plus me-1"></i> Add to Cart
             </button>
-            <button class="btn hn-btn-outline-dark flex-grow-1 py-3" style="background: var(--hn-navy); color: #fff !important;" onclick="detailBuyNow()">
+            <button type="button" class="btn hn-btn-outline-dark flex-grow-1 py-3" style="background: var(--hn-navy); color: #fff !important;" onclick="detailBuyNow()">
               Buy Now
+            </button>
+            <button type="button" class="btn btn-outline-danger px-4 py-3 d-flex align-items-center justify-content-center" id="hn-detail-wishlist-btn" onclick="toggleWishlist(currentProduct ? currentProduct.id : '', this)" title="Save to Sacred Wishlist" style="border-radius: var(--hn-radius-sm);">
+              <i class="bi bi-heart fs-5"></i>
             </button>
           </div>
 
@@ -141,6 +148,11 @@
           <li class="nav-item">
             <button class="nav-link" id="ret-tab" data-bs-toggle="tab" data-bs-target="#ret-content" type="button" role="tab">Returns</button>
           </li>
+          <li class="nav-item">
+            <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews-content" type="button" role="tab">
+              <i class="bi bi-star-fill text-warning me-1"></i> Devotee Reviews (<span id="hn-tab-reviews-count">24</span>)
+            </button>
+          </li>
         </ul>
 
         <div class="tab-content py-4 bg-white p-4 border border-top-0 rounded-bottom" id="productTabsContent">
@@ -167,6 +179,37 @@
               We offer a hassle-free 7-day return and replacement policy if your items arrive damaged or defective. Simply reach out via WhatsApp or email.
             </p>
           </div>
+
+          <!-- Devotee Reviews Pane -->
+          <div class="tab-pane fade" id="reviews-content" role="tabpanel">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between pb-3 mb-4 border-bottom gap-3">
+              <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <span class="fs-2 fw-bold text-navy" id="hn-reviews-avg-rating" style="color: var(--hn-navy);">5.0</span>
+                  <div class="hn-card-rating mb-0 fs-5" id="hn-reviews-stars">
+                    <i class="bi bi-star-fill text-warning"></i>
+                    <i class="bi bi-star-fill text-warning"></i>
+                    <i class="bi bi-star-fill text-warning"></i>
+                    <i class="bi bi-star-fill text-warning"></i>
+                    <i class="bi bi-star-fill text-warning"></i>
+                  </div>
+                </div>
+                <p class="text-secondary small mb-0">Based on <span id="hn-reviews-total-count">24</span> verified devotee reviews</p>
+              </div>
+              <div>
+                <button type="button" class="btn hn-btn-gold px-4 py-2" onclick="triggerWriteReview()">
+                  <i class="bi bi-pencil-square me-2"></i>Write a Devotee Review
+                </button>
+              </div>
+            </div>
+
+            <!-- Dynamic Reviews List -->
+            <div id="hn-reviews-list" class="d-flex flex-column gap-3">
+              <div class="text-center py-4 text-muted">
+                <span class="spinner-border spinner-border-sm me-2"></span>Loading sacred devotee reviews...
+              </div>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -174,15 +217,67 @@
     </div>
   </main>
 
+  <!-- Review Modal Overlay -->
+  <div class="hn-auth-overlay" id="hnReviewModalOverlay" onclick="handleReviewOverlayClick(event)">
+    <div class="hn-auth-card" style="max-width: 520px;" onclick="event.stopPropagation()">
+      <button type="button" class="hn-auth-close-btn" onclick="closeReviewModal()" aria-label="Close modal">
+        <i class="bi bi-x-lg"></i>
+      </button>
+
+      <div class="hn-auth-header">
+        <div class="hn-auth-emblem">
+          <i class="bi bi-chat-heart"></i>
+        </div>
+        <h3 class="hn-auth-title">Share Your Experience</h3>
+        <p class="hn-auth-subtitle">Your review inspires devotees around the world 🌸</p>
+      </div>
+
+      <div class="hn-auth-alert" id="hnReviewAlert"></div>
+
+      <form id="hnReviewForm" onsubmit="handleReviewSubmit(event)">
+        <div class="mb-3 text-center">
+          <label class="hn-auth-label d-block mb-2">Your Rating</label>
+          <div class="d-inline-flex gap-2 fs-3" id="hnStarRatingWidget" style="color: var(--hn-gold); cursor: pointer;">
+            <i class="bi bi-star-fill" data-val="1" onclick="selectStar(1)" onmouseover="hoverStars(1)" onmouseout="resetStars()"></i>
+            <i class="bi bi-star-fill" data-val="2" onclick="selectStar(2)" onmouseover="hoverStars(2)" onmouseout="resetStars()"></i>
+            <i class="bi bi-star-fill" data-val="3" onclick="selectStar(3)" onmouseover="hoverStars(3)" onmouseout="resetStars()"></i>
+            <i class="bi bi-star-fill" data-val="4" onclick="selectStar(4)" onmouseover="hoverStars(4)" onmouseout="resetStars()"></i>
+            <i class="bi bi-star-fill" data-val="5" onclick="selectStar(5)" onmouseover="hoverStars(5)" onmouseout="resetStars()"></i>
+          </div>
+          <input type="hidden" id="hnSelectedRating" value="5">
+        </div>
+
+        <div class="hn-auth-group mb-3">
+          <label class="hn-auth-label" for="hnReviewTitle">Review Title</label>
+          <div class="hn-auth-input-wrap">
+            <i class="bi bi-card-heading hn-input-icon"></i>
+            <input type="text" id="hnReviewTitle" class="hn-auth-input" placeholder="e.g. Blessed craftsmanship & pure quality" required>
+          </div>
+        </div>
+
+        <div class="hn-auth-group mb-3">
+          <label class="hn-auth-label" for="hnReviewComment">Devotional Experience</label>
+          <textarea id="hnReviewComment" class="form-control" rows="4" placeholder="How did this product bring Krishna into your day? Share your sacred experience..." required style="border: 1.5px solid #E5E7EB; border-radius: 10px; font-size: 0.92rem; padding: 0.75rem;"></textarea>
+        </div>
+
+        <button type="submit" class="hn-auth-submit-btn" id="hnReviewSubmitBtn">
+          <span>Publish Sacred Review</span>
+          <i class="bi bi-send-fill ms-2"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
   <!-- Global Footer -->
   <div id="hn-footer-placeholder"></div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
-  <script src="/assets/js/components.js"></script>
+  <script src="/assets/js/components.js?v=15"></script>
   <script>
     let currentProduct = null;
+    let selectedRating = 5;
 
     function incrementQty() {
       const el = document.getElementById('hn-qty-val');
@@ -203,8 +298,257 @@
     }
 
     function detailBuyNow() {
-      detailAddToCart();
-      window.location.href = '/checkout.html';
+      if (!currentProduct) return;
+      const qty = parseInt(document.getElementById('hn-qty-val').value || '1', 10);
+      const material = document.getElementById('hn-material-select').value || 'Acrylic';
+      handleBuyNow(currentProduct.id, qty, material);
+    }
+
+    function switchToReviewsTab() {
+      const tabEl = document.getElementById('reviews-tab');
+      if (tabEl) {
+        const tab = new bootstrap.Tab(tabEl);
+        tab.show();
+        tabEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    // Review Stars Widget Handlers
+    function hoverStars(n) {
+      const stars = document.querySelectorAll('#hnStarRatingWidget i');
+      stars.forEach((s, idx) => {
+        if (idx < n) {
+          s.className = 'bi bi-star-fill text-warning';
+        } else {
+          s.className = 'bi bi-star text-muted';
+        }
+      });
+    }
+
+    function resetStars() {
+      hoverStars(selectedRating);
+    }
+
+    function selectStar(n) {
+      selectedRating = n;
+      document.getElementById('hnSelectedRating').value = n;
+      resetStars();
+    }
+
+    function triggerWriteReview() {
+      if (!isUserLoggedIn()) {
+        openAuthModal(() => openReviewModal(), 'Sign in to share your divine review 🌸');
+        return;
+      }
+      openReviewModal();
+    }
+
+    function openReviewModal() {
+      const overlay = document.getElementById('hnReviewModalOverlay');
+      if (overlay) {
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        selectStar(5);
+        const titleInput = document.getElementById('hnReviewTitle');
+        if (titleInput) {
+          titleInput.value = '';
+          setTimeout(() => titleInput.focus(), 150);
+        }
+        const commentInput = document.getElementById('hnReviewComment');
+        if (commentInput) commentInput.value = '';
+        const alertEl = document.getElementById('hnReviewAlert');
+        if (alertEl) {
+          alertEl.className = 'hn-auth-alert';
+          alertEl.innerText = '';
+        }
+      }
+    }
+
+    function closeReviewModal() {
+      const overlay = document.getElementById('hnReviewModalOverlay');
+      if (overlay) overlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function handleReviewOverlayClick(e) {
+      if (e.target.id === 'hnReviewModalOverlay') closeReviewModal();
+    }
+
+    async function handleReviewSubmit(e) {
+      e.preventDefault();
+      if (!currentProduct) return;
+
+      const token = localStorage.getItem('hn_auth_token');
+      if (!token) {
+        closeReviewModal();
+        openAuthModal(() => openReviewModal(), 'Sign in to share your divine review 🌸');
+        return;
+      }
+
+      const rating = parseInt(document.getElementById('hnSelectedRating').value || '5', 10);
+      const title = document.getElementById('hnReviewTitle').value.trim();
+      const comment = document.getElementById('hnReviewComment').value.trim();
+      const btn = document.getElementById('hnReviewSubmitBtn');
+      const alertEl = document.getElementById('hnReviewAlert');
+
+      const originalBtnContent = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Publishing...`;
+
+      try {
+        const res = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            product_id: currentProduct.id,
+            rating,
+            title,
+            comment
+          })
+        }).then(r => r.json());
+
+        if (!res.success) {
+          throw new Error(res.message || 'Failed to submit review.');
+        }
+
+        if (alertEl) {
+          alertEl.className = 'hn-auth-alert success';
+          alertEl.innerText = 'Your review has been published! Hare Krishna. 🌸';
+        }
+
+        setTimeout(() => {
+          closeReviewModal();
+          showToast('Thank you! Your sacred review has been published. 🌸');
+          loadProductReviews(currentProduct.id);
+        }, 600);
+
+      } catch (err) {
+        if (alertEl) {
+          alertEl.className = 'hn-auth-alert error';
+          alertEl.innerText = err.message;
+        }
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalBtnContent;
+      }
+    }
+
+    async function loadProductReviews(prodId) {
+      const container = document.getElementById('hn-reviews-list');
+      if (!container) return;
+
+      try {
+        const res = await fetch(`/api/reviews/product/${encodeURIComponent(prodId)}`).then(r => r.json());
+        const reviews = (res && res.success && Array.isArray(res.data)) ? res.data : [];
+
+        if (reviews.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-4 bg-light rounded-3">
+              <i class="bi bi-flower1 fs-1 text-warning d-block mb-2"></i>
+              <h6 class="fw-bold text-navy">Be the first devotee to review this sacred item</h6>
+              <p class="text-secondary small mb-3">Share your blessing and experience with fellow devotees.</p>
+              <button class="btn btn-sm hn-btn-gold px-3" onclick="triggerWriteReview()">Write First Review</button>
+            </div>
+          `;
+          return;
+        }
+
+        // Update counts
+        const countEl = document.getElementById('hn-tab-reviews-count');
+        if (countEl) countEl.innerText = reviews.length;
+        const totalEl = document.getElementById('hn-reviews-total-count');
+        if (totalEl) totalEl.innerText = reviews.length;
+
+        const avgRating = (reviews.reduce((acc, r) => acc + (r.rating || 5), 0) / reviews.length).toFixed(1);
+        const avgEl = document.getElementById('hn-reviews-avg-rating');
+        if (avgEl) avgEl.innerText = avgRating;
+
+        container.innerHTML = reviews.map(r => `
+          <div class="p-3 border rounded-3 bg-white shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <img src="${r.user_avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'}" class="rounded-circle border" style="width: 36px; height: 36px; object-fit: cover;" alt="${r.user_name}">
+                <div>
+                  <div class="fw-bold text-navy small mb-0">${r.user_name}</div>
+                  ${r.is_verified_purchase ? '<span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;"><i class="bi bi-check-circle-fill me-1"></i>Verified Devotee Purchase</span>' : ''}
+                </div>
+              </div>
+              <span class="text-muted small">${new Date(r.created_at || Date.now()).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <div class="hn-card-rating mb-0" style="color: var(--hn-gold); font-size: 0.85rem;">
+                ${'<i class="bi bi-star-fill"></i>'.repeat(Math.min(5, r.rating || 5))}
+              </div>
+              ${r.title ? `<span class="fw-semibold text-dark small">${r.title}</span>` : ''}
+            </div>
+
+            <p class="text-secondary small mb-0" style="line-height: 1.5;">${r.comment}</p>
+          </div>
+        `).join('');
+
+      } catch (err) {
+        container.innerHTML = `<div class="text-muted small py-3">Devotee reviews ready to read.</div>`;
+      }
+    }
+
+    function populateDetails(prod) {
+      if (!prod) return;
+      currentProduct = prod;
+      document.title = `${prod.title || prod.name} — Harinama Store`;
+      const titleEl = document.getElementById('hn-product-title');
+      if (titleEl) titleEl.innerText = prod.title || prod.name;
+      const priceEl = document.getElementById('hn-product-price');
+      if (priceEl) priceEl.innerText = formatPrice(prod.price);
+      const descEl = document.getElementById('hn-product-desc');
+      if (descEl) descEl.innerText = prod.description;
+      const tabDescEl = document.getElementById('hn-tab-desc');
+      if (tabDescEl) tabDescEl.innerText = prod.description;
+      const mainImg = document.getElementById('hn-main-image');
+      if (mainImg) mainImg.src = prod.image || prod.primary_image;
+      const reviewsEl = document.getElementById('hn-product-reviews');
+      if (reviewsEl) {
+        reviewsEl.innerText = `(${prod.reviews_count || 24} reviews)`;
+        reviewsEl.style.cursor = 'pointer';
+        reviewsEl.onclick = switchToReviewsTab;
+      }
+
+      // Specifications
+      if (prod.specifications) {
+        const specUl = document.getElementById('hn-tab-specs');
+        if (specUl) {
+          specUl.innerHTML = Object.entries(prod.specifications).map(([k, v]) => `
+            <li class="py-1"><strong>${k}:</strong> ${v}</li>
+          `).join('');
+        }
+      }
+
+      // Thumbs
+      const gallery = prod.gallery && prod.gallery.length ? prod.gallery : [prod.image, prod.image, prod.image];
+      const thumbContainer = document.getElementById('hn-thumb-gallery');
+      if (thumbContainer) {
+        thumbContainer.innerHTML = gallery.map((img, idx) => `
+          <img src="${img}" class="hn-thumb-img ${idx === 0 ? 'active' : ''}" onclick="document.getElementById('hn-main-image').src = '${img}'; document.querySelectorAll('.hn-thumb-img').forEach(t => t.classList.remove('active')); this.classList.add('active');" alt="Thumbnail">
+        `).join('');
+      }
+
+      // Sync wishlist button state
+      const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+      const isWish = wishlist.includes(prod.id) || (prod.legacy_id && wishlist.includes(prod.legacy_id)) || (prod.slug && wishlist.includes(prod.slug));
+      const detailWishBtn = document.getElementById('hn-detail-wishlist-btn');
+      if (detailWishBtn) {
+        detailWishBtn.classList.toggle('active', isWish);
+        detailWishBtn.classList.toggle('btn-danger', isWish);
+        detailWishBtn.classList.toggle('btn-outline-danger', !isWish);
+        const heartIcon = detailWishBtn.querySelector('i');
+        if (heartIcon) heartIcon.className = isWish ? 'bi bi-heart-fill fs-5 text-white' : 'bi bi-heart fs-5';
+      }
+
+      // Load live reviews
+      loadProductReviews(prod.id);
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -212,35 +556,37 @@
       renderFooter();
 
       const urlParams = new URLSearchParams(window.location.search);
-      const prodId = urlParams.get('id') || 'prod-001';
-      currentProduct = (HARINAMA_DATA.products || []).find(p => p.id === prodId) || HARINAMA_DATA.products[0];
+      const prodId = urlParams.get('id') || 'a0000001-0000-0000-0000-000000000001';
 
-      if (currentProduct) {
-        document.title = `${currentProduct.name || currentProduct.title} — Harinama Store`;
-        document.getElementById('hn-product-title').innerText = currentProduct.title || currentProduct.name;
-        document.getElementById('hn-product-price').innerText = formatPrice(currentProduct.price);
-        document.getElementById('hn-product-desc').innerText = currentProduct.description;
-        document.getElementById('hn-tab-desc').innerText = currentProduct.description;
-        document.getElementById('hn-main-image').src = currentProduct.image;
-        document.getElementById('hn-product-reviews').innerText = `(${currentProduct.reviews_count || 24} reviews)`;
-
-        // Specifications
-        if (currentProduct.specifications) {
-          const specUl = document.getElementById('hn-tab-specs');
-          if (specUl) {
-            specUl.innerHTML = Object.entries(currentProduct.specifications).map(([k, v]) => `
-              <li class="py-1"><strong>${k}:</strong> ${v}</li>
-            `).join('');
-          }
-        }
-
-        // Thumbs
-        const gallery = currentProduct.gallery && currentProduct.gallery.length ? currentProduct.gallery : [currentProduct.image, currentProduct.image, currentProduct.image];
-        const thumbContainer = document.getElementById('hn-thumb-gallery');
-        thumbContainer.innerHTML = gallery.map((img, idx) => `
-          <img src="${img}" class="hn-thumb-img ${idx === 0 ? 'active' : ''}" onclick="document.getElementById('hn-main-image').src = '${img}'; document.querySelectorAll('.hn-thumb-img').forEach(t => t.classList.remove('active')); this.classList.add('active');" alt="Thumbnail">
-        `).join('');
+      // Lookup product using universal resolver
+      const cached = findCatalogProduct(prodId);
+      if (cached) {
+        populateDetails(cached);
       }
+
+      // Fetch live product from API
+      fetch(`/api/products/${encodeURIComponent(prodId)}`)
+        .then(r => r.json())
+        .then(res => {
+          if (res && res.success && res.data) {
+            populateDetails(res.data);
+          }
+        })
+        .catch(() => {
+          if (!cached) {
+            const fallback = findCatalogProduct('prod-001') || (HARINAMA_DATA.products && HARINAMA_DATA.products[0]);
+            if (fallback) populateDetails(fallback);
+          }
+        });
+
+      window.addEventListener('hn:catalog-loaded', () => {
+        const found = findCatalogProduct(prodId);
+        if (found) populateDetails(found);
+      });
+
+      window.addEventListener('hn_wishlist_updated', () => {
+        if (currentProduct) populateDetails(currentProduct);
+      });
     });
   </script>
 </body>

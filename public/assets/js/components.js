@@ -207,12 +207,21 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', processOAuthRedirectAndSession);
 }
 
-const logoutUser = async (e = null) => {
+const logoutUser = async (e = null, skipConfirm = false) => {
   if (e) {
     if (typeof e.preventDefault === 'function') e.preventDefault();
     if (typeof e.stopPropagation === 'function') e.stopPropagation();
   }
   
+  if (!skipConfirm) {
+    const user = getLoggedInUser();
+    const devoteeName = user?.name ? user.name : 'Devotee';
+    const confirmed = window.confirm(`Hare Krishna, ${devoteeName}!\n\nAre you sure you want to sign out of your sacred account?`);
+    if (!confirmed) {
+      return false;
+    }
+  }
+
   // Sign out from Supabase if client is present
   try {
     const client = window.supabaseClient || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase.createClient('https://wnaqfadlxrrvvjvqqbch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM') : null);

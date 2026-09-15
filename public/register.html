@@ -381,7 +381,7 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
-  <script src="/assets/js/components.js?v=16"></script>
+  <script src="/assets/js/components.js?v=17"></script>
   <script>
     // Supabase Client Setup
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
@@ -408,76 +408,54 @@
       }
     };
 
-    window.demoGoogleLogin = function() {
-      const googleUser = {
-        id: 'google-user-108',
-        name: 'Radha Vallabh',
-        email: 'devotee.google@gmail.com',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
-        role: 'customer'
-      };
-      const token = 'sb_google_token_' + Date.now();
-      localStorage.setItem('hn_auth_token', token);
-      localStorage.setItem('hn_user_profile', JSON.stringify(googleUser));
-      localStorage.setItem('hn_user', JSON.stringify(googleUser));
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(googleUser));
-
-      if (typeof showToast === 'function') {
-        showToast('Signed in with Google! Welcome, Radha Vallabh 🌸');
-      }
-
-      setTimeout(() => { window.location.href = '/account.html'; }, 500);
-    };
-
+    // Real Google Sign-In Handler (Production OAuth)
     window.handleGoogleSignIn = async function() {
       const googleBtn = document.getElementById('btn-google');
-      if (googleBtn) {
-        googleBtn.disabled = true;
-        googleBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Connecting Google...';
+      const alertBox = document.getElementById('regAlert');
+      const origText = googleBtn ? googleBtn.innerHTML : '';
+
+      if (alertBox) {
+        alertBox.style.display = 'none';
       }
 
-      let handled = false;
-      const timeoutId = setTimeout(() => {
-        if (!handled) {
-          handled = true;
-          window.demoGoogleLogin();
-        }
-      }, 1200);
+      if (googleBtn) {
+        googleBtn.disabled = true;
+        googleBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Redirecting to Google...';
+      }
 
       try {
-        if (sbClient && sbClient.auth) {
-          const { data, error } = await sbClient.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-              redirectTo: window.location.origin + '/account.html'
-            }
-          });
-          clearTimeout(timeoutId);
-          if (handled) return;
-          handled = true;
-
-          if (error) {
-            console.warn('Google OAuth error:', error);
-            window.demoGoogleLogin();
-            return;
-          }
-          if (data && data.url) {
-            window.location.href = data.url;
-            return;
-          }
+        if (!sbClient || !sbClient.auth) {
+          throw new Error('Supabase authentication client is not initialized.');
         }
-        clearTimeout(timeoutId);
-        if (!handled) {
-          handled = true;
-          window.demoGoogleLogin();
+
+        const { data, error } = await sbClient.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin + '/account.html'
+          }
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (data && data.url) {
+          window.location.href = data.url;
+          return;
         }
       } catch (err) {
-        clearTimeout(timeoutId);
-        if (!handled) {
-          handled = true;
-          console.warn('Google sign-in completed with demo fallback:', err);
-          window.demoGoogleLogin();
+        console.error('Google sign-in error:', err);
+        if (alertBox) {
+          alertBox.className = 'hn-alert-box alert alert-danger';
+          alertBox.innerText = err.message || 'Google sign-in failed. Please verify your Supabase Google Provider settings.';
+          alertBox.style.display = 'block';
+        }
+        if (typeof showToast === 'function') {
+          showToast(err.message || 'Google OAuth Error', 'danger');
+        }
+        if (googleBtn) {
+          googleBtn.disabled = false;
+          googleBtn.innerHTML = origText;
         }
       }
     };

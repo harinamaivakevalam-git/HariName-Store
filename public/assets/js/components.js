@@ -724,28 +724,32 @@ const continueAsGuest = () => {
 };
 window.continueAsGuest = continueAsGuest;
 
-const handleGoogleSignIn = () => {
-  showToast('Google Sign-In ready. Signing in with demo credentials... 🌸');
-  setTimeout(() => {
-    const demoUser = {
-      id: 'demo-google-user',
-      name: 'Radha Vallabh',
-      email: 'devotee@gmail.com',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'
-    };
-    localStorage.setItem('hn_auth_token', 'demo_token_google');
-    localStorage.setItem('hn_user_profile', JSON.stringify(demoUser));
-    localStorage.setItem('hn_user', JSON.stringify(demoUser));
-    closeAuthModal();
-    renderHeader();
-    showToast('Welcome, Radha Vallabh! 🌸');
-    window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user: demoUser } }));
-    if (typeof _pendingAuthCallback === 'function') {
-      const cb = _pendingAuthCallback;
-      _pendingAuthCallback = null;
-      cb();
+const handleGoogleSignIn = async () => {
+  const client = window.supabaseClient || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase.createClient('https://wnaqfadlxrrvvjvqqbch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM') : null);
+  
+  if (client && client.auth) {
+    showToast('Redirecting to Google Secure Sign-In... 🌸');
+    try {
+      const { data, error } = await client.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/account.html'
+        }
+      });
+      if (error) {
+        setAuthAlert(error.message || 'Google OAuth error', 'error');
+        return;
+      }
+      if (data && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+    } catch (err) {
+      setAuthAlert(err.message || 'Google Sign-in failed', 'error');
     }
-  }, 600);
+  } else {
+    window.location.href = '/login.html';
+  }
 };
 window.handleGoogleSignIn = handleGoogleSignIn;
 

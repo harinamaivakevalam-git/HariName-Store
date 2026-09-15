@@ -108,20 +108,6 @@
             </button>
           </div>
 
-          <!-- Cross-Selling Bundle ("Complete Your Collection") -->
-          <div class="p-3 bg-light border rounded mb-4">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-              <span class="fw-bold small text-navy"><i class="bi bi-stars text-warning me-1"></i> Complete Your Collection</span>
-              <span class="badge bg-warning text-dark font-monospace">Save ₹49 as a set</span>
-            </div>
-            <div class="d-flex align-items-center justify-content-between">
-              <div class="small text-secondary">Add Maha-Mantra + Peacock Feather Pair</div>
-              <button type="button" class="btn btn-sm btn-outline-dark" onclick="handleBundleAdd()">
-                + Add Bundle (₹199)
-              </button>
-            </div>
-          </div>
-
           <!-- Trust Badges Strip -->
           <div class="d-flex flex-wrap justify-content-between pt-3 border-top border-bottom py-3 small text-secondary">
             <div><i class="bi bi-shield-check text-warning me-1"></i> Secure Checkout</div>
@@ -274,7 +260,7 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
-  <script src="/assets/js/components.js?v=16"></script>
+  <script src="/assets/js/components.js?v=17"></script>
   <script>
     let currentProduct = null;
     let selectedRating = 5;
@@ -326,15 +312,6 @@
       }
       const btn = document.getElementById('hn-detail-wishlist-btn');
       toggleWishlist(currentProduct ? currentProduct.id : '', btn);
-    }
-
-    function handleBundleAdd() {
-      if (!isUserLoggedIn()) {
-        openAuthModal(() => handleBundleAdd(), 'Sign in to add bundle items to your cart 🌸');
-        return;
-      }
-      handleAddToCart('prod-003', 1);
-      handleAddToCart('prod-001', 1);
     }
 
     function switchToReviewsTab() {

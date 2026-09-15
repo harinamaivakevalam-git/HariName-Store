@@ -1050,6 +1050,8 @@
 
     const cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
     const cartCount = cart.reduce((acc, i) => acc + (i.qty || 1), 0);
+    const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || localStorage.getItem('wishlist') || '[]');
+    const wishlistCount = Array.isArray(wishlist) ? wishlist.length : 0;
     const loggedIn = isUserLoggedIn();
     const user = getLoggedInUser();
 
@@ -1129,10 +1131,15 @@
             <a href="/contact.html" class="hn-nav-link ${active === 'contact' ? 'active' : ''}">Contact</a>
           </nav>
 
-          <!-- Right Action Icons: Search -> Cart -> Sign In / Profile (LAST) -->
+          <!-- Right Action Icons: Search -> Favorites -> Cart -> Sign In / Profile (LAST) -->
           <div class="d-flex align-items-center gap-2 gap-md-3">
             <a href="/shop.html" class="hn-icon-btn d-none d-md-inline-flex" title="Search Products">
               <i class="bi bi-search"></i>
+            </a>
+
+            <a href="/wishlist.html" class="hn-icon-btn" title="Favorites & Wishlist">
+              <i class="bi bi-heart"></i>
+              <span class="hn-badge-pill" id="hn-wishlist-badge">${wishlistCount}</span>
             </a>
 
             <a href="/cart.html" class="hn-icon-btn" title="Shopping Cart">
@@ -1541,6 +1548,15 @@
         icon.className = isNowWish ? 'bi bi-heart-fill text-danger' : 'bi bi-heart';
       }
     });
+
+    // Update header wishlist badge with bounce animation
+    const wishBadge = document.getElementById('hn-wishlist-badge');
+    if (wishBadge) {
+      wishBadge.innerText = wishlist.length;
+      wishBadge.classList.remove('hn-badge-bounce');
+      void wishBadge.offsetWidth;
+      wishBadge.classList.add('hn-badge-bounce');
+    }
 
     window.dispatchEvent(new CustomEvent('hn_wishlist_updated', { detail: wishlist }));
   };

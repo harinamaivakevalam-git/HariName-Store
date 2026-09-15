@@ -62,6 +62,9 @@ const showToast = (message, type = 'success') => {
 // ============================================================================
 let _pendingAuthCallback = null;
 
+const SUPABASE_AUTH_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+const SUPABASE_AUTH_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+
 const getLoggedInUser = () => {
   try {
     const raw = localStorage.getItem('hn_user_profile') || localStorage.getItem('hn_user') || localStorage.getItem('user');
@@ -81,15 +84,128 @@ const isUserLoggedIn = () => {
   if (!token || token === 'undefined' || token === 'null' || token === '') return false;
   const user = getLoggedInUser();
   if (!user) {
-    // If token exists without valid user profile, clear corrupted token
-    try {
-      localStorage.removeItem('hn_auth_token');
-      localStorage.removeItem('token');
-    } catch (_) {}
+    // If token exists without valid user profile, check if token is valid before clearing
     return false;
   }
   return true;
 };
+
+// Global Supabase OAuth Redirect & Hash Parser
+const processOAuthRedirectAndSession = async () => {
+  // 1. Process URL Hash (e.g. #access_token=...&refresh_token=...)
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token=')) {
+    try {
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get('access_token');
+
+      if (accessToken) {
+        // Direct fetch from Supabase Auth API
+        const res = await fetch(`${SUPABASE_AUTH_URL}/auth/v1/user`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'apikey': SUPABASE_AUTH_ANON_KEY
+          }
+        });
+        const userData = await res.json();
+        if (userData && userData.id && userData.email) {
+          const user = {
+            id: userData.id,
+            email: userData.email,
+            name: userData.user_metadata?.full_name || userData.user_metadata?.name || userData.email.split('@')[0],
+            avatar: userData.user_metadata?.avatar_url || userData.user_metadata?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+            phone: userData.user_metadata?.phone || '',
+            city: userData.user_metadata?.city || '',
+            role: 'customer'
+          };
+
+          localStorage.setItem('hn_auth_token', accessToken);
+          localStorage.setItem('hn_user_profile', JSON.stringify(user));
+          localStorage.setItem('hn_user', JSON.stringify(user));
+          localStorage.setItem('token', accessToken);
+          localStorage.setItem('user', JSON.stringify(user));
+
+          // Clean URL hash without triggering full reload
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.pathname + window.location.search);
+          }
+
+          renderHeader();
+          window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user } }));
+          showToast(`Welcome back, ${user.name}! 🌸`);
+
+          // If currently on login, register, or auth page, auto-redirect to account
+          const path = window.location.pathname.toLowerCase();
+          if (path.includes('login') || path.includes('register') || path.includes('auth')) {
+            setTimeout(() => { window.location.href = '/account.html'; }, 300);
+          }
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('OAuth redirect processing notice:', err);
+    }
+  }
+
+  // 2. Process Supabase Client Session if library is loaded
+  if (window.supabase && typeof window.supabase.createClient === 'function') {
+    try {
+      if (!window.supabaseClient) {
+        window.supabaseClient = window.supabase.createClient(SUPABASE_AUTH_URL, SUPABASE_AUTH_ANON_KEY);
+      }
+      const sb = window.supabaseClient;
+      if (sb && sb.auth) {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session && session.user && !isUserLoggedIn()) {
+          const user = {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email.split('@')[0],
+            avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+            phone: session.user.user_metadata?.phone || '',
+            city: session.user.user_metadata?.city || '',
+            role: 'customer'
+          };
+          localStorage.setItem('hn_auth_token', session.access_token);
+          localStorage.setItem('hn_user_profile', JSON.stringify(user));
+          localStorage.setItem('hn_user', JSON.stringify(user));
+          localStorage.setItem('token', session.access_token);
+          localStorage.setItem('user', JSON.stringify(user));
+          renderHeader();
+          window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user } }));
+        }
+
+        sb.auth.onAuthStateChange((event, session) => {
+          if (session && session.user) {
+            const user = {
+              id: session.user.id,
+              email: session.user.email,
+              name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email.split('@')[0],
+              avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+              phone: session.user.user_metadata?.phone || '',
+              city: session.user.user_metadata?.city || '',
+              role: 'customer'
+            };
+            localStorage.setItem('hn_auth_token', session.access_token);
+            localStorage.setItem('hn_user_profile', JSON.stringify(user));
+            localStorage.setItem('hn_user', JSON.stringify(user));
+            localStorage.setItem('token', session.access_token);
+            localStorage.setItem('user', JSON.stringify(user));
+            renderHeader();
+            window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user } }));
+          }
+        });
+      }
+    } catch (_) {}
+  }
+};
+
+// Execute immediately upon script execution
+processOAuthRedirectAndSession();
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', processOAuthRedirectAndSession);
+}
 
 const logoutUser = async (e = null) => {
   if (e) {
@@ -1530,4 +1646,5 @@ window.continueAsGuest = continueAsGuest;
 window.handleGoogleSignIn = handleGoogleSignIn;
 window.handleAuthOverlayClick = handleAuthOverlayClick;
 window.handleHeaderAccountClick = handleHeaderAccountClick;
+window.initScrollAnimations = initScrollAnimations;
 })();

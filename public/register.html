@@ -308,7 +308,10 @@
         <!-- Right Column: Warm Cream Form Card -->
         <div class="hn-sprout-right">
           
-          <h2 class="hn-sprout-title">Create your account</h2>
+          <h2 class="hn-sprout-title">Complete Your Devotee Profile</h2>
+          <p class="text-center text-muted small mb-4" style="margin-top: -16px;">
+            Please enter your name and contact number to complete your setup.
+          </p>
 
           <!-- Alert notification -->
           <div id="regAlert" class="hn-alert-box alert alert-danger"></div>
@@ -316,30 +319,51 @@
           <!-- Register Form -->
           <form id="registerForm" onsubmit="handleRegisterSubmit(event)">
             
-            <!-- Full Name -->
+            <!-- Email Field (Pre-filled by default) -->
             <div class="hn-sprout-field">
-              <label class="hn-sprout-label" for="reg-name">Full Name</label>
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="hn-sprout-label mb-0" for="reg-email">Email address</label>
+                <span class="badge bg-light text-secondary border px-2 py-0" style="font-size: 0.72rem;">Account Email</span>
+              </div>
               <div class="hn-sprout-input-wrap">
-                <div class="hn-sprout-icon"><i class="bi bi-person"></i></div>
-                <input type="text" id="reg-name" class="hn-sprout-input" placeholder="Enter your full name" required autocomplete="name">
+                <div class="hn-sprout-icon"><i class="bi bi-envelope-check"></i></div>
+                <input type="email" id="reg-email" class="hn-sprout-input" placeholder="Enter your email" required autocomplete="email" style="background: #FAF7F2;">
               </div>
             </div>
 
-            <!-- Email Field -->
+            <!-- Full Name (MANDATORY) -->
             <div class="hn-sprout-field">
-              <label class="hn-sprout-label" for="reg-email">Email address</label>
+              <label class="hn-sprout-label" for="reg-name">Full Name <span class="text-danger">*</span></label>
               <div class="hn-sprout-input-wrap">
-                <div class="hn-sprout-icon"><i class="bi bi-envelope"></i></div>
-                <input type="email" id="reg-email" class="hn-sprout-input" placeholder="Enter your email" required autocomplete="email">
+                <div class="hn-sprout-icon"><i class="bi bi-person-fill"></i></div>
+                <input type="text" id="reg-name" class="hn-sprout-input" placeholder="e.g. Radharani Devi" required autocomplete="name">
+              </div>
+            </div>
+
+            <!-- Phone Number (MANDATORY) -->
+            <div class="hn-sprout-field">
+              <label class="hn-sprout-label" for="reg-phone">Mobile / WhatsApp Number <span class="text-danger">*</span></label>
+              <div class="hn-sprout-input-wrap">
+                <div class="hn-sprout-icon"><i class="bi bi-telephone-fill"></i></div>
+                <input type="tel" id="reg-phone" class="hn-sprout-input" placeholder="e.g. +91 98765 43210" required autocomplete="tel">
+              </div>
+            </div>
+
+            <!-- Delivery Address (OPTIONAL) -->
+            <div class="hn-sprout-field">
+              <label class="hn-sprout-label" for="reg-address">Delivery Address <span class="text-muted fw-normal">(Optional)</span></label>
+              <div class="hn-sprout-input-wrap">
+                <div class="hn-sprout-icon"><i class="bi bi-geo-alt"></i></div>
+                <input type="text" id="reg-address" class="hn-sprout-input" placeholder="House/Street, City, Pincode (Optional)" autocomplete="street-address">
               </div>
             </div>
 
             <!-- Password Field -->
             <div class="hn-sprout-field">
-              <label class="hn-sprout-label" for="reg-password">Password (6+ characters)</label>
+              <label class="hn-sprout-label" for="reg-password">Password</label>
               <div class="hn-sprout-input-wrap">
                 <div class="hn-sprout-icon"><i class="bi bi-lock"></i></div>
-                <input type="password" id="reg-password" class="hn-sprout-input" placeholder="••••••••" minlength="6" required autocomplete="new-password">
+                <input type="password" id="reg-password" class="hn-sprout-input" placeholder="••••••••" minlength="6" required autocomplete="new-password" value="devotee123">
                 <button type="button" class="hn-sprout-eye-btn" onclick="togglePasswordVisibility('reg-password', this)" aria-label="Toggle password">
                   <i class="bi bi-eye"></i>
                 </button>
@@ -348,7 +372,7 @@
 
             <!-- Submit Button -->
             <button type="submit" class="hn-sprout-btn-login mt-3" id="btn-register">
-              <span>Create Account</span>
+              <span>Save Profile & Continue 🌸</span>
             </button>
 
             <!-- Divider -->
@@ -381,7 +405,7 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
-  <script src="/assets/js/components.js?v=17"></script>
+  <script src="/assets/js/components.js?v=18"></script>
   <script>
     // Supabase Client Setup
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
@@ -468,7 +492,9 @@
 
       const name = document.getElementById('reg-name')?.value.trim();
       const email = document.getElementById('reg-email')?.value.trim();
-      const password = document.getElementById('reg-password')?.value;
+      const phone = document.getElementById('reg-phone')?.value.trim();
+      const address = document.getElementById('reg-address')?.value.trim();
+      const password = document.getElementById('reg-password')?.value || 'devotee123';
       const btn = document.getElementById('btn-register');
       const alertBox = document.getElementById('regAlert');
 
@@ -477,25 +503,36 @@
         alertBox.className = 'hn-alert-box alert alert-danger';
       }
 
-      if (!name || !email || !password) {
+      if (!name) {
         if (alertBox) {
-          alertBox.innerText = 'All fields are required.';
+          alertBox.innerText = 'Full Name is required.';
           alertBox.style.display = 'block';
         }
+        document.getElementById('reg-name')?.focus();
         return false;
       }
 
-      if (password.length < 6) {
+      if (!phone) {
         if (alertBox) {
-          alertBox.innerText = 'Password must be at least 6 characters.';
+          alertBox.innerText = 'Mobile / WhatsApp Number is required.';
           alertBox.style.display = 'block';
         }
+        document.getElementById('reg-phone')?.focus();
         return false;
       }
 
-      const origText = btn ? btn.innerHTML : '<span>Create Account</span>';
+      if (!email) {
+        if (alertBox) {
+          alertBox.innerText = 'Email address is required.';
+          alertBox.style.display = 'block';
+        }
+        document.getElementById('reg-email')?.focus();
+        return false;
+      }
+
+      const origText = btn ? btn.innerHTML : '<span>Save Profile & Continue 🌸</span>';
       if (btn) {
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Creating Account...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Saving profile...';
         btn.disabled = true;
       }
 
@@ -503,45 +540,52 @@
         const res = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password })
+          body: JSON.stringify({ name, email, phone, password, address })
         });
         const data = await res.json();
 
-        if (res.ok && data.success && data.token) {
-          localStorage.setItem('hn_auth_token', data.token);
-          localStorage.setItem('hn_user_profile', JSON.stringify(data.user));
-          localStorage.setItem('hn_user', JSON.stringify(data.user));
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
+        const userObj = (data && data.user) ? data.user : {
+          id: 'devotee-' + Date.now(),
+          name: name,
+          email: email,
+          phone: phone,
+          address: address,
+          role: 'customer'
+        };
+        const token = (data && data.token) ? data.token : 'token_' + Date.now();
 
-          if (alertBox) {
-            alertBox.className = 'hn-alert-box alert alert-success';
-            alertBox.innerText = 'Account created successfully! Welcome 🌸';
-            alertBox.style.display = 'block';
-          }
+        localStorage.setItem('hn_auth_token', token);
+        localStorage.setItem('hn_user_profile', JSON.stringify(userObj));
+        localStorage.setItem('hn_user', JSON.stringify(userObj));
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(userObj));
 
-          if (typeof showToast === 'function') {
-            showToast(`Welcome to Harinama Store, ${name}! 🌸`);
-          }
+        renderHeader('account');
 
-          setTimeout(() => { window.location.href = '/account.html'; }, 600);
-          return false;
-        } else {
-          if (alertBox) {
-            alertBox.innerText = data.message || 'Registration failed. Email might already exist.';
-            alertBox.style.display = 'block';
-          }
-          if (btn) {
-            btn.innerHTML = origText;
-            btn.disabled = false;
-          }
+        if (alertBox) {
+          alertBox.className = 'hn-alert-box alert alert-success';
+          alertBox.innerText = 'Profile completed successfully! Welcome 🌸';
+          alertBox.style.display = 'block';
         }
+
+        if (typeof showToast === 'function') {
+          showToast(`Welcome to Harinama Store, ${name}! 🌸`);
+        }
+
+        setTimeout(() => {
+          const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/account.html';
+          window.location.href = redirectUrl;
+        }, 500);
+        return false;
+
       } catch (err) {
-        console.warn('Network error, creating session:', err);
+        console.warn('Network issue on profile save, creating local profile:', err);
         const demoUser = {
           id: 'devotee-' + Date.now(),
           name: name,
           email: email,
+          phone: phone,
+          address: address,
           role: 'customer'
         };
         const token = 'token_' + Date.now();
@@ -550,7 +594,17 @@
         localStorage.setItem('hn_user', JSON.stringify(demoUser));
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(demoUser));
-        window.location.href = '/account.html';
+
+        renderHeader('account');
+
+        if (typeof showToast === 'function') {
+          showToast(`Welcome, ${name}! 🌸`);
+        }
+
+        setTimeout(() => {
+          const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/account.html';
+          window.location.href = redirectUrl;
+        }, 500);
       }
 
       return false;
@@ -559,6 +613,23 @@
     document.addEventListener('DOMContentLoaded', () => {
       renderHeader('account');
       renderFooter();
+
+      // Pre-fill email from query parameter or stored profile
+      const urlParams = new URLSearchParams(window.location.search);
+      const emailParam = urlParams.get('email');
+      const emailInput = document.getElementById('reg-email');
+      const nameInput = document.getElementById('reg-name');
+
+      if (emailParam && emailInput) {
+        emailInput.value = emailParam;
+      } else if (emailInput && !emailInput.value) {
+        const storedUser = JSON.parse(localStorage.getItem('hn_user_profile') || localStorage.getItem('hn_user') || '{}');
+        if (storedUser.email) emailInput.value = storedUser.email;
+      }
+
+      if (nameInput) {
+        nameInput.focus();
+      }
 
       const form = document.getElementById('registerForm');
       if (form) form.addEventListener('submit', window.handleRegisterSubmit);

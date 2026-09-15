@@ -91,13 +91,23 @@ const isUserLoggedIn = () => {
   return true;
 };
 
-const logoutUser = (e = null) => {
+const logoutUser = async (e = null) => {
   if (e) {
     if (typeof e.preventDefault === 'function') e.preventDefault();
     if (typeof e.stopPropagation === 'function') e.stopPropagation();
   }
   
-  // Completely purge all possible authentication keys
+  // Sign out from Supabase if client is present
+  try {
+    const client = window.supabaseClient || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase.createClient('https://wnaqfadlxrrvvjvqqbch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM') : null);
+    if (client && client.auth) {
+      await client.auth.signOut();
+    }
+  } catch (sbErr) {
+    console.warn('Supabase signout note:', sbErr);
+  }
+
+  // Purge all possible authentication keys from localStorage & sessionStorage
   const keysToPurge = [
     'hn_auth_token',
     'hn_user_profile',
@@ -105,7 +115,8 @@ const logoutUser = (e = null) => {
     'token',
     'user',
     'auth_token',
-    'supabase.auth.token'
+    'supabase.auth.token',
+    'sb-wnaqfadlxrrvvjvqqbch-auth-token'
   ];
   keysToPurge.forEach(key => {
     try {
@@ -114,18 +125,28 @@ const logoutUser = (e = null) => {
     } catch (_) {}
   });
 
+  // Also clean any leftover Supabase token patterns in storage
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('sb-') || k.includes('auth-token'))) {
+        localStorage.removeItem(k);
+      }
+    }
+  } catch (_) {}
+
   const menu = document.getElementById('hnUserMenu');
   if (menu) menu.classList.remove('active');
 
-  // Re-render header to immediately reflect logged-out state
+  // Re-render header to immediately reflect logged-out state ("Sign In")
   renderHeader();
   showToast('You have been signed out safely. Hare Krishna! 🌸');
   window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user: null } }));
 
-  // If currently on an account/profile page, redirect to shop
+  // If currently on an account/profile or admin page, redirect to login
   const currentPath = window.location.pathname.toLowerCase();
   if (currentPath.includes('account') || currentPath.includes('orders') || currentPath.includes('admin')) {
-    setTimeout(() => { window.location.href = '/shop.html'; }, 300);
+    setTimeout(() => { window.location.href = '/login.html'; }, 350);
   }
 };
 window.logoutUser = logoutUser;
@@ -984,6 +1005,7 @@ const renderHeader = (activePage = '') => {
         <div class="hn-user-menu-links">
           <a href="/account.html"><i class="bi bi-person-badge"></i>My Profile</a>
           <a href="/account.html?tab=orders"><i class="bi bi-box-seam"></i>My Orders</a>
+          <a href="/account.html?tab=addresses"><i class="bi bi-geo-alt"></i>Saved Addresses</a>
           <a href="/wishlist.html"><i class="bi bi-heart"></i>My Wishlist</a>
           <a href="/cart.html"><i class="bi bi-bag"></i>Shopping Cart</a>
         </div>

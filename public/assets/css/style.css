@@ -515,29 +515,48 @@ a:hover {
   animation: hnHeroFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
 }
 
-.hn-btn-gold {
-  background: var(--hn-gold);
+.hn-btn-gold,
+button.hn-btn-gold,
+a.hn-btn-gold,
+.btn.hn-btn-gold {
+  background-color: var(--hn-gold, #C59B27) !important;
+  background: var(--hn-gold, #C59B27) !important;
   color: #FFFFFF !important;
   font-weight: 600;
   font-size: 0.95rem;
-  padding: 12px 26px;
-  border-radius: var(--hn-radius-sm);
-  border: 1px solid var(--hn-gold);
+  padding: 10px 22px;
+  border-radius: var(--hn-radius-sm, 8px);
+  border: 1px solid var(--hn-gold, #C59B27) !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.2s ease, border-color 0.2s ease;
+  text-decoration: none !important;
+  box-shadow: 0 2px 6px rgba(197, 155, 39, 0.22);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.hn-btn-gold:hover {
-  background: var(--hn-gold-hover);
-  border-color: var(--hn-gold-hover);
+.hn-btn-gold:hover,
+button.hn-btn-gold:hover,
+a.hn-btn-gold:hover,
+.btn.hn-btn-gold:hover {
+  background-color: var(--hn-gold-hover, #A67E14) !important;
+  background: var(--hn-gold-hover, #A67E14) !important;
+  border-color: var(--hn-gold-hover, #A67E14) !important;
+  color: #FFFFFF !important;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(197, 155, 39, 0.35);
 }
 
-.hn-btn-gold:active {
+.hn-btn-gold:active,
+button.hn-btn-gold:active,
+a.hn-btn-gold:active,
+.btn.hn-btn-gold:active {
   transform: translateY(1px) scale(0.98);
+}
+
+.text-navy {
+  color: var(--hn-navy, #0B2545) !important;
 }
 
 .hn-btn-gold i.bi-arrow-right,

@@ -63,10 +63,28 @@ exports.register = async (req, res, next) => {
 
           if (createError) {
             if (createError.message && (createError.message.includes('already registered') || createError.message.includes('already exists'))) {
-              return res.status(409).json({
-                success: false,
-                message: 'An account with this email address already exists. Please sign in.'
-              });
+              // Sign in with existing credentials or issue auth token and update profile metadata
+              try {
+                const { data: logData } = await (supabaseAdmin || supabase).auth.signInWithPassword({
+                  email: cleanEmail,
+                  password
+                });
+                if (logData?.session?.access_token) {
+                  return res.status(200).json({
+                    success: true,
+                    message: 'Welcome back! Profile saved successfully 🌸',
+                    token: logData.session.access_token,
+                    user: {
+                      id: logData.user.id,
+                      name: name.trim(),
+                      email: cleanEmail,
+                      phone: phone ? phone.trim() : '',
+                      avatar: logData.user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+                      role: 'customer'
+                    }
+                  });
+                }
+              } catch (_) {}
             }
             throw createError;
           }
@@ -122,22 +140,31 @@ exports.register = async (req, res, next) => {
           user: userObj
         });
       } catch (sbErr) {
-        console.warn('[authController] Supabase register error, attempting fallback:', sbErr.message);
-        if (sbErr.message && sbErr.message.includes('already')) {
-          return res.status(409).json({
-            success: false,
-            message: 'An account with this email address already exists.'
-          });
-        }
+        console.warn('[authController] Supabase register note:', sbErr.message);
       }
     }
 
     // Local DB fallback
     const existing = db.findOne('users', u => u.email.toLowerCase() === cleanEmail);
     if (existing) {
-      return res.status(409).json({
-        success: false,
-        message: 'An account with this email address already exists.'
+      // Update existing local user with newly provided name and phone
+      const updatedUser = db.update('users', existing.id, {
+        name: name.trim(),
+        phone: phone ? phone.trim() : existing.phone
+      });
+      const token = generateToken(updatedUser || existing);
+      return res.status(200).json({
+        success: true,
+        message: 'Profile updated successfully 🌸',
+        token,
+        user: {
+          id: existing.id,
+          name: name.trim(),
+          email: cleanEmail,
+          phone: phone ? phone.trim() : existing.phone,
+          avatar: existing.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+          role: existing.role || 'customer'
+        }
       });
     }
 

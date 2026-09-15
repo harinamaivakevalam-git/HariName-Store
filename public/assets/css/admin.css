@@ -493,3 +493,25 @@ body.hn-admin-body-bg {
     padding: 12px 16px;
   }
 }
+
+/* Ensure all admin tables have smooth horizontal touch scrolling on mobile */
+.table-responsive,
+.hn-table-wrap {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 767.98px) {
+  .hn-admin-topbar .d-flex {
+    flex-wrap: wrap;
+  }
+  .hn-admin-nav-bar {
+    padding: 4px;
+    gap: 4px;
+  }
+  .hn-admin-tab {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+}

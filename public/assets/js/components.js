@@ -283,41 +283,40 @@ const toggleUserDropdown = (e) => {
   }
 
   if (!isUserLoggedIn()) {
-    openAuthModal(null, 'Sign in to access your sacred account 🌸');
+    window.location.href = '/login.html';
     return;
   }
 
+  const dropdown = document.getElementById('hnUserDropdown');
   const menu = document.getElementById('hnUserMenu');
   if (menu) {
-    const isVisible = menu.style.display === 'block' || menu.classList.contains('active');
+    const isVisible = menu.classList.contains('active') || menu.classList.contains('show') || menu.style.display === 'block';
     if (isVisible) {
+      menu.classList.remove('active', 'show');
       menu.style.display = 'none';
-      menu.classList.remove('active');
+      if (dropdown) dropdown.classList.remove('active');
     } else {
+      menu.classList.add('active', 'show');
       menu.style.display = 'block';
       menu.style.zIndex = '999999';
-      menu.style.opacity = '1';
-      menu.style.visibility = 'visible';
-      menu.classList.add('active');
+      if (dropdown) dropdown.classList.add('active');
     }
   }
 };
 
 document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('hnUserDropdown');
   const menu = document.getElementById('hnUserMenu');
-  if (menu && !e.target.closest('.hn-user-dropdown')) {
+  if (menu && !e.target.closest('#hnUserDropdown')) {
+    menu.classList.remove('active', 'show');
     menu.style.display = 'none';
-    menu.classList.remove('active');
+    if (dropdown) dropdown.classList.remove('active');
   }
 });
 
 const handleHeaderAccountClick = (e) => {
-  if (e && e.target && e.target.closest('.hn-account-caret')) {
-    toggleUserDropdown(e);
-    return;
-  }
   if (isUserLoggedIn()) {
-    window.location.href = '/account.html';
+    toggleUserDropdown(e);
   } else {
     window.location.href = '/login.html';
   }
@@ -1106,7 +1105,7 @@ const renderHeader = (activePage = '') => {
 
   const userActionMarkup = loggedIn && user ? `
     <div class="hn-user-dropdown" id="hnUserDropdown">
-      <a href="/account.html" class="hn-header-account-btn logged-in text-decoration-none" title="My Profile (${user.name})" id="hnUserAccountBtn">
+      <button type="button" class="hn-header-account-btn logged-in text-decoration-none" title="Account Menu (${user.name})" id="hnUserAccountBtn" onclick="toggleUserDropdown(event)">
         <div class="hn-account-avatar-wrap">
           <img src="${user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'}" class="hn-header-avatar" alt="${user.name}">
           <span class="hn-avatar-status-dot" title="Active"></span>
@@ -1114,8 +1113,8 @@ const renderHeader = (activePage = '') => {
         <div class="hn-account-text-wrap d-none d-sm-flex">
           <span class="hn-account-main fw-semibold">${user.name.split(' ')[0]}</span>
         </div>
-        <i class="bi bi-chevron-down hn-account-caret ms-1" onclick="event.preventDefault(); event.stopPropagation(); toggleUserDropdown(event)" title="Account Menu"></i>
-      </a>
+        <i class="bi bi-chevron-down hn-account-caret ms-1" title="Account Menu"></i>
+      </button>
 
       <div class="hn-user-menu" id="hnUserMenu">
         <div class="hn-user-menu-header">
@@ -1298,7 +1297,6 @@ const renderFooter = () => {
               <a href="https://instagram.com" target="_blank" title="Instagram"><i class="bi bi-instagram"></i></a>
               <a href="https://youtube.com" target="_blank" title="YouTube"><i class="bi bi-youtube"></i></a>
               <a href="https://facebook.com" target="_blank" title="Facebook"><i class="bi bi-facebook"></i></a>
-              <a href="https://pinterest.com" target="_blank" title="Pinterest"><i class="bi bi-pinterest"></i></a>
             </div>
           </div>
 
@@ -1332,7 +1330,6 @@ const renderFooter = () => {
               <a href="https://instagram.com" target="_blank"><i class="bi bi-instagram me-2"></i>Instagram</a>
               <a href="https://youtube.com" target="_blank"><i class="bi bi-youtube me-2"></i>YouTube</a>
               <a href="https://facebook.com" target="_blank"><i class="bi bi-facebook me-2"></i>Facebook</a>
-              <a href="https://pinterest.com" target="_blank"><i class="bi bi-pinterest me-2"></i>Pinterest</a>
             </div>
           </div>
 

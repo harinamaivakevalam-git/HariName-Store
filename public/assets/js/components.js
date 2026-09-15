@@ -80,20 +80,56 @@
   window.isAdminUser = isAdminUser;
   window._getAdminRoute = _getAdminRoute;
 
-  const enforceAdminAccess = () => {
+  const enforceProtectedPageAccess = () => {
     const path = window.location.pathname.toLowerCase();
     const adminSegment = atob('YWRtaW4=');
     if (path.includes(adminSegment)) {
       if (!isAdminUser()) {
         window.location.replace('/404.html');
+        return;
+      }
+    }
+
+    if (!isUserLoggedIn()) {
+      if (path.includes('wishlist') || path.includes('cart')) {
+        const promptType = path.includes('wishlist') ? 'wishlist' : 'cart';
+        window.location.replace('/index.html?auth=1&prompt=' + promptType);
       }
     }
   };
 
+  const checkAuthQueryPrompt = () => {
+    if (isUserLoggedIn()) return;
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('auth') === '1') {
+        const prompt = urlParams.get('prompt');
+        let msg = 'Sign in to access your account 🌸';
+        let redirectTarget = '/index.html';
+        if (prompt === 'wishlist') {
+          msg = 'Sign in to access your sacred wishlist and saved items 🌸';
+          redirectTarget = '/wishlist.html';
+        } else if (prompt === 'cart') {
+          msg = 'Sign in to access your cart items and proceed to checkout 🌸';
+          redirectTarget = '/cart.html';
+        }
+        setTimeout(() => {
+          openAuthModal(() => {
+            window.location.href = redirectTarget;
+          }, msg);
+        }, 350);
+      }
+    } catch (_) {}
+  };
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', enforceAdminAccess);
+    document.addEventListener('DOMContentLoaded', () => {
+      enforceProtectedPageAccess();
+      checkAuthQueryPrompt();
+    });
   } else {
-    enforceAdminAccess();
+    enforceProtectedPageAccess();
+    checkAuthQueryPrompt();
   }
 
   const getLoggedInUser = () => {
@@ -299,8 +335,9 @@
     const menu = document.getElementById('hnUserMenu');
     if (menu) menu.classList.remove('active');
 
-    // Re-render header to immediately reflect logged-out state ("Sign In")
+    // Re-render header & update badges to immediately reflect logged-out state ("Sign In" & hidden badges)
     renderHeader();
+    updateHeaderBadges();
     showToast('You have been signed out safely. Hare Krishna! 🌸');
     window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user: null } }));
 
@@ -806,7 +843,16 @@
       overlay.classList.remove('active');
     }
     document.body.style.overflow = '';
+
+    // If user is not logged in and closes the modal on wishlist, cart, or account pages, redirect to main page (/index.html)
+    if (!isUserLoggedIn()) {
+      const path = window.location.pathname.toLowerCase();
+      if (path.includes('wishlist') || path.includes('cart') || path.includes('account') || path.includes('orders') || path.includes('addresses')) {
+        window.location.href = '/index.html';
+      }
+    }
   };
+  window.closeAuthModal = closeAuthModal;
 
   const continueAsGuest = () => {
     closeAuthModal();
@@ -815,6 +861,11 @@
       const cb = _pendingAuthCallback;
       _pendingAuthCallback = null;
       cb();
+    } else if (!isUserLoggedIn()) {
+      const path = window.location.pathname.toLowerCase();
+      if (path.includes('wishlist') || path.includes('cart') || path.includes('account') || path.includes('orders') || path.includes('addresses')) {
+        window.location.href = '/index.html';
+      }
     }
   };
   window.continueAsGuest = continueAsGuest;
@@ -1018,6 +1069,32 @@
     setAuthAlert('Please reach out to support@harinama.com to reset your credentials.', 'error');
   };
 
+  const handleHeaderWishlistClick = (e) => {
+    if (!isUserLoggedIn()) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      window.location.href = '/index.html?auth=1&prompt=wishlist';
+      return false;
+    }
+    return true;
+  };
+  window.handleHeaderWishlistClick = handleHeaderWishlistClick;
+
+  const handleHeaderCartClick = (e) => {
+    if (!isUserLoggedIn()) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      window.location.href = '/index.html?auth=1&prompt=cart';
+      return false;
+    }
+    return true;
+  };
+  window.handleHeaderCartClick = handleHeaderCartClick;
+
   // Global Header Component
   const renderHeader = (activePage = '') => {
     // Ensure favicon is present
@@ -1048,12 +1125,14 @@
       else if (currentPath === '/' || currentPath.includes('index')) active = 'home';
     }
 
-    const cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
-    const cartCount = cart.reduce((acc, i) => acc + (i.qty || 1), 0);
-    const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || localStorage.getItem('wishlist') || '[]');
-    const wishlistCount = Array.isArray(wishlist) ? wishlist.length : 0;
     const loggedIn = isUserLoggedIn();
     const user = getLoggedInUser();
+
+    // Show count ONLY when user is logged in AND has items
+    const cart = loggedIn ? JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]') : [];
+    const cartCount = loggedIn ? cart.reduce((acc, i) => acc + (i.qty || 1), 0) : 0;
+    const wishlist = loggedIn ? JSON.parse(localStorage.getItem('hn_wishlist') || localStorage.getItem('wishlist') || '[]') : [];
+    const wishlistCount = loggedIn && Array.isArray(wishlist) ? wishlist.length : 0;
 
     const userActionMarkup = loggedIn && user ? `
     <div class="hn-user-dropdown" id="hnUserDropdown">
@@ -1137,14 +1216,14 @@
               <i class="bi bi-search"></i>
             </a>
 
-            <a href="/wishlist.html" class="hn-icon-btn" title="Favorites & Wishlist">
+            <a href="/wishlist.html" class="hn-icon-btn" title="Favorites & Wishlist" onclick="return handleHeaderWishlistClick(event)">
               <i class="bi bi-heart"></i>
-              <span class="hn-badge-pill" id="hn-wishlist-badge">${wishlistCount}</span>
+              <span class="hn-badge-pill ${loggedIn && wishlistCount > 0 ? '' : 'd-none'}" id="hn-wishlist-badge">${wishlistCount}</span>
             </a>
 
-            <a href="/cart.html" class="hn-icon-btn" title="Shopping Cart">
+            <a href="/cart.html" class="hn-icon-btn" title="Shopping Cart" onclick="return handleHeaderCartClick(event)">
               <i class="bi bi-bag"></i>
-              <span class="hn-badge-pill" id="hn-cart-badge">${cartCount}</span>
+              <span class="hn-badge-pill ${loggedIn && cartCount > 0 ? '' : 'd-none'}" id="hn-cart-badge">${cartCount}</span>
             </a>
 
             <!-- User Auth Trigger / Profile (LAST in order) -->
@@ -1209,13 +1288,13 @@
                 <i class="bi bi-chevron-right small text-muted"></i>
               </a>
               <hr class="my-2">
-              <a href="/cart.html" class="hn-mobile-nav-link">
+              <a href="/cart.html" class="hn-mobile-nav-link" onclick="return handleHeaderCartClick(event)">
                 <span><i class="bi bi-bag me-2"></i>Shopping Cart</span>
-                <span class="badge text-white rounded-pill px-2" style="background-color: var(--hn-gold);">${cartCount}</span>
+                ${cartCount > 0 ? `<span class="badge text-white rounded-pill px-2" style="background-color: var(--hn-gold);">${cartCount}</span>` : ''}
               </a>
-              <a href="/wishlist.html" class="hn-mobile-nav-link">
+              <a href="/wishlist.html" class="hn-mobile-nav-link" onclick="return handleHeaderWishlistClick(event)">
                 <span><i class="bi bi-heart me-2"></i>My Wishlist</span>
-                <i class="bi bi-chevron-right small text-muted"></i>
+                ${wishlistCount > 0 ? `<span class="badge text-white rounded-pill px-2" style="background-color: var(--hn-gold);">${wishlistCount}</span>` : ''}
               </a>
               ${isAdminUser(user) ? `
                 <a href="${_getAdminRoute()}" class="hn-mobile-nav-link admin-link mt-1">
@@ -1230,6 +1309,9 @@
       </div>
     </header>
   `;
+
+    // Ensure badge visibility is strictly updated (hidden without login or when count is 0)
+    setTimeout(updateHeaderBadges, 0);
   };
 
   // Global Footer Component
@@ -1433,10 +1515,9 @@
     localStorage.setItem('cres_cart', JSON.stringify(cart));
 
     // Update badge with micro bounce animation
-    const totalCount = cart.reduce((acc, i) => acc + (i.qty || 1), 0);
+    updateHeaderBadges();
     const badge = document.getElementById('hn-cart-badge') || document.getElementById('cres-cart-badge');
-    if (badge) {
-      badge.innerText = totalCount;
+    if (badge && !badge.classList.contains('d-none')) {
       badge.classList.remove('hn-badge-bounce');
       void badge.offsetWidth; // Force CSS reflow to re-trigger keyframe
       badge.classList.add('hn-badge-bounce');
@@ -1550,9 +1631,9 @@
     });
 
     // Update header wishlist badge with bounce animation
+    updateHeaderBadges();
     const wishBadge = document.getElementById('hn-wishlist-badge');
-    if (wishBadge) {
-      wishBadge.innerText = wishlist.length;
+    if (wishBadge && !wishBadge.classList.contains('d-none')) {
       wishBadge.classList.remove('hn-badge-bounce');
       void wishBadge.offsetWidth;
       wishBadge.classList.add('hn-badge-bounce');
@@ -1594,6 +1675,35 @@
     setTimeout(initScrollAnimations, 100);
   }
 
+  const updateHeaderBadges = () => {
+    const loggedIn = isUserLoggedIn();
+    const cart = loggedIn ? JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]') : [];
+    const cartCount = loggedIn ? cart.reduce((acc, i) => acc + (i.qty || 1), 0) : 0;
+    const wishlist = loggedIn ? JSON.parse(localStorage.getItem('hn_wishlist') || localStorage.getItem('wishlist') || '[]') : [];
+    const wishlistCount = loggedIn && Array.isArray(wishlist) ? wishlist.length : 0;
+
+    const cartBadge = document.getElementById('hn-cart-badge') || document.getElementById('cres-cart-badge');
+    if (cartBadge) {
+      cartBadge.innerText = cartCount;
+      if (loggedIn && cartCount > 0) {
+        cartBadge.classList.remove('d-none');
+      } else {
+        cartBadge.classList.add('d-none');
+      }
+    }
+
+    const wishBadge = document.getElementById('hn-wishlist-badge');
+    if (wishBadge) {
+      wishBadge.innerText = wishlistCount;
+      if (loggedIn && wishlistCount > 0) {
+        wishBadge.classList.remove('d-none');
+      } else {
+        wishBadge.classList.add('d-none');
+      }
+    }
+  };
+  window.updateHeaderBadges = updateHeaderBadges;
+
   // Global Window Exports for Inline HTML Handlers
   window.formatPrice = formatPrice;
   window.renderRatingStars = renderRatingStars;
@@ -1623,3 +1733,4 @@
   window.handleHeaderAccountClick = handleHeaderAccountClick;
   window.initScrollAnimations = initScrollAnimations;
 })();
+

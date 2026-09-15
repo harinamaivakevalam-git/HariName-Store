@@ -30,6 +30,9 @@
   <main class="py-5">
     <div class="container">
       
+      <!-- Login Invitation Banner when unauthenticated -->
+      <div id="hn-cart-auth-banner"></div>
+
       <!-- Cart Header with Continue Shopping -->
       <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
         <h1 class="hn-section-title mb-0" style="font-size: 2rem;">Your Cart</h1>
@@ -135,21 +138,6 @@
 
     function getCart() {
       const stored = localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart');
-      const initialized = localStorage.getItem('hn_cart_init');
-
-      if (stored === null && initialized === null) {
-        // First time sample cart
-        const defaultCart = [
-          { id: 'prod-003', name: 'Maha-Mantra Keychain (Hare Krishna)', price: 149, qty: 2, image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=400&q=80', material: 'Metal' },
-          { id: 'prod-001', name: 'Peacock Feather Keychain', price: 99, qty: 1, image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80', material: 'Acrylic' },
-          { id: 'prod-004', name: 'Radhe Radhe Enamel Keychain', price: 129, qty: 1, image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', material: 'Acrylic' }
-        ];
-        localStorage.setItem('hn_cart', JSON.stringify(defaultCart));
-        localStorage.setItem('cres_cart', JSON.stringify(defaultCart));
-        localStorage.setItem('hn_cart_init', '1');
-        return defaultCart;
-      }
-
       try {
         return JSON.parse(stored || '[]');
       } catch (e) {
@@ -162,6 +150,31 @@
       const tbody = document.getElementById('hn-cart-items-body');
       const emptyMsg = document.getElementById('hn-empty-cart-msg');
       const tableWrap = document.getElementById('hn-cart-table-wrap');
+
+      // Render Sign In Prompt Banner if user is logged out
+      const banner = document.getElementById('hn-cart-auth-banner');
+      if (banner) {
+        if (!isUserLoggedIn()) {
+          banner.innerHTML = `
+            <div class="alert border-0 shadow-sm rounded-4 p-3 p-md-4 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3" style="background: linear-gradient(135deg, #FFF9EC, #FEF0D5); border: 1.5px solid rgba(197, 155, 39, 0.4) !important;">
+              <div class="d-flex align-items-center gap-3">
+                <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 44px; height: 44px; background: #FFFFFF; color: var(--hn-gold); font-size: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                  <i class="bi bi-person-lock"></i>
+                </span>
+                <div>
+                  <div class="fw-bold text-navy" style="font-size: 0.95rem;">Sign in for Faster Checkout & Address Auto-fill</div>
+                  <div class="small text-secondary">Log in to save your devotional orders and access your saved shipping addresses.</div>
+                </div>
+              </div>
+              <a href="/login.html" class="btn hn-btn-gold px-4 py-2 fw-bold text-decoration-none shadow-sm">
+                <i class="bi bi-person-circle me-1"></i> Sign In / Register
+              </a>
+            </div>
+          `;
+        } else {
+          banner.innerHTML = '';
+        }
+      }
 
       if (!cart || cart.length === 0) {
         if (tbody) tbody.innerHTML = '';
@@ -215,9 +228,7 @@
       document.getElementById('hn-sum-total').innerText = `₹${finalTotal}`;
 
       // Update badge
-      const totalCount = cart.reduce((acc, i) => acc + (i.qty || 1), 0);
-      const badge = document.getElementById('hn-cart-badge');
-      if (badge) badge.innerText = totalCount;
+      if (typeof updateHeaderBadges === 'function') updateHeaderBadges();
     }
 
     function updateItemQty(index, delta) {
@@ -280,6 +291,15 @@
       renderFooter();
       renderCart();
       window.addEventListener('hn_cart_updated', renderCart);
+
+      // Ask for login if user is not logged in when visiting cart.html
+      if (!isUserLoggedIn()) {
+        setTimeout(() => {
+          if (typeof openAuthModal === 'function') {
+            openAuthModal(null, 'Sign in to access your cart items and proceed to checkout 🌸');
+          }
+        }, 300);
+      }
     });
   </script>
 </body>

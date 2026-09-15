@@ -29,6 +29,9 @@
   <main class="py-5">
     <div class="container">
       
+      <!-- Login Invitation Banner when unauthenticated -->
+      <div id="hn-wishlist-auth-banner"></div>
+
       <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom">
         <h1 class="hn-section-title mb-0" style="font-size: 2rem;">My Wishlist</h1>
         <a href="/shop.html" class="text-secondary small fw-semibold">Browse Products</a>
@@ -80,25 +83,44 @@
       const grid = document.getElementById('hn-wishlist-grid');
       if (!grid) return;
 
-      let wishlistIds = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
-      
-      // Default to 3 popular items on fresh visit if empty
-      if (!wishlistIds || wishlistIds.length === 0) {
-        if (localStorage.getItem('hn_wishlist_init') === null) {
-          wishlistIds = ['prod-001', 'prod-003', 'prod-004'];
-          localStorage.setItem('hn_wishlist', JSON.stringify(wishlistIds));
-          localStorage.setItem('hn_wishlist_init', '1');
-        } else {
-          grid.innerHTML = `
-            <div class="col-12 py-5 text-center">
-              <i class="bi bi-heart fs-1 text-muted d-block mb-3"></i>
-              <h5 class="fw-bold">Your Wishlist is Empty</h5>
-              <p class="text-muted small mb-4">Save your favorite holy products and books to view them anytime.</p>
-              <a href="/shop.html" class="btn hn-btn-gold">Explore Devotional Products</a>
+      // Render Sign In Prompt Banner if user is logged out
+      const banner = document.getElementById('hn-wishlist-auth-banner');
+      if (banner) {
+        if (!isUserLoggedIn()) {
+          banner.innerHTML = `
+            <div class="alert border-0 shadow-sm rounded-4 p-3 p-md-4 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3" style="background: linear-gradient(135deg, #FFF9EC, #FEF0D5); border: 1.5px solid rgba(197, 155, 39, 0.4) !important;">
+              <div class="d-flex align-items-center gap-3">
+                <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 44px; height: 44px; background: #FFFFFF; color: var(--hn-gold); font-size: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                  <i class="bi bi-person-lock"></i>
+                </span>
+                <div>
+                  <div class="fw-bold text-navy" style="font-size: 0.95rem;">Sign in to save and sync your Wishlist</div>
+                  <div class="small text-secondary">Log in with your account to access your saved sacred items across all your devices.</div>
+                </div>
+              </div>
+              <a href="/login.html" class="btn hn-btn-gold px-4 py-2 fw-bold text-decoration-none shadow-sm">
+                <i class="bi bi-person-circle me-1"></i> Sign In / Register
+              </a>
             </div>
           `;
-          return;
+        } else {
+          banner.innerHTML = '';
         }
+      }
+
+      let wishlistIds = isUserLoggedIn() ? JSON.parse(localStorage.getItem('hn_wishlist') || '[]') : [];
+      
+      if (!isUserLoggedIn() || !wishlistIds || wishlistIds.length === 0) {
+        grid.innerHTML = `
+          <div class="col-12 py-5 text-center">
+            <i class="bi bi-heart fs-1 text-muted d-block mb-3"></i>
+            <h5 class="fw-bold">Your Wishlist is Empty</h5>
+            <p class="text-muted small mb-4">Save your favorite holy products and books to view them anytime.</p>
+            <a href="/shop.html" class="btn hn-btn-gold">Explore Devotional Products</a>
+          </div>
+        `;
+        if (typeof updateHeaderBadges === 'function') updateHeaderBadges();
+        return;
       }
 
       const allCatalog = [...(HARINAMA_DATA.products || []), ...(HARINAMA_DATA._staticProducts || [])];
@@ -187,6 +209,15 @@
       renderWishlist();
       window.addEventListener('hn_wishlist_updated', renderWishlist);
       window.addEventListener('hn:catalog-loaded', renderWishlist);
+
+      // Ask for login if user is not logged in when visiting wishlist.html
+      if (!isUserLoggedIn()) {
+        setTimeout(() => {
+          if (typeof openAuthModal === 'function') {
+            openAuthModal(null, 'Sign in to access your sacred wishlist and saved items 🌸');
+          }
+        }, 300);
+      }
     });
   </script>
 </body>

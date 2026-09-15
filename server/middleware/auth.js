@@ -30,11 +30,16 @@ const authenticate = async (req, res, next) => {
             .eq('id', sbUser.id)
             .single();
 
+          const isAdminEmail = sbUser.email && (
+            sbUser.email.toLowerCase() === 'harinamaivakevalam@gmail.com' ||
+            sbUser.email.toLowerCase() === 'admin@harinama.com'
+          );
+
           req.user = {
             id: sbUser.id,
             name: profile?.name || sbUser.user_metadata?.name || 'Devotee Customer',
             email: sbUser.email,
-            role: profile?.role || sbUser.user_metadata?.role || 'customer',
+            role: isAdminEmail ? 'admin' : (profile?.role || sbUser.user_metadata?.role || 'customer'),
             phone: profile?.phone || sbUser.user_metadata?.phone || '',
             avatar: profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'
           };
@@ -97,11 +102,16 @@ const optionalAuth = async (req, res, next) => {
               .eq('id', sbUser.id)
               .single();
 
+            const isAdminEmail = sbUser.email && (
+              sbUser.email.toLowerCase() === 'harinamaivakevalam@gmail.com' ||
+              sbUser.email.toLowerCase() === 'admin@harinama.com'
+            );
+
             req.user = {
               id: sbUser.id,
               name: profile?.name || sbUser.user_metadata?.name || 'Devotee Customer',
               email: sbUser.email,
-              role: profile?.role || sbUser.user_metadata?.role || 'customer',
+              role: isAdminEmail ? 'admin' : (profile?.role || sbUser.user_metadata?.role || 'customer'),
               phone: profile?.phone || sbUser.user_metadata?.phone || '',
               avatar: profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'
             };

@@ -400,36 +400,143 @@ exports.cancelOrder = (req, res, next) => {
 };
 
 // Admin: Get All Orders with Filters
-exports.adminGetOrders = (req, res, next) => {
+exports.adminGetOrders = async (req, res, next) => {
   try {
-    const { status, search, page = 1, limit = 20 } = req.query;
-    let orders = db.findAll('orders').sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const { status, search, page = 1, limit = 50 } = req.query;
+    let orders = [];
 
-    if (status && status !== 'all') {
-      orders = orders.filter(o => o.order_status === status);
+    // 1. Fetch from Supabase if configured
+    if (isSupabaseConfigured && supabaseAdmin) {
+      try {
+        let q = supabaseAdmin
+          .from('orders')
+          .select('*, order_items(*), payments(*)')
+          .order('created_at', { ascending: false });
+
+        const { data: sbOrders, error: sbErr } = await q;
+        if (!sbErr && sbOrders && sbOrders.length > 0) {
+          orders = sbOrders.map(o => {
+            const rawItems = o.order_items || [];
+            const mappedItems = rawItems.map(item => ({
+              id: item.id,
+              name: item.product_name,
+              qty: item.quantity,
+              price: parseFloat(item.price),
+              total: parseFloat(item.total),
+              image: item.product_image || ''
+            }));
+            const shipAddr = o.shipping_address || {};
+            const fullAddress = typeof shipAddr === 'string' 
+              ? shipAddr 
+              : `${shipAddr.address_line_1 || ''}, ${shipAddr.city || ''}, ${shipAddr.state || ''} ${shipAddr.postal_code || shipAddr.pin || ''}`.replace(/^[\s,]+|[\s,]+$/g, '');
+
+            return {
+              id: o.order_number || o.id,
+              db_id: o.id,
+              order_number: o.order_number,
+              date: new Date(o.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+              created_at: o.created_at,
+              customer: shipAddr.name || o.guest_name || 'Devotee Customer',
+              phone: shipAddr.phone || '—',
+              email: shipAddr.email || o.guest_email || '—',
+              address: fullAddress || '—',
+              shipping_address: shipAddr,
+              items: mappedItems,
+              subtotal: parseFloat(o.subtotal) || 0,
+              shipping: parseFloat(o.shipping_fee) || 0,
+              discount: parseFloat(o.discount) || 0,
+              tax: parseFloat(o.tax) || 0,
+              total: parseFloat(o.total) || 0,
+              payment_method: o.payment_method || 'UPI',
+              payment_status: o.payment_status || 'Paid',
+              status: (o.order_status ? o.order_status.charAt(0).toUpperCase() + o.order_status.slice(1) : 'Confirmed'),
+              courier: o.courier || 'India Post Speed Post',
+              tracking_number: o.tracking_number || '',
+              tracking_url: o.tracking_url || '',
+              notes: o.notes || ''
+            };
+          });
+        }
+      } catch (err) {
+        console.warn('[adminGetOrders] Supabase fetch error, fallback to local:', err.message);
+      }
     }
 
+    // 2. Fetch and merge from local in-memory/file database
+    const localOrders = db.findAll('orders').sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const seenOrderNums = new Set(orders.map(o => o.order_number || o.id));
+
+    for (const lo of localOrders) {
+      const num = lo.order_number || lo.id;
+      if (!seenOrderNums.has(num)) {
+        seenOrderNums.add(num);
+        const items = db.filter('order_items', oi => oi.order_id === lo.id);
+        const mappedItems = items.map(i => ({
+          id: i.id,
+          name: i.product_name,
+          qty: i.quantity,
+          price: parseFloat(i.price),
+          total: parseFloat(i.total),
+          image: i.product_image || ''
+        }));
+        const user = db.findById('users', lo.user_id);
+        const shipAddr = lo.shipping_address || {};
+        const fullAddress = typeof shipAddr === 'string'
+          ? shipAddr
+          : `${shipAddr.address_line_1 || ''}, ${shipAddr.city || ''}, ${shipAddr.state || ''} ${shipAddr.postal_code || shipAddr.pin || ''}`.replace(/^[\s,]+|[\s,]+$/g, '');
+
+        orders.push({
+          id: num,
+          db_id: lo.id,
+          order_number: num,
+          date: new Date(lo.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+          created_at: lo.created_at,
+          customer: shipAddr.name || (user ? user.name : 'Customer'),
+          phone: shipAddr.phone || (user ? user.phone : '—'),
+          email: shipAddr.email || (user ? user.email : '—'),
+          address: fullAddress || '—',
+          shipping_address: shipAddr,
+          items: mappedItems,
+          subtotal: parseFloat(lo.subtotal) || 0,
+          shipping: parseFloat(lo.shipping_fee) || 0,
+          discount: parseFloat(lo.discount) || 0,
+          tax: parseFloat(lo.tax) || 0,
+          total: parseFloat(lo.total) || 0,
+          payment_method: lo.payment_method || 'COD',
+          payment_status: lo.payment_status || 'Pending',
+          status: (lo.order_status ? lo.order_status.charAt(0).toUpperCase() + lo.order_status.slice(1) : 'Confirmed'),
+          courier: lo.courier || 'India Post Speed Post',
+          tracking_number: lo.tracking_number || '',
+          tracking_url: lo.tracking_url || '',
+          notes: lo.notes || ''
+        });
+      }
+    }
+
+    // Sort newest first
+    orders.sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
+
+    // 3. Filter by status if requested
+    if (status && status !== 'all') {
+      const s = status.toLowerCase();
+      orders = orders.filter(o => o.status.toLowerCase() === s);
+    }
+
+    // 4. Search filter
     if (search) {
       const q = search.toLowerCase().trim();
-      orders = orders.filter(o => 
-        o.order_number.toLowerCase().includes(q) ||
-        o.shipping_address?.name?.toLowerCase().includes(q) ||
-        o.shipping_address?.phone?.includes(q)
+      orders = orders.filter(o =>
+        (o.id && o.id.toLowerCase().includes(q)) ||
+        (o.customer && o.customer.toLowerCase().includes(q)) ||
+        (o.phone && o.phone.includes(q)) ||
+        (o.email && o.email.toLowerCase().includes(q))
       );
     }
 
     const total = orders.length;
     const pageNum = parseInt(page, 10) || 1;
-    const limitNum = parseInt(limit, 10) || 20;
-    const paginated = orders.slice((pageNum - 1) * limitNum, pageNum * limitNum).map(order => {
-      const items = db.filter('order_items', oi => oi.order_id === order.id);
-      const user = db.findById('users', order.user_id);
-      return {
-        ...order,
-        items,
-        customer_name: user ? user.name : order.shipping_address?.name || 'Customer'
-      };
-    });
+    const limitNum = parseInt(limit, 10) || 50;
+    const paginated = orders.slice((pageNum - 1) * limitNum, pageNum * limitNum);
 
     res.json({
       success: true,
@@ -444,41 +551,56 @@ exports.adminGetOrders = (req, res, next) => {
 };
 
 // Admin: Update Order Status & Fulfillment Tracking
-exports.adminUpdateOrderStatus = (req, res, next) => {
+exports.adminUpdateOrderStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { order_status, payment_status, tracking_number, tracking_url, notes } = req.body;
-
-    const order = db.findById('orders', id);
-    if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found.' });
-    }
+    const { order_status, payment_status, tracking_number, tracking_url, notes, courier } = req.body;
 
     const updates = {};
-    if (order_status) updates.order_status = order_status;
-    if (payment_status) updates.payment_status = payment_status;
+    if (order_status) updates.order_status = order_status.toLowerCase();
+    if (payment_status) updates.payment_status = payment_status.toLowerCase();
     if (tracking_number) updates.tracking_number = tracking_number;
     if (tracking_url) updates.tracking_url = tracking_url;
     if (notes) updates.notes = notes;
+    if (courier) updates.courier = courier;
+    updates.updated_at = new Date().toISOString();
 
-    const updated = db.update('orders', id, updates);
+    // 1. Update in Supabase if configured
+    if (isSupabaseConfigured && supabaseAdmin) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        let q = supabaseAdmin.from('orders').update(updates);
+        if (isUuid) q = q.eq('id', id);
+        else q = q.eq('order_number', id);
+        await q;
+      } catch (sbErr) {
+        console.warn('[adminUpdateOrderStatus] Supabase update notice:', sbErr.message);
+      }
+    }
 
-    // Notify Customer
-    if (order_status) {
-      db.insert('notifications', {
-        user_id: order.user_id,
-        title: `Order #${order.order_number} Update`,
-        message: `Your order status changed to "${order_status.replace(/_/g, ' ').toUpperCase()}".`,
-        type: 'order',
-        link: `/order-tracking.html?order=${order.order_number}`,
-        is_read: false
-      });
+    // 2. Update local database
+    let order = db.findById('orders', id) || db.findOne('orders', o => o.order_number === id);
+    let updated = null;
+    if (order) {
+      updated = db.update('orders', order.id, updates);
+
+      // Notify Customer
+      if (order_status && order.user_id) {
+        db.insert('notifications', {
+          user_id: order.user_id,
+          title: `Order #${order.order_number} Update`,
+          message: `Your order status changed to "${order_status.replace(/_/g, ' ').toUpperCase()}".`,
+          type: 'order',
+          link: `/order-tracking.html?order=${order.order_number}`,
+          is_read: false
+        });
+      }
     }
 
     res.json({
       success: true,
       message: 'Order status updated successfully.',
-      data: updated
+      data: updated || { id, ...updates }
     });
   } catch (err) {
     next(err);

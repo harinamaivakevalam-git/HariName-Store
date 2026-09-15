@@ -30,6 +30,8 @@
   <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
   <link rel="shortcut icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/assets/images/krishna-logo.jpg">
+  <!-- Supabase JS Client v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="hn-admin-body-bg">
 
@@ -317,17 +319,31 @@
       modal.show();
     }
 
-    function saveProduct(e) {
+    const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+
+    function initSupabase() {
+      if (!window.supabaseClient && window.supabase && typeof window.supabase.createClient === 'function') {
+        try {
+          window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (e) {}
+      }
+      return window.supabaseClient;
+    }
+
+    async function saveProduct(e) {
       e.preventDefault();
       const id = document.getElementById('edit-prod-id').value;
       const name = document.getElementById('prod-name').value.trim();
       const category = document.getElementById('prod-category').value;
       const price = parseFloat(document.getElementById('prod-price').value);
       const old_price = document.getElementById('prod-old-price').value ? parseFloat(document.getElementById('prod-old-price').value) : null;
-      const stock = parseInt(document.getElementById('prod-stock').value);
+      const stock = parseInt(document.getElementById('prod-stock').value) || 25;
       const material = document.getElementById('prod-material').value;
       const image = document.getElementById('prod-image').value.trim();
       const description = document.getElementById('prod-description').value.trim();
+
+      let targetProduct = null;
 
       if (id) {
         const idx = localProducts.findIndex(p => p.id === id);
@@ -344,14 +360,16 @@
             image,
             description
           };
+          targetProduct = localProducts[idx];
           showToast('Product updated successfully!');
         }
       } else {
+        const generatedSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
         const newProduct = {
           id: 'prod-' + Date.now().toString().slice(-4),
           name,
           title: name,
-          slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          slug: generatedSlug,
           category,
           category_slug: category.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
           price,
@@ -361,14 +379,83 @@
           rating: 5.0,
           reviews_count: 1,
           image,
+          primary_image: image,
           description
         };
         localProducts.unshift(newProduct);
+        targetProduct = newProduct;
         showToast('New product added to catalog!');
       }
 
+      // 1. Save to local storage
       localStorage.setItem('harinama_admin_products', JSON.stringify(localProducts));
-      
+
+      // 2. Mirror into HARINAMA_DATA catalog immediately
+      if (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) {
+        const existingIdx = HARINAMA_DATA.products.findIndex(p => p.id === targetProduct.id || p.slug === targetProduct.slug);
+        if (existingIdx > -1) {
+          HARINAMA_DATA.products[existingIdx] = { ...HARINAMA_DATA.products[existingIdx], ...targetProduct };
+        } else {
+          HARINAMA_DATA.products.unshift(targetProduct);
+        }
+        window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
+          detail: { products: HARINAMA_DATA.products, categories: HARINAMA_DATA.categories }
+        }));
+      }
+
+      // 3. Sync to Backend API
+      try {
+        const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+
+        const endpoint = id ? `/api/products/${id}` : '/api/products';
+        const method = id ? 'PUT' : 'POST';
+
+        fetch(endpoint, {
+          method,
+          headers,
+          body: JSON.stringify({
+            name,
+            title: name,
+            description,
+            price,
+            compare_price: old_price,
+            sku: targetProduct.sku || `HN-${targetProduct.slug || 'ITEM'}`.toUpperCase(),
+            stock,
+            material,
+            image,
+            category_name: category
+          })
+        }).catch(err => console.warn('[AdminProducts] API sync notice:', err));
+      } catch (err) {}
+
+      // 4. Sync to Supabase Database directly
+      try {
+        const sb = initSupabase();
+        if (sb) {
+          const payload = {
+            name,
+            title: name,
+            slug: targetProduct.slug,
+            description,
+            price,
+            compare_price: old_price,
+            stock,
+            material,
+            image,
+            primary_image: image,
+            status: 'active'
+          };
+
+          if (id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+            sb.from('products').update(payload).eq('id', id).then(() => {});
+          } else {
+            sb.from('products').insert(payload).then(() => {});
+          }
+        }
+      } catch (sbErr) {}
+
       const modalEl = document.getElementById('productModal');
       const modal = bootstrap.Modal.getInstance(modalEl);
       if (modal) modal.hide();
@@ -376,10 +463,32 @@
       filterProducts();
     }
 
-    function deleteProduct(id) {
+    async function deleteProduct(id) {
       if (!confirm('Are you sure you want to remove this product from the catalog?')) return;
       localProducts = localProducts.filter(p => p.id !== id);
       localStorage.setItem('harinama_admin_products', JSON.stringify(localProducts));
+
+      if (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) {
+        HARINAMA_DATA.products = HARINAMA_DATA.products.filter(p => p.id !== id);
+        window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
+          detail: { products: HARINAMA_DATA.products, categories: HARINAMA_DATA.categories }
+        }));
+      }
+
+      // API delete
+      try {
+        const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+        const headers = {};
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        fetch(`/api/products/${id}`, { method: 'DELETE', headers }).catch(() => {});
+      } catch(e) {}
+
+      // Supabase delete
+      try {
+        const sb = initSupabase();
+        if (sb) sb.from('products').delete().eq('id', id).then(() => {});
+      } catch(e) {}
+
       showToast('Product removed.');
       filterProducts();
     }

@@ -22,6 +22,8 @@
   <link rel="shortcut icon" href="/favicon.ico">
   <!-- Razorpay Official Checkout SDK -->
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <!-- Supabase JS Client v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -365,18 +367,45 @@
       const subtotal = cart.reduce((acc, i) => acc + (i.price * (i.qty || 1)), 0);
       const shipping = subtotal >= 499 ? 0 : 0;
       const total = Math.max(0, subtotal + shipping - checkoutDiscount);
+      const formattedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const fullAddressStr = `${address}, ${city}, ${state} - ${pin}`;
+      const trackingNum = 'HN-EXP-' + Math.floor(100000 + Math.random() * 900000);
 
       const orderData = {
+        id: orderNumber,
         orderId: orderNumber,
-        date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+        order_number: orderNumber,
+        date: formattedDate,
+        created_at: new Date().toISOString(),
         timestamp: Date.now(),
-        customer: { name, phone, email, address, city, state, pin },
+        customer: name,
+        phone: phone,
+        email: email,
+        address: fullAddressStr,
+        shipping_address: { name, phone, email, address_line_1: address, city, state, pin },
         paymentMethod: selectedPaymentText,
-        items: [...cart],
+        payment_method: selectedPaymentText,
+        payment_status: isCod ? 'Pending (COD)' : 'Paid',
+        items: cart.map(i => ({
+          id: i.id || 'prod-001',
+          name: i.name,
+          product_name: i.name,
+          qty: i.qty || 1,
+          quantity: i.qty || 1,
+          price: i.price,
+          total: i.price * (i.qty || 1),
+          image: i.image,
+          material: i.material || 'Standard'
+        })),
         subtotal,
+        shipping,
         discount: checkoutDiscount,
         total,
-        status: isCod ? 'Confirmed (Cash on Delivery)' : 'Processing'
+        status: isCod ? 'Confirmed' : 'Confirmed',
+        order_status: 'confirmed',
+        courier: 'India Post Speed Post',
+        tracking_number: trackingNum,
+        notes: isCod ? 'Cash on Delivery devotional package.' : 'Prepaid online order.'
       };
 
       // Helper to submit finalized order to backend and redirect
@@ -429,14 +458,59 @@
         }
 
         // Mirror in client localStorage for orders list
+        orderData.id = finalOrderNum;
         orderData.orderId = finalOrderNum;
+        orderData.order_number = finalOrderNum;
         if (paymentDetails?.razorpay_payment_id) {
-          orderData.status = 'Confirmed (Paid via Razorpay)';
+          orderData.status = 'Confirmed';
+          orderData.payment_status = 'Paid (Razorpay)';
           orderData.payment_id = paymentDetails.razorpay_payment_id;
+          orderData.transaction_id = paymentDetails.razorpay_payment_id;
         }
+
+        // 1. Save to customer order list
         let orders = JSON.parse(localStorage.getItem('hn_orders') || '[]');
         orders.unshift(orderData);
         localStorage.setItem('hn_orders', JSON.stringify(orders));
+
+        // 2. Save to Admin order list so Admin Dashboard immediately reflects it!
+        let adminOrders = JSON.parse(localStorage.getItem('harinama_admin_orders') || '[]');
+        // Check if already in adminOrders
+        const existingIdx = adminOrders.findIndex(o => (o.id === finalOrderNum || o.order_number === finalOrderNum));
+        if (existingIdx > -1) {
+          adminOrders[existingIdx] = orderData;
+        } else {
+          adminOrders.unshift(orderData);
+        }
+        localStorage.setItem('harinama_admin_orders', JSON.stringify(adminOrders));
+
+        // 3. Direct client sync to Supabase database if available
+        try {
+          const sb = window.supabaseClient || (window.supabase && typeof window.supabase.createClient === 'function' 
+            ? window.supabase.createClient('https://wnaqfadlxrrvvjvqqbch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM') 
+            : null);
+          if (sb) {
+            sb.from('orders').insert({
+              order_number: finalOrderNum,
+              guest_name: name,
+              guest_email: email,
+              subtotal,
+              discount: checkoutDiscount,
+              shipping_fee: shipping,
+              tax: 0,
+              total,
+              payment_status: isCod ? 'pending' : 'paid',
+              payment_method: isCod ? 'cod' : 'razorpay',
+              order_status: 'confirmed',
+              shipping_address: { name, phone, email, address_line_1: address, city, state, pin },
+              tracking_number: trackingNum,
+              tracking_url: `/order-tracking.html?order=${finalOrderNum}`
+            }).then(() => console.log('[Supabase] Order stored in database.'))
+              .catch(e => console.warn('[Supabase] Direct database write notice:', e));
+          }
+        } catch (sbE) {
+          console.warn('[Supabase] Database sync note:', sbE);
+        }
 
         // Clear cart & session
         localStorage.removeItem('hn_cart');

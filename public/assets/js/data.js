@@ -453,11 +453,37 @@ const CRESCENDO_DATA = HARINAMA_DATA;
 // Retain initial static products for robust fallbacks
 HARINAMA_DATA._staticProducts = [...HARINAMA_DATA.products];
 
-// Dynamic Sync with Live Supabase API
+// Dynamic Sync with Live Supabase & Admin API
 HARINAMA_DATA.syncWithApi = async function() {
   try {
+    const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+
+    let mergedProducts = [...(HARINAMA_DATA._staticProducts || HARINAMA_DATA.products)];
+
+    // 1. Merge any admin-added products from browser storage immediately
+    try {
+      const storedAdminProds = localStorage.getItem('harinama_admin_products');
+      if (storedAdminProds) {
+        const adminList = JSON.parse(storedAdminProds);
+        if (Array.isArray(adminList) && adminList.length > 0) {
+          const existingSlugs = new Set(mergedProducts.map(p => p.slug || p.id));
+          adminList.forEach(ap => {
+            const key = ap.slug || ap.id;
+            const existingIdx = mergedProducts.findIndex(p => (p.slug === key || p.id === key));
+            if (existingIdx > -1) {
+              mergedProducts[existingIdx] = { ...mergedProducts[existingIdx], ...ap };
+            } else {
+              mergedProducts.unshift(ap);
+            }
+          });
+        }
+      }
+    } catch (e) {}
+
+    // 2. Fetch from Backend API
     const [prodRes, catRes] = await Promise.allSettled([
-      fetch('/api/products?limit=50').then(r => r.json()),
+      fetch('/api/products?limit=100').then(r => r.json()),
       fetch('/api/categories').then(r => r.json())
     ]);
 
@@ -489,11 +515,39 @@ HARINAMA_DATA.syncWithApi = async function() {
         variants: p.variants || []
       }));
 
-      // Merge with remaining static catalog items so all 16 devotional items remain accessible
-      const apiSlugs = new Set(apiProducts.map(p => p.slug));
-      const remainingStatic = (HARINAMA_DATA._staticProducts || []).filter(p => !apiSlugs.has(p.slug));
-      HARINAMA_DATA.products = [...apiProducts, ...remainingStatic];
+      const apiSlugs = new Set(apiProducts.map(p => p.slug || p.id));
+      mergedProducts = [...apiProducts, ...mergedProducts.filter(p => !apiSlugs.has(p.slug || p.id))];
+    } else {
+      // 3. Fallback: Directly query Supabase client if API backend is not present (e.g. static hosting)
+      try {
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+          const sb = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          window.supabaseClient = sb;
+          const { data: sbProds, error: sbErr } = await sb.from('products').select('*');
+          if (!sbErr && Array.isArray(sbProds) && sbProds.length > 0) {
+            const mappedSb = sbProds.map(p => ({
+              id: p.id,
+              name: p.name,
+              title: p.title || p.name,
+              slug: p.slug,
+              category: p.category || 'Devotional Keychains',
+              material: p.material || 'Sacred Material',
+              price: parseFloat(p.price) || 0,
+              old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+              rating: parseFloat(p.rating) || 5.0,
+              reviews_count: p.reviews_count || 0,
+              image: p.image || p.primary_image,
+              description: p.description || '',
+              stock: p.stock !== undefined ? p.stock : 25
+            }));
+            const sbSlugs = new Set(mappedSb.map(p => p.slug || p.id));
+            mergedProducts = [...mappedSb, ...mergedProducts.filter(p => !sbSlugs.has(p.slug || p.id))];
+          }
+        }
+      } catch (sbE) {}
     }
+
+    HARINAMA_DATA.products = mergedProducts;
 
     if (catRes.status === 'fulfilled' && catRes.value && catRes.value.success && Array.isArray(catRes.value.data) && catRes.value.data.length > 0) {
       const allCount = HARINAMA_DATA.products.length;

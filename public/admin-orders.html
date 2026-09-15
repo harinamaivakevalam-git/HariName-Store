@@ -30,6 +30,8 @@
   <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
   <link rel="shortcut icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/assets/images/krishna-logo.jpg">
+  <!-- Supabase JS Client v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="hn-admin-body-bg">
 
@@ -382,14 +384,208 @@
 
     let currentSelectedOrderId = null;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const stored = localStorage.getItem('harinama_admin_orders');
-      if (stored) {
-        try { localOrders = JSON.parse(stored); } catch(e) {}
+    const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+
+    function initSupabase() {
+      if (!window.supabaseClient && window.supabase && typeof window.supabase.createClient === 'function') {
+        try {
+          window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (e) {
+          console.warn('[AdminOrders] Supabase client init note:', e);
+        }
+      }
+      return window.supabaseClient;
+    }
+
+    // Normalize any order object into uniform format
+    function normalizeOrder(o) {
+      if (!o) return null;
+      const orderId = o.order_number || o.orderId || o.id || ('HN-2026-' + Math.floor(10000 + Math.random() * 90000));
+      
+      // Extract customer details
+      let customerName = 'Devotee Customer';
+      let phone = '—';
+      let email = '—';
+      let addressStr = '—';
+
+      if (o.customer && typeof o.customer === 'object') {
+        customerName = o.customer.name || customerName;
+        phone = o.customer.phone || phone;
+        email = o.customer.email || email;
+        const c = o.customer;
+        addressStr = `${c.address || ''}, ${c.city || ''}, ${c.state || ''} ${c.pin || ''}`.replace(/^[\s,]+|[\s,]+$/g, '');
+      } else if (typeof o.customer === 'string') {
+        customerName = o.customer;
+        phone = o.phone || '—';
+        email = o.email || '—';
+        addressStr = o.address || '—';
       }
 
+      if (o.shipping_address && typeof o.shipping_address === 'object') {
+        const sa = o.shipping_address;
+        customerName = sa.name || o.guest_name || customerName;
+        phone = sa.phone || phone;
+        email = sa.email || o.guest_email || email;
+        const saText = `${sa.address_line_1 || ''}, ${sa.city || ''}, ${sa.state || ''} ${sa.postal_code || sa.pin || ''}`.replace(/^[\s,]+|[\s,]+$/g, '');
+        if (saText && saText !== '—') addressStr = saText;
+      }
+
+      // Extract items
+      let items = [];
+      if (Array.isArray(o.items) && o.items.length > 0) {
+        items = o.items.map(i => ({
+          name: i.product_name || i.name || 'Sacred Item',
+          qty: i.quantity || i.qty || 1,
+          price: parseFloat(i.price) || 0
+        }));
+      } else if (Array.isArray(o.order_items) && o.order_items.length > 0) {
+        items = o.order_items.map(i => ({
+          name: i.product_name || 'Sacred Item',
+          qty: i.quantity || 1,
+          price: parseFloat(i.price) || 0
+        }));
+      } else {
+        items = [{ name: 'Devotional Product', qty: 1, price: parseFloat(o.total) || 0 }];
+      }
+
+      let dateFormatted = o.date;
+      if (!dateFormatted && o.created_at) {
+        try {
+          dateFormatted = new Date(o.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+        } catch(e) {
+          dateFormatted = new Date().toLocaleDateString('en-GB');
+        }
+      } else if (!dateFormatted) {
+        dateFormatted = new Date().toLocaleDateString('en-GB');
+      }
+
+      const rawStatus = (o.status || o.order_status || 'Confirmed').toString();
+      let statusNorm = 'Confirmed';
+      if (/deliv/i.test(rawStatus)) statusNorm = 'Delivered';
+      else if (/dispatch|transit/i.test(rawStatus)) statusNorm = 'Dispatched';
+      else if (/pack/i.test(rawStatus)) statusNorm = 'Packed';
+      else if (/cancel/i.test(rawStatus)) statusNorm = 'Cancelled';
+      else statusNorm = 'Confirmed';
+
+      return {
+        id: orderId,
+        db_id: o.db_id || o.id || null,
+        order_number: orderId,
+        date: dateFormatted,
+        created_at: o.created_at || new Date().toISOString(),
+        customer: customerName,
+        phone: phone,
+        email: email,
+        address: addressStr || 'Vrindavan Dham',
+        items: items,
+        subtotal: parseFloat(o.subtotal) || parseFloat(o.total) || 0,
+        shipping: parseFloat(o.shipping || o.shipping_fee) || 0,
+        total: parseFloat(o.total) || 0,
+        payment_method: o.payment_method || o.paymentMethod || 'UPI (Online)',
+        payment_status: o.payment_status || (/cod/i.test(o.payment_method || '') ? 'Pending (COD)' : 'Paid'),
+        status: statusNorm,
+        courier: o.courier || 'India Post Speed Post',
+        tracking_number: o.tracking_number || '',
+        notes: o.notes || ''
+      };
+    }
+
+    async function loadOrdersFromAllSources() {
+      // 1. Initial quick load from browser storage (admin + customer orders)
+      const mergedMap = new Map();
+
+      // Add baseline orders first
+      localOrders.forEach(o => {
+        const norm = normalizeOrder(o);
+        if (norm) mergedMap.set(norm.id, norm);
+      });
+
+      // Load stored admin orders
+      try {
+        const storedAdmin = localStorage.getItem('harinama_admin_orders');
+        if (storedAdmin) {
+          const parsed = JSON.parse(storedAdmin);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(o => {
+              const norm = normalizeOrder(o);
+              if (norm) mergedMap.set(norm.id, norm);
+            });
+          }
+        }
+      } catch (e) {}
+
+      // Load devotee customer orders placed from checkout
+      try {
+        const storedCustomer = localStorage.getItem('hn_orders');
+        if (storedCustomer) {
+          const parsedCust = JSON.parse(storedCustomer);
+          if (Array.isArray(parsedCust)) {
+            parsedCust.forEach(o => {
+              const norm = normalizeOrder(o);
+              if (norm) mergedMap.set(norm.id, norm);
+            });
+          }
+        }
+      } catch (e) {}
+
+      // Render fast initial cached view
+      localOrders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
       updateMetricCounters();
       renderOrdersTable(localOrders);
+
+      // 2. Fetch from Live Backend Server API (/api/orders/admin/all)
+      try {
+        const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+        const headers = {};
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+
+        const apiRes = await fetch('/api/orders/admin/all?limit=100', { headers });
+        const cType = apiRes.headers.get('content-type') || '';
+        if (apiRes.ok && cType.includes('application/json')) {
+          const json = await apiRes.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            json.data.forEach(apiOrder => {
+              const norm = normalizeOrder(apiOrder);
+              if (norm) mergedMap.set(norm.id, norm);
+            });
+          }
+        }
+      } catch (apiErr) {
+        console.warn('[AdminOrders] Backend API sync note:', apiErr.message);
+      }
+
+      // 3. Fetch directly from Supabase Database
+      try {
+        const sb = initSupabase();
+        if (sb) {
+          const { data: sbData, error: sbErr } = await sb
+            .from('orders')
+            .select('*, order_items(*), payments(*)')
+            .order('created_at', { ascending: false });
+
+          if (!sbErr && Array.isArray(sbData) && sbData.length > 0) {
+            sbData.forEach(sbOrder => {
+              const norm = normalizeOrder(sbOrder);
+              if (norm) mergedMap.set(norm.id, norm);
+            });
+          }
+        }
+      } catch (sbError) {
+        console.warn('[AdminOrders] Supabase database sync note:', sbError.message);
+      }
+
+      // Update final synced list
+      localOrders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
+      localStorage.setItem('harinama_admin_orders', JSON.stringify(localOrders));
+
+      updateMetricCounters();
+      filterOrders();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initSupabase();
+      loadOrdersFromAllSources();
     });
 
     function updateMetricCounters() {
@@ -574,22 +770,26 @@
       editModal.show();
     }
 
-    function saveOrderChanges(e) {
+    async function saveOrderChanges(e) {
       e.preventDefault();
       const id = document.getElementById('edit-order-id').value;
       const idx = localOrders.findIndex(o => o.id === id);
       if (idx === -1) return;
 
-      localOrders[idx].customer = document.getElementById('edit-order-customer').value.trim();
-      localOrders[idx].phone = document.getElementById('edit-order-phone').value.trim();
-      localOrders[idx].email = document.getElementById('edit-order-email').value.trim();
-      localOrders[idx].address = document.getElementById('edit-order-address').value.trim();
-      localOrders[idx].status = document.getElementById('edit-order-status').value;
-      localOrders[idx].payment_method = document.getElementById('edit-order-payment-method').value;
-      localOrders[idx].payment_status = document.getElementById('edit-order-payment-status').value;
-      localOrders[idx].courier = document.getElementById('edit-order-courier').value.trim();
-      localOrders[idx].tracking_number = document.getElementById('edit-order-tracking').value.trim();
-      localOrders[idx].notes = document.getElementById('edit-order-notes').value.trim();
+      const updatedFields = {
+        customer: document.getElementById('edit-order-customer').value.trim(),
+        phone: document.getElementById('edit-order-phone').value.trim(),
+        email: document.getElementById('edit-order-email').value.trim(),
+        address: document.getElementById('edit-order-address').value.trim(),
+        status: document.getElementById('edit-order-status').value,
+        payment_method: document.getElementById('edit-order-payment-method').value,
+        payment_status: document.getElementById('edit-order-payment-status').value,
+        courier: document.getElementById('edit-order-courier').value.trim(),
+        tracking_number: document.getElementById('edit-order-tracking').value.trim(),
+        notes: document.getElementById('edit-order-notes').value.trim()
+      };
+
+      Object.assign(localOrders[idx], updatedFields);
 
       localStorage.setItem('harinama_admin_orders', JSON.stringify(localOrders));
       showToast(`Order ${id} updated successfully!`);
@@ -600,9 +800,49 @@
 
       updateMetricCounters();
       filterOrders();
+
+      // Sync with Live Backend API
+      try {
+        const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+
+        await fetch(`/api/orders/admin/${encodeURIComponent(id)}/status`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({
+            order_status: updatedFields.status.toLowerCase(),
+            payment_status: updatedFields.payment_status.toLowerCase(),
+            tracking_number: updatedFields.tracking_number,
+            courier: updatedFields.courier,
+            notes: updatedFields.notes
+          })
+        });
+      } catch (err) {
+        console.warn('[AdminOrders] API status update note:', err);
+      }
+
+      // Sync with Supabase Database
+      try {
+        const sb = initSupabase();
+        if (sb) {
+          await sb
+            .from('orders')
+            .update({
+              order_status: updatedFields.status.toLowerCase(),
+              payment_status: updatedFields.payment_status.toLowerCase(),
+              tracking_number: updatedFields.tracking_number,
+              courier: updatedFields.courier,
+              notes: updatedFields.notes
+            })
+            .or(`order_number.eq.${id},id.eq.${localOrders[idx].db_id || id}`);
+        }
+      } catch (sbE) {
+        console.warn('[AdminOrders] Supabase update note:', sbE);
+      }
     }
 
-    function updateOrderStatusFromModal() {
+    async function updateOrderStatusFromModal() {
       if (!currentSelectedOrderId) return;
       const newStatus = document.getElementById('modal-order-status').value;
       const idx = localOrders.findIndex(o => o.id === currentSelectedOrderId);
@@ -610,6 +850,30 @@
         localOrders[idx].status = newStatus;
         localStorage.setItem('harinama_admin_orders', JSON.stringify(localOrders));
         showToast(`Order ${currentSelectedOrderId} status updated to ${newStatus}`);
+
+        // Sync with API
+        try {
+          const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+          const headers = { 'Content-Type': 'application/json' };
+          if (token) headers['Authorization'] = 'Bearer ' + token;
+
+          await fetch(`/api/orders/admin/${encodeURIComponent(currentSelectedOrderId)}/status`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify({ order_status: newStatus.toLowerCase() })
+          });
+        } catch(e) {}
+
+        // Sync with Supabase
+        try {
+          const sb = initSupabase();
+          if (sb) {
+            await sb
+              .from('orders')
+              .update({ order_status: newStatus.toLowerCase() })
+              .or(`order_number.eq.${currentSelectedOrderId},id.eq.${localOrders[idx].db_id || currentSelectedOrderId}`);
+          }
+        } catch (sbE) {}
       }
 
       const modalEl = document.getElementById('orderModal');

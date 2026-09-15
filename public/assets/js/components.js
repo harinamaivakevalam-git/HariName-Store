@@ -784,10 +784,6 @@
             </button>
           </div>
 
-          <div class="hn-exact-guest-wrap mt-3">
-            <a onclick="continueAsGuest()" class="hn-exact-guest-link text-muted small" style="cursor: pointer;">Or continue as guest &rarr;</a>
-          </div>
-
         </div>
       </div>
     </div>
@@ -1551,17 +1547,51 @@
   };
   window.handleAddToCart = handleAddToCart;
 
-  // Buy Now Helper
+  // Buy Now Helper (Instant Checkout)
   const handleBuyNow = (productId, qty = 1, selectedMaterial = null) => {
     if (!isUserLoggedIn()) {
       openAuthModal(() => handleBuyNow(productId, qty, selectedMaterial), 'Sign in to proceed to instant checkout 🌸');
       return;
     }
 
-    handleAddToCart(productId, qty, selectedMaterial);
-    setTimeout(() => {
-      window.location.href = '/checkout.html';
-    }, 300);
+    const product = findCatalogProduct(productId);
+    if (!product) {
+      showToast('Product not found in catalog.', 'error');
+      return;
+    }
+
+    const material = selectedMaterial || product.material || 'Acrylic';
+    const quantity = Math.max(1, Number(qty) || 1);
+
+    let cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
+    const canonId = product.id;
+    const legacyId = product.legacy_id || product.id;
+
+    const existingIndex = cart.findIndex(item =>
+      (item.id === canonId || (legacyId && item.id === legacyId) || item.id === productId) &&
+      (item.material === material)
+    );
+
+    if (existingIndex > -1) {
+      cart[existingIndex].qty += quantity;
+    } else {
+      cart.push({
+        id: canonId,
+        legacy_id: legacyId,
+        name: product.title || product.name,
+        price: Number(product.price) || 0,
+        image: product.image || product.primary_image,
+        material: material,
+        qty: quantity
+      });
+    }
+
+    localStorage.setItem('hn_cart', JSON.stringify(cart));
+    localStorage.setItem('cres_cart', JSON.stringify(cart));
+    updateHeaderBadges();
+
+    // Direct redirect to checkout without delaying or behaving like normal add to cart
+    window.location.href = '/checkout.html';
   };
   window.handleBuyNow = handleBuyNow;
 

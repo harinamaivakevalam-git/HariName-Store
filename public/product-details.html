@@ -100,10 +100,10 @@
             <button type="button" class="btn hn-btn-gold flex-grow-1 py-3" onclick="detailAddToCart()">
               <i class="bi bi-bag-plus me-1"></i> Add to Cart
             </button>
-            <button type="button" class="btn hn-btn-outline-dark flex-grow-1 py-3" style="background: var(--hn-navy); color: #fff !important;" onclick="detailBuyNow()">
+            <button type="button" class="btn hn-btn-outline-dark flex-grow-1 py-3" id="hn-detail-buynow-btn" style="background: var(--hn-navy); color: #fff !important;" onclick="detailBuyNow()">
               Buy Now
             </button>
-            <button type="button" class="btn btn-outline-danger px-4 py-3 d-flex align-items-center justify-content-center" id="hn-detail-wishlist-btn" onclick="toggleWishlist(currentProduct ? currentProduct.id : '', this)" title="Save to Sacred Wishlist" style="border-radius: var(--hn-radius-sm);">
+            <button type="button" class="btn btn-outline-danger px-4 py-3 d-flex align-items-center justify-content-center" id="hn-detail-wishlist-btn" onclick="handleDetailWishlist()" title="Save to Sacred Wishlist" style="border-radius: var(--hn-radius-sm);">
               <i class="bi bi-heart fs-5"></i>
             </button>
           </div>
@@ -116,7 +116,7 @@
             </div>
             <div class="d-flex align-items-center justify-content-between">
               <div class="small text-secondary">Add Maha-Mantra + Peacock Feather Pair</div>
-              <button type="button" class="btn btn-sm btn-outline-dark" onclick="handleAddToCart('prod-003', 1); handleAddToCart('prod-001', 1);">
+              <button type="button" class="btn btn-sm btn-outline-dark" onclick="handleBundleAdd()">
                 + Add Bundle (₹199)
               </button>
             </div>
@@ -274,7 +274,7 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
-  <script src="/assets/js/components.js?v=15"></script>
+  <script src="/assets/js/components.js?v=16"></script>
   <script>
     let currentProduct = null;
     let selectedRating = 5;
@@ -291,6 +291,10 @@
     }
 
     function detailAddToCart() {
+      if (!isUserLoggedIn()) {
+        openAuthModal(() => detailAddToCart(), 'Sign in to add divine items to your sacred cart 🌸');
+        return;
+      }
       if (!currentProduct) return;
       const qty = parseInt(document.getElementById('hn-qty-val').value || '1', 10);
       const material = document.getElementById('hn-material-select').value || 'Acrylic';
@@ -298,10 +302,39 @@
     }
 
     function detailBuyNow() {
+      if (!isUserLoggedIn()) {
+        openAuthModal(() => detailBuyNow(), 'Sign in to proceed to instant checkout 🌸');
+        return;
+      }
       if (!currentProduct) return;
       const qty = parseInt(document.getElementById('hn-qty-val').value || '1', 10);
       const material = document.getElementById('hn-material-select').value || 'Acrylic';
+
+      const btn = document.getElementById('hn-detail-buynow-btn');
+      if (btn) {
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Going to Checkout...';
+        btn.disabled = true;
+      }
+
       handleBuyNow(currentProduct.id, qty, material);
+    }
+
+    function handleDetailWishlist() {
+      if (!isUserLoggedIn()) {
+        openAuthModal(() => handleDetailWishlist(), 'Sign in to save items to your sacred wishlist 🌸');
+        return;
+      }
+      const btn = document.getElementById('hn-detail-wishlist-btn');
+      toggleWishlist(currentProduct ? currentProduct.id : '', btn);
+    }
+
+    function handleBundleAdd() {
+      if (!isUserLoggedIn()) {
+        openAuthModal(() => handleBundleAdd(), 'Sign in to add bundle items to your cart 🌸');
+        return;
+      }
+      handleAddToCart('prod-003', 1);
+      handleAddToCart('prod-001', 1);
     }
 
     function switchToReviewsTab() {

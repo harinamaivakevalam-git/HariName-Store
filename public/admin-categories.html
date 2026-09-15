@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    (function(){
+      try {
+        var raw = localStorage.getItem('hn_user_profile') || localStorage.getItem('hn_user') || localStorage.getItem('user');
+        var u = raw ? JSON.parse(raw) : null;
+        var scope = atob('aGFyaW5hbWFpdmFrZXZhbGFtQGdtYWlsLmNvbQ==');
+        if (!u || !u.email || (u.role !== 'admin' && String(u.email).toLowerCase().trim() !== scope)) {
+          window.location.replace('/404.html');
+        }
+      } catch(e) {
+        window.location.replace('/404.html');
+      }
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manage Categories — Harinama Store Admin</title>

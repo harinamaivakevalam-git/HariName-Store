@@ -352,73 +352,27 @@
         </div>
 
         <!-- Right Column: Warm Cream Form Card -->
-        <div class="hn-sprout-right">
+        <div class="hn-sprout-right d-flex flex-column justify-content-center text-center">
           
-          <h2 class="hn-sprout-title">Log in to your account</h2>
+          <h2 class="hn-sprout-title mb-2">Log in to your account</h2>
+          <p class="text-secondary small mb-4">Sign in securely with your Google account to access your orders, sacred wishlist, and devotional profile.</p>
 
           <!-- Alert notification -->
           <div id="loginAlert" class="hn-alert-box alert alert-danger"></div>
 
-          <!-- Login Form -->
-          <form id="loginForm" onsubmit="handleLoginSubmit(event)">
-            
-            <!-- Email Field -->
-            <div class="hn-sprout-field">
-              <label class="hn-sprout-label" for="login-email">Email address</label>
-              <div class="hn-sprout-input-wrap">
-                <div class="hn-sprout-icon"><i class="bi bi-envelope"></i></div>
-                <input type="email" id="login-email" class="hn-sprout-input" placeholder="Enter your email" required autocomplete="email" value="user@harinama.com">
-              </div>
-            </div>
-
-            <!-- Password Field -->
-            <div class="hn-sprout-field">
-              <label class="hn-sprout-label" for="login-password">Password</label>
-              <div class="hn-sprout-input-wrap">
-                <div class="hn-sprout-icon"><i class="bi bi-lock"></i></div>
-                <input type="password" id="login-password" class="hn-sprout-input" placeholder="Enter your password" required autocomplete="current-password" value="user123">
-                <button type="button" class="hn-sprout-eye-btn" onclick="togglePasswordVisibility('login-password', this)" aria-label="Toggle password">
-                  <i class="bi bi-eye"></i>
-                </button>
-              </div>
-            </div>
-
-            <!-- Forgot password link -->
-            <div class="hn-sprout-forgot-wrap">
-              <a href="#" class="hn-sprout-forgot-link" onclick="showForgotPasswordAlert(event)">Forgot your password?</a>
-            </div>
-
-            <!-- Submit Button -->
-            <button type="submit" class="hn-sprout-btn-login" id="btn-login">
-              <span>Log in</span>
-            </button>
-
-            <!-- Divider -->
-            <div class="hn-sprout-divider">
-              <span>or</span>
-            </div>
-
-            <!-- Google Sign-In Button -->
-            <button type="button" class="hn-sprout-btn-google" id="btn-google" onclick="handleGoogleSignIn()">
-              <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.35 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.97 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
+          <!-- Google Sign-In Primary Action -->
+          <div class="my-3">
+            <button type="button" class="hn-sprout-btn-google py-3 shadow-sm text-dark fw-bold border-2 rounded-3 w-100 fs-6 d-flex align-items-center justify-content-center gap-2" id="btn-google" onclick="handleGoogleSignIn()" style="background: #FFFFFF; border-color: #E2D9CD;">
+              <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.35 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.97 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
               <span>Continue with Google</span>
             </button>
+          </div>
 
-            <!-- Switch Link -->
-            <div class="hn-sprout-switch">
-              Don't have an account? <a href="/register.html">Sign in</a>
-            </div>
-
-          </form>
+          <div class="text-muted text-center mt-3 small" style="font-size: 0.78rem;">
+            <i class="bi bi-shield-check text-success me-1"></i> Fast, 100% Secure & One-Click Auth
+          </div>
 
         </div>
-      </div>
-
-      <!-- Quick Demo Credentials helper -->
-      <div class="mt-4 p-3 bg-white border rounded-4 text-center small text-secondary mx-auto" style="max-width: 580px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-        <span class="fw-bold text-dark">Quick Demo Credentials:</span> &nbsp;
-        Customer: <code class="bg-light px-2 py-1 text-dark rounded">user@harinama.com / user123</code> &nbsp;|&nbsp;
-        Admin: <code class="bg-light px-2 py-1 text-dark rounded">admin@harinama.com / admin123</code>
       </div>
 
     </div>

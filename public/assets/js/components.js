@@ -2,14 +2,14 @@
  * HARINAMA STORE - Reusable Components & Layout Renderers
  * Exact Match to Reference Specification
  */
-(function() {
-const formatPrice = (num) => {
-  const amount = Number(num) || 0;
-  return `₹${amount.toLocaleString('en-IN')}`;
-};
+(function () {
+  const formatPrice = (num) => {
+    const amount = Number(num) || 0;
+    return `₹${amount.toLocaleString('en-IN')}`;
+  };
 
-const renderRatingStars = (rating = 5.0, count = 24) => {
-  return `
+  const renderRatingStars = (rating = 5.0, count = 24) => {
+    return `
     <div class="hn-card-rating">
       <i class="bi bi-star-fill"></i>
       <i class="bi bi-star-fill"></i>
@@ -19,27 +19,27 @@ const renderRatingStars = (rating = 5.0, count = 24) => {
       <span class="hn-card-rating-count">(${count})</span>
     </div>
   `;
-};
+  };
 
-const showToast = (message, type = 'success') => {
-  let container = document.getElementById('hn-toast-container');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'hn-toast-container';
-    container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-    container.style.zIndex = '2000';
-    document.body.appendChild(container);
-  }
+  const showToast = (message, type = 'success') => {
+    let container = document.getElementById('hn-toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'hn-toast-container';
+      container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+      container.style.zIndex = '2000';
+      document.body.appendChild(container);
+    }
 
-  const toastEl = document.createElement('div');
-  toastEl.className = 'toast align-items-center text-bg-dark border-0 show mb-2 rounded-2 hn-toast-animated';
-  toastEl.role = 'alert';
-  toastEl.ariaLive = 'assertive';
-  toastEl.ariaAtomic = 'true';
-  toastEl.style.background = '#0B2545';
-  toastEl.style.color = '#FFFFFF';
-  toastEl.style.borderLeft = '4px solid #C59B27';
-  toastEl.innerHTML = `
+    const toastEl = document.createElement('div');
+    toastEl.className = 'toast align-items-center text-bg-dark border-0 show mb-2 rounded-2 hn-toast-animated';
+    toastEl.role = 'alert';
+    toastEl.ariaLive = 'assertive';
+    toastEl.ariaAtomic = 'true';
+    toastEl.style.background = '#0B2545';
+    toastEl.style.color = '#FFFFFF';
+    toastEl.style.borderLeft = '4px solid #C59B27';
+    toastEl.innerHTML = `
     <div class="d-flex p-2 align-items-center">
       <div class="toast-body d-flex align-items-center gap-2">
         <i class="bi bi-check-circle-fill text-warning fs-5"></i>
@@ -48,135 +48,150 @@ const showToast = (message, type = 'success') => {
       <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.closest('.toast').remove()"></button>
     </div>
   `;
-  container.appendChild(toastEl);
+    container.appendChild(toastEl);
 
-  setTimeout(() => {
-    toastEl.style.opacity = '0';
-    toastEl.style.transform = 'translateY(12px) scale(0.95)';
-    setTimeout(() => toastEl.remove(), 320);
-  }, 3500);
-};
+    setTimeout(() => {
+      toastEl.style.opacity = '0';
+      toastEl.style.transform = 'translateY(12px) scale(0.95)';
+      setTimeout(() => toastEl.remove(), 320);
+    }, 3500);
+  };
 
-// ============================================================================
-// AUTHENTICATION STATE & DIVINE POPUP MODAL
-// ============================================================================
-let _pendingAuthCallback = null;
+  // ============================================================================
+  // AUTHENTICATION STATE & DIVINE POPUP MODAL
+  // ============================================================================
+  let _pendingAuthCallback = null;
 
-const SUPABASE_AUTH_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
-const SUPABASE_AUTH_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+  const SUPABASE_AUTH_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+  const SUPABASE_AUTH_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
 
-const getLoggedInUser = () => {
-  try {
-    const raw = localStorage.getItem('hn_user_profile') || localStorage.getItem('hn_user') || localStorage.getItem('user');
-    if (!raw || raw === 'undefined' || raw === 'null') return null;
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object' && (parsed.id || parsed.email || parsed.name)) {
-      return parsed;
-    }
-    return null;
-  } catch (e) {
-    return null;
-  }
-};
+  const _getAuthScope = () => atob('aGFyaW5hbWFpdmFrZXZhbGFtQGdtYWlsLmNvbQ==');
+  const _getAdminRoute = () => atob('L2FkbWluLmh0bWw=');
 
-const isUserLoggedIn = () => {
-  const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-  if (!token || token === 'undefined' || token === 'null' || token === '') return false;
-  const user = getLoggedInUser();
-  if (!user) {
-    // If token exists without valid user profile, check if token is valid before clearing
-    return false;
-  }
-  return true;
-};
-
-// Global Supabase OAuth Redirect & Hash Parser
-const processOAuthRedirectAndSession = async () => {
-  // 1. Process URL Hash (e.g. #access_token=...&refresh_token=...)
-  const hash = window.location.hash;
-  if (hash && hash.includes('access_token=')) {
+  const isAdminUser = (usr) => {
     try {
-      const params = new URLSearchParams(hash.substring(1));
-      const accessToken = params.get('access_token');
-
-      if (accessToken) {
-        // Direct fetch from Supabase Auth API
-        const res = await fetch(`${SUPABASE_AUTH_URL}/auth/v1/user`, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'apikey': SUPABASE_AUTH_ANON_KEY
-          }
-        });
-        const userData = await res.json();
-        if (userData && userData.id && userData.email) {
-          const user = {
-            id: userData.id,
-            email: userData.email,
-            name: userData.user_metadata?.full_name || userData.user_metadata?.name || userData.email.split('@')[0],
-            avatar: userData.user_metadata?.avatar_url || userData.user_metadata?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
-            phone: userData.user_metadata?.phone || '',
-            city: userData.user_metadata?.city || '',
-            role: 'customer'
-          };
-
-          localStorage.setItem('hn_auth_token', accessToken);
-          localStorage.setItem('hn_user_profile', JSON.stringify(user));
-          localStorage.setItem('hn_user', JSON.stringify(user));
-          localStorage.setItem('token', accessToken);
-          localStorage.setItem('user', JSON.stringify(user));
-
-          // Clean URL hash without triggering full reload
-          if (window.history && window.history.replaceState) {
-            window.history.replaceState(null, null, window.location.pathname + window.location.search);
-          }
-
-          renderHeader();
-          window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user } }));
-          showToast(`Welcome back, ${user.name}! 🌸`);
-
-          // If currently on login, register, or auth page, auto-redirect to account
-          const path = window.location.pathname.toLowerCase();
-          if (path.includes('login') || path.includes('register') || path.includes('auth')) {
-            setTimeout(() => { window.location.href = '/account.html'; }, 300);
-          }
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn('OAuth redirect processing notice:', err);
+      const user = usr || getLoggedInUser();
+      if (!user || !user.email) return false;
+      return user.role === 'admin' || String(user.email).toLowerCase().trim() === _getAuthScope();
+    } catch (_) {
+      return false;
     }
+  };
+  window.isAdminUser = isAdminUser;
+  window._getAdminRoute = _getAdminRoute;
+
+  const enforceAdminAccess = () => {
+    const path = window.location.pathname.toLowerCase();
+    const adminSegment = atob('YWRtaW4=');
+    if (path.includes(adminSegment)) {
+      if (!isAdminUser()) {
+        window.location.replace('/404.html');
+      }
+    }
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', enforceAdminAccess);
+  } else {
+    enforceAdminAccess();
   }
 
-  // 2. Process Supabase Client Session if library is loaded
-  if (window.supabase && typeof window.supabase.createClient === 'function') {
+  const getLoggedInUser = () => {
     try {
-      if (!window.supabaseClient) {
-        window.supabaseClient = window.supabase.createClient(SUPABASE_AUTH_URL, SUPABASE_AUTH_ANON_KEY);
-      }
-      const sb = window.supabaseClient;
-      if (sb && sb.auth) {
-        const { data: { session } } = await sb.auth.getSession();
-        if (session && session.user && !isUserLoggedIn()) {
-          const user = {
-            id: session.user.id,
-            email: session.user.email,
-            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email.split('@')[0],
-            avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
-            phone: session.user.user_metadata?.phone || '',
-            city: session.user.user_metadata?.city || '',
-            role: 'customer'
-          };
-          localStorage.setItem('hn_auth_token', session.access_token);
-          localStorage.setItem('hn_user_profile', JSON.stringify(user));
-          localStorage.setItem('hn_user', JSON.stringify(user));
-          localStorage.setItem('token', session.access_token);
-          localStorage.setItem('user', JSON.stringify(user));
-          renderHeader();
-          window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user } }));
+      const raw = localStorage.getItem('hn_user_profile') || localStorage.getItem('hn_user') || localStorage.getItem('user');
+      if (!raw || raw === 'undefined' || raw === 'null') return null;
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && (parsed.id || parsed.email || parsed.name)) {
+        if (parsed.email && String(parsed.email).toLowerCase().trim() === _getAuthScope()) {
+          parsed.role = 'admin';
         }
+        return parsed;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  };
 
-        sb.auth.onAuthStateChange((event, session) => {
-          if (session && session.user) {
+  const isUserLoggedIn = () => {
+    const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+    if (!token || token === 'undefined' || token === 'null' || token === '') return false;
+    const user = getLoggedInUser();
+    if (!user) {
+      return false;
+    }
+    return true;
+  };
+
+  // Global Supabase OAuth Redirect & Hash Parser
+  const processOAuthRedirectAndSession = async () => {
+    // 1. Process URL Hash (e.g. #access_token=...&refresh_token=...)
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token=')) {
+      try {
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get('access_token');
+
+        if (accessToken) {
+          // Direct fetch from Supabase Auth API
+          const res = await fetch(`${SUPABASE_AUTH_URL}/auth/v1/user`, {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'apikey': SUPABASE_AUTH_ANON_KEY
+            }
+          });
+          const userData = await res.json();
+          if (userData && userData.id && userData.email) {
+            const isSysAdmin = userData.email && String(userData.email).toLowerCase().trim() === _getAuthScope();
+            const user = {
+              id: userData.id,
+              email: userData.email,
+              name: userData.user_metadata?.full_name || userData.user_metadata?.name || userData.email.split('@')[0],
+              avatar: userData.user_metadata?.avatar_url || userData.user_metadata?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+              phone: userData.user_metadata?.phone || '',
+              city: userData.user_metadata?.city || '',
+              role: isSysAdmin ? 'admin' : 'customer'
+            };
+
+            localStorage.setItem('hn_auth_token', accessToken);
+            localStorage.setItem('hn_user_profile', JSON.stringify(user));
+            localStorage.setItem('hn_user', JSON.stringify(user));
+            localStorage.setItem('token', accessToken);
+            localStorage.setItem('user', JSON.stringify(user));
+
+            // Clean URL hash without triggering full reload
+            if (window.history && window.history.replaceState) {
+              window.history.replaceState(null, null, window.location.pathname + window.location.search);
+            }
+
+            renderHeader();
+            window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user } }));
+            showToast(`Welcome back, ${user.name}! 🌸`);
+
+            // If currently on login, register, or auth page, auto-redirect to account
+            const path = window.location.pathname.toLowerCase();
+            if (path.includes('login') || path.includes('register') || path.includes('auth')) {
+              setTimeout(() => { window.location.href = isSysAdmin ? _getAdminRoute() : '/account.html'; }, 300);
+            }
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('OAuth redirect processing notice:', err);
+      }
+    }
+
+    // 2. Process Supabase Client Session if library is loaded
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      try {
+        if (!window.supabaseClient) {
+          window.supabaseClient = window.supabase.createClient(SUPABASE_AUTH_URL, SUPABASE_AUTH_ANON_KEY);
+        }
+        const sb = window.supabaseClient;
+        if (sb && sb.auth) {
+          const { data: { session } } = await sb.auth.getSession();
+          if (session && session.user && !isUserLoggedIn()) {
+            const isSysAdmin = session.user.email && String(session.user.email).toLowerCase().trim() === _getAuthScope();
             const user = {
               id: session.user.id,
               email: session.user.email,
@@ -184,7 +199,7 @@ const processOAuthRedirectAndSession = async () => {
               avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
               phone: session.user.user_metadata?.phone || '',
               city: session.user.user_metadata?.city || '',
-              role: 'customer'
+              role: isSysAdmin ? 'admin' : 'customer'
             };
             localStorage.setItem('hn_auth_token', session.access_token);
             localStorage.setItem('hn_user_profile', JSON.stringify(user));
@@ -194,141 +209,162 @@ const processOAuthRedirectAndSession = async () => {
             renderHeader();
             window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user } }));
           }
-        });
+
+          sb.auth.onAuthStateChange((event, session) => {
+            if (session && session.user) {
+              const isSysAdmin = session.user.email && String(session.user.email).toLowerCase().trim() === _getAuthScope();
+              const user = {
+                id: session.user.id,
+                email: session.user.email,
+                name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email.split('@')[0],
+                avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+                phone: session.user.user_metadata?.phone || '',
+                city: session.user.user_metadata?.city || '',
+                role: isSysAdmin ? 'admin' : 'customer'
+              };
+              localStorage.setItem('hn_auth_token', session.access_token);
+              localStorage.setItem('hn_user_profile', JSON.stringify(user));
+              localStorage.setItem('hn_user', JSON.stringify(user));
+              localStorage.setItem('token', session.access_token);
+              localStorage.setItem('user', JSON.stringify(user));
+              renderHeader();
+              window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user } }));
+            }
+          });
+        }
+      } catch (_) { }
+    }
+  };
+
+  // Execute immediately upon script execution
+  processOAuthRedirectAndSession();
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', processOAuthRedirectAndSession);
+  }
+
+  const logoutUser = async (e = null, skipConfirm = false) => {
+    if (e) {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+
+    if (!skipConfirm) {
+      const user = getLoggedInUser();
+      const devoteeName = user?.name ? user.name : 'Devotee';
+      const confirmed = window.confirm(`Hare Krishna, ${devoteeName}!\n\nAre you sure you want to sign out of your sacred account?`);
+      if (!confirmed) {
+        return false;
       }
-    } catch (_) {}
-  }
-};
-
-// Execute immediately upon script execution
-processOAuthRedirectAndSession();
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', processOAuthRedirectAndSession);
-}
-
-const logoutUser = async (e = null, skipConfirm = false) => {
-  if (e) {
-    if (typeof e.preventDefault === 'function') e.preventDefault();
-    if (typeof e.stopPropagation === 'function') e.stopPropagation();
-  }
-  
-  if (!skipConfirm) {
-    const user = getLoggedInUser();
-    const devoteeName = user?.name ? user.name : 'Devotee';
-    const confirmed = window.confirm(`Hare Krishna, ${devoteeName}!\n\nAre you sure you want to sign out of your sacred account?`);
-    if (!confirmed) {
-      return false;
     }
-  }
 
-  // Sign out from Supabase if client is present
-  try {
-    const client = window.supabaseClient || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase.createClient('https://wnaqfadlxrrvvjvqqbch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM') : null);
-    if (client && client.auth) {
-      await client.auth.signOut();
-    }
-  } catch (sbErr) {
-    console.warn('Supabase signout note:', sbErr);
-  }
-
-  // Purge all possible authentication keys from localStorage & sessionStorage
-  const keysToPurge = [
-    'hn_auth_token',
-    'hn_user_profile',
-    'hn_user',
-    'token',
-    'user',
-    'auth_token',
-    'supabase.auth.token',
-    'sb-wnaqfadlxrrvvjvqqbch-auth-token'
-  ];
-  keysToPurge.forEach(key => {
+    // Sign out from Supabase if client is present
     try {
-      localStorage.removeItem(key);
-      sessionStorage.removeItem(key);
-    } catch (_) {}
-  });
+      const client = window.supabaseClient || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase.createClient('https://wnaqfadlxrrvvjvqqbch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM') : null);
+      if (client && client.auth) {
+        await client.auth.signOut();
+      }
+    } catch (sbErr) {
+      console.warn('Supabase signout note:', sbErr);
+    }
 
-  // Also clean any leftover Supabase token patterns in storage
-  try {
-    for (let i = localStorage.length - 1; i >= 0; i--) {
-      const k = localStorage.key(i);
-      if (k && (k.startsWith('sb-') || k.includes('auth-token'))) {
-        localStorage.removeItem(k);
+    // Purge all possible authentication keys from localStorage & sessionStorage
+    const keysToPurge = [
+      'hn_auth_token',
+      'hn_user_profile',
+      'hn_user',
+      'token',
+      'user',
+      'auth_token',
+      'supabase.auth.token',
+      'sb-wnaqfadlxrrvvjvqqbch-auth-token'
+    ];
+    keysToPurge.forEach(key => {
+      try {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      } catch (_) { }
+    });
+
+    // Also clean any leftover Supabase token patterns in storage
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith('sb-') || k.includes('auth-token'))) {
+          localStorage.removeItem(k);
+        }
+      }
+    } catch (_) { }
+
+    const menu = document.getElementById('hnUserMenu');
+    if (menu) menu.classList.remove('active');
+
+    // Re-render header to immediately reflect logged-out state ("Sign In")
+    renderHeader();
+    showToast('You have been signed out safely. Hare Krishna! 🌸');
+    window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user: null } }));
+
+    // If currently on an account/profile or admin page, redirect to login
+    const currentPath = window.location.pathname.toLowerCase();
+    if (currentPath.includes('account') || currentPath.includes('orders') || currentPath.includes('admin')) {
+      setTimeout(() => { window.location.href = '/login.html'; }, 350);
+    }
+  };
+  window.logoutUser = logoutUser;
+
+  const toggleUserDropdown = (e) => {
+    if (e) {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+
+    if (!isUserLoggedIn()) {
+      window.location.href = '/login.html';
+      return;
+    }
+
+    const dropdown = document.getElementById('hnUserDropdown');
+    const menu = document.getElementById('hnUserMenu');
+    if (menu) {
+      const isVisible = menu.classList.contains('active') || menu.classList.contains('show') || menu.style.display === 'block';
+      if (isVisible) {
+        menu.classList.remove('active', 'show');
+        menu.style.display = 'none';
+        if (dropdown) dropdown.classList.remove('active');
+      } else {
+        menu.classList.add('active', 'show');
+        menu.style.display = 'block';
+        menu.style.zIndex = '999999';
+        if (dropdown) dropdown.classList.add('active');
       }
     }
-  } catch (_) {}
+  };
 
-  const menu = document.getElementById('hnUserMenu');
-  if (menu) menu.classList.remove('active');
-
-  // Re-render header to immediately reflect logged-out state ("Sign In")
-  renderHeader();
-  showToast('You have been signed out safely. Hare Krishna! 🌸');
-  window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user: null } }));
-
-  // If currently on an account/profile or admin page, redirect to login
-  const currentPath = window.location.pathname.toLowerCase();
-  if (currentPath.includes('account') || currentPath.includes('orders') || currentPath.includes('admin')) {
-    setTimeout(() => { window.location.href = '/login.html'; }, 350);
-  }
-};
-window.logoutUser = logoutUser;
-
-const toggleUserDropdown = (e) => {
-  if (e) {
-    if (typeof e.preventDefault === 'function') e.preventDefault();
-    if (typeof e.stopPropagation === 'function') e.stopPropagation();
-  }
-
-  if (!isUserLoggedIn()) {
-    window.location.href = '/login.html';
-    return;
-  }
-
-  const dropdown = document.getElementById('hnUserDropdown');
-  const menu = document.getElementById('hnUserMenu');
-  if (menu) {
-    const isVisible = menu.classList.contains('active') || menu.classList.contains('show') || menu.style.display === 'block';
-    if (isVisible) {
+  document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('hnUserDropdown');
+    const menu = document.getElementById('hnUserMenu');
+    if (menu && !e.target.closest('#hnUserDropdown')) {
       menu.classList.remove('active', 'show');
       menu.style.display = 'none';
       if (dropdown) dropdown.classList.remove('active');
-    } else {
-      menu.classList.add('active', 'show');
-      menu.style.display = 'block';
-      menu.style.zIndex = '999999';
-      if (dropdown) dropdown.classList.add('active');
     }
-  }
-};
+  });
 
-document.addEventListener('click', (e) => {
-  const dropdown = document.getElementById('hnUserDropdown');
-  const menu = document.getElementById('hnUserMenu');
-  if (menu && !e.target.closest('#hnUserDropdown')) {
-    menu.classList.remove('active', 'show');
-    menu.style.display = 'none';
-    if (dropdown) dropdown.classList.remove('active');
-  }
-});
+  const handleHeaderAccountClick = (e) => {
+    if (isUserLoggedIn()) {
+      toggleUserDropdown(e);
+    } else {
+      window.location.href = '/login.html';
+    }
+  };
+  window.handleHeaderAccountClick = handleHeaderAccountClick;
 
-const handleHeaderAccountClick = (e) => {
-  if (isUserLoggedIn()) {
-    toggleUserDropdown(e);
-  } else {
-    window.location.href = '/login.html';
-  }
-};
-window.handleHeaderAccountClick = handleHeaderAccountClick;
-
-const ensureAuthModal = () => {
-  // Inject embedded self-contained CSS to guarantee 100% visibility regardless of external cache
-  if (!document.getElementById('hn-auth-modal-embedded-css')) {
-    const styleTag = document.createElement('style');
-    styleTag.id = 'hn-auth-modal-embedded-css';
-    styleTag.textContent = `
+  const ensureAuthModal = () => {
+    // Inject embedded self-contained CSS to guarantee 100% visibility regardless of external cache
+    if (!document.getElementById('hn-auth-modal-embedded-css')) {
+      const styleTag = document.createElement('style');
+      styleTag.id = 'hn-auth-modal-embedded-css';
+      styleTag.textContent = `
       .hn-auth-overlay-exact {
         position: fixed !important;
         top: 0 !important;
@@ -664,19 +700,19 @@ const ensureAuthModal = () => {
         }
       }
     `;
-    document.head.appendChild(styleTag);
-  }
-
-  const existingOverlay = document.getElementById('hnAuthModalOverlay');
-  if (existingOverlay) {
-    if (!existingOverlay.querySelector('.hn-auth-card-exact')) {
-      existingOverlay.remove();
-    } else {
-      return;
+      document.head.appendChild(styleTag);
     }
-  }
 
-  const modalHtml = `
+    const existingOverlay = document.getElementById('hnAuthModalOverlay');
+    if (existingOverlay) {
+      if (!existingOverlay.querySelector('.hn-auth-card-exact')) {
+        existingOverlay.remove();
+      } else {
+        return;
+      }
+    }
+
+    const modalHtml = `
     <div class="hn-auth-overlay-exact" id="hnAuthModalOverlay" onclick="handleAuthOverlayClick(event)">
       <div class="hn-auth-card-exact" role="dialog" aria-modal="true" aria-labelledby="hnAuthTitle" onclick="event.stopPropagation()">
         
@@ -696,414 +732,328 @@ const ensureAuthModal = () => {
         </div>
 
         <!-- Right Column: Warm Cream Form Card -->
-        <div class="hn-auth-form-col">
+        <div class="hn-auth-form-col text-center d-flex flex-column justify-content-center">
           
-          <h2 class="hn-auth-exact-title" id="hnAuthTitle">Log in to your account</h2>
-          <p class="hn-auth-exact-sub" id="hnAuthSubtitle" style="display: none;">Enter Your Details Below</p>
+          <h2 class="hn-auth-exact-title mb-2" id="hnAuthTitle">Log in to your account</h2>
+          <p class="hn-auth-exact-sub text-muted small mb-4" id="hnAuthSubtitle">Sign in securely with your Google account to continue 🌸</p>
 
           <div class="hn-exact-alert" id="hnAuthAlert"></div>
 
-          <!-- Sign In Form -->
-          <form id="hnSignInForm" onsubmit="handleAuthSignIn(event)">
-            <div class="hn-exact-field">
-              <label class="hn-exact-label" for="hnAuthEmail">Email address</label>
-              <div class="hn-exact-input-wrap">
-                <div class="hn-exact-icon"><i class="bi bi-envelope"></i></div>
-                <input type="email" id="hnAuthEmail" class="hn-exact-input" placeholder="Enter your email" required autocomplete="email" value="user@harinama.com">
-              </div>
-            </div>
-
-            <div class="hn-exact-field">
-              <label class="hn-exact-label" for="hnAuthPassword">Password</label>
-              <div class="hn-exact-input-wrap">
-                <div class="hn-exact-icon"><i class="bi bi-lock"></i></div>
-                <input type="password" id="hnAuthPassword" class="hn-exact-input" placeholder="Enter your password" required autocomplete="current-password" value="user123">
-                <button type="button" class="hn-exact-eye-btn" onclick="togglePasswordVisibility('hnAuthPassword', this)" aria-label="Toggle password">
-                  <i class="bi bi-eye"></i>
-                </button>
-              </div>
-            </div>
-
-            <div class="hn-exact-forgot-wrap">
-              <a href="#" class="hn-exact-forgot" onclick="showForgotPasswordAlert(event)">Forgot your password?</a>
-            </div>
-
-            <button type="submit" class="hn-exact-btn-primary" id="hnSignInSubmitBtn">
-              <span>Log in</span>
-            </button>
-
-            <div class="hn-exact-divider">
-              <span>or</span>
-            </div>
-
-            <button type="button" class="hn-exact-btn-google" onclick="handleGoogleSignIn()">
-              <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.35 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.97 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
+          <!-- Google Sign-In Action -->
+          <div class="my-3">
+            <button type="button" class="hn-exact-btn-google py-3 shadow-sm border-2 rounded-3 w-100 fs-6 d-flex align-items-center justify-content-center gap-2" onclick="handleGoogleSignIn()" style="background: #FFFFFF; border-color: #E2D9CD; color: #231C18; font-weight: 700; cursor: pointer;">
+              <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.35 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.97 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
               <span>Continue with Google</span>
             </button>
+          </div>
 
-            <div class="hn-exact-guest-wrap">
-              <a onclick="continueAsGuest()" class="hn-exact-guest-link">Or continue as guest &rarr;</a>
-            </div>
-
-            <div class="hn-exact-switch">
-              Don't have an account? <a onclick="switchAuthTab('register')">Sign up</a>
-            </div>
-          </form>
-
-          <!-- Register Form -->
-          <form id="hnRegisterForm" style="display: none;" onsubmit="handleAuthRegister(event)">
-            <div class="hn-exact-field">
-              <label class="hn-exact-label" for="hnRegName">Full Name</label>
-              <div class="hn-exact-input-wrap">
-                <div class="hn-exact-icon"><i class="bi bi-person"></i></div>
-                <input type="text" id="hnRegName" class="hn-exact-input" placeholder="Enter your full name" required autocomplete="name">
-              </div>
-            </div>
-
-            <div class="hn-exact-field">
-              <label class="hn-exact-label" for="hnRegEmail">Email address</label>
-              <div class="hn-exact-input-wrap">
-                <div class="hn-exact-icon"><i class="bi bi-envelope"></i></div>
-                <input type="email" id="hnRegEmail" class="hn-exact-input" placeholder="Enter your email" required autocomplete="email">
-              </div>
-            </div>
-
-            <div class="hn-exact-field">
-              <label class="hn-exact-label" for="hnRegPassword">Password (6+ characters)</label>
-              <div class="hn-exact-input-wrap">
-                <div class="hn-exact-icon"><i class="bi bi-lock"></i></div>
-                <input type="password" id="hnRegPassword" class="hn-exact-input" placeholder="••••••••" minlength="6" required autocomplete="new-password">
-                <button type="button" class="hn-exact-eye-btn" onclick="togglePasswordVisibility('hnRegPassword', this)" aria-label="Toggle password">
-                  <i class="bi bi-eye"></i>
-                </button>
-              </div>
-            </div>
-
-            <button type="submit" class="hn-exact-btn-primary" id="hnRegisterSubmitBtn">
-              <span>Create Account & Continue</span>
-            </button>
-
-            <div class="hn-exact-divider">
-              <span>or</span>
-            </div>
-
-            <button type="button" class="hn-exact-btn-google" onclick="handleGoogleSignIn()">
-              <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.35 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.97 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
-              <span>Sign up with Google</span>
-            </button>
-
-            <div class="hn-exact-guest-wrap">
-              <a onclick="continueAsGuest()" class="hn-exact-guest-link">Or continue as guest &rarr;</a>
-            </div>
-
-            <div class="hn-exact-switch">
-              Already have an account? <a onclick="switchAuthTab('signin')">Log In</a>
-            </div>
-          </form>
+          <div class="hn-exact-guest-wrap mt-3">
+            <a onclick="continueAsGuest()" class="hn-exact-guest-link text-muted small" style="cursor: pointer;">Or continue as guest &rarr;</a>
+          </div>
 
         </div>
       </div>
     </div>
   `;
 
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
-};
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+  };
 
-const openAuthModal = (callback = null, promptReason = null) => {
-  if (isUserLoggedIn()) {
-    if (typeof callback === 'function') callback();
-    return;
-  }
-
-  ensureAuthModal();
-  _pendingAuthCallback = typeof callback === 'function' ? callback : null;
-
-  const overlay = document.getElementById('hnAuthModalOverlay');
-  const subtitle = document.getElementById('hnAuthSubtitle');
-  const alertEl = document.getElementById('hnAuthAlert');
-
-  if (subtitle && promptReason) {
-    subtitle.innerText = promptReason;
-  } else if (subtitle) {
-    subtitle.innerText = 'Enter Your Details Below';
-  }
-
-  if (alertEl) {
-    alertEl.className = 'hn-exact-alert';
-    alertEl.innerText = '';
-    alertEl.style.display = 'none';
-  }
-
-  if (overlay) {
-    overlay.style.setProperty('display', 'flex', 'important');
-    overlay.style.setProperty('opacity', '1', 'important');
-    overlay.style.setProperty('visibility', 'visible', 'important');
-    overlay.style.setProperty('z-index', '999999', 'important');
-    overlay.classList.add('active');
-  }
-  document.body.style.overflow = 'hidden';
-
-  setTimeout(() => {
-    const emailInput = document.getElementById('hnAuthEmail');
-    if (emailInput) emailInput.focus();
-  }, 120);
-};
-
-const closeAuthModal = () => {
-  const overlay = document.getElementById('hnAuthModalOverlay');
-  if (overlay) {
-    overlay.style.setProperty('display', 'none', 'important');
-    overlay.classList.remove('active');
-  }
-  document.body.style.overflow = '';
-};
-
-const continueAsGuest = () => {
-  closeAuthModal();
-  showToast('Continuing as divine guest. Hare Krishna! 🌸');
-  if (typeof _pendingAuthCallback === 'function') {
-    const cb = _pendingAuthCallback;
-    _pendingAuthCallback = null;
-    cb();
-  }
-};
-window.continueAsGuest = continueAsGuest;
-
-const handleGoogleSignIn = async () => {
-  const client = window.supabaseClient || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase.createClient('https://wnaqfadlxrrvvjvqqbch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM') : null);
-  
-  if (client && client.auth) {
-    showToast('Redirecting to Google Secure Sign-In... 🌸');
-    try {
-      const { data, error } = await client.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + '/account.html'
-        }
-      });
-      if (error) {
-        setAuthAlert(error.message || 'Google OAuth error', 'error');
-        return;
-      }
-      if (data && data.url) {
-        window.location.href = data.url;
-        return;
-      }
-    } catch (err) {
-      setAuthAlert(err.message || 'Google Sign-in failed', 'error');
+  const openAuthModal = (callback = null, promptReason = null) => {
+    if (isUserLoggedIn()) {
+      if (typeof callback === 'function') callback();
+      return;
     }
-  } else {
-    window.location.href = '/login.html';
-  }
-};
-window.handleGoogleSignIn = handleGoogleSignIn;
 
-const handleAuthOverlayClick = (e) => {
-  if (e.target.id === 'hnAuthModalOverlay') {
+    ensureAuthModal();
+    _pendingAuthCallback = typeof callback === 'function' ? callback : null;
+
+    const overlay = document.getElementById('hnAuthModalOverlay');
+    const subtitle = document.getElementById('hnAuthSubtitle');
+    const alertEl = document.getElementById('hnAuthAlert');
+
+    if (subtitle && promptReason) {
+      subtitle.innerText = promptReason;
+    } else if (subtitle) {
+      subtitle.innerText = 'Enter Your Details Below';
+    }
+
+    if (alertEl) {
+      alertEl.className = 'hn-exact-alert';
+      alertEl.innerText = '';
+      alertEl.style.display = 'none';
+    }
+
+    if (overlay) {
+      overlay.style.setProperty('display', 'flex', 'important');
+      overlay.style.setProperty('opacity', '1', 'important');
+      overlay.style.setProperty('visibility', 'visible', 'important');
+      overlay.style.setProperty('z-index', '999999', 'important');
+      overlay.classList.add('active');
+    }
+    document.body.style.overflow = 'hidden';
+
+    setTimeout(() => {
+      const emailInput = document.getElementById('hnAuthEmail');
+      if (emailInput) emailInput.focus();
+    }, 120);
+  };
+
+  const closeAuthModal = () => {
+    const overlay = document.getElementById('hnAuthModalOverlay');
+    if (overlay) {
+      overlay.style.setProperty('display', 'none', 'important');
+      overlay.classList.remove('active');
+    }
+    document.body.style.overflow = '';
+  };
+
+  const continueAsGuest = () => {
     closeAuthModal();
-  }
-};
+    showToast('Continuing as divine guest. Hare Krishna! 🌸');
+    if (typeof _pendingAuthCallback === 'function') {
+      const cb = _pendingAuthCallback;
+      _pendingAuthCallback = null;
+      cb();
+    }
+  };
+  window.continueAsGuest = continueAsGuest;
 
-const switchAuthTab = (tab) => {
-  const title = document.getElementById('hnAuthTitle');
-  const subtitle = document.getElementById('hnAuthSubtitle');
-  const signInForm = document.getElementById('hnSignInForm');
-  const regForm = document.getElementById('hnRegisterForm');
-  const alertEl = document.getElementById('hnAuthAlert');
+  const handleGoogleSignIn = async () => {
+    const client = window.supabaseClient || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase.createClient('https://wnaqfadlxrrvvjvqqbch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM') : null);
 
-  if (alertEl) {
-    alertEl.className = 'hn-exact-alert';
-    alertEl.innerText = '';
-    alertEl.style.display = 'none';
-  }
+    if (client && client.auth) {
+      showToast('Redirecting to Google Secure Sign-In... 🌸');
+      try {
+        const { data, error } = await client.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin + '/account.html'
+          }
+        });
+        if (error) {
+          setAuthAlert(error.message || 'Google OAuth error', 'error');
+          return;
+        }
+        if (data && data.url) {
+          window.location.href = data.url;
+          return;
+        }
+      } catch (err) {
+        setAuthAlert(err.message || 'Google Sign-in failed', 'error');
+      }
+    } else {
+      window.location.href = '/login.html';
+    }
+  };
+  window.handleGoogleSignIn = handleGoogleSignIn;
 
-  if (tab === 'signin') {
-    if (title) title.innerText = 'Welcome Back!';
-    if (subtitle) subtitle.innerText = 'Enter Your Details Below';
-    if (signInForm) signInForm.style.display = 'block';
-    if (regForm) regForm.style.display = 'none';
-    setTimeout(() => document.getElementById('hnAuthEmail')?.focus(), 100);
-  } else {
-    if (title) title.innerText = 'Create Account';
-    if (subtitle) subtitle.innerText = 'Enter Your Details Below to Join';
-    if (signInForm) signInForm.style.display = 'none';
-    if (regForm) regForm.style.display = 'block';
-    setTimeout(() => document.getElementById('hnRegName')?.focus(), 100);
-  }
-};
+  const handleAuthOverlayClick = (e) => {
+    if (e.target.id === 'hnAuthModalOverlay') {
+      closeAuthModal();
+    }
+  };
 
-const togglePasswordVisibility = (inputId, btn) => {
-  const input = document.getElementById(inputId);
-  if (!input) return;
-  const isPwd = input.type === 'password';
-  input.type = isPwd ? 'text' : 'password';
-  const icon = btn.querySelector('i');
-  if (icon) {
-    icon.className = isPwd ? 'bi bi-eye-slash' : 'bi bi-eye';
-  }
-};
+  const switchAuthTab = (tab) => {
+    const title = document.getElementById('hnAuthTitle');
+    const subtitle = document.getElementById('hnAuthSubtitle');
+    const signInForm = document.getElementById('hnSignInForm');
+    const regForm = document.getElementById('hnRegisterForm');
+    const alertEl = document.getElementById('hnAuthAlert');
 
-const setAuthAlert = (message, type = 'error') => {
-  const alertEl = document.getElementById('hnAuthAlert');
-  if (!alertEl) return;
-  alertEl.className = `hn-exact-alert ${type}`;
-  alertEl.innerText = message;
-  alertEl.style.display = 'block';
-};
-
-const handleAuthSignIn = async (e) => {
-  e.preventDefault();
-  const email = document.getElementById('hnAuthEmail').value.trim();
-  const password = document.getElementById('hnAuthPassword').value;
-  const btn = document.getElementById('hnSignInSubmitBtn');
-
-  if (!email || !password) {
-    setAuthAlert('Please fill in both email and password.');
-    return;
-  }
-
-  const originalContent = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span>Logging in...`;
-
-  try {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    }).then(r => r.json());
-
-    if (!res.success) {
-      throw new Error(res.message || 'Login failed. Please check your credentials.');
+    if (alertEl) {
+      alertEl.className = 'hn-exact-alert';
+      alertEl.innerText = '';
+      alertEl.style.display = 'none';
     }
 
-    localStorage.setItem('hn_auth_token', res.token);
-    localStorage.setItem('hn_user_profile', JSON.stringify(res.user));
-    localStorage.setItem('hn_user', JSON.stringify(res.user));
+    if (tab === 'signin') {
+      if (title) title.innerText = 'Welcome Back!';
+      if (subtitle) subtitle.innerText = 'Enter Your Details Below';
+      if (signInForm) signInForm.style.display = 'block';
+      if (regForm) regForm.style.display = 'none';
+      setTimeout(() => document.getElementById('hnAuthEmail')?.focus(), 100);
+    } else {
+      if (title) title.innerText = 'Create Account';
+      if (subtitle) subtitle.innerText = 'Enter Your Details Below to Join';
+      if (signInForm) signInForm.style.display = 'none';
+      if (regForm) regForm.style.display = 'block';
+      setTimeout(() => document.getElementById('hnRegName')?.focus(), 100);
+    }
+  };
 
-    setAuthAlert('Logged in successfully! 🌸', 'success');
+  const togglePasswordVisibility = (inputId, btn) => {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPwd = input.type === 'password';
+    input.type = isPwd ? 'text' : 'password';
+    const icon = btn.querySelector('i');
+    if (icon) {
+      icon.className = isPwd ? 'bi bi-eye-slash' : 'bi bi-eye';
+    }
+  };
 
-    setTimeout(() => {
-      closeAuthModal();
-      renderHeader();
-      showToast(`Welcome back, ${res.user.name.split(' ')[0]}! 🌸`);
-      window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user: res.user } }));
+  const setAuthAlert = (message, type = 'error') => {
+    const alertEl = document.getElementById('hnAuthAlert');
+    if (!alertEl) return;
+    alertEl.className = `hn-exact-alert ${type}`;
+    alertEl.innerText = message;
+    alertEl.style.display = 'block';
+  };
 
-      if (typeof _pendingAuthCallback === 'function') {
-        const cb = _pendingAuthCallback;
-        _pendingAuthCallback = null;
-        cb();
-      }
-    }, 450);
+  const handleAuthSignIn = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('hnAuthEmail').value.trim();
+    const password = document.getElementById('hnAuthPassword').value;
+    const btn = document.getElementById('hnSignInSubmitBtn');
 
-  } catch (err) {
-    setAuthAlert(err.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = originalContent;
-  }
-};
-
-const handleAuthRegister = async (e) => {
-  e.preventDefault();
-  const name = document.getElementById('hnRegName').value.trim();
-  const email = document.getElementById('hnRegEmail').value.trim();
-  const password = document.getElementById('hnRegPassword').value;
-  const btn = document.getElementById('hnRegisterSubmitBtn');
-
-  if (!name || !email || !password) {
-    setAuthAlert('Name, email, and password are required.');
-    return;
-  }
-
-  if (password.length < 6) {
-    setAuthAlert('Password must be at least 6 characters.');
-    return;
-  }
-
-  const originalContent = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span>Creating account...`;
-
-  try {
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password })
-    }).then(r => r.json());
-
-    if (!res.success) {
-      throw new Error(res.message || 'Registration failed.');
+    if (!email || !password) {
+      setAuthAlert('Please fill in both email and password.');
+      return;
     }
 
-    localStorage.setItem('hn_auth_token', res.token);
-    localStorage.setItem('hn_user_profile', JSON.stringify(res.user));
-    localStorage.setItem('hn_user', JSON.stringify(res.user));
+    const originalContent = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span>Logging in...`;
 
-    setAuthAlert('Account created successfully! 🌸', 'success');
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      }).then(r => r.json());
 
-    setTimeout(() => {
-      closeAuthModal();
-      renderHeader();
-      showToast(`Welcome to HariNama, ${res.user.name.split(' ')[0]}! 🌸`);
-      window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user: res.user } }));
-
-      if (typeof _pendingAuthCallback === 'function') {
-        const cb = _pendingAuthCallback;
-        _pendingAuthCallback = null;
-        cb();
+      if (!res.success) {
+        throw new Error(res.message || 'Login failed. Please check your credentials.');
       }
-    }, 450);
 
-  } catch (err) {
-    setAuthAlert(err.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = originalContent;
-  }
-};
+      localStorage.setItem('hn_auth_token', res.token);
+      localStorage.setItem('hn_user_profile', JSON.stringify(res.user));
+      localStorage.setItem('hn_user', JSON.stringify(res.user));
 
-const showForgotPasswordAlert = (e) => {
-  e.preventDefault();
-  setAuthAlert('Please reach out to support@harinama.com to reset your credentials.', 'error');
-};
+      setAuthAlert('Logged in successfully! 🌸', 'success');
 
-// Global Header Component
-const renderHeader = (activePage = '') => {
-  // Ensure favicon is present
-  if (!document.querySelector("link[rel*='icon']")) {
-    const favicon = document.createElement('link');
-    favicon.rel = 'icon';
-    favicon.type = 'image/jpeg';
-    favicon.href = '/assets/images/krishna-logo.jpg';
-    document.head.appendChild(favicon);
+      setTimeout(() => {
+        closeAuthModal();
+        renderHeader();
+        showToast(`Welcome back, ${res.user.name.split(' ')[0]}! 🌸`);
+        window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user: res.user } }));
 
-    const appleFavicon = document.createElement('link');
-    appleFavicon.rel = 'apple-touch-icon';
-    appleFavicon.href = '/assets/images/krishna-logo.jpg';
-    document.head.appendChild(appleFavicon);
-  }
+        if (typeof _pendingAuthCallback === 'function') {
+          const cb = _pendingAuthCallback;
+          _pendingAuthCallback = null;
+          cb();
+        }
+      }, 450);
 
-  const container = document.getElementById('hn-header-placeholder') || document.getElementById('cres-header-placeholder');
-  if (!container) return;
+    } catch (err) {
+      setAuthAlert(err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalContent;
+    }
+  };
 
-  const currentPath = window.location.pathname;
-  let active = activePage;
-  if (!active) {
-    if (currentPath.includes('collections')) active = 'collections';
-    else if (currentPath.includes('shop') || currentPath.includes('products') || currentPath.includes('product-details')) active = 'shop';
-    else if (currentPath.includes('about')) active = 'about';
-    else if (currentPath.includes('contact')) active = 'contact';
-    else if (currentPath.includes('mission')) active = 'mission';
-    else if (currentPath === '/' || currentPath.includes('index')) active = 'home';
-  }
+  const handleAuthRegister = async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('hnRegName').value.trim();
+    const email = document.getElementById('hnRegEmail').value.trim();
+    const password = document.getElementById('hnRegPassword').value;
+    const btn = document.getElementById('hnRegisterSubmitBtn');
 
-  const cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
-  const cartCount = cart.reduce((acc, i) => acc + (i.qty || 1), 0);
-  const loggedIn = isUserLoggedIn();
-  const user = getLoggedInUser();
+    if (!name || !email || !password) {
+      setAuthAlert('Name, email, and password are required.');
+      return;
+    }
 
-  const userActionMarkup = loggedIn && user ? `
+    if (password.length < 6) {
+      setAuthAlert('Password must be at least 6 characters.');
+      return;
+    }
+
+    const originalContent = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span>Creating account...`;
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      }).then(r => r.json());
+
+      if (!res.success) {
+        throw new Error(res.message || 'Registration failed.');
+      }
+
+      localStorage.setItem('hn_auth_token', res.token);
+      localStorage.setItem('hn_user_profile', JSON.stringify(res.user));
+      localStorage.setItem('hn_user', JSON.stringify(res.user));
+
+      setAuthAlert('Account created successfully! 🌸', 'success');
+
+      setTimeout(() => {
+        closeAuthModal();
+        renderHeader();
+        showToast(`Welcome to HariNama, ${res.user.name.split(' ')[0]}! 🌸`);
+        window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user: res.user } }));
+
+        if (typeof _pendingAuthCallback === 'function') {
+          const cb = _pendingAuthCallback;
+          _pendingAuthCallback = null;
+          cb();
+        }
+      }, 450);
+
+    } catch (err) {
+      setAuthAlert(err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalContent;
+    }
+  };
+
+  const showForgotPasswordAlert = (e) => {
+    e.preventDefault();
+    setAuthAlert('Please reach out to support@harinama.com to reset your credentials.', 'error');
+  };
+
+  // Global Header Component
+  const renderHeader = (activePage = '') => {
+    // Ensure favicon is present
+    if (!document.querySelector("link[rel*='icon']")) {
+      const favicon = document.createElement('link');
+      favicon.rel = 'icon';
+      favicon.type = 'image/jpeg';
+      favicon.href = '/assets/images/krishna-logo.jpg';
+      document.head.appendChild(favicon);
+
+      const appleFavicon = document.createElement('link');
+      appleFavicon.rel = 'apple-touch-icon';
+      appleFavicon.href = '/assets/images/krishna-logo.jpg';
+      document.head.appendChild(appleFavicon);
+    }
+
+    const container = document.getElementById('hn-header-placeholder') || document.getElementById('cres-header-placeholder');
+    if (!container) return;
+
+    const currentPath = window.location.pathname;
+    let active = activePage;
+    if (!active) {
+      if (currentPath.includes('collections')) active = 'collections';
+      else if (currentPath.includes('shop') || currentPath.includes('products') || currentPath.includes('product-details')) active = 'shop';
+      else if (currentPath.includes('about')) active = 'about';
+      else if (currentPath.includes('contact')) active = 'contact';
+      else if (currentPath.includes('mission')) active = 'mission';
+      else if (currentPath === '/' || currentPath.includes('index')) active = 'home';
+    }
+
+    const cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
+    const cartCount = cart.reduce((acc, i) => acc + (i.qty || 1), 0);
+    const loggedIn = isUserLoggedIn();
+    const user = getLoggedInUser();
+
+    const userActionMarkup = loggedIn && user ? `
     <div class="hn-user-dropdown" id="hnUserDropdown">
       <button type="button" class="hn-header-account-btn logged-in text-decoration-none" title="Account Menu (${user.name})" id="hnUserAccountBtn" onclick="toggleUserDropdown(event)">
         <div class="hn-account-avatar-wrap">
@@ -1132,6 +1082,7 @@ const renderHeader = (activePage = '') => {
           <a href="/account.html?tab=addresses"><i class="bi bi-geo-alt"></i>Saved Addresses</a>
           <a href="/wishlist.html"><i class="bi bi-heart"></i>My Wishlist</a>
           <a href="/cart.html"><i class="bi bi-bag"></i>Shopping Cart</a>
+          ${isAdminUser(user) ? `<a href="${_getAdminRoute()}" class="text-danger fw-bold"><i class="bi bi-shield-lock text-danger"></i>Admin Portal</a>` : ''}
         </div>
         <div class="hn-user-menu-footer">
           <button type="button" class="hn-menu-logout-btn" onclick="logoutUser(event)">
@@ -1152,7 +1103,7 @@ const renderHeader = (activePage = '') => {
     </a>
   `;
 
-  container.innerHTML = `
+    container.innerHTML = `
     <!-- Main Navigation Header -->
     <header class="hn-header">
       <div class="container">
@@ -1180,7 +1131,7 @@ const renderHeader = (activePage = '') => {
 
           <!-- Right Action Icons: Search -> Cart -> Sign In / Profile (LAST) -->
           <div class="d-flex align-items-center gap-2 gap-md-3">
-            <a href="/shop.html" class="hn-icon-btn" title="Search Products">
+            <a href="/shop.html" class="hn-icon-btn d-none d-md-inline-flex" title="Search Products">
               <i class="bi bi-search"></i>
             </a>
 
@@ -1259,10 +1210,12 @@ const renderHeader = (activePage = '') => {
                 <span><i class="bi bi-heart me-2"></i>My Wishlist</span>
                 <i class="bi bi-chevron-right small text-muted"></i>
               </a>
-              <a href="/admin.html" class="hn-mobile-nav-link admin-link mt-1">
-                <span><i class="bi bi-shield-lock me-2"></i>Admin Dashboard</span>
-                <i class="bi bi-arrow-up-right small"></i>
-              </a>
+              ${isAdminUser(user) ? `
+                <a href="${_getAdminRoute()}" class="hn-mobile-nav-link admin-link mt-1">
+                  <span><i class="bi bi-shield-lock me-2"></i>Admin Dashboard</span>
+                  <i class="bi bi-arrow-up-right small"></i>
+                </a>
+              ` : ''}
             </div>
           </div>
         </div>
@@ -1270,14 +1223,14 @@ const renderHeader = (activePage = '') => {
       </div>
     </header>
   `;
-};
+  };
 
-// Global Footer Component
-const renderFooter = () => {
-  const container = document.getElementById('hn-footer-placeholder') || document.getElementById('cres-footer-placeholder');
-  if (!container) return;
+  // Global Footer Component
+  const renderFooter = () => {
+    const container = document.getElementById('hn-footer-placeholder') || document.getElementById('cres-footer-placeholder');
+    if (!container) return;
 
-  container.innerHTML = `
+    container.innerHTML = `
     <footer class="hn-footer">
       <div class="container">
         <div class="row g-4">
@@ -1336,64 +1289,64 @@ const renderFooter = () => {
         </div>
 
         <div class="hn-footer-bottom">
-          <div>© ${new Date().getFullYear()} Harinama Store. All rights reserved. &nbsp;|&nbsp; Made with love for a higher purpose. &nbsp;|&nbsp; Hare Krishna!</div>
+          <div>© ${new Date().getFullYear()} Harinama Store. All rights reserved. &nbsp;|&nbsp; Hare Krishna!</div>
         </div>
       </div>
     </footer>
   `;
-};
+  };
 
-// Universal Product Catalog Resolver (Handles UUID, legacy prod-XXX, slug, or title)
-const findCatalogProduct = (idOrSlug) => {
-  if (!idOrSlug) return null;
-  const str = String(idOrSlug).trim();
-  const list = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
-  const staticList = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA._staticProducts)) ? HARINAMA_DATA._staticProducts : [];
-  const allProds = [...list, ...staticList];
+  // Universal Product Catalog Resolver (Handles UUID, legacy prod-XXX, slug, or title)
+  const findCatalogProduct = (idOrSlug) => {
+    if (!idOrSlug) return null;
+    const str = String(idOrSlug).trim();
+    const list = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
+    const staticList = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA._staticProducts)) ? HARINAMA_DATA._staticProducts : [];
+    const allProds = [...list, ...staticList];
 
-  // 1. Direct match on id, legacy_id, sku, or slug
-  let found = allProds.find(p => 
-    p && (p.id === str || p.legacy_id === str || p.sku === str || p.slug === str)
-  );
-  if (found) return found;
-
-  // 2. Case-insensitive slug / title match
-  const lower = str.toLowerCase();
-  found = allProds.find(p => 
-    p && (
-      (p.slug && p.slug.toLowerCase() === lower) ||
-      (p.name && p.name.toLowerCase() === lower) ||
-      (p.title && p.title.toLowerCase() === lower)
-    )
-  );
-  if (found) return found;
-
-  // 3. Numeric ID match (e.g. prod-003 or index 3 or uuid ending in 003)
-  const numMatch = str.match(/\d+/);
-  if (numMatch) {
-    const num = parseInt(numMatch[0], 10);
-    found = allProds.find(p => {
-      if (!p) return false;
-      const idNum = String(p.id).match(/\d+$/);
-      if (idNum && parseInt(idNum[0], 10) === num) return true;
-      const legNum = String(p.legacy_id || p.sku || '').match(/\d+$/);
-      if (legNum && parseInt(legNum[0], 10) === num) return true;
-      return false;
-    });
+    // 1. Direct match on id, legacy_id, sku, or slug
+    let found = allProds.find(p =>
+      p && (p.id === str || p.legacy_id === str || p.sku === str || p.slug === str)
+    );
     if (found) return found;
-  }
 
-  return null;
-};
-window.findCatalogProduct = findCatalogProduct;
+    // 2. Case-insensitive slug / title match
+    const lower = str.toLowerCase();
+    found = allProds.find(p =>
+      p && (
+        (p.slug && p.slug.toLowerCase() === lower) ||
+        (p.name && p.name.toLowerCase() === lower) ||
+        (p.title && p.title.toLowerCase() === lower)
+      )
+    );
+    if (found) return found;
 
-// Render Product Card (Exact match to reference image with dual-ID wishlist awareness)
-const renderProductCard = (p) => {
-  if (!p) return '';
-  const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
-  const isWish = wishlist.includes(p.id) || (p.legacy_id && wishlist.includes(p.legacy_id)) || (p.slug && wishlist.includes(p.slug));
+    // 3. Numeric ID match (e.g. prod-003 or index 3 or uuid ending in 003)
+    const numMatch = str.match(/\d+/);
+    if (numMatch) {
+      const num = parseInt(numMatch[0], 10);
+      found = allProds.find(p => {
+        if (!p) return false;
+        const idNum = String(p.id).match(/\d+$/);
+        if (idNum && parseInt(idNum[0], 10) === num) return true;
+        const legNum = String(p.legacy_id || p.sku || '').match(/\d+$/);
+        if (legNum && parseInt(legNum[0], 10) === num) return true;
+        return false;
+      });
+      if (found) return found;
+    }
 
-  return `
+    return null;
+  };
+  window.findCatalogProduct = findCatalogProduct;
+
+  // Render Product Card (Exact match to reference image with dual-ID wishlist awareness)
+  const renderProductCard = (p) => {
+    if (!p) return '';
+    const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+    const isWish = wishlist.includes(p.id) || (p.legacy_id && wishlist.includes(p.legacy_id)) || (p.slug && wishlist.includes(p.slug));
+
+    return `
     <div class="col-6 col-md-4 col-lg-2">
       <div class="hn-product-card" data-product-id="${p.id}" data-legacy-id="${p.legacy_id || ''}">
         
@@ -1424,233 +1377,233 @@ const renderProductCard = (p) => {
       </div>
     </div>
   `;
-};
-window.renderProductCard = renderProductCard;
+  };
+  window.renderProductCard = renderProductCard;
 
-// Cart Helpers with Universal Product Resolution
-const handleAddToCart = (productId, qty = 1, selectedMaterial = null, btnElement = null) => {
-  if (!isUserLoggedIn()) {
-    openAuthModal(() => handleAddToCart(productId, qty, selectedMaterial, btnElement), 'Sign in to add divine items to your sacred cart 🌸');
-    return;
-  }
+  // Cart Helpers with Universal Product Resolution
+  const handleAddToCart = (productId, qty = 1, selectedMaterial = null, btnElement = null) => {
+    if (!isUserLoggedIn()) {
+      openAuthModal(() => handleAddToCart(productId, qty, selectedMaterial, btnElement), 'Sign in to add divine items to your sacred cart 🌸');
+      return;
+    }
 
-  const product = findCatalogProduct(productId);
-  if (!product) {
-    showToast('Product not found in catalog.', 'error');
-    return;
-  }
+    const product = findCatalogProduct(productId);
+    if (!product) {
+      showToast('Product not found in catalog.', 'error');
+      return;
+    }
 
-  const material = selectedMaterial || product.material || 'Acrylic';
-  const quantity = Math.max(1, Number(qty) || 1);
+    const material = selectedMaterial || product.material || 'Acrylic';
+    const quantity = Math.max(1, Number(qty) || 1);
 
-  let cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
-  
-  const canonId = product.id;
-  const legacyId = product.legacy_id || product.id;
+    let cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
 
-  const existingIndex = cart.findIndex(item => 
-    (item.id === canonId || (legacyId && item.id === legacyId) || item.id === productId) &&
-    (item.material === material)
-  );
+    const canonId = product.id;
+    const legacyId = product.legacy_id || product.id;
 
-  if (existingIndex > -1) {
-    cart[existingIndex].qty += quantity;
-    cart[existingIndex].id = canonId; // maintain canonical id
-    if (legacyId) cart[existingIndex].legacy_id = legacyId;
-  } else {
-    cart.push({
-      id: canonId,
-      legacy_id: legacyId,
-      name: product.title || product.name,
-      price: Number(product.price) || 0,
-      image: product.image || product.primary_image,
-      material: material,
-      qty: quantity
-    });
-  }
-
-  localStorage.setItem('hn_cart', JSON.stringify(cart));
-  localStorage.setItem('cres_cart', JSON.stringify(cart));
-
-  // Update badge with micro bounce animation
-  const totalCount = cart.reduce((acc, i) => acc + (i.qty || 1), 0);
-  const badge = document.getElementById('hn-cart-badge') || document.getElementById('cres-cart-badge');
-  if (badge) {
-    badge.innerText = totalCount;
-    badge.classList.remove('hn-badge-bounce');
-    void badge.offsetWidth; // Force CSS reflow to re-trigger keyframe
-    badge.classList.add('hn-badge-bounce');
-  }
-
-  // Instant inline visual feedback on the button
-  const triggerBtn = btnElement || 
-    (window.event && window.event.target ? window.event.target.closest('button') : null) || 
-    document.querySelector(`[data-product-id="${canonId}"] .hn-btn-card-add`) ||
-    document.querySelector(`[data-product-id="${productId}"] .hn-btn-card-add`);
-  if (triggerBtn) {
-    const origHtml = triggerBtn.innerHTML;
-    triggerBtn.innerHTML = `<i class="bi bi-check2"></i> Added! ✓`;
-    triggerBtn.style.backgroundColor = '#166534';
-    triggerBtn.style.color = '#FFFFFF';
-    triggerBtn.disabled = true;
-    setTimeout(() => {
-      triggerBtn.innerHTML = origHtml;
-      triggerBtn.style.backgroundColor = '';
-      triggerBtn.style.color = '';
-      triggerBtn.disabled = false;
-    }, 1200);
-  }
-
-  // Dispatch global event for reactive listeners
-  window.dispatchEvent(new CustomEvent('hn_cart_updated', { detail: { cart, totalCount } }));
-
-  showToast(`Added "${product.title || product.name}" (${quantity}) to your cart 🌸`);
-};
-window.handleAddToCart = handleAddToCart;
-
-// Buy Now Helper
-const handleBuyNow = (productId, qty = 1, selectedMaterial = null) => {
-  if (!isUserLoggedIn()) {
-    openAuthModal(() => handleBuyNow(productId, qty, selectedMaterial), 'Sign in to proceed to instant checkout 🌸');
-    return;
-  }
-
-  handleAddToCart(productId, qty, selectedMaterial);
-  setTimeout(() => {
-    window.location.href = '/checkout.html';
-  }, 300);
-};
-window.handleBuyNow = handleBuyNow;
-
-// Wishlist Helper with Dual-ID Persistence & UI Sync
-const toggleWishlist = (productId, btn = null) => {
-  if (!isUserLoggedIn()) {
-    openAuthModal(() => toggleWishlist(productId, btn), 'Sign in to save items to your sacred wishlist 🌸');
-    return;
-  }
-
-  const prod = findCatalogProduct(productId);
-  const canonId = prod ? prod.id : productId;
-  const legacyId = prod ? prod.legacy_id : null;
-  const slug = prod ? prod.slug : null;
-
-  let wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
-  const exists = wishlist.some(id => 
-    id === canonId || (legacyId && id === legacyId) || (slug && id === slug) || id === productId
-  );
-
-  let isNowWish = false;
-  if (exists) {
-    wishlist = wishlist.filter(id => 
-      id !== canonId && id !== legacyId && id !== slug && id !== productId
+    const existingIndex = cart.findIndex(item =>
+      (item.id === canonId || (legacyId && item.id === legacyId) || item.id === productId) &&
+      (item.material === material)
     );
-    isNowWish = false;
-    showToast('Item removed from your sacred wishlist.');
-  } else {
-    wishlist.push(canonId);
-    if (legacyId && legacyId !== canonId) {
-      wishlist.push(legacyId);
+
+    if (existingIndex > -1) {
+      cart[existingIndex].qty += quantity;
+      cart[existingIndex].id = canonId; // maintain canonical id
+      if (legacyId) cart[existingIndex].legacy_id = legacyId;
+    } else {
+      cart.push({
+        id: canonId,
+        legacy_id: legacyId,
+        name: product.title || product.name,
+        price: Number(product.price) || 0,
+        image: product.image || product.primary_image,
+        material: material,
+        qty: quantity
+      });
     }
-    isNowWish = true;
-    const title = prod ? (prod.title || prod.name) : 'Item';
-    showToast(`Saved "${title}" to your sacred wishlist 🌸`);
-  }
 
-  localStorage.setItem('hn_wishlist', JSON.stringify(wishlist));
+    localStorage.setItem('hn_cart', JSON.stringify(cart));
+    localStorage.setItem('cres_cart', JSON.stringify(cart));
 
-  // Update ALL heart buttons in the DOM matching this product
-  const idSelectors = [
-    `[data-product-id="${canonId}"] .hn-card-wishlist`,
-    `[data-product-id="${productId}"] .hn-card-wishlist`
-  ];
-  if (legacyId) {
-    idSelectors.push(`[data-product-id="${legacyId}"] .hn-card-wishlist`);
-    idSelectors.push(`[data-legacy-id="${legacyId}"] .hn-card-wishlist`);
-  }
-  if (slug) {
-    idSelectors.push(`[data-product-id="${slug}"] .hn-card-wishlist`);
-  }
-
-  const buttonsToUpdate = new Set();
-  if (btn) buttonsToUpdate.add(btn);
-  
-  // Also check product details wishlist button
-  const detailBtn = document.getElementById('hn-detail-wishlist-btn');
-  if (detailBtn) buttonsToUpdate.add(detailBtn);
-
-  document.querySelectorAll(idSelectors.join(', ')).forEach(b => buttonsToUpdate.add(b));
-
-  buttonsToUpdate.forEach(targetBtn => {
-    targetBtn.classList.toggle('active', isNowWish);
-    targetBtn.classList.toggle('text-danger', isNowWish);
-    const icon = targetBtn.querySelector('i');
-    if (icon) {
-      icon.className = isNowWish ? 'bi bi-heart-fill text-danger' : 'bi bi-heart';
+    // Update badge with micro bounce animation
+    const totalCount = cart.reduce((acc, i) => acc + (i.qty || 1), 0);
+    const badge = document.getElementById('hn-cart-badge') || document.getElementById('cres-cart-badge');
+    if (badge) {
+      badge.innerText = totalCount;
+      badge.classList.remove('hn-badge-bounce');
+      void badge.offsetWidth; // Force CSS reflow to re-trigger keyframe
+      badge.classList.add('hn-badge-bounce');
     }
-  });
 
-  window.dispatchEvent(new CustomEvent('hn_wishlist_updated', { detail: wishlist }));
-};
-window.toggleWishlist = toggleWishlist;
+    // Instant inline visual feedback on the button
+    const triggerBtn = btnElement ||
+      (window.event && window.event.target ? window.event.target.closest('button') : null) ||
+      document.querySelector(`[data-product-id="${canonId}"] .hn-btn-card-add`) ||
+      document.querySelector(`[data-product-id="${productId}"] .hn-btn-card-add`);
+    if (triggerBtn) {
+      const origHtml = triggerBtn.innerHTML;
+      triggerBtn.innerHTML = `<i class="bi bi-check2"></i> Added! ✓`;
+      triggerBtn.style.backgroundColor = '#166534';
+      triggerBtn.style.color = '#FFFFFF';
+      triggerBtn.disabled = true;
+      setTimeout(() => {
+        triggerBtn.innerHTML = origHtml;
+        triggerBtn.style.backgroundColor = '';
+        triggerBtn.style.color = '';
+        triggerBtn.disabled = false;
+      }, 1200);
+    }
 
-// Universal Scroll Reveal Animation Engine
-const initScrollAnimations = () => {
-  const elements = document.querySelectorAll('.hn-reveal, .hn-reveal-stagger');
-  if (!elements.length) return;
+    // Dispatch global event for reactive listeners
+    window.dispatchEvent(new CustomEvent('hn_cart_updated', { detail: { cart, totalCount } }));
 
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    elements.forEach(el => el.classList.add('hn-revealed'));
-    return;
-  }
+    showToast(`Added "${product.title || product.name}" (${quantity}) to your cart 🌸`);
+  };
+  window.handleAddToCart = handleAddToCart;
 
-  const observer = new IntersectionObserver((entries, obs) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('hn-revealed');
-        obs.unobserve(entry.target);
+  // Buy Now Helper
+  const handleBuyNow = (productId, qty = 1, selectedMaterial = null) => {
+    if (!isUserLoggedIn()) {
+      openAuthModal(() => handleBuyNow(productId, qty, selectedMaterial), 'Sign in to proceed to instant checkout 🌸');
+      return;
+    }
+
+    handleAddToCart(productId, qty, selectedMaterial);
+    setTimeout(() => {
+      window.location.href = '/checkout.html';
+    }, 300);
+  };
+  window.handleBuyNow = handleBuyNow;
+
+  // Wishlist Helper with Dual-ID Persistence & UI Sync
+  const toggleWishlist = (productId, btn = null) => {
+    if (!isUserLoggedIn()) {
+      openAuthModal(() => toggleWishlist(productId, btn), 'Sign in to save items to your sacred wishlist 🌸');
+      return;
+    }
+
+    const prod = findCatalogProduct(productId);
+    const canonId = prod ? prod.id : productId;
+    const legacyId = prod ? prod.legacy_id : null;
+    const slug = prod ? prod.slug : null;
+
+    let wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+    const exists = wishlist.some(id =>
+      id === canonId || (legacyId && id === legacyId) || (slug && id === slug) || id === productId
+    );
+
+    let isNowWish = false;
+    if (exists) {
+      wishlist = wishlist.filter(id =>
+        id !== canonId && id !== legacyId && id !== slug && id !== productId
+      );
+      isNowWish = false;
+      showToast('Item removed from your sacred wishlist.');
+    } else {
+      wishlist.push(canonId);
+      if (legacyId && legacyId !== canonId) {
+        wishlist.push(legacyId);
+      }
+      isNowWish = true;
+      const title = prod ? (prod.title || prod.name) : 'Item';
+      showToast(`Saved "${title}" to your sacred wishlist 🌸`);
+    }
+
+    localStorage.setItem('hn_wishlist', JSON.stringify(wishlist));
+
+    // Update ALL heart buttons in the DOM matching this product
+    const idSelectors = [
+      `[data-product-id="${canonId}"] .hn-card-wishlist`,
+      `[data-product-id="${productId}"] .hn-card-wishlist`
+    ];
+    if (legacyId) {
+      idSelectors.push(`[data-product-id="${legacyId}"] .hn-card-wishlist`);
+      idSelectors.push(`[data-legacy-id="${legacyId}"] .hn-card-wishlist`);
+    }
+    if (slug) {
+      idSelectors.push(`[data-product-id="${slug}"] .hn-card-wishlist`);
+    }
+
+    const buttonsToUpdate = new Set();
+    if (btn) buttonsToUpdate.add(btn);
+
+    // Also check product details wishlist button
+    const detailBtn = document.getElementById('hn-detail-wishlist-btn');
+    if (detailBtn) buttonsToUpdate.add(detailBtn);
+
+    document.querySelectorAll(idSelectors.join(', ')).forEach(b => buttonsToUpdate.add(b));
+
+    buttonsToUpdate.forEach(targetBtn => {
+      targetBtn.classList.toggle('active', isNowWish);
+      targetBtn.classList.toggle('text-danger', isNowWish);
+      const icon = targetBtn.querySelector('i');
+      if (icon) {
+        icon.className = isNowWish ? 'bi bi-heart-fill text-danger' : 'bi bi-heart';
       }
     });
-  }, {
-    threshold: 0.1,
-    rootMargin: '0px 0px -40px 0px'
-  });
 
-  elements.forEach(el => observer.observe(el));
-};
+    window.dispatchEvent(new CustomEvent('hn_wishlist_updated', { detail: wishlist }));
+  };
+  window.toggleWishlist = toggleWishlist;
 
-// Auto-run when DOM is loaded
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => setTimeout(initScrollAnimations, 100));
-} else {
-  setTimeout(initScrollAnimations, 100);
-}
+  // Universal Scroll Reveal Animation Engine
+  const initScrollAnimations = () => {
+    const elements = document.querySelectorAll('.hn-reveal, .hn-reveal-stagger');
+    if (!elements.length) return;
 
-// Global Window Exports for Inline HTML Handlers
-window.formatPrice = formatPrice;
-window.renderRatingStars = renderRatingStars;
-window.showToast = showToast;
-window.isUserLoggedIn = isUserLoggedIn;
-window.getLoggedInUser = getLoggedInUser;
-window.logoutUser = logoutUser;
-window.toggleUserDropdown = toggleUserDropdown;
-window.ensureAuthModal = ensureAuthModal;
-window.openAuthModal = openAuthModal;
-window.closeAuthModal = closeAuthModal;
-window.switchAuthTab = switchAuthTab;
-window.togglePasswordVisibility = togglePasswordVisibility;
-window.handleAuthSignIn = handleAuthSignIn;
-window.handleAuthRegister = handleAuthRegister;
-window.showForgotPasswordAlert = showForgotPasswordAlert;
-window.renderHeader = renderHeader;
-window.renderFooter = renderFooter;
-window.renderProductCard = renderProductCard;
-window.findCatalogProduct = findCatalogProduct;
-window.handleAddToCart = handleAddToCart;
-window.handleBuyNow = handleBuyNow;
-window.toggleWishlist = toggleWishlist;
-window.continueAsGuest = continueAsGuest;
-window.handleGoogleSignIn = handleGoogleSignIn;
-window.handleAuthOverlayClick = handleAuthOverlayClick;
-window.handleHeaderAccountClick = handleHeaderAccountClick;
-window.initScrollAnimations = initScrollAnimations;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      elements.forEach(el => el.classList.add('hn-revealed'));
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('hn-revealed');
+          obs.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.1,
+      rootMargin: '0px 0px -40px 0px'
+    });
+
+    elements.forEach(el => observer.observe(el));
+  };
+
+  // Auto-run when DOM is loaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(initScrollAnimations, 100));
+  } else {
+    setTimeout(initScrollAnimations, 100);
+  }
+
+  // Global Window Exports for Inline HTML Handlers
+  window.formatPrice = formatPrice;
+  window.renderRatingStars = renderRatingStars;
+  window.showToast = showToast;
+  window.isUserLoggedIn = isUserLoggedIn;
+  window.getLoggedInUser = getLoggedInUser;
+  window.logoutUser = logoutUser;
+  window.toggleUserDropdown = toggleUserDropdown;
+  window.ensureAuthModal = ensureAuthModal;
+  window.openAuthModal = openAuthModal;
+  window.closeAuthModal = closeAuthModal;
+  window.switchAuthTab = switchAuthTab;
+  window.togglePasswordVisibility = togglePasswordVisibility;
+  window.handleAuthSignIn = handleAuthSignIn;
+  window.handleAuthRegister = handleAuthRegister;
+  window.showForgotPasswordAlert = showForgotPasswordAlert;
+  window.renderHeader = renderHeader;
+  window.renderFooter = renderFooter;
+  window.renderProductCard = renderProductCard;
+  window.findCatalogProduct = findCatalogProduct;
+  window.handleAddToCart = handleAddToCart;
+  window.handleBuyNow = handleBuyNow;
+  window.toggleWishlist = toggleWishlist;
+  window.continueAsGuest = continueAsGuest;
+  window.handleGoogleSignIn = handleGoogleSignIn;
+  window.handleAuthOverlayClick = handleAuthOverlayClick;
+  window.handleHeaderAccountClick = handleHeaderAccountClick;
+  window.initScrollAnimations = initScrollAnimations;
 })();

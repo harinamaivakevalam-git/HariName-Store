@@ -2894,3 +2894,9 @@ a.hn-btn-gold:active,
   align-items: center;
   gap: 5px;
 }
+
+/* Global smooth animations */
+html { scroll-behavior: smooth; }
+a, button, .btn, .card, .nav-link { transition: all 0.2s ease; }
+body { opacity: 0; animation: fadeIn 0.5s forwards; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

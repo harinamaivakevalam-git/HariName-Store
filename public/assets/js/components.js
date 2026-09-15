@@ -2,7 +2,7 @@
  * HARINAMA STORE - Reusable Components & Layout Renderers
  * Exact Match to Reference Specification
  */
-
+(function() {
 const formatPrice = (num) => {
   const amount = Number(num) || 0;
   return `₹${amount.toLocaleString('en-IN')}`;
@@ -1504,3 +1504,4 @@ window.continueAsGuest = continueAsGuest;
 window.handleGoogleSignIn = handleGoogleSignIn;
 window.handleAuthOverlayClick = handleAuthOverlayClick;
 window.handleHeaderAccountClick = handleHeaderAccountClick;
+})();

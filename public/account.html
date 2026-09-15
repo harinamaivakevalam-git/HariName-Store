@@ -283,11 +283,24 @@
   <!-- Global Footer -->
   <div id="hn-footer-placeholder"></div>
 
+  <!-- Supabase JS Client v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
-  <script src="/assets/js/components.js?v=15"></script>
+  <script src="/assets/js/components.js?v=16"></script>
   <script>
+    const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+
+    let sbClient = null;
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      try {
+        sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      } catch (err) {
+        console.warn('Supabase init warning:', err);
+      }
+    }
     function initAccountPage() {
       const loggedIn = isUserLoggedIn();
       const user = getLoggedInUser();
@@ -424,6 +437,48 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      // Check if redirected back from Google OAuth
+      if (sbClient && sbClient.auth) {
+        sbClient.auth.getSession().then(({ data: { session } }) => {
+          if (session && session.user) {
+            const user = {
+              id: session.user.id,
+              email: session.user.email,
+              name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email.split('@')[0],
+              avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+              role: 'customer'
+            };
+            localStorage.setItem('hn_auth_token', session.access_token);
+            localStorage.setItem('hn_user_profile', JSON.stringify(user));
+            localStorage.setItem('hn_user', JSON.stringify(user));
+            localStorage.setItem('token', session.access_token);
+            localStorage.setItem('user', JSON.stringify(user));
+            showToast(`Welcome back, ${user.name}! 🌸`);
+            renderHeader('account');
+            initAccountPage();
+          }
+        }).catch(err => console.warn('Supabase session lookup:', err));
+
+        sbClient.auth.onAuthStateChange((event, session) => {
+          if (session && session.user) {
+            const user = {
+              id: session.user.id,
+              email: session.user.email,
+              name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email.split('@')[0],
+              avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+              role: 'customer'
+            };
+            localStorage.setItem('hn_auth_token', session.access_token);
+            localStorage.setItem('hn_user_profile', JSON.stringify(user));
+            localStorage.setItem('hn_user', JSON.stringify(user));
+            localStorage.setItem('token', session.access_token);
+            localStorage.setItem('user', JSON.stringify(user));
+            renderHeader('account');
+            initAccountPage();
+          }
+        });
+      }
+
       renderHeader('account');
       renderFooter();
       initAccountPage();

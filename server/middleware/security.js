@@ -40,7 +40,8 @@ const helmetConfig = helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://cdn.jsdelivr.net", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "blob:", "https://images.unsplash.com", "https://*.supabase.co", "https://cdn.jsdelivr.net", "https://*"],
-      connectSrc: ["'self'", "https://api.razorpay.com", "https://api.stripe.com", "https://*.supabase.co"],
+      connectSrc: ["'self'", "https://api.razorpay.com", "https://api.stripe.com", "https://*.supabase.co", "https://api.web3forms.com"],
+      formAction: ["'self'", "https://api.web3forms.com"],
       frameSrc: ["'self'", "https://api.razorpay.com", "https://js.stripe.com"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: []

@@ -1336,9 +1336,10 @@
               Beautiful devotional products and gifts designed to keep Krishna in your heart and everyday life.
             </p>
             <div class="hn-footer-social">
-              <a href="https://instagram.com" target="_blank" title="Instagram"><i class="bi bi-instagram"></i></a>
-              <a href="https://youtube.com" target="_blank" title="YouTube"><i class="bi bi-youtube"></i></a>
-              <a href="https://facebook.com" target="_blank" title="Facebook"><i class="bi bi-facebook"></i></a>
+              <a href="https://open.spotify.com/artist/0MhdmOuZhlQkAYJIBxpRJv" target="_blank" rel="noopener" title="Spotify"><i class="bi bi-spotify"></i></a>
+              <a href="https://instagram.com/harinamaevakevalam" target="_blank" rel="noopener" title="Instagram"><i class="bi bi-instagram"></i></a>
+              <a href="https://facebook.com/share/1Gw1BJ1iXy" target="_blank" rel="noopener" title="Facebook"><i class="bi bi-facebook"></i></a>
+              <a href="https://www.youtube.com/@Hari-namaevakevalam" target="_blank" rel="noopener" title="YouTube"><i class="bi bi-youtube"></i></a>
             </div>
           </div>
 
@@ -1369,9 +1370,10 @@
           <div class="col-6 col-lg-2">
             <div class="hn-footer-title">Follow Us</div>
             <div class="d-flex flex-column gap-1">
-              <a href="https://instagram.com" target="_blank"><i class="bi bi-instagram me-2"></i>Instagram</a>
-              <a href="https://youtube.com" target="_blank"><i class="bi bi-youtube me-2"></i>YouTube</a>
-              <a href="https://facebook.com" target="_blank"><i class="bi bi-facebook me-2"></i>Facebook</a>
+              <a href="https://open.spotify.com/artist/0MhdmOuZhlQkAYJIBxpRJv" target="_blank" rel="noopener"><i class="bi bi-spotify me-2"></i>Spotify</a>
+              <a href="https://instagram.com/harinamaevakevalam" target="_blank" rel="noopener"><i class="bi bi-instagram me-2"></i>Instagram</a>
+              <a href="https://facebook.com/share/1Gw1BJ1iXy" target="_blank" rel="noopener"><i class="bi bi-facebook me-2"></i>Facebook</a>
+              <a href="https://www.youtube.com/@Hari-namaevakevalam" target="_blank" rel="noopener"><i class="bi bi-youtube me-2"></i>YouTube</a>
             </div>
           </div>
 

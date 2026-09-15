@@ -1,20 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Contact Us — Harinama Store</title>
   <meta name="description" content="Get in touch with Harinama Store for custom orders, wholesale, or support.">
-  
+
   <!-- Google Fonts: Poppins Master Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800&display=swap"
+    rel="stylesheet">
+
   <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  
+
   <!-- Harinama Store Master Stylesheet -->
   <link rel="stylesheet" href="/assets/css/style.css?v=4">
   <!-- Brand Favicon -->
@@ -22,6 +25,7 @@
   <link rel="shortcut icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/assets/images/krishna-logo.jpg">
 </head>
+
 <body>
 
   <!-- Top Announcement Bar & Header -->
@@ -29,18 +33,18 @@
 
   <main class="py-5">
     <div class="container">
-      
+
       <div class="text-center mb-5">
         <h1 class="hn-section-title">Contact Us</h1>
         <div class="hn-section-subtitle">We'd love to hear from you!</div>
       </div>
 
       <div class="row g-4 g-lg-5 justify-content-center">
-        
+
         <!-- Left: Contact Details Cards (Exact match to reference) -->
         <div class="col-lg-5">
           <div class="d-flex flex-column gap-3">
-            
+
             <!-- Email -->
             <div class="bg-white border rounded p-3 d-flex align-items-center gap-3 shadow-sm">
               <div class="hn-why-circle mb-0" style="width: 50px; height: 50px; font-size: 1.3rem;">
@@ -48,12 +52,13 @@
               </div>
               <div>
                 <div class="small text-muted">Email</div>
-                <a href="mailto:support@harinama.store" class="fw-semibold text-navy">support@harinama.store</a>
+                <a href="mailto:harinamaivakevalam@gmail.com"
+                  class="fw-semibold text-navy">harinamaivakevalam@gmail.com</a>
               </div>
             </div>
 
             <!-- WhatsApp -->
-            <div class="bg-white border rounded p-3 d-flex align-items-center gap-3 shadow-sm">
+            <!-- <div class="bg-white border rounded p-3 d-flex align-items-center gap-3 shadow-sm">
               <div class="hn-why-circle mb-0" style="width: 50px; height: 50px; font-size: 1.3rem;">
                 <i class="bi bi-whatsapp"></i>
               </div>
@@ -61,7 +66,7 @@
                 <div class="small text-muted">WhatsApp</div>
                 <a href="https://wa.me/919876543210" target="_blank" class="fw-semibold text-navy">+91 98765 43210</a>
               </div>
-            </div>
+            </div> -->
 
             <!-- Location -->
             <div class="bg-white border rounded p-3 d-flex align-items-center gap-3 shadow-sm">
@@ -78,9 +83,14 @@
             <div class="bg-white border rounded p-3 text-center shadow-sm">
               <div class="small text-muted mb-2">Follow our journey</div>
               <div class="d-flex justify-content-center gap-3 fs-4">
-                <a href="https://instagram.com" target="_blank" class="text-navy"><i class="bi bi-instagram"></i></a>
-                <a href="https://youtube.com" target="_blank" class="text-navy"><i class="bi bi-youtube"></i></a>
-                <a href="https://facebook.com" target="_blank" class="text-navy"><i class="bi bi-facebook"></i></a>
+                <a href="https://open.spotify.com/artist/0MhdmOuZhlQkAYJIBxpRJv" target="_blank" rel="noopener"
+                  class="text-navy" title="Spotify"><i class="bi bi-spotify"></i></a>
+                <a href="https://instagram.com/harinamaevakevalam" target="_blank" rel="noopener" class="text-navy"
+                  title="Instagram"><i class="bi bi-instagram"></i></a>
+                <a href="https://facebook.com/share/1Gw1BJ1iXy" target="_blank" rel="noopener" class="text-navy"
+                  title="Facebook"><i class="bi bi-facebook"></i></a>
+                <a href="https://www.youtube.com/@Hari-namaevakevalam" target="_blank" rel="noopener" class="text-navy"
+                  title="YouTube"><i class="bi bi-youtube"></i></a>
               </div>
             </div>
 
@@ -90,8 +100,9 @@
         <!-- Right: Message Form -->
         <div class="col-lg-6">
           <div class="bg-white border rounded p-4 shadow-sm">
-            <h4 class="fw-bold mb-3" style="font-family: var(--hn-font-serif); color: var(--hn-navy);">Send a Message</h4>
-            
+            <h4 class="fw-bold mb-3" style="font-family: var(--hn-font-serif); color: var(--hn-navy);">Send a Message
+            </h4>
+
             <form onsubmit="handleContactSubmit(event)">
               <div class="mb-3">
                 <label class="form-label small fw-bold text-secondary">Your Name *</label>
@@ -105,7 +116,8 @@
 
               <div class="mb-3">
                 <label class="form-label small fw-bold text-secondary">Message / Bulk Inquiry *</label>
-                <textarea class="form-control" rows="4" required placeholder="Write your message or inquiry here..."></textarea>
+                <textarea class="form-control" rows="4" required
+                  placeholder="Write your message or inquiry here..."></textarea>
               </div>
 
               <button type="submit" class="btn hn-btn-gold w-100 py-3 fw-bold">
@@ -140,4 +152,5 @@
     });
   </script>
 </body>
+
 </html>

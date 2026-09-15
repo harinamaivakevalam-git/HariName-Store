@@ -1,6 +1,20 @@
 const crypto = require('crypto');
+const Razorpay = require('razorpay');
 const db = require('../models/db');
 require('dotenv').config();
+
+// Helper to get active Razorpay instance
+const getRazorpayInstance = () => {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (keyId && keySecret && !keyId.includes('placeholder') && !keyId.includes('demo')) {
+    return new Razorpay({
+      key_id: keyId,
+      key_secret: keySecret
+    });
+  }
+  return null;
+};
 
 // Create Payment Intent / Order
 exports.createPaymentOrder = async (req, res, next) => {
@@ -14,10 +28,34 @@ exports.createPaymentOrder = async (req, res, next) => {
     const orderAmount = Math.round(parseFloat(amount) * 100); // Amount in paise/cents
 
     if (provider === 'razorpay') {
-      // In live environment with valid credentials, use Razorpay SDK
       const keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_demo';
-      const isDemo = keyId.includes('demo') || keyId.includes('placeholder');
+      const rzp = getRazorpayInstance();
 
+      if (rzp) {
+        try {
+          const rzpOrder = await rzp.orders.create({
+            amount: orderAmount,
+            currency: currency.toUpperCase(),
+            receipt: `rcpt_${Date.now()}`
+          });
+
+          return res.json({
+            success: true,
+            provider: 'razorpay',
+            key: keyId,
+            order: rzpOrder
+          });
+        } catch (rzpErr) {
+          console.error('[Razorpay Order Creation Error]', rzpErr);
+          return res.status(500).json({
+            success: false,
+            message: rzpErr.error?.description || rzpErr.message || 'Failed to create Razorpay order'
+          });
+        }
+      }
+
+      // Safe demo simulation if credentials are mock/missing
+      const isDemo = keyId.includes('demo') || keyId.includes('placeholder');
       const paymentOrder = {
         id: `order_rzp_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`,
         entity: 'order',
@@ -64,15 +102,6 @@ exports.verifyPayment = async (req, res, next) => {
       stripe_payment_intent_id
     } = req.body;
 
-    if (!order_id) {
-      return res.status(400).json({ success: false, message: 'Order ID is required for verification.' });
-    }
-
-    const order = db.findById('orders', order_id);
-    if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found.' });
-    }
-
     let isVerified = false;
 
     if (provider === 'razorpay') {
@@ -100,28 +129,33 @@ exports.verifyPayment = async (req, res, next) => {
       });
     }
 
-    // Update order payment status
-    db.update('orders', order.id, {
-      payment_status: 'paid',
-      updated_at: new Date().toISOString()
-    });
+    // If order_id exists, update the order in DB
+    if (order_id) {
+      const order = db.findById('orders', order_id);
+      if (order) {
+        db.update('orders', order.id, {
+          payment_status: 'paid',
+          updated_at: new Date().toISOString()
+        });
 
-    // Record payment details
-    db.insert('payments', {
-      order_id: order.id,
-      payment_provider: provider,
-      transaction_id: razorpay_payment_id || stripe_payment_intent_id || `txn_${Date.now()}`,
-      payment_order_id: razorpay_order_id || null,
-      amount: order.total,
-      currency: 'INR',
-      status: 'captured'
-    });
+        db.insert('payments', {
+          order_id: order.id,
+          payment_provider: provider,
+          transaction_id: razorpay_payment_id || stripe_payment_intent_id || `txn_${Date.now()}`,
+          payment_order_id: razorpay_order_id || null,
+          amount: order.total,
+          currency: 'INR',
+          status: 'captured'
+        });
+      }
+    }
 
     res.json({
       success: true,
+      verified: true,
       message: 'Payment verified and captured successfully.',
       data: {
-        order_number: order.order_number,
+        payment_id: razorpay_payment_id || stripe_payment_intent_id,
         payment_status: 'paid'
       }
     });

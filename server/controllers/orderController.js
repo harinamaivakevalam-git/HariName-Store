@@ -18,6 +18,8 @@ exports.createOrder = async (req, res, next) => {
       shipping_address,
       billing_address,
       payment_method = 'cod',
+      payment_details = {},
+      transaction_id = null,
       coupon_code = null,
       notes = ''
     } = req.body;
@@ -190,11 +192,14 @@ exports.createOrder = async (req, res, next) => {
 
           await supabaseAdmin.from('order_items').insert(itemsPayload);
 
+          // Calculate actual transaction ID from payment details if provided
+          const actualTxnId = transaction_id || payment_details.razorpay_payment_id || `txn_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+
           // Insert payment record
           await supabaseAdmin.from('payments').insert({
             order_id: dbOrder.id,
             payment_provider: payment_method,
-            transaction_id: `txn_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`,
+            transaction_id: actualTxnId,
             amount: grandTotal,
             currency: 'INR',
             status: isOnlinePaid ? 'captured' : 'pending'
@@ -204,6 +209,8 @@ exports.createOrder = async (req, res, next) => {
         console.warn('[Database] Supabase transaction failed:', sbErr.message);
       }
     }
+
+    const actualTxnId = transaction_id || payment_details.razorpay_payment_id || `txn_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
 
     // Always mirror in-memory for zero-latency local lookups
     const localOrder = db.insert('orders', {
@@ -235,7 +242,7 @@ exports.createOrder = async (req, res, next) => {
     db.insert('payments', {
       order_id: localOrder.id,
       payment_provider: payment_method,
-      transaction_id: `txn_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`,
+      transaction_id: actualTxnId,
       amount: grandTotal,
       currency: 'INR',
       status: isOnlinePaid ? 'captured' : 'pending'

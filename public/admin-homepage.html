@@ -1249,8 +1249,15 @@ Rama Rama Hare Hare</textarea>
         }
       } catch (apiErr) {}
 
-      // Save to localStorage for instant client rendering
-      localStorage.setItem('hn_homepage_config', JSON.stringify(payload));
+      // Save normalized client-ready config to localStorage for instant cross-tab live updates
+      const normalizedForClient = {
+        hero: payload.hero.content,
+        promo_banner: payload.promo_banner.content,
+        why_krishna: payload.why_krishna.content,
+        lifestyle_gallery: payload.lifestyle_gallery.content,
+        trust_bar: payload.trust_bar.content
+      };
+      localStorage.setItem('hn_homepage_config', JSON.stringify(normalizedForClient));
 
       if (saved) {
         showToast('All homepage sections saved to live store! 🌸', 'success');

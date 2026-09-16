@@ -318,52 +318,25 @@
                 </div>
               </div>
 
-              <!-- Right: Hero Media (Image vs Video) -->
+              <!-- Right: Hero Media (Unified Image/Video) -->
               <div class="col-lg-5">
-                <div class="border rounded p-3 bg-light">
-                  <div class="d-flex align-items-center justify-content-between mb-3">
-                    <label class="form-label mb-0 fw-bold">Hero Media Format</label>
-                    <div class="btn-group btn-group-sm media-mode-btn-group" role="group">
-                      <input type="radio" class="btn-check" name="hero_media_type" id="hero_type_img" value="image" checked onchange="toggleHeroMediaType('image')">
-                      <label class="btn btn-outline-dark" for="hero_type_img"><i class="bi bi-image"></i> Image</label>
-
-                      <input type="radio" class="btn-check" name="hero_media_type" id="hero_type_video" value="video" onchange="toggleHeroMediaType('video')">
-                      <label class="btn btn-outline-dark" for="hero_type_video"><i class="bi bi-play-btn-fill"></i> Video</label>
-                    </div>
+                <div class="border rounded p-3 bg-light h-100 d-flex flex-column">
+                  <label class="form-label fw-bold mb-2"><i class="bi bi-camera-reels text-gold me-1"></i> Hero Media (Image or Video)</label>
+                  <div class="input-group mb-2">
+                    <input type="text" id="hero_media_url" class="form-control" value="/assets/images/krishna_hero_keychain.jpg" placeholder="Image URL, Video URL (MP4), or YouTube Link" oninput="updateHeroPreview()">
+                    <button class="btn btn-outline-dark px-3" type="button" onclick="triggerFileUpload('hero_media_file_input')">
+                      <i class="bi bi-upload"></i> Upload
+                    </button>
                   </div>
-
-                  <!-- Image Controls -->
-                  <div id="hero_image_controls">
-                    <label class="form-label small">Hero Image URL / Upload</label>
-                    <div class="input-group mb-2">
-                      <input type="text" id="hero_image_url" class="form-control form-control-sm" value="/assets/images/krishna_hero_keychain.jpg" oninput="updateHeroPreview()">
-                      <button class="btn btn-sm btn-outline-secondary" type="button" onclick="triggerFileUpload('hero_file_input')">
-                        <i class="bi bi-upload"></i> Upload
-                      </button>
-                    </div>
-                    <input type="file" id="hero_file_input" class="d-none" accept="image/*" onchange="handleSingleFileUpload(event, 'hero_image_url', updateHeroPreview)">
-                  </div>
-
-                  <!-- Video Controls -->
-                  <div id="hero_video_controls" class="d-none">
-                    <label class="form-label small">Hero Video URL (MP4 file or YouTube embed)</label>
-                    <div class="input-group mb-2">
-                      <input type="text" id="hero_video_url" class="form-control form-control-sm" placeholder="https://example.com/video.mp4 or YouTube link" oninput="updateHeroPreview()">
-                      <button class="btn btn-sm btn-outline-secondary" type="button" onclick="triggerFileUpload('hero_video_file_input')">
-                        <i class="bi bi-upload"></i> MP4
-                      </button>
-                    </div>
-                    <input type="file" id="hero_video_file_input" class="d-none" accept="video/mp4,video/webm" onchange="handleSingleFileUpload(event, 'hero_video_url', updateHeroPreview)">
-                    <div class="form-text small text-muted">Supports MP4, WebM video files, or YouTube links.</div>
-                  </div>
+                  <input type="file" id="hero_media_file_input" class="d-none" accept="image/*,video/*" onchange="handleSingleFileUpload(event, 'hero_media_url', updateHeroPreview)">
+                  <div class="form-text small text-muted mb-3">Upload any image or video (MP4/WebM) or paste a link. Videos will automatically autoplay in muted loop on the storefront.</div>
 
                   <!-- Media Preview Box -->
-                  <div class="media-preview-box mt-3" id="hero_media_preview">
+                  <div class="media-preview-box mt-auto" id="hero_media_preview">
                     <img id="hero_preview_img" src="/assets/images/krishna_hero_keychain.jpg" alt="Hero Preview">
                     <video id="hero_preview_video" class="d-none" controls autoplay loop muted playsinline></video>
                     <iframe id="hero_preview_iframe" class="d-none" allowfullscreen></iframe>
                   </div>
-
                 </div>
               </div>
             </div>
@@ -412,40 +385,18 @@ Rama Rama Hare Hare</textarea>
                 </div>
               </div>
 
-              <!-- Right: Media Controls (Image vs Video) -->
+              <!-- Right: Banner Media (Unified Image/Video) -->
               <div class="col-lg-5">
                 <div class="border rounded p-3 bg-light h-100 d-flex flex-column">
-                  <div class="d-flex align-items-center justify-content-between mb-3">
-                    <label class="form-label mb-0 fw-bold">Banner Media Format</label>
-                    <div class="btn-group btn-group-sm media-mode-btn-group" role="group">
-                      <input type="radio" class="btn-check" name="promo_media_type" id="promo_type_img" value="image" checked onchange="togglePromoMediaType('image')">
-                      <label class="btn btn-outline-dark" for="promo_type_img"><i class="bi bi-image"></i> Image</label>
-
-                      <input type="radio" class="btn-check" name="promo_media_type" id="promo_type_video" value="video" onchange="togglePromoMediaType('video')">
-                      <label class="btn btn-outline-dark" for="promo_type_video"><i class="bi bi-play-btn-fill"></i> Video</label>
-                    </div>
+                  <label class="form-label fw-bold mb-2"><i class="bi bi-camera-reels text-gold me-1"></i> Banner Media (Image or Video)</label>
+                  <div class="input-group mb-2">
+                    <input type="text" id="promo_media_url" class="form-control" value="/assets/images/krishna-logo.jpg" placeholder="Image URL, Video URL (MP4), or YouTube Link" oninput="updatePromoPreview()">
+                    <button class="btn btn-outline-dark px-3" type="button" onclick="triggerFileUpload('promo_media_file_input')">
+                      <i class="bi bi-upload"></i> Upload
+                    </button>
                   </div>
-
-                  <!-- Image Controls -->
-                  <div id="promo_image_controls">
-                    <label class="form-label small">Banner Image URL / Upload</label>
-                    <div class="input-group mb-2">
-                      <input type="text" id="promo_image_url" class="form-control form-control-sm" value="/assets/images/krishna-logo.jpg" oninput="updatePromoPreview()">
-                      <button class="btn btn-sm btn-outline-secondary" type="button" onclick="triggerFileUpload('promo_file_input')"><i class="bi bi-upload"></i> Upload</button>
-                    </div>
-                    <input type="file" id="promo_file_input" class="d-none" accept="image/*" onchange="handleSingleFileUpload(event, 'promo_image_url', updatePromoPreview)">
-                  </div>
-
-                  <!-- Video Controls -->
-                  <div id="promo_video_controls" class="d-none">
-                    <label class="form-label small">Banner Video URL (MP4 / WebM / YouTube link)</label>
-                    <div class="input-group mb-2">
-                      <input type="text" id="promo_video_url" class="form-control form-control-sm" placeholder="https://example.com/video.mp4 or YouTube link" oninput="updatePromoPreview()">
-                      <button class="btn btn-sm btn-outline-secondary" type="button" onclick="triggerFileUpload('promo_video_file_input')"><i class="bi bi-upload"></i> MP4</button>
-                    </div>
-                    <input type="file" id="promo_video_file_input" class="d-none" accept="video/mp4,video/webm" onchange="handleSingleFileUpload(event, 'promo_video_url', updatePromoPreview)">
-                    <div class="form-text small text-muted">Videos automatically autoplay in loop &amp; muted format.</div>
-                  </div>
+                  <input type="file" id="promo_media_file_input" class="d-none" accept="image/*,video/*" onchange="handleSingleFileUpload(event, 'promo_media_url', updatePromoPreview)">
+                  <div class="form-text small text-muted mb-3">Upload any image or video (MP4/WebM) or paste a link. Videos will automatically autoplay in muted loop on the storefront.</div>
 
                   <!-- Media Preview Box -->
                   <div class="media-preview-box mt-auto" id="promo_media_preview">
@@ -803,39 +754,12 @@ Rama Rama Hare Hare</textarea>
       if (!file) return;
 
       const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|ogg|m4v)$/i.test(file.name);
-
-      if (targetInputId.includes('promo')) {
-        if (isVideo) {
-          targetInputId = 'promo_video_url';
-          const r = document.getElementById('promo_type_video');
-          if (r) r.checked = true;
-          togglePromoMediaType('video');
-        } else {
-          targetInputId = 'promo_image_url';
-          const r = document.getElementById('promo_type_img');
-          if (r) r.checked = true;
-          togglePromoMediaType('image');
-        }
-      } else if (targetInputId.includes('hero')) {
-        if (isVideo) {
-          targetInputId = 'hero_video_url';
-          const r = document.getElementById('hero_type_video');
-          if (r) r.checked = true;
-          toggleHeroMediaType('video');
-        } else {
-          targetInputId = 'hero_image_url';
-          const r = document.getElementById('hero_type_img');
-          if (r) r.checked = true;
-          toggleHeroMediaType('image');
-        }
-      }
-
-      showToast(`Uploading ${isVideo ? 'video' : 'media'}...`, 'dark');
+      showToast(`Uploading ${isVideo ? 'video' : 'image'}...`, 'dark');
       const url = await uploadMediaFile(file);
       if (url) {
         const input = document.getElementById(targetInputId);
         if (input) input.value = url;
-        showToast(`${isVideo ? 'Video' : 'Media'} uploaded successfully! 🌸`, 'success');
+        showToast(`${isVideo ? 'Video' : 'Image'} uploaded successfully! 🌸`, 'success');
         if (typeof callback === 'function') callback();
         if (targetInputId.includes('promo')) updatePromoPreview();
         if (targetInputId.includes('hero')) updateHeroPreview();
@@ -844,70 +768,21 @@ Rama Rama Hare Hare</textarea>
       }
     }
 
-    function toggleHeroMediaType(type, triggerPreview = true) {
-      const imgControls = document.getElementById('hero_image_controls');
-      const videoControls = document.getElementById('hero_video_controls');
-
-      if (type === 'video') {
-        imgControls?.classList.add('d-none');
-        videoControls?.classList.remove('d-none');
-      } else {
-        imgControls?.classList.remove('d-none');
-        videoControls?.classList.add('d-none');
-      }
-      if (triggerPreview) updateHeroPreview();
-    }
-
-    function togglePromoMediaType(type, triggerPreview = true) {
-      const imgControls = document.getElementById('promo_image_controls');
-      const videoControls = document.getElementById('promo_video_controls');
-
-      if (type === 'video') {
-        imgControls?.classList.add('d-none');
-        videoControls?.classList.remove('d-none');
-      } else {
-        imgControls?.classList.remove('d-none');
-        videoControls?.classList.add('d-none');
-      }
-      if (triggerPreview) updatePromoPreview();
-    }
-
     function updateHeroPreview() {
-      const heroVidVal = document.getElementById('hero_video_url')?.value?.trim() || '';
-      const heroImgVal = document.getElementById('hero_image_url')?.value?.trim() || '';
-      const isRadioVideo = document.getElementById('hero_type_video')?.checked;
-
-      let isVideo = Boolean(isRadioVideo);
-      const activeUrl = isRadioVideo ? heroVidVal : heroImgVal;
-
-      if (isVideoUrl(activeUrl)) {
-        isVideo = true;
-        const r = document.getElementById('hero_type_video');
-        if (r && !r.checked) {
-          r.checked = true;
-          toggleHeroMediaType('video', false);
-        }
-        if (!heroVidVal && heroImgVal) {
-          document.getElementById('hero_video_url').value = heroImgVal;
-        }
-      }
-
+      const mediaUrl = document.getElementById('hero_media_url')?.value?.trim() || '/assets/images/krishna_hero_keychain.jpg';
       const imgEl = document.getElementById('hero_preview_img');
       const videoEl = document.getElementById('hero_preview_video');
       const iframeEl = document.getElementById('hero_preview_iframe');
 
-      const videoSrc = (isVideoUrl(heroVidVal) ? heroVidVal : (isVideoUrl(heroImgVal) ? heroImgVal : heroVidVal)).trim();
-      const imageSrc = (!isVideoUrl(heroImgVal) && heroImgVal ? heroImgVal : '/assets/images/krishna_hero_keychain.jpg').trim();
-
-      if (isVideo && videoSrc) {
+      if (isVideoUrl(mediaUrl)) {
         imgEl?.classList.add('d-none');
 
-        if (videoSrc.includes('youtube.com') || videoSrc.includes('youtu.be')) {
-          let embedUrl = videoSrc;
-          if (videoSrc.includes('watch?v=')) {
-            embedUrl = videoSrc.replace('watch?v=', 'embed/');
-          } else if (videoSrc.includes('youtu.be/')) {
-            embedUrl = videoSrc.replace('youtu.be/', 'www.youtube.com/embed/');
+        if (mediaUrl.includes('youtube.com') || mediaUrl.includes('youtu.be')) {
+          let embedUrl = mediaUrl;
+          if (mediaUrl.includes('watch?v=')) {
+            embedUrl = mediaUrl.replace('watch?v=', 'embed/');
+          } else if (mediaUrl.includes('youtu.be/')) {
+            embedUrl = mediaUrl.replace('youtu.be/', 'www.youtube.com/embed/');
           }
           if (iframeEl) {
             iframeEl.src = embedUrl;
@@ -917,7 +792,7 @@ Rama Rama Hare Hare</textarea>
         } else {
           iframeEl?.classList.add('d-none');
           if (videoEl) {
-            videoEl.src = videoSrc;
+            videoEl.src = mediaUrl;
             videoEl.classList.remove('d-none');
             videoEl.play().catch(() => {});
           }
@@ -926,48 +801,27 @@ Rama Rama Hare Hare</textarea>
         videoEl?.classList.add('d-none');
         iframeEl?.classList.add('d-none');
         if (imgEl) {
-          imgEl.src = imageSrc;
+          imgEl.src = mediaUrl;
           imgEl.classList.remove('d-none');
         }
       }
     }
 
     function updatePromoPreview() {
-      const promoVidVal = document.getElementById('promo_video_url')?.value?.trim() || '';
-      const promoImgVal = document.getElementById('promo_image_url')?.value?.trim() || '';
-      const isRadioVideo = document.getElementById('promo_type_video')?.checked;
-
-      let isVideo = Boolean(isRadioVideo);
-      const activeUrl = isRadioVideo ? promoVidVal : promoImgVal;
-
-      if (isVideoUrl(activeUrl)) {
-        isVideo = true;
-        const r = document.getElementById('promo_type_video');
-        if (r && !r.checked) {
-          r.checked = true;
-          togglePromoMediaType('video', false);
-        }
-        if (!promoVidVal && promoImgVal) {
-          document.getElementById('promo_video_url').value = promoImgVal;
-        }
-      }
-
+      const mediaUrl = document.getElementById('promo_media_url')?.value?.trim() || '/assets/images/krishna-logo.jpg';
       const imgEl = document.getElementById('promo_preview_img');
       const videoEl = document.getElementById('promo_preview_video');
       const iframeEl = document.getElementById('promo_preview_iframe');
 
-      const videoSrc = (isVideoUrl(promoVidVal) ? promoVidVal : (isVideoUrl(promoImgVal) ? promoImgVal : promoVidVal)).trim();
-      const imageSrc = (!isVideoUrl(promoImgVal) && promoImgVal ? promoImgVal : '/assets/images/krishna-logo.jpg').trim();
-
-      if (isVideo && videoSrc) {
+      if (isVideoUrl(mediaUrl)) {
         imgEl?.classList.add('d-none');
 
-        if (videoSrc.includes('youtube.com') || videoSrc.includes('youtu.be')) {
-          let embedUrl = videoSrc;
-          if (videoSrc.includes('watch?v=')) {
-            embedUrl = videoSrc.replace('watch?v=', 'embed/');
-          } else if (videoSrc.includes('youtu.be/')) {
-            embedUrl = videoSrc.replace('youtu.be/', 'www.youtube.com/embed/');
+        if (mediaUrl.includes('youtube.com') || mediaUrl.includes('youtu.be')) {
+          let embedUrl = mediaUrl;
+          if (mediaUrl.includes('watch?v=')) {
+            embedUrl = mediaUrl.replace('watch?v=', 'embed/');
+          } else if (mediaUrl.includes('youtu.be/')) {
+            embedUrl = mediaUrl.replace('youtu.be/', 'www.youtube.com/embed/');
           }
           if (iframeEl) {
             iframeEl.src = embedUrl;
@@ -977,7 +831,7 @@ Rama Rama Hare Hare</textarea>
         } else {
           iframeEl?.classList.add('d-none');
           if (videoEl) {
-            videoEl.src = videoSrc;
+            videoEl.src = mediaUrl;
             videoEl.classList.remove('d-none');
             videoEl.play().catch(() => {});
           }
@@ -986,7 +840,7 @@ Rama Rama Hare Hare</textarea>
         videoEl?.classList.add('d-none');
         iframeEl?.classList.add('d-none');
         if (imgEl) {
-          imgEl.src = imageSrc;
+          imgEl.src = mediaUrl;
           imgEl.classList.remove('d-none');
         }
       }
@@ -1054,18 +908,9 @@ Rama Rama Hare Hare</textarea>
         if (h.trust_rating !== undefined) document.getElementById('hero_trust_rating').value = h.trust_rating;
         if (h.trust_caption !== undefined) document.getElementById('hero_trust_caption').value = h.trust_caption;
 
-        const hImg = (!isVideoUrl(h.image_url) && h.image_url) ? h.image_url : '/assets/images/krishna_hero_keychain.jpg';
-        const hVid = (isVideoUrl(h.video_url) ? h.video_url : (isVideoUrl(h.image_url) ? h.image_url : ''));
-        document.getElementById('hero_image_url').value = hImg;
-        document.getElementById('hero_video_url').value = hVid;
-
-        if (h.media_type === 'video') {
-          document.getElementById('hero_type_video').checked = true;
-          toggleHeroMediaType('video');
-        } else {
-          document.getElementById('hero_type_img').checked = true;
-          toggleHeroMediaType('image');
-        }
+        const heroMedia = (h.media_type === 'video' ? h.video_url : h.image_url) || h.video_url || h.image_url || '/assets/images/krishna_hero_keychain.jpg';
+        const heroInput = document.getElementById('hero_media_url');
+        if (heroInput) heroInput.value = heroMedia;
       }
 
       // 2. Promo Banner
@@ -1077,18 +922,9 @@ Rama Rama Hare Hare</textarea>
         if (p.mantra_verse !== undefined) document.getElementById('promo_mantra').value = p.mantra_verse;
         if (p.chant !== undefined || p.mantra_chant !== undefined) document.getElementById('promo_chant').value = p.chant || p.mantra_chant || 'Chant & Be Happy ✨.';
 
-        const pImg = (!isVideoUrl(p.image_url) && p.image_url) ? p.image_url : '/assets/images/krishna-logo.jpg';
-        const pVid = (isVideoUrl(p.video_url) ? p.video_url : (isVideoUrl(p.image_url) ? p.image_url : ''));
-        document.getElementById('promo_image_url').value = pImg;
-        document.getElementById('promo_video_url').value = pVid;
-
-        if (p.media_type === 'video') {
-          document.getElementById('promo_type_video').checked = true;
-          togglePromoMediaType('video');
-        } else {
-          document.getElementById('promo_type_img').checked = true;
-          togglePromoMediaType('image');
-        }
+        const promoMedia = (p.media_type === 'video' ? p.video_url : p.image_url) || p.video_url || p.image_url || '/assets/images/krishna-logo.jpg';
+        const promoInput = document.getElementById('promo_media_url');
+        if (promoInput) promoInput.value = promoMedia;
       }
 
       // 3. Why Krishna
@@ -1141,23 +977,11 @@ Rama Rama Hare Hare</textarea>
     }
 
     async function saveAllHomepageSections() {
-      const rawHeroImg = document.getElementById('hero_image_url').value.trim();
-      const rawHeroVid = document.getElementById('hero_video_url').value.trim();
-      const heroRadio = document.querySelector('input[name="hero_media_type"]:checked')?.value || 'image';
+      const heroMedia = (document.getElementById('hero_media_url')?.value || '').trim() || '/assets/images/krishna_hero_keychain.jpg';
+      const isHeroVid = isVideoUrl(heroMedia);
 
-      const isHeroVid = heroRadio === 'video' || isVideoUrl(rawHeroVid) || isVideoUrl(rawHeroImg);
-      const heroMediaType = isHeroVid ? 'video' : 'image';
-      const heroVideoUrl = isHeroVid ? (isVideoUrl(rawHeroVid) ? rawHeroVid : (isVideoUrl(rawHeroImg) ? rawHeroImg : rawHeroVid)) : '';
-      const heroImageUrl = !isHeroVid ? (rawHeroImg || '/assets/images/krishna_hero_keychain.jpg') : (rawHeroImg && !isVideoUrl(rawHeroImg) ? rawHeroImg : '/assets/images/krishna_hero_keychain.jpg');
-
-      const rawPromoImg = document.getElementById('promo_image_url').value.trim();
-      const rawPromoVid = document.getElementById('promo_video_url').value.trim();
-      const promoRadio = document.querySelector('input[name="promo_media_type"]:checked')?.value || 'image';
-
-      const isPromoVid = promoRadio === 'video' || isVideoUrl(rawPromoVid) || isVideoUrl(rawPromoImg);
-      const promoMediaType = isPromoVid ? 'video' : 'image';
-      const promoVideoUrl = isPromoVid ? (isVideoUrl(rawPromoVid) ? rawPromoVid : (isVideoUrl(rawPromoImg) ? rawPromoImg : rawPromoVid)) : '';
-      const promoImageUrl = !isPromoVid ? (rawPromoImg || '/assets/images/krishna-logo.jpg') : (rawPromoImg && !isVideoUrl(rawPromoImg) ? rawPromoImg : '/assets/images/krishna-logo.jpg');
+      const promoMedia = (document.getElementById('promo_media_url')?.value || '').trim() || '/assets/images/krishna-logo.jpg';
+      const isPromoVid = isVideoUrl(promoMedia);
 
       const payload = {
         hero: {
@@ -1175,9 +999,9 @@ Rama Rama Hare Hare</textarea>
             quote_subtitle: document.getElementById('hero_quote_sub').value,
             trust_rating: document.getElementById('hero_trust_rating').value,
             trust_caption: document.getElementById('hero_trust_caption').value,
-            media_type: heroMediaType,
-            image_url: heroImageUrl,
-            video_url: heroVideoUrl,
+            media_type: isHeroVid ? 'video' : 'image',
+            image_url: isHeroVid ? '' : heroMedia,
+            video_url: isHeroVid ? heroMedia : '',
             badge_top_title: 'Blessed in Vrindavan',
             badge_top_sub: 'Authentic & Sacred',
             badge_bottom_title: 'Solid Cast Brass & Enamel',
@@ -1200,9 +1024,9 @@ Rama Rama Hare Hare</textarea>
             mantra_verse: document.getElementById('promo_mantra').value,
             chant: document.getElementById('promo_chant').value,
             cta_text: 'Add to Cart',
-            image_url: promoImageUrl,
-            video_url: promoVideoUrl,
-            media_type: promoMediaType
+            image_url: isPromoVid ? '' : promoMedia,
+            video_url: isPromoVid ? promoMedia : '',
+            media_type: isPromoVid ? 'video' : 'image'
           }
         },
         why_krishna: {

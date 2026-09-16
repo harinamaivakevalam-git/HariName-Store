@@ -22,6 +22,7 @@
   <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <!-- Harinama Store Master Stylesheet -->
   <link rel="stylesheet" href="/assets/css/style.css?v=6">
@@ -229,7 +230,46 @@
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
+    const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+
+    function renderMetrics(totalRevenue, totalOrders, totalCustomers, topProducts) {
+      const revEl = document.getElementById('stat-revenue');
+      const ordersEl = document.getElementById('stat-orders');
+      const custEl = document.getElementById('stat-customers');
+      const aovEl = document.getElementById('stat-aov');
+
+      if (revEl) revEl.innerText = '₹' + Math.round(totalRevenue).toLocaleString('en-IN');
+      if (ordersEl) ordersEl.innerText = totalOrders.toString();
+      if (custEl) custEl.innerText = totalCustomers.toString();
+
+      const avgOrderVal = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+      if (aovEl) aovEl.innerText = '₹' + avgOrderVal.toLocaleString('en-IN');
+
+      const container = document.getElementById('top-products-container');
+      if (container && Array.isArray(topProducts) && topProducts.length > 0) {
+        const maxPrice = Math.max(...topProducts.map(p => parseFloat(p.price) || 1));
+        container.innerHTML = topProducts.map(p => {
+          const pct = Math.min(100, Math.round(((parseFloat(p.price) || 50) / maxPrice) * 100));
+          return `
+            <div>
+              <div class="d-flex justify-content-between mb-1">
+                <span class="fw-semibold text-navy">${p.name}</span>
+                <span class="fw-bold">₹${p.price} (Stock: ${p.stock != null ? p.stock : 25})</span>
+              </div>
+              <div class="progress" style="height: 10px;">
+                <div class="progress-bar bg-warning" style="width: ${pct}%;"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
+      let loaded = false;
+
+      // 1. Try backend API
       const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
       const adminScope = atob('aGFyaW5hbWFpdmFrZXZhbGFtQGdtYWlsLmNvbQ==');
       const headers = {
@@ -244,40 +284,43 @@
           const json = await res.json();
           if (json.success && json.data) {
             const d = json.data;
-            const revEl = document.getElementById('stat-revenue');
-            const ordersEl = document.getElementById('stat-orders');
-            const custEl = document.getElementById('stat-customers');
-            const aovEl = document.getElementById('stat-aov');
-
-            if (revEl) revEl.innerText = '₹' + (d.totalRevenue || 0).toLocaleString('en-IN');
-            if (ordersEl) ordersEl.innerText = (d.totalOrders || 0).toString();
-            if (custEl) custEl.innerText = (d.totalCustomers || 0).toString();
-
-            const avgOrderVal = d.totalOrders > 0 ? Math.round((d.totalRevenue || 0) / d.totalOrders) : 0;
-            if (aovEl) aovEl.innerText = '₹' + avgOrderVal.toLocaleString('en-IN');
-
-            const container = document.getElementById('top-products-container');
-            if (container && Array.isArray(d.topProducts) && d.topProducts.length > 0) {
-              const maxPrice = Math.max(...d.topProducts.map(p => parseFloat(p.price) || 1));
-              container.innerHTML = d.topProducts.map(p => {
-                const pct = Math.min(100, Math.round(((parseFloat(p.price) || 50) / maxPrice) * 100));
-                return `
-                  <div>
-                    <div class="d-flex justify-content-between mb-1">
-                      <span class="fw-semibold text-navy">${p.name}</span>
-                      <span class="fw-bold">₹${p.price} (Stock: ${p.stock != null ? p.stock : 25})</span>
-                    </div>
-                    <div class="progress" style="height: 10px;">
-                      <div class="progress-bar bg-warning" style="width: ${pct}%;"></div>
-                    </div>
-                  </div>
-                `;
-              }).join('');
-            }
+            renderMetrics(d.totalRevenue || 0, d.totalOrders || 0, d.totalCustomers || 0, d.topProducts || []);
+            loaded = true;
           }
         }
       } catch (err) {
-        console.warn('[AdminAnalytics] Fetch note:', err.message);
+        console.warn('[AdminAnalytics] API fetch note:', err.message);
+      }
+
+      // 2. Direct Supabase Query Fallback
+      if (!loaded) {
+        try {
+          if (window.supabase && typeof window.supabase.createClient === 'function') {
+            const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            
+            const [ordersRes, profilesRes, productsRes] = await Promise.all([
+              sb.from('orders').select('total, guest_email, customer'),
+              sb.from('profiles').select('id', { count: 'exact' }),
+              sb.from('products').select('*').limit(5)
+            ]);
+
+            const orders = ordersRes.data || [];
+            const totalRev = orders.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
+            const totalOrders = orders.length;
+
+            // Unique customers
+            const emailSet = new Set(orders.map(o => (o.guest_email || o.customer || '').toLowerCase().trim()).filter(Boolean));
+            const totalCustomers = Math.max(profilesRes.count || 0, emailSet.size);
+
+            const topProducts = (productsRes.data && productsRes.data.length > 0) ? productsRes.data : (
+              (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products.slice(0, 5) : []
+            );
+
+            renderMetrics(totalRev, totalOrders, totalCustomers, topProducts);
+          }
+        } catch (sbErr) {
+          console.warn('[AdminAnalytics] Direct Supabase analytics note:', sbErr);
+        }
       }
     });
   </script>

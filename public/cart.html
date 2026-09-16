@@ -254,25 +254,38 @@
       }
     }
 
-    function applyCartCoupon() {
+    async function applyCartCoupon() {
       const code = (document.getElementById('hn-coupon-code').value || '').trim().toUpperCase();
       const feedback = document.getElementById('hn-coupon-feedback');
-      if (code === 'WELCOME10' || code === 'KRISHNA50') {
-        cartDiscount = 50;
-        appliedCouponCode = code;
-        sessionStorage.setItem('hn_checkout_discount', '50');
-        sessionStorage.setItem('hn_coupon_code', code);
-        feedback.innerHTML = '<span class="text-success fw-semibold"><i class="bi bi-check-circle"></i> Coupon applied! ₹50 discount.</span>';
-        renderCart();
-      } else if (code === 'RADHA100') {
-        cartDiscount = 100;
-        appliedCouponCode = code;
-        sessionStorage.setItem('hn_checkout_discount', '100');
-        sessionStorage.setItem('hn_coupon_code', code);
-        feedback.innerHTML = '<span class="text-success fw-semibold"><i class="bi bi-check-circle"></i> Holy Blessing! ₹100 discount applied.</span>';
-        renderCart();
-      } else {
-        feedback.innerHTML = '<span class="text-danger small">Invalid coupon code. Try WELCOME10 or KRISHNA50</span>';
+      if (!code) {
+        feedback.innerHTML = '<span class="text-danger small">Please enter a coupon code.</span>';
+        return;
+      }
+      
+      feedback.innerHTML = '<span class="text-muted small"><i class="bi bi-arrow-repeat spin"></i> Validating coupon...</span>';
+      
+      const cart = getCart();
+      const subtotal = cart.reduce((sum, item) => sum + (parseFloat(item.price || 0) * (item.qty || 1)), 0);
+
+      try {
+        const result = await HARINAMA_DATA.validateCoupon(code, subtotal);
+        if (result && result.valid) {
+          cartDiscount = parseFloat(result.discount || 0);
+          appliedCouponCode = result.code || code;
+          sessionStorage.setItem('hn_checkout_discount', String(cartDiscount));
+          sessionStorage.setItem('hn_coupon_code', appliedCouponCode);
+          feedback.innerHTML = `<span class="text-success fw-semibold"><i class="bi bi-check-circle"></i> ${result.message || `Coupon ${appliedCouponCode} applied!`}</span>`;
+          renderCart();
+        } else {
+          cartDiscount = 0;
+          appliedCouponCode = '';
+          sessionStorage.removeItem('hn_checkout_discount');
+          sessionStorage.removeItem('hn_coupon_code');
+          feedback.innerHTML = `<span class="text-danger small">${result ? result.message : 'Invalid coupon code.'}</span>`;
+          renderCart();
+        }
+      } catch (err) {
+        feedback.innerHTML = '<span class="text-danger small">Unable to validate coupon at this time.</span>';
       }
     }
 

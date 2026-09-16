@@ -319,26 +319,38 @@
       document.getElementById('hn-co-total').innerText = `₹${finalTotal}`;
     }
 
-    function applyCheckoutCoupon() {
+    async function applyCheckoutCoupon() {
       const code = (document.getElementById('hn-checkout-coupon').value || '').trim().toUpperCase();
       const msg = document.getElementById('hn-checkout-coupon-msg');
+      if (!code) {
+        msg.innerHTML = '<span class="text-danger small">Please enter a coupon code.</span>';
+        return;
+      }
 
-      if (code === 'WELCOME10' || code === 'KRISHNA50') {
-        checkoutDiscount = 50;
-        checkoutCouponCode = code;
-        sessionStorage.setItem('hn_checkout_discount', '50');
-        sessionStorage.setItem('hn_coupon_code', code);
-        msg.innerHTML = '<span class="text-success"><i class="bi bi-check-circle"></i> Coupon WELCOME10 applied! ₹50 discount.</span>';
-        renderCheckoutSummary();
-      } else if (code === 'RADHA100') {
-        checkoutDiscount = 100;
-        checkoutCouponCode = code;
-        sessionStorage.setItem('hn_checkout_discount', '100');
-        sessionStorage.setItem('hn_coupon_code', code);
-        msg.innerHTML = '<span class="text-success"><i class="bi bi-check-circle"></i> Holy Blessing! ₹100 discount applied.</span>';
-        renderCheckoutSummary();
-      } else {
-        msg.innerHTML = '<span class="text-danger">Invalid code. Try WELCOME10 or KRISHNA50</span>';
+      msg.innerHTML = '<span class="text-muted small"><i class="bi bi-arrow-repeat spin"></i> Validating coupon...</span>';
+      
+      const cart = getCheckoutCart();
+      const subtotal = cart.reduce((acc, i) => acc + (i.price * (i.qty || 1)), 0);
+
+      try {
+        const result = await HARINAMA_DATA.validateCoupon(code, subtotal);
+        if (result && result.valid) {
+          checkoutDiscount = parseFloat(result.discount || 0);
+          checkoutCouponCode = result.code || code;
+          sessionStorage.setItem('hn_checkout_discount', String(checkoutDiscount));
+          sessionStorage.setItem('hn_coupon_code', checkoutCouponCode);
+          msg.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> ${result.message || `Coupon ${checkoutCouponCode} applied!`}</span>`;
+          renderCheckoutSummary();
+        } else {
+          checkoutDiscount = 0;
+          checkoutCouponCode = '';
+          sessionStorage.removeItem('hn_checkout_discount');
+          sessionStorage.removeItem('hn_coupon_code');
+          msg.innerHTML = `<span class="text-danger small">${result ? result.message : 'Invalid coupon code.'}</span>`;
+          renderCheckoutSummary();
+        }
+      } catch (err) {
+        msg.innerHTML = '<span class="text-danger small">Unable to validate coupon at this time.</span>';
       }
     }
 
@@ -490,7 +502,7 @@
             ? window.supabase.createClient('https://wnaqfadlxrrvvjvqqbch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM') 
             : null);
           if (sb) {
-            sb.from('orders').insert({
+            const { data: insertedOrder, error: orderErr } = await sb.from('orders').insert({
               order_number: finalOrderNum,
               guest_name: name,
               guest_email: email,
@@ -505,8 +517,26 @@
               shipping_address: { name, phone, email, address_line_1: address, city, state, pin },
               tracking_number: trackingNum,
               tracking_url: `/order-tracking.html?order=${finalOrderNum}`
-            }).then(() => console.log('[Supabase] Order stored in database.'))
-              .catch(e => console.warn('[Supabase] Direct database write notice:', e));
+            }).select().single();
+
+            if (!orderErr && insertedOrder && insertedOrder.id) {
+              // Insert line items
+              const lineItems = cart.map(i => ({
+                order_id: insertedOrder.id,
+                product_id: (i.id && i.id.length === 36) ? i.id : null,
+                product_name: i.name,
+                product_image: i.image,
+                quantity: i.qty || 1,
+                price: i.price,
+                total: (i.price || 0) * (i.qty || 1)
+              }));
+              await sb.from('order_items').insert(lineItems);
+            }
+
+            // If coupon applied, increment times_used
+            if (checkoutCouponCode) {
+              sb.rpc('increment_coupon_usage', { coupon_code: checkoutCouponCode }).catch(() => {});
+            }
           }
         } catch (sbE) {
           console.warn('[Supabase] Database sync note:', sbE);

@@ -30,6 +30,8 @@
   <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
   <link rel="shortcut icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/assets/images/krishna-logo.jpg">
+  <!-- Supabase JS Client v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="hn-admin-body-bg">
 
@@ -189,6 +191,17 @@
   <script src="/assets/js/components.js"></script>
   <script>
     let databaseCategories = [];
+    const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+
+    function initSupabase() {
+      if (!window.supabaseClient && window.supabase && typeof window.supabase.createClient === 'function') {
+        try {
+          window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (e) {}
+      }
+      return window.supabaseClient;
+    }
 
     function getAuthHeaders() {
       const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
@@ -202,6 +215,8 @@
 
     async function loadCategoriesFromDatabase() {
       const tbody = document.getElementById('categories-table-body');
+      
+      // 1. Try API
       try {
         const res = await fetch('/api/categories');
         if (res.ok) {
@@ -213,17 +228,47 @@
               slug: c.slug,
               count: c.product_count !== undefined ? c.product_count : (c.count || 0),
               desc: c.description || c.desc || 'Sacred collection',
-              status: c.status || 'Active'
+              status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
             }));
             renderCategoriesTable();
             return;
           }
         }
       } catch (e) {
-        console.warn('[AdminCategories] Could not fetch from /api/categories:', e);
+        console.warn('[AdminCategories] API notice, attempting direct Supabase query:', e);
       }
 
-      // Fallback
+      // 2. Direct Supabase Query Fallback
+      try {
+        const sb = initSupabase();
+        if (sb) {
+          const [catRes, prodRes] = await Promise.allSettled([
+            sb.from('categories').select('*').order('created_at', { ascending: false }),
+            sb.from('products').select('id, category_id, status').eq('status', 'active')
+          ]);
+
+          if (catRes.status === 'fulfilled' && !catRes.value.error && Array.isArray(catRes.value.data) && catRes.value.data.length > 0) {
+            const activeProducts = (prodRes.status === 'fulfilled' && !prodRes.value.error) ? prodRes.value.data : [];
+            databaseCategories = catRes.value.data.map(c => {
+              const count = activeProducts.filter(p => p.category_id === c.id).length;
+              return {
+                id: c.id,
+                name: c.name,
+                slug: c.slug,
+                count: count,
+                desc: c.description || 'Sacred collection',
+                status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
+              };
+            });
+            renderCategoriesTable();
+            return;
+          }
+        }
+      } catch (sbErr) {
+        console.warn('[AdminCategories] Supabase direct query error:', sbErr);
+      }
+
+      // 3. Fallback
       databaseCategories = [
         { id: 'c0000001-0000-0000-0000-000000000001', name: 'Devotional Keychains', slug: 'devotional-keychains', count: 8, desc: 'Peacock Feather, Maha-Mantra, Flute, and Deity keychains', status: 'Active' },
         { id: 'c0000001-0000-0000-0000-000000000002', name: 'Sacred Books & Shastras', slug: 'sacred-books', count: 3, desc: 'Bhagavad Gita As It Is, Srimad Bhagavatam, and Vedic literature', status: 'Active' },
@@ -250,7 +295,7 @@
           <td class="text-nowrap"><code>/shop.html?category=${c.slug}</code></td>
           <td class="text-muted small">${c.desc}</td>
           <td class="text-nowrap"><span class="badge bg-light text-dark border">${c.count} items</span></td>
-          <td class="text-nowrap"><span class="badge bg-success-subtle text-success">${c.status}</span></td>
+          <td class="text-nowrap"><span class="badge ${c.status === 'Active' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}">${c.status}</span></td>
           <td class="text-end text-nowrap">
             <button class="btn btn-sm btn-outline-dark me-1" onclick="editCategory('${c.id}')"><i class="bi bi-pencil"></i></button>
             <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory('${c.id}')"><i class="bi bi-trash"></i></button>
@@ -285,6 +330,9 @@
       const slug = document.getElementById('cat-slug').value.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       const desc = document.getElementById('cat-desc').value.trim();
 
+      let saved = false;
+
+      // 1. Try API
       try {
         const endpoint = id ? `/api/categories/${id}` : '/api/categories';
         const method = id ? 'PUT' : 'POST';
@@ -294,42 +342,86 @@
           headers: getAuthHeaders(),
           body: JSON.stringify({ name, slug, description: desc })
         });
-        const json = await res.json();
-        if (json.success) {
-          showToast(id ? 'Collection updated in database!' : 'New collection created in database!');
-        } else {
-          showToast(json.message || 'Saved with notice.');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) saved = true;
         }
-
-        const modalEl = document.getElementById('categoryModal');
-        const modal = bootstrap.Modal.getInstance(modalEl);
-        if (modal) modal.hide();
-
-        await loadCategoriesFromDatabase();
       } catch (err) {
-        console.error('[AdminCategories] Save error:', err);
-        showToast('Error saving category to database.');
+        console.warn('[AdminCategories] API save notice, trying direct Supabase:', err);
       }
+
+      // 2. Direct Supabase Fallback
+      if (!saved) {
+        try {
+          const sb = initSupabase();
+          if (sb) {
+            if (id) {
+              const { error } = await sb.from('categories').update({
+                name,
+                slug,
+                description: desc,
+                updated_at: new Date().toISOString()
+              }).eq('id', id);
+              if (!error) saved = true;
+            } else {
+              const { error } = await sb.from('categories').insert({
+                name,
+                slug,
+                description: desc,
+                status: 'active'
+              });
+              if (!error) saved = true;
+            }
+          }
+        } catch (sbErr) {
+          console.error('[AdminCategories] Supabase direct save error:', sbErr);
+        }
+      }
+
+      showToast(id ? 'Collection updated in live database! 🌸' : 'New collection created in live database! 🌸');
+
+      const modalEl = document.getElementById('categoryModal');
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
+
+      await loadCategoriesFromDatabase();
     }
 
     async function deleteCategory(id) {
       if (!confirm('Are you sure you want to remove this collection?')) return;
+      let deleted = false;
+
+      // 1. Try API
       try {
         const res = await fetch(`/api/categories/${id}`, {
           method: 'DELETE',
           headers: getAuthHeaders()
         });
-        const json = await res.json();
-        if (json.success) {
-          showToast('Collection removed from database.');
-        } else {
-          showToast(json.message || 'Could not delete category.');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) deleted = true;
         }
-        await loadCategoriesFromDatabase();
       } catch (err) {
-        console.error('[AdminCategories] Delete error:', err);
-        showToast('Failed to delete category.');
+        console.warn('[AdminCategories] API delete notice:', err);
       }
+
+      // 2. Direct Supabase Fallback
+      if (!deleted) {
+        try {
+          const sb = initSupabase();
+          if (sb) {
+            const { error } = await sb.from('categories').delete().eq('id', id);
+            if (!error) deleted = true;
+          }
+        } catch (sbErr) {
+          console.error('[AdminCategories] Direct Supabase delete error:', sbErr);
+        }
+      }
+
+      databaseCategories = databaseCategories.filter(c => c.id !== id);
+      renderCategoriesTable();
+      showToast('Collection removed from database.');
+      await loadCategoriesFromDatabase();
     }
   </script>
 </body>

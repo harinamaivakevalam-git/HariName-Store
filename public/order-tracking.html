@@ -20,6 +20,8 @@
   <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
   <link rel="shortcut icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/assets/images/krishna-logo.jpg">
+  <!-- Supabase JS Client v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -33,54 +35,68 @@
           
           <div class="bg-white border rounded shadow-sm p-4 p-md-5 mb-4">
             <div class="text-center mb-4">
-              <h2 class="hn-section-title mb-1" style="font-size: 1.8rem;">Track Your Order</h2>
+              <h2 class="hn-section-title mb-1" style="font-size: 1.8rem;">Track Your Sacred Order</h2>
               <div class="text-secondary small">Order ID: <span class="fw-bold text-navy" id="hn-track-order-id">#HN-2026-98124</span></div>
+              <div id="hn-track-customer" class="small text-muted mt-1"></div>
+            </div>
+
+            <!-- Search order if not in URL -->
+            <div class="mb-4">
+              <div class="input-group">
+                <input type="text" id="hn-input-track-order" class="form-control" placeholder="Enter Order Number (e.g. HN-2026-12345)">
+                <button class="btn btn-gold px-4" type="button" onclick="searchOrderTracking()"><i class="bi bi-search me-1"></i> Track</button>
+              </div>
             </div>
 
             <!-- Status Timeline -->
-            <div class="py-4">
+            <div class="py-4" id="hn-tracking-timeline">
               <div class="d-flex justify-content-between position-relative mb-4">
-                <div class="text-center" style="z-index: 2;">
-                  <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;">
+                <div class="text-center step-confirmed" style="z-index: 2; width: 25%;">
+                  <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto mb-2 status-icon" style="width: 40px; height: 40px;">
                     <i class="bi bi-check-lg"></i>
                   </div>
                   <div class="small fw-bold">Confirmed</div>
-                  <div class="text-muted" style="font-size: 0.75rem;">12 Sep 10:30 AM</div>
+                  <div class="text-muted status-time" style="font-size: 0.75rem;">Order Placed</div>
                 </div>
 
-                <div class="text-center" style="z-index: 2;">
-                  <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;">
+                <div class="text-center step-packed" style="z-index: 2; width: 25%;">
+                  <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto mb-2 status-icon" style="width: 40px; height: 40px;">
                     <i class="bi bi-box-seam"></i>
                   </div>
                   <div class="small fw-bold">Packed</div>
-                  <div class="text-muted" style="font-size: 0.75rem;">12 Sep 02:15 PM</div>
+                  <div class="text-muted status-time" style="font-size: 0.75rem;">In Preparation</div>
                 </div>
 
-                <div class="text-center" style="z-index: 2;">
-                  <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;">
+                <div class="text-center step-dispatched" style="z-index: 2; width: 25%;">
+                  <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto mb-2 status-icon" style="width: 40px; height: 40px;">
                     <i class="bi bi-truck"></i>
                   </div>
                   <div class="small fw-bold">Dispatched</div>
-                  <div class="text-muted" style="font-size: 0.75rem;">13 Sep 09:00 AM</div>
+                  <div class="text-muted status-time" style="font-size: 0.75rem;">In Transit</div>
                 </div>
 
-                <div class="text-center" style="z-index: 2;">
-                  <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;">
+                <div class="text-center step-delivered" style="z-index: 2; width: 25%;">
+                  <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto mb-2 status-icon" style="width: 40px; height: 40px;">
                     <i class="bi bi-house-door"></i>
                   </div>
                   <div class="small fw-bold">Delivered</div>
-                  <div class="text-muted" style="font-size: 0.75rem;">14 Sep 04:30 PM</div>
+                  <div class="text-muted status-time" style="font-size: 0.75rem;">To Devotee</div>
                 </div>
               </div>
             </div>
 
-            <div class="p-3 bg-light rounded border text-center small text-secondary">
-              <span class="fw-bold text-navy">Carrier:</span> BlueDart Express &nbsp;|&nbsp;
-              <span class="fw-bold text-navy">Tracking AWB:</span> <code>BD77291039IN</code>
+            <div class="p-3 bg-light rounded border text-center small text-secondary" id="hn-track-carrier-box">
+              <span class="fw-bold text-navy">Carrier:</span> <span id="hn-track-carrier">India Post Speed Post</span> &nbsp;|&nbsp;
+              <span class="fw-bold text-navy">Tracking / AWB:</span> <code id="hn-track-awb">HN-EXP-772910</code>
+            </div>
+
+            <div id="hn-track-items-box" class="mt-4 border rounded p-3 bg-light d-none">
+              <div class="fw-bold text-navy small mb-2"><i class="bi bi-bag-heart me-1"></i> Order Items</div>
+              <div id="hn-track-items-list" class="small"></div>
             </div>
 
             <div class="text-center mt-4">
-              <a href="/shop.html" class="btn hn-btn-gold">Continue Shopping</a>
+              <a href="/shop.html" class="btn btn-gold">Continue Shopping</a>
             </div>
 
           </div>
@@ -98,13 +114,115 @@
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
+    const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+
+    function setStepActive(stepClass, active) {
+      const el = document.querySelector(`.${stepClass} .status-icon`);
+      if (!el) return;
+      if (active) {
+        el.className = 'rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto mb-2 status-icon';
+      } else {
+        el.className = 'rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto mb-2 status-icon';
+      }
+    }
+
+    function renderOrderTimeline(orderData) {
+      if (!orderData) return;
+      const orderNum = orderData.order_number || orderData.id || '';
+      document.getElementById('hn-track-order-id').innerText = '#' + orderNum;
+      
+      const custName = orderData.guest_name || orderData.customer || orderData.shipping_address?.name || '';
+      if (custName) {
+        document.getElementById('hn-track-customer').innerText = `Devotee: ${custName}`;
+      }
+
+      document.getElementById('hn-track-carrier').innerText = orderData.courier || 'India Post Speed Post';
+      document.getElementById('hn-track-awb').innerText = orderData.tracking_number || 'Processing';
+
+      const status = (orderData.order_status || orderData.status || 'confirmed').toLowerCase();
+
+      // Confirmed: step 1
+      setStepActive('step-confirmed', true);
+      // Packed: step 2
+      setStepActive('step-packed', status === 'packed' || status === 'dispatched' || status === 'delivered');
+      // Dispatched: step 3
+      setStepActive('step-dispatched', status === 'dispatched' || status === 'delivered');
+      // Delivered: step 4
+      setStepActive('step-delivered', status === 'delivered');
+
+      // If cancelled
+      if (status === 'cancelled') {
+        const confirmedIcon = document.querySelector('.step-confirmed .status-icon');
+        if (confirmedIcon) {
+          confirmedIcon.className = 'rounded-circle bg-danger text-white d-flex align-items-center justify-content-center mx-auto mb-2 status-icon';
+          confirmedIcon.innerHTML = '<i class="bi bi-x-lg"></i>';
+        }
+      }
+
+      // Render line items if available
+      const items = orderData.items || orderData.order_items || [];
+      if (Array.isArray(items) && items.length > 0) {
+        const itemsBox = document.getElementById('hn-track-items-box');
+        const itemsList = document.getElementById('hn-track-items-list');
+        itemsBox.classList.remove('d-none');
+        itemsList.innerHTML = items.map(i => `
+          <div class="d-flex justify-content-between py-1 border-bottom">
+            <span>${i.product_name || i.name} × ${i.quantity || i.qty || 1}</span>
+            <span class="fw-bold text-navy">₹${(parseFloat(i.price || 0) * (i.quantity || i.qty || 1))}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    async function fetchOrderDetails(orderNum) {
+      if (!orderNum) return;
+      const cleanNum = orderNum.trim().replace(/^#/, '');
+
+      // 1. Try local storage first
+      try {
+        const local = JSON.parse(localStorage.getItem('harinama_admin_orders') || '[]')
+          .concat(JSON.parse(localStorage.getItem('hn_orders') || '[]'));
+        const found = local.find(o => (o.id === cleanNum || o.order_number === cleanNum));
+        if (found) {
+          renderOrderTimeline(found);
+        }
+      } catch (e) {}
+
+      // 2. Try Supabase live query
+      try {
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+          const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          const { data, error } = await sb
+            .from('orders')
+            .select('*, order_items(*)')
+            .or(`order_number.eq.${cleanNum},id.eq.${cleanNum}`)
+            .maybeSingle();
+
+          if (!error && data) {
+            renderOrderTimeline(data);
+          }
+        }
+      } catch (sbE) {
+        console.warn('[OrderTracking] Supabase fetch note:', sbE);
+      }
+    }
+
+    function searchOrderTracking() {
+      const val = document.getElementById('hn-input-track-order').value;
+      if (val) {
+        fetchOrderDetails(val);
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       renderHeader('orders');
       renderFooter();
       const params = new URLSearchParams(window.location.search);
       const order = params.get('order');
       if (order) {
-        document.getElementById('hn-track-order-id').innerText = '#' + order;
+        document.getElementById('hn-input-track-order').value = order;
+        fetchOrderDetails(order);
       }
     });
   </script>

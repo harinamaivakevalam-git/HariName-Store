@@ -22,6 +22,7 @@
   <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <!-- Harinama Store Master Stylesheet -->
   <link rel="stylesheet" href="/assets/css/style.css?v=6">
@@ -204,6 +205,18 @@
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
+    const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+    let supabaseClient = null;
+
+    function initSupabase() {
+      if (supabaseClient) return supabaseClient;
+      if (window.supabase && typeof window.supabase.createClient === 'function') {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+      return supabaseClient;
+    }
+
     let databaseCoupons = [];
 
     function getAuthHeaders() {
@@ -218,6 +231,8 @@
 
     async function loadCouponsFromDatabase() {
       const tbody = document.getElementById('coupons-table-body');
+      
+      // 1. Try Express API
       try {
         const res = await fetch('/api/coupons', { headers: getAuthHeaders() });
         if (res.ok) {
@@ -238,7 +253,35 @@
           }
         }
       } catch (e) {
-        console.warn('[AdminCoupons] Could not load coupons from API:', e);
+        console.warn('[AdminCoupons] API unavailable, attempting direct Supabase query...');
+      }
+
+      // 2. Direct Supabase Query
+      try {
+        const client = initSupabase();
+        if (client) {
+          const { data, error } = await client
+            .from('coupons')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (!error && Array.isArray(data) && data.length > 0) {
+            databaseCoupons = data.map(c => ({
+              id: c.id,
+              code: c.code,
+              type: c.discount_type || c.type || 'fixed',
+              value: parseFloat(c.discount_value || c.value || 0),
+              min: parseFloat(c.minimum_order || c.min || 0),
+              used: c.times_used || c.used || 0,
+              expiry: c.expiry_date ? c.expiry_date.split('T')[0] : (c.expiry || ''),
+              status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
+            }));
+            renderCouponsTable();
+            return;
+          }
+        }
+      } catch (sbErr) {
+        console.warn('[AdminCoupons] Supabase direct query error:', sbErr);
       }
 
       // Fallback
@@ -252,6 +295,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       localStorage.removeItem('harinama_admin_coupons');
+      initSupabase();
       loadCouponsFromDatabase();
     });
 
@@ -307,6 +351,18 @@
       const minimum_order = document.getElementById('coup-min').value ? parseFloat(document.getElementById('coup-min').value) : 0;
       const expiry_date = document.getElementById('coup-expiry').value || new Date(Date.now() + 365*24*3600*1000).toISOString().split('T')[0];
 
+      const payload = {
+        code,
+        discount_type,
+        discount_value,
+        minimum_order,
+        expiry_date,
+        status: 'active'
+      };
+
+      let saved = false;
+
+      // 1. Try Express API
       try {
         const endpoint = id ? `/api/coupons/${id}` : '/api/coupons';
         const method = id ? 'PUT' : 'POST';
@@ -314,50 +370,87 @@
         const res = await fetch(endpoint, {
           method,
           headers: getAuthHeaders(),
-          body: JSON.stringify({
-            code,
-            discount_type,
-            discount_value,
-            minimum_order,
-            expiry_date
-          })
+          body: JSON.stringify(payload)
         });
 
-        const json = await res.json();
-        if (json.success) {
-          showToast(id ? 'Coupon updated in database!' : 'New coupon created in database!');
-        } else {
-          showToast(json.message || 'Saved with notice.');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) {
+            saved = true;
+          }
         }
+      } catch (err) {
+        console.warn('[AdminCoupons] Express API save failed, attempting Supabase direct write...');
+      }
 
+      // 2. Direct Supabase fallback
+      if (!saved) {
+        try {
+          const client = initSupabase();
+          if (client) {
+            if (id) {
+              const { error } = await client.from('coupons').update(payload).eq('id', id);
+              if (!error) saved = true;
+              else console.error('[AdminCoupons] Supabase update error:', error);
+            } else {
+              const { error } = await client.from('coupons').insert([payload]);
+              if (!error) saved = true;
+              else console.error('[AdminCoupons] Supabase insert error:', error);
+            }
+          }
+        } catch (sbErr) {
+          console.error('[AdminCoupons] Direct Supabase save error:', sbErr);
+        }
+      }
+
+      if (saved) {
+        showToast(id ? 'Coupon updated in database!' : 'New coupon created in database!');
         const modalEl = document.getElementById('couponModal');
         const modal = bootstrap.Modal.getInstance(modalEl);
         if (modal) modal.hide();
-
         await loadCouponsFromDatabase();
-      } catch (err) {
-        console.error('[AdminCoupons] Save error:', err);
-        showToast('Error saving coupon to database.');
+      } else {
+        showToast('Error saving coupon to database. Please check Supabase permissions.');
       }
     }
 
     async function deleteCoupon(id) {
       if (!confirm('Permanently delete this coupon from the database?')) return;
+      let deleted = false;
+
+      // 1. Try API
       try {
         const res = await fetch(`/api/coupons/${id}`, {
           method: 'DELETE',
           headers: getAuthHeaders()
         });
-        const json = await res.json();
-        if (json.success) {
-          showToast('Coupon deleted from database.');
-        } else {
-          showToast(json.message || 'Could not delete coupon.');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) deleted = true;
         }
-        await loadCouponsFromDatabase();
       } catch (err) {
-        console.error('[AdminCoupons] Delete error:', err);
-        showToast('Failed to delete coupon.');
+        console.warn('[AdminCoupons] API delete failed, attempting Supabase direct delete...');
+      }
+
+      // 2. Direct Supabase fallback
+      if (!deleted) {
+        try {
+          const client = initSupabase();
+          if (client) {
+            const { error } = await client.from('coupons').delete().eq('id', id);
+            if (!error) deleted = true;
+            else console.error('[AdminCoupons] Supabase delete error:', error);
+          }
+        } catch (sbErr) {
+          console.error('[AdminCoupons] Supabase delete error:', sbErr);
+        }
+      }
+
+      if (deleted) {
+        showToast('Coupon deleted from database.');
+        await loadCouponsFromDatabase();
+      } else {
+        showToast('Failed to delete coupon from database.');
       }
     }
   </script>

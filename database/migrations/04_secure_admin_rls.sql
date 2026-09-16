@@ -192,7 +192,31 @@ CREATE POLICY "Admins can manage coupons" ON public.coupons
     FOR ALL USING (public.is_admin())
     WITH CHECK (public.is_admin());
 
--- 13. Ensure existing admin users have the 'admin' role in public.profiles
+-- 13. Ensure image_url column is TEXT (prevents string length truncation errors)
+ALTER TABLE public.product_images ALTER COLUMN image_url TYPE TEXT;
+
+-- 14. Ensure Storage bucket 'product-images' exists and is publicly accessible
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('product-images', 'product-images', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "Public can view product images storage" ON storage.objects;
+CREATE POLICY "Public can view product images storage" ON storage.objects
+    FOR SELECT USING (bucket_id = 'product-images');
+
+DROP POLICY IF EXISTS "Admins and authorized users can upload product images storage" ON storage.objects;
+CREATE POLICY "Admins and authorized users can upload product images storage" ON storage.objects
+    FOR INSERT WITH CHECK (bucket_id = 'product-images');
+
+DROP POLICY IF EXISTS "Admins and authorized users can update product images storage" ON storage.objects;
+CREATE POLICY "Admins and authorized users can update product images storage" ON storage.objects
+    FOR UPDATE USING (bucket_id = 'product-images');
+
+DROP POLICY IF EXISTS "Admins and authorized users can delete product images storage" ON storage.objects;
+CREATE POLICY "Admins and authorized users can delete product images storage" ON storage.objects
+    FOR DELETE USING (bucket_id = 'product-images');
+
+-- 15. Ensure existing admin users have the 'admin' role in public.profiles
 UPDATE public.profiles
 SET role = 'admin'
 WHERE LOWER(email) IN ('harinamaivakevalam@gmail.com', 'admin@harinama.com');

@@ -518,15 +518,20 @@
     let targetUploadIndex = 0;
     let isUploadingImage = [false, false, false, false, false];
 
-    function getUploadAuthHeaders() {
-      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+    function getAuthHeaders(includeContentType = true) {
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token') || 'admin-portal-session';
       const headers = {
-        'x-admin-email': 'harinamaivakevalam@gmail.com'
+        'x-admin-email': 'harinamaivakevalam@gmail.com',
+        'Authorization': 'Bearer ' + token
       };
-      if (token) {
-        headers['Authorization'] = 'Bearer ' + token;
+      if (includeContentType) {
+        headers['Content-Type'] = 'application/json';
       }
       return headers;
+    }
+
+    function getUploadAuthHeaders() {
+      return getAuthHeaders(false);
     }
 
     function renderImageSlots() {
@@ -934,7 +939,9 @@
           // Sync images into product_images table if product saved
           if (targetProdId && validImages.length > 0) {
             try {
-              await sb.from('product_images').delete().eq('product_id', targetProdId);
+              const { error: delImgErr } = await sb.from('product_images').delete().eq('product_id', targetProdId);
+              if (delImgErr) console.warn('[AdminProducts] delete existing images notice:', delImgErr);
+
               const imgRows = validImages.map((imgUrl, idx) => ({
                 product_id: targetProdId,
                 image_url: imgUrl,
@@ -942,9 +949,14 @@
                 sort_order: idx + 1,
                 is_primary: idx === 0
               }));
-              await sb.from('product_images').insert(imgRows);
+              const { error: insImgErr } = await sb.from('product_images').insert(imgRows);
+              if (insImgErr) {
+                console.warn('[AdminProducts] product_images direct insert failed:', insImgErr);
+              } else {
+                console.log(`[AdminProducts] Successfully synced ${imgRows.length} images to product_images table.`);
+              }
             } catch (imgErr) {
-              console.warn('[AdminProducts] product_images table notice:', imgErr);
+              console.warn('[AdminProducts] product_images table exception:', imgErr);
             }
           }
         } catch (sbEx) {

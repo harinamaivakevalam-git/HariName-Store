@@ -679,15 +679,15 @@
           const { data, error } = await sb.from('products')
             .select(`
               *,
-              product_images (image_url, is_primary, display_order),
+              product_images (*),
               categories (name, slug)
             `)
             .or(`id.eq.${prodId},slug.eq.${prodId}`)
             .maybeSingle();
 
           if (!error && data) {
-            const images = (data.product_images || []).sort((a,b) => (a.display_order||0) - (b.display_order||0));
-            const primaryImg = images.find(i => i.is_primary)?.image_url || images[0]?.image_url || data.primary_image;
+            const images = (data.product_images || []).sort((a,b) => (a.sort_order || a.display_order || 0) - (b.sort_order || b.display_order || 0));
+            const primaryImg = images.find(i => i.is_primary)?.image_url || images[0]?.image_url || data.primary_image || data.image;
             const galleryUrls = images.map(i => i.image_url);
 
             const resolvedProd = {
@@ -698,11 +698,11 @@
               price: Number(data.price),
               old_price: data.compare_price ? Number(data.compare_price) : null,
               category: data.categories?.name || 'Devotional Items',
-              material: data.material || 'Devotional Finish',
+              material: data.material || (data.specifications && data.specifications.material) || 'Devotional Finish',
               description: data.description || '',
               image: primaryImg,
               gallery: galleryUrls.length > 0 ? galleryUrls : [primaryImg],
-              stock: data.stock_quantity ?? 10
+              stock: data.stock !== undefined ? data.stock : (data.stock_quantity ?? 10)
             };
             populateDetails(resolvedProd);
             return;

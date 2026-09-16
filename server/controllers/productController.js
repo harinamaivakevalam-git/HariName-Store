@@ -580,6 +580,8 @@ exports.createProduct = async (req, res, next) => {
         numCompare = null;
       }
 
+      const isBrandUuid = brand_id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(brand_id);
+
       const { data: newProd, error } = await client
         .from('products')
         .insert({
@@ -592,7 +594,7 @@ exports.createProduct = async (req, res, next) => {
           sku: finalSku,
           stock: parseInt(stock, 10) || 0,
           category_id: resolvedCatId || null,
-          brand_id: brand_id || 'b0000001-0000-0000-0000-000000000001',
+          brand_id: isBrandUuid ? brand_id : null,
           status: status || 'active',
           featured: Boolean(featured),
           trending: Boolean(trending),

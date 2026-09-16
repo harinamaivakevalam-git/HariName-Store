@@ -776,10 +776,14 @@ exports.updateProduct = async (req, res, next) => {
         }
 
         const effectivePrice = updates.price !== undefined ? updates.price : (targetRecord ? parseFloat(targetRecord.price) : 0);
-        if (updates.compare_price !== undefined && updates.compare_price !== null) {
-          if (isNaN(updates.compare_price) || updates.compare_price <= effectivePrice) {
-            updates.compare_price = null;
-          }
+        let effectiveCompare = updates.compare_price !== undefined 
+          ? updates.compare_price 
+          : (targetRecord && targetRecord.compare_price ? parseFloat(targetRecord.compare_price) : null);
+
+        if (effectiveCompare !== null && (isNaN(effectiveCompare) || effectiveCompare <= effectivePrice)) {
+          updates.compare_price = null;
+        } else if (updates.compare_price !== undefined) {
+          updates.compare_price = effectiveCompare;
         }
         if (updates.stock !== undefined) updates.stock = parseInt(updates.stock, 10);
         if (updates.featured !== undefined) updates.featured = Boolean(updates.featured);

@@ -297,6 +297,18 @@
     }
 
     async function loadProductsFromDatabase() {
+      // 0. Immediately populate from local live cache if available so UI renders without delay
+      try {
+        const cached = localStorage.getItem('hn_live_products');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            databaseProducts = parsed;
+            renderProductsTable(databaseProducts);
+          }
+        }
+      } catch (e) {}
+
       const tbody = document.getElementById('products-table-body');
       if (tbody && databaseProducts.length === 0) {
         tbody.innerHTML = `
@@ -309,6 +321,9 @@
         `;
       }
 
+      let remoteProducts = [];
+
+      // 1. Try Express API
       try {
         const res = await fetch('/api/products?limit=100', {
           headers: getAuthHeaders()
@@ -317,77 +332,78 @@
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-            databaseProducts = json.data;
-            renderProductsTable(databaseProducts);
-            localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
-            
-            // Sync with global catalog in memory
-            if (typeof HARINAMA_DATA !== 'undefined') {
-              HARINAMA_DATA.products = databaseProducts;
-              window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
-                detail: { products: databaseProducts, categories: HARINAMA_DATA.categories }
-              }));
-            }
-            return;
+            remoteProducts = json.data;
           }
         }
       } catch (err) {
-        console.warn('[AdminProducts] Failed to fetch via /api/products, attempting direct Supabase query:', err);
+        console.warn('[AdminProducts] /api/products fetch notice:', err);
       }
 
-      // Fallback: direct Supabase query
-      try {
-        const sb = initSupabase();
-        if (sb) {
-          const { data, error } = await sb
-            .from('products')
-            .select('*, product_images(*), categories(id, name, slug)')
-            .order('created_at', { ascending: false });
+      // 2. Fallback: direct Supabase query if API didn't return data
+      if (remoteProducts.length === 0) {
+        try {
+          const sb = initSupabase();
+          if (sb) {
+            const { data, error } = await sb
+              .from('products')
+              .select('*, product_images(*), categories(id, name, slug)')
+              .order('created_at', { ascending: false });
 
-          if (!error && Array.isArray(data) && data.length > 0) {
-            databaseProducts = data.map(p => {
-              const imgList = (p.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(i => i.image_url);
-              const img = imgList[0] || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
-              return {
-                id: p.id,
-                sku: p.sku,
-                name: p.name,
-                title: p.title || p.name,
-                slug: p.slug,
-                category: p.categories?.name || 'Devotional Items',
-                material: p.material || 'Standard',
-                price: parseFloat(p.price) || 0,
-                old_price: p.compare_price ? parseFloat(p.compare_price) : null,
-                stock: p.stock !== undefined ? p.stock : 25,
-                rating: parseFloat(p.rating) || 5.0,
-                reviews_count: p.reviews_count || 0,
-                image: img,
-                primary_image: img,
-                images: imgList.length > 0 ? imgList : [img],
-                gallery: imgList.length > 0 ? imgList : [img],
-                description: p.description || ''
-              };
-            });
-            renderProductsTable(databaseProducts);
-            localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
-            if (typeof HARINAMA_DATA !== 'undefined') {
-              HARINAMA_DATA.products = databaseProducts;
-              window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
-                detail: { products: databaseProducts, categories: HARINAMA_DATA.categories }
-              }));
+            if (!error && Array.isArray(data) && data.length > 0) {
+              remoteProducts = data.map(p => {
+                const imgList = (p.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(i => i.image_url);
+                const img = imgList[0] || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80';
+                return {
+                  id: p.id,
+                  sku: p.sku,
+                  name: p.name,
+                  title: p.title || p.name,
+                  slug: p.slug,
+                  category: p.categories?.name || 'Devotional Items',
+                  material: p.material || (p.specifications && p.specifications.material) || 'Standard',
+                  price: parseFloat(p.price) || 0,
+                  old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+                  compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
+                  stock: p.stock !== undefined ? p.stock : 25,
+                  rating: parseFloat(p.rating) || 5.0,
+                  reviews_count: p.reviews_count || 0,
+                  image: img,
+                  primary_image: img,
+                  images: imgList.length > 0 ? imgList : [img],
+                  gallery: imgList.length > 0 ? imgList : [img],
+                  description: p.description || ''
+                };
+              });
             }
-            return;
           }
+        } catch (sbErr) {
+          console.error('[AdminProducts] Supabase direct query notice:', sbErr);
         }
-      } catch (sbErr) {
-        console.error('[AdminProducts] Direct Supabase query error:', sbErr);
       }
 
-      // Ultimate fallback: HARINAMA_DATA
-      if (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) {
-        databaseProducts = [...HARINAMA_DATA.products];
+      // If remote products were fetched, merge with local state
+      if (remoteProducts.length > 0) {
+        const remoteIds = new Set(remoteProducts.map(p => String(p.id)));
+        const remoteSlugs = new Set(remoteProducts.map(p => String(p.slug)));
+
+        const localOnly = databaseProducts.filter(p => !remoteIds.has(String(p.id)) && !remoteSlugs.has(String(p.slug)));
+        databaseProducts = [...localOnly, ...remoteProducts];
         renderProductsTable(databaseProducts);
         localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
+      } else if (databaseProducts.length === 0) {
+        // Ultimate fallback if nothing in local or remote
+        if (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) {
+          databaseProducts = [...HARINAMA_DATA.products];
+          renderProductsTable(databaseProducts);
+          localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
+        }
+      }
+
+      if (typeof HARINAMA_DATA !== 'undefined') {
+        HARINAMA_DATA.products = databaseProducts;
+        window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
+          detail: { products: databaseProducts, categories: HARINAMA_DATA.categories }
+        }));
       }
     }
 

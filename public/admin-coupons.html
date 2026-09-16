@@ -118,26 +118,32 @@
     </div>
 
     <!-- Action Bar -->
-    <div class="hn-admin-filter-bar d-flex flex-wrap align-items-center justify-content-between gap-3">
-      <p class="mb-0 text-muted">Create devotional festival coupons and discounts for devotees at checkout.</p>
-      <button class="btn btn-gold d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#couponModal" onclick="prepareAddCoupon()">
+    <div class="hn-admin-filter-bar d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 bg-white rounded-3 border mb-3 shadow-sm">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-ticket-perforated-fill text-gold fs-4"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-navy">Devotional Coupons & Discounts</h6>
+          <small class="text-muted">Create, manage, and track usage limits for festival coupons across the store.</small>
+        </div>
+      </div>
+      <button class="btn btn-gold d-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#couponModal" onclick="prepareAddCoupon()">
         <i class="bi bi-plus-lg"></i> Create New Coupon
       </button>
     </div>
 
     <!-- Coupons Table Card -->
-    <div class="hn-admin-card mb-4">
+    <div class="hn-admin-card card border-0 shadow-sm rounded-3 mb-4 overflow-hidden">
       <div class="table-responsive">
         <table class="table hn-table align-middle mb-0">
-          <thead>
-            <tr>
-              <th style="min-width: 160px;">Coupon Code</th>
+          <thead class="table-light">
+            <tr class="text-uppercase small text-muted font-monospace" style="font-size: 0.78rem;">
+              <th style="min-width: 160px;" class="ps-3">Coupon Code</th>
               <th style="min-width: 140px;">Discount Value</th>
-              <th style="min-width: 160px;">Min Order Value</th>
-              <th style="min-width: 120px;">Usage Count</th>
+              <th style="min-width: 150px;">Min Order Value</th>
+              <th style="min-width: 160px;">Usage Count</th>
               <th style="min-width: 140px;">Expiry Date</th>
-              <th style="min-width: 100px;">Status</th>
-              <th style="min-width: 100px;" class="text-end">Actions</th>
+              <th style="min-width: 110px;">Status</th>
+              <th style="min-width: 110px;" class="text-end pe-3">Actions</th>
             </tr>
           </thead>
           <tbody id="coupons-table-body">
@@ -151,49 +157,75 @@
 
   <!-- Coupon Modal -->
   <div class="modal fade hn-admin-modal" id="couponModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="couponModalTitle">Create Devotional Coupon</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-navy text-white py-3">
+          <h5 class="modal-title fs-6 fw-bold" id="couponModalTitle">
+            <i class="bi bi-ticket-perforated me-1"></i> Create Devotional Coupon
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body p-4">
+        <div class="modal-body p-3 p-md-4">
           <form id="couponForm" onsubmit="saveCoupon(event)">
             <input type="hidden" id="edit-coup-id">
             
             <div class="mb-3">
-              <label class="form-label fw-semibold">Coupon Code *</label>
-              <input type="text" id="coup-code" class="form-control text-uppercase" placeholder="e.g. KRISHNA10" required>
+              <label class="form-label small fw-bold text-navy">Coupon Code *</label>
+              <input type="text" id="coup-code" class="form-control form-control-sm text-uppercase fw-bold" placeholder="e.g. KRISHNA50" required>
             </div>
 
             <div class="row g-3 mb-3">
               <div class="col-md-6">
-                <label class="form-label fw-semibold">Discount Type</label>
-                <select id="coup-type" class="form-select">
-                  <option value="percentage">Percentage (%)</option>
+                <label class="form-label small fw-bold text-navy">Discount Type</label>
+                <select id="coup-type" class="form-select form-select-sm">
                   <option value="fixed">Fixed Amount (₹)</option>
+                  <option value="percentage">Percentage (%)</option>
                 </select>
               </div>
               <div class="col-md-6">
-                <label class="form-label fw-semibold">Discount Value *</label>
-                <input type="number" id="coup-value" class="form-control" placeholder="10" min="1" required>
+                <label class="form-label small fw-bold text-navy">Discount Value *</label>
+                <input type="number" id="coup-value" class="form-control form-control-sm" placeholder="50" min="1" required>
               </div>
             </div>
 
             <div class="row g-3 mb-3">
               <div class="col-md-6">
-                <label class="form-label fw-semibold">Min Order Value (₹)</label>
-                <input type="number" id="coup-min" class="form-control" placeholder="299" min="0">
+                <label class="form-label small fw-bold text-navy">Min Order Value (₹)</label>
+                <input type="number" id="coup-min" class="form-control form-control-sm" placeholder="249" min="0">
               </div>
               <div class="col-md-6">
-                <label class="form-label fw-semibold">Expiry Date</label>
-                <input type="date" id="coup-expiry" class="form-control">
+                <label class="form-label small fw-bold text-navy">Expiry Date</label>
+                <input type="date" id="coup-expiry" class="form-control form-control-sm">
               </div>
             </div>
 
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold text-navy">Usage Count (Times Used)</label>
+                <input type="number" id="coup-used" class="form-control form-control-sm" placeholder="0" min="0" value="0">
+                <small class="text-muted" style="font-size: 0.72rem;">Current redemption count</small>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold text-navy">Max Usage Limit</label>
+                <input type="number" id="coup-limit" class="form-control form-control-sm" placeholder="100" min="1" value="100">
+                <small class="text-muted" style="font-size: 0.72rem;">Total allowed redemptions</small>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-navy">Coupon Status</label>
+              <select id="coup-status" class="form-select form-select-sm">
+                <option value="active">Active (Available for Checkout)</option>
+                <option value="inactive">Inactive (Disabled)</option>
+                <option value="expired">Expired</option>
+              </select>
+            </div>
+
             <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-gold px-4">Save Coupon</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" id="save-coupon-btn" class="btn btn-sm btn-gold px-4">
+                <i class="bi bi-cloud-arrow-up me-1"></i> Save Coupon
+              </button>
             </div>
           </form>
         </div>
@@ -245,7 +277,8 @@
               type: c.discount_type || c.type || 'fixed',
               value: parseFloat(c.discount_value || c.value || 0),
               min: parseFloat(c.minimum_order || c.min || 0),
-              used: c.times_used || c.used || 0,
+              used: parseInt(c.times_used !== undefined ? c.times_used : (c.used || 0), 10) || 0,
+              limit: c.usage_limit ? parseInt(c.usage_limit, 10) : (c.limit ? parseInt(c.limit, 10) : 100),
               expiry: c.expiry_date ? c.expiry_date.split('T')[0] : (c.expiry || ''),
               status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
             }));
@@ -273,7 +306,8 @@
               type: c.discount_type || c.type || 'fixed',
               value: parseFloat(c.discount_value || c.value || 0),
               min: parseFloat(c.minimum_order || c.min || 0),
-              used: c.times_used || c.used || 0,
+              used: parseInt(c.times_used !== undefined ? c.times_used : (c.used || 0), 10) || 0,
+              limit: c.usage_limit ? parseInt(c.usage_limit, 10) : 100,
               expiry: c.expiry_date ? c.expiry_date.split('T')[0] : (c.expiry || ''),
               status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
             }));
@@ -287,9 +321,9 @@
 
       // Fallback
       databaseCoupons = [
-        { id: 'd6b958cf-205d-45ee-bb9b-ffcc0afe1b95', code: 'WELCOME10', type: 'fixed', value: 50, min: 199, used: 0, expiry: '2027-09-14', status: 'Active' },
-        { id: '68cf15c1-b8e8-4cf4-bfca-01758fa11d26', code: 'KRISHNA50', type: 'fixed', value: 50, min: 249, used: 0, expiry: '2027-09-14', status: 'Active' },
-        { id: '7a04b500-ff6a-4fbb-a8c3-43db1e63b0a3', code: 'RADHA100', type: 'fixed', value: 100, min: 499, used: 0, expiry: '2027-09-14', status: 'Active' }
+        { id: 'd6b958cf-205d-45ee-bb9b-ffcc0afe1b95', code: 'WELCOME10', type: 'fixed', value: 50, min: 1000, used: 0, limit: 100, expiry: '2027-09-14', status: 'Active' },
+        { id: '68cf15c1-b8e8-4cf4-bfca-01758fa11d26', code: 'KRISHNA50', type: 'fixed', value: 50, min: 249, used: 0, limit: 100, expiry: '2027-09-14', status: 'Active' },
+        { id: '7a04b500-ff6a-4fbb-a8c3-43db1e63b0a3', code: 'RADHA100', type: 'fixed', value: 100, min: 499, used: 0, limit: 100, expiry: '2027-09-14', status: 'Active' }
       ];
       renderCouponsTable();
     }
@@ -304,28 +338,45 @@
       const tbody = document.getElementById('coupons-table-body');
       if (!tbody) return;
 
-      tbody.innerHTML = databaseCoupons.map(c => `
+      tbody.innerHTML = databaseCoupons.map(c => {
+        const isActive = c.status.toLowerCase() === 'active';
+        const isExpired = c.status.toLowerCase() === 'expired' || (c.expiry && new Date(c.expiry) < new Date());
+        const statusBadge = isActive ? 'bg-success-subtle text-success border border-success-subtle' :
+                            isExpired ? 'bg-danger-subtle text-danger border border-danger-subtle' :
+                            'bg-secondary-subtle text-secondary border border-secondary-subtle';
+
+        return `
         <tr>
-          <td>
+          <td class="ps-3">
             <span class="badge bg-primary-subtle text-primary border px-2 py-1 fs-6 fw-bold text-nowrap">${c.code}</span>
           </td>
           <td class="fw-bold text-navy text-nowrap">${c.type === 'percentage' ? c.value + '%' : '₹' + c.value} OFF</td>
           <td class="text-nowrap">${c.min ? '₹' + c.min : 'No minimum'}</td>
-          <td class="text-nowrap">${c.used} times</td>
+          <td class="text-nowrap">
+            <div class="d-flex align-items-center gap-1">
+              <span class="badge bg-light text-dark border px-2 py-1 font-monospace">
+                <i class="bi bi-ticket-detailed text-gold me-1"></i>${c.used} / ${c.limit || '∞'} used
+              </span>
+            </div>
+          </td>
           <td class="small text-muted text-nowrap">${c.expiry || 'No expiry'}</td>
-          <td class="text-nowrap"><span class="badge bg-success-subtle text-success">${c.status}</span></td>
-          <td class="text-end text-nowrap">
-            <button class="btn btn-sm btn-outline-dark me-1" onclick="editCoupon('${c.id}')"><i class="bi bi-pencil"></i></button>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteCoupon('${c.id}')"><i class="bi bi-trash"></i></button>
+          <td class="text-nowrap"><span class="badge ${statusBadge} px-2 py-1">${c.status}</span></td>
+          <td class="text-end text-nowrap pe-3">
+            <button class="btn btn-sm btn-outline-dark me-1" onclick="editCoupon('${c.id}')" title="Edit Coupon"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteCoupon('${c.id}')" title="Delete Coupon"><i class="bi bi-trash"></i></button>
           </td>
         </tr>
-      `).join('');
+        `;
+      }).join('');
     }
 
     function prepareAddCoupon() {
       document.getElementById('couponForm').reset();
       document.getElementById('edit-coup-id').value = '';
-      document.getElementById('couponModalTitle').innerText = 'Create Devotional Coupon';
+      document.getElementById('coup-used').value = 0;
+      document.getElementById('coup-limit').value = 100;
+      document.getElementById('coup-status').value = 'active';
+      document.getElementById('couponModalTitle').innerHTML = '<i class="bi bi-plus-circle me-1"></i> Create Devotional Coupon';
     }
 
     function editCoupon(id) {
@@ -337,7 +388,10 @@
       document.getElementById('coup-value').value = c.value;
       document.getElementById('coup-min').value = c.min || '';
       document.getElementById('coup-expiry').value = c.expiry || '';
-      document.getElementById('couponModalTitle').innerText = 'Edit Coupon — ' + c.code;
+      document.getElementById('coup-used').value = c.used !== undefined ? c.used : 0;
+      document.getElementById('coup-limit').value = c.limit || 100;
+      document.getElementById('coup-status').value = (c.status || 'active').toLowerCase();
+      document.getElementById('couponModalTitle').innerHTML = '<i class="bi bi-pencil-square me-1"></i> Edit Coupon — ' + c.code;
 
       const modal = new bootstrap.Modal(document.getElementById('couponModal'));
       modal.show();
@@ -345,12 +399,19 @@
 
     async function saveCoupon(e) {
       e.preventDefault();
+      const saveBtn = document.getElementById('save-coupon-btn');
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
       const id = document.getElementById('edit-coup-id').value;
       const code = document.getElementById('coup-code').value.trim().toUpperCase();
       const discount_type = document.getElementById('coup-type').value;
       const discount_value = parseFloat(document.getElementById('coup-value').value);
       const minimum_order = document.getElementById('coup-min').value ? parseFloat(document.getElementById('coup-min').value) : 0;
       const expiry_date = document.getElementById('coup-expiry').value || new Date(Date.now() + 365*24*3600*1000).toISOString().split('T')[0];
+      const times_used = parseInt(document.getElementById('coup-used').value, 10) || 0;
+      const usage_limit = parseInt(document.getElementById('coup-limit').value, 10) || 100;
+      const status = document.getElementById('coup-status').value || 'active';
 
       const payload = {
         code,
@@ -358,7 +419,9 @@
         discount_value,
         minimum_order,
         expiry_date,
-        status: 'active'
+        times_used,
+        usage_limit,
+        status
       };
 
       let saved = false;
@@ -404,14 +467,17 @@
         }
       }
 
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '<i class="bi bi-cloud-arrow-up me-1"></i> Save Coupon';
+
       if (saved) {
-        showToast(id ? 'Coupon updated in database!' : 'New coupon created in database!');
+        showToast(id ? 'Coupon updated in database! 🌸' : 'New coupon created in database! 🌸');
         const modalEl = document.getElementById('couponModal');
         const modal = bootstrap.Modal.getInstance(modalEl);
         if (modal) modal.hide();
         await loadCouponsFromDatabase();
       } else {
-        showToast('Error saving coupon to database. Please check Supabase permissions.');
+        showToast('Error saving coupon to database. Please check Supabase permissions.', 'danger');
       }
     }
 
@@ -451,7 +517,7 @@
         showToast('Coupon deleted from database.');
         await loadCouponsFromDatabase();
       } else {
-        showToast('Failed to delete coupon from database.');
+        showToast('Failed to delete coupon from database.', 'danger');
       }
     }
   </script>

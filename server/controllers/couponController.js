@@ -107,13 +107,16 @@ exports.getCoupons = async (req, res, next) => {
 // Admin: Create Coupon
 exports.createCoupon = async (req, res, next) => {
   try {
-    const { code, description, discount_type, discount_value, minimum_order, maximum_discount, expiry_date, usage_limit } = req.body;
+    const { code, description, discount_type, discount_value, minimum_order, maximum_discount, expiry_date, usage_limit, times_used, status } = req.body;
 
     if (!code || !discount_type || discount_value === undefined || !expiry_date) {
       return res.status(400).json({ success: false, message: 'Code, type, value, and expiry date are required.' });
     }
 
     const cleanCode = code.toUpperCase().trim();
+    const usedCount = parseInt(times_used, 10) || 0;
+    const limitVal = usage_limit !== undefined && usage_limit !== '' && usage_limit !== null ? parseInt(usage_limit, 10) : 100;
+    const cpnStatus = status ? status.toLowerCase().trim() : 'active';
 
     if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       const client = supabaseAdmin || supabase;
@@ -127,9 +130,9 @@ exports.createCoupon = async (req, res, next) => {
           minimum_order: minimum_order ? parseFloat(minimum_order) : 0,
           maximum_discount: maximum_discount ? parseFloat(maximum_discount) : null,
           expiry_date: new Date(expiry_date).toISOString(),
-          usage_limit: usage_limit ? parseInt(usage_limit, 10) : 100,
-          times_used: 0,
-          status: 'active'
+          usage_limit: limitVal,
+          times_used: usedCount,
+          status: cpnStatus
         })
         .select()
         .single();
@@ -152,9 +155,9 @@ exports.createCoupon = async (req, res, next) => {
       minimum_order: minimum_order ? parseFloat(minimum_order) : 0,
       maximum_discount: maximum_discount ? parseFloat(maximum_discount) : null,
       expiry_date: new Date(expiry_date).toISOString(),
-      usage_limit: usage_limit ? parseInt(usage_limit, 10) : 100,
-      times_used: 0,
-      status: 'active'
+      usage_limit: limitVal,
+      times_used: usedCount,
+      status: cpnStatus
     });
 
     res.status(201).json({ success: true, message: 'Coupon created.', data: newCoupon });
@@ -167,22 +170,35 @@ exports.createCoupon = async (req, res, next) => {
 exports.updateCoupon = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const payload = req.body || {};
+    const cleanPayload = {};
+    if (payload.times_used !== undefined) cleanPayload.times_used = parseInt(payload.times_used, 10) || 0;
+    if (payload.usage_limit !== undefined && payload.usage_limit !== '') {
+      cleanPayload.usage_limit = parseInt(payload.usage_limit, 10) || null;
+    }
+    if (payload.discount_value !== undefined) cleanPayload.discount_value = parseFloat(payload.discount_value);
+    if (payload.minimum_order !== undefined) cleanPayload.minimum_order = parseFloat(payload.minimum_order) || 0;
+    if (payload.maximum_discount !== undefined) cleanPayload.maximum_discount = parseFloat(payload.maximum_discount) || null;
+    if (payload.discount_type) cleanPayload.discount_type = payload.discount_type;
+    if (payload.description !== undefined) cleanPayload.description = payload.description;
+    if (payload.code) cleanPayload.code = payload.code.toUpperCase().trim();
+    if (payload.status) cleanPayload.status = payload.status.toLowerCase().trim();
+    if (payload.expiry_date) cleanPayload.expiry_date = new Date(payload.expiry_date).toISOString();
 
     if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       const client = supabaseAdmin || supabase;
       const { data, error } = await client
         .from('coupons')
-        .update({ ...req.body, updated_at: new Date().toISOString() })
+        .update(cleanPayload)
         .eq('id', id)
-        .select()
-        .single();
+        .select();
 
-      if (!error && data) {
-        return res.json({ success: true, message: 'Coupon updated in Supabase.', data });
+      if (!error && data && data.length > 0) {
+        return res.json({ success: true, message: 'Coupon updated in Supabase.', data: data[0] });
       }
     }
 
-    const updated = db.update('coupons', id, req.body);
+    const updated = db.update('coupons', id, cleanPayload);
     if (!updated) return res.status(404).json({ success: false, message: 'Coupon not found.' });
     res.json({ success: true, message: 'Coupon updated.', data: updated });
   } catch (err) {

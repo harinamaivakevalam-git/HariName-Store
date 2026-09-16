@@ -275,18 +275,19 @@
   <script src="/assets/js/components.js"></script>
   <script>
     let databaseProducts = [];
+    let databaseCategories = [];
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
-    const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTMzODg1NiwiZXhwIjoyMTA0OTE0ODU2fQ.eV63FZ0bvtf5lAv_l4sGHtnk-ngpklZQbGxoxyHEzTs';
-    let adminSupabaseClient = null;
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+
     function initSupabase() {
-      if (!adminSupabaseClient && window.supabase && typeof window.supabase.createClient === 'function') {
+      if (!window.supabaseClient && window.supabase && typeof window.supabase.createClient === 'function') {
         try {
-          adminSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+          window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         } catch (e) {
-          console.error('[AdminProducts] Error creating admin Supabase client:', e);
+          console.error('[AdminProducts] Supabase init warning:', e);
         }
       }
-      return adminSupabaseClient || window.supabaseClient;
+      return window.supabaseClient;
     }
 
     function getAuthHeaders() {
@@ -301,8 +302,36 @@
       return headers;
     }
 
+    async function loadCategoriesIntoDropdown() {
+      const catSelect = document.getElementById('prod-category');
+      const filterCatSelect = document.getElementById('category-filter');
+      if (!catSelect) return;
+
+      const sb = initSupabase();
+      if (!sb) return;
+
+      try {
+        const { data: cats, error } = await sb
+          .from('categories')
+          .select('id, name, slug')
+          .eq('status', 'active')
+          .order('name', { ascending: true });
+
+        if (!error && Array.isArray(cats) && cats.length > 0) {
+          databaseCategories = cats;
+          catSelect.innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+          if (filterCatSelect) {
+            filterCatSelect.innerHTML = `<option value="all">All Categories</option>` + cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+          }
+        }
+      } catch (err) {
+        console.warn('[AdminProducts] Categories load notice:', err);
+      }
+    }
+
     async function loadProductsFromDatabase() {
-      // 0. Immediately populate from local live cache if available so UI renders without delay
+      // 0. Populate from local cache immediately for instant render
       try {
         const cached = localStorage.getItem('hn_live_products');
         if (cached) {
@@ -329,78 +358,72 @@
       let remoteProducts = [];
       let remoteLoaded = false;
 
-      // 1. Try Express API
+      // 1. Fetch live from Supabase Database
       try {
-        const res = await fetch('/api/products?limit=100', {
-          headers: getAuthHeaders()
-        });
+        const sb = initSupabase();
+        if (sb) {
+          const { data, error } = await sb
+            .from('products')
+            .select('*, product_images(*), categories(id, name, slug)')
+            .order('created_at', { ascending: false });
 
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && Array.isArray(json.data)) {
-            remoteProducts = json.data;
+          if (!error && Array.isArray(data)) {
             remoteLoaded = true;
+            remoteProducts = data.map(p => {
+              const imgList = (p.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(i => i.image_url);
+              const img = imgList[0] || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80';
+              return {
+                id: p.id,
+                sku: p.sku,
+                name: p.name,
+                title: p.title || p.name,
+                slug: p.slug,
+                category: p.categories?.name || 'Devotional Items',
+                category_id: p.category_id || p.categories?.id || null,
+                category_slug: p.categories?.slug || '',
+                material: p.material || (p.specifications && p.specifications.material) || 'Standard',
+                price: parseFloat(p.price) || 0,
+                old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+                compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
+                stock: p.stock !== undefined ? p.stock : 25,
+                rating: parseFloat(p.rating) || 5.0,
+                reviews_count: p.reviews_count || 0,
+                image: img,
+                primary_image: img,
+                images: imgList.length > 0 ? imgList : [img],
+                gallery: imgList.length > 0 ? imgList : [img],
+                description: p.description || ''
+              };
+            });
+          } else if (error) {
+            console.warn('[AdminProducts] Supabase direct query notice:', error);
           }
         }
-      } catch (err) {
-        console.warn('[AdminProducts] /api/products fetch notice:', err);
+      } catch (sbErr) {
+        console.warn('[AdminProducts] Supabase direct query exception:', sbErr);
       }
 
-      // 2. Fallback: direct Supabase query if API didn't return data
+      // 2. Fallback to Express API if available
       if (!remoteLoaded) {
         try {
-          const sb = initSupabase();
-          if (sb) {
-            const { data, error } = await sb
-              .from('products')
-              .select('*, product_images(*), categories(id, name, slug)')
-              .order('created_at', { ascending: false });
-
-            if (!error && Array.isArray(data)) {
+          const res = await fetch('/api/products?limit=100', {
+            headers: getAuthHeaders()
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && Array.isArray(json.data)) {
+              remoteProducts = json.data;
               remoteLoaded = true;
-              remoteProducts = data.map(p => {
-                const imgList = (p.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(i => i.image_url);
-                const img = imgList[0] || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80';
-                return {
-                  id: p.id,
-                  sku: p.sku,
-                  name: p.name,
-                  title: p.title || p.name,
-                  slug: p.slug,
-                  category: p.categories?.name || 'Devotional Items',
-                  material: p.material || (p.specifications && p.specifications.material) || 'Standard',
-                  price: parseFloat(p.price) || 0,
-                  old_price: p.compare_price ? parseFloat(p.compare_price) : null,
-                  compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
-                  stock: p.stock !== undefined ? p.stock : 25,
-                  rating: parseFloat(p.rating) || 5.0,
-                  reviews_count: p.reviews_count || 0,
-                  image: img,
-                  primary_image: img,
-                  images: imgList.length > 0 ? imgList : [img],
-                  gallery: imgList.length > 0 ? imgList : [img],
-                  description: p.description || ''
-                };
-              });
             }
           }
-        } catch (sbErr) {
-          console.error('[AdminProducts] Supabase direct query notice:', sbErr);
-        }
+        } catch (err) {}
       }
 
-      // If remote products were fetched (even if 0 items)
+      // Sync state and render
       if (remoteLoaded) {
         databaseProducts = remoteProducts;
         renderProductsTable(databaseProducts);
         localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
-      } else if (databaseProducts.length === 0) {
-        // Ultimate fallback if nothing in local or remote
-        if (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) {
-          databaseProducts = [...HARINAMA_DATA.products];
-          renderProductsTable(databaseProducts);
-          localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
-        }
       }
 
       if (typeof HARINAMA_DATA !== 'undefined') {
@@ -411,11 +434,11 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      // Clear legacy unused key only
+    document.addEventListener('DOMContentLoaded', async () => {
       localStorage.removeItem('harinama_admin_products');
       renderImageSlots();
-      loadProductsFromDatabase();
+      await loadCategoriesIntoDropdown();
+      await loadProductsFromDatabase();
     });
 
     function renderProductsTable(products) {
@@ -476,9 +499,10 @@
       let filtered = databaseProducts.filter(p => {
         const pName = (p.name || p.title || '').toLowerCase();
         const pDesc = (p.description || '').toLowerCase();
-        const pCat = p.category || p.category_name || '';
+        const pCatId = p.category_id || '';
+        const pCatName = p.category || p.category_name || '';
         const matchesQuery = !query || pName.includes(query) || pDesc.includes(query);
-        const matchesCat = cat === 'all' || pCat === cat;
+        const matchesCat = cat === 'all' || pCatId === cat || pCatName === cat;
         const pStock = p.stock !== undefined ? p.stock : 25;
         const matchesStock = stock === 'all' || (stock === 'in-stock' && pStock > 10) || (stock === 'low-stock' && pStock <= 10);
         return matchesQuery && matchesCat && matchesStock;
@@ -497,18 +521,6 @@
     function getUploadAuthHeaders() {
       const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
       const headers = {
-        'x-admin-email': 'harinamaivakevalam@gmail.com'
-      };
-      if (token) {
-        headers['Authorization'] = 'Bearer ' + token;
-      }
-      return headers;
-    }
-
-    function getAuthHeaders() {
-      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-      const headers = {
-        'Content-Type': 'application/json',
         'x-admin-email': 'harinamaivakevalam@gmail.com'
       };
       if (token) {
@@ -674,33 +686,31 @@
 
         let uploadedUrl = null;
 
-        // 1. Try Express API upload
-        try {
-          const formData = new FormData();
-          formData.append('image', file);
+        // 1. Try Supabase Storage upload directly
+        uploadedUrl = await uploadToSupabaseStorage(file);
 
-          const res = await fetch('/api/upload/image', {
-            method: 'POST',
-            headers: getUploadAuthHeaders(),
-            body: formData
-          });
-
-          if (res.ok) {
-            const json = await res.json();
-            if (json.success && json.data && json.data.url) {
-              uploadedUrl = json.data.url;
-            }
-          }
-        } catch (apiErr) {
-          console.warn('[AdminProducts] /api/upload/image notice:', apiErr);
-        }
-
-        // 2. Try Supabase Storage upload
+        // 2. Try Backend upload endpoint if storage was unavailable
         if (!uploadedUrl) {
-          uploadedUrl = await uploadToSupabaseStorage(file);
+          try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const res = await fetch('/api/upload/image', {
+              method: 'POST',
+              headers: getUploadAuthHeaders(),
+              body: formData
+            });
+
+            if (res.ok) {
+              const json = await res.json();
+              if (json.success && json.data && json.data.url) {
+                uploadedUrl = json.data.url;
+              }
+            }
+          } catch (apiErr) {}
         }
 
-        // 3. Fallback: Compress locally as ultra-fast WebP Data URL
+        // 3. Fallback: Compress locally as fast WebP Data URL
         if (!uploadedUrl) {
           uploadedUrl = await compressImageFile(file, 900, 0.82);
         }
@@ -742,7 +752,18 @@
 
       document.getElementById('edit-prod-id').value = p.id;
       document.getElementById('prod-name').value = p.name || p.title || '';
-      document.getElementById('prod-category').value = p.category || p.category_name || 'Devotional Keychains';
+      
+      const catSelect = document.getElementById('prod-category');
+      if (catSelect) {
+        if (p.category_id) {
+          catSelect.value = p.category_id;
+        } else {
+          // Find option matching category name
+          const opt = Array.from(catSelect.options).find(o => o.text.toLowerCase() === (p.category || '').toLowerCase());
+          if (opt) catSelect.value = opt.value;
+        }
+      }
+
       document.getElementById('prod-price').value = p.price !== undefined ? p.price : '';
       document.getElementById('prod-old-price').value = p.old_price || p.compare_price || '';
       document.getElementById('prod-stock').value = p.stock !== undefined ? p.stock : 25;
@@ -778,13 +799,6 @@
       modal.show();
     }
 
-    const CATEGORY_UUID_MAP = {
-      'Devotional Keychains': 'c0000001-0000-0000-0000-000000000001',
-      'Sacred Books & Shastras': 'c0000001-0000-0000-0000-000000000002',
-      'Japa & Chanting': 'c0000001-0000-0000-0000-000000000003',
-      'Gift Sets & Bundles': 'c0000001-0000-0000-0000-000000000004'
-    };
-
     async function saveProduct(e) {
       e.preventDefault();
 
@@ -798,21 +812,37 @@
           errorEl.classList.remove('d-none');
           errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-        showToast(`Please upload at least 3 product images (${validImages.length}/5 uploaded).`);
+        showToast(`Please upload at least 3 product images (${validImages.length}/5 uploaded).`, 'warning');
         return;
       }
 
       const id = document.getElementById('edit-prod-id').value;
       const name = document.getElementById('prod-name').value.trim();
-      const category = document.getElementById('prod-category').value;
+      const catSelect = document.getElementById('prod-category');
+      const selectedCatId = catSelect && catSelect.value ? catSelect.value : null;
+      const selectedCatName = catSelect && catSelect.selectedIndex >= 0 ? catSelect.options[catSelect.selectedIndex].text : 'Devotional Items';
+
       const price = parseFloat(document.getElementById('prod-price').value) || 0;
       const rawOldPrice = document.getElementById('prod-old-price').value ? parseFloat(document.getElementById('prod-old-price').value) : null;
-      const validComparePrice = (rawOldPrice !== null && !isNaN(rawOldPrice) && rawOldPrice > price) ? rawOldPrice : null;
+      
+      // Strict Price Validation
+      if (price <= 0) {
+        showToast('Selling price must be greater than ₹0.', 'warning');
+        return;
+      }
+      if (rawOldPrice !== null && !isNaN(rawOldPrice) && rawOldPrice > 0) {
+        if (rawOldPrice < price) {
+          showToast('Original price (strikethrough) must be greater than or equal to selling price, or left blank.', 'warning');
+          document.getElementById('prod-old-price')?.focus();
+          return;
+        }
+      }
+
+      const validComparePrice = (rawOldPrice !== null && !isNaN(rawOldPrice) && rawOldPrice >= price) ? rawOldPrice : null;
       const stock = parseInt(document.getElementById('prod-stock').value, 10) || 0;
       const material = document.getElementById('prod-material').value.trim();
       const description = document.getElementById('prod-description').value.trim();
       const primaryImage = validImages[0] || '';
-      const resolvedCatId = CATEGORY_UUID_MAP[category] || null;
 
       const saveBtn = e.target.querySelector('button[type="submit"]');
       const origText = saveBtn ? saveBtn.innerHTML : 'Save Product';
@@ -821,220 +851,160 @@
         saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving to Database...';
       }
 
-      const prodId = id || `hn-prod-${Date.now()}`;
       const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
       const productSlug = id ? (databaseProducts.find(p => p.id === id)?.slug || baseSlug) : `${baseSlug}-${Date.now().toString().slice(-4)}`;
       const generatedSku = `HN-PROD-${Date.now().toString().slice(-6)}`;
 
-      const newOrUpdatedItem = {
-        id: prodId,
-        sku: generatedSku,
-        name,
-        title: name,
-        slug: productSlug,
-        category,
-        category_name: category,
-        category_id: resolvedCatId,
-        material: material || 'Standard',
-        price,
-        old_price: validComparePrice,
-        compare_price: validComparePrice,
-        stock,
-        rating: 5.0,
-        reviews_count: 0,
-        image: primaryImage,
-        primary_image: primaryImage,
-        images: validImages,
-        gallery: validImages,
-        description,
-        status: 'active'
-      };
-
-      // 1. Immediately update local inventory table & memory so user sees it instantly
-      const existingIdx = databaseProducts.findIndex(p => String(p.id) === String(id) || p.slug === id);
-      if (existingIdx !== -1) {
-        databaseProducts[existingIdx] = { ...databaseProducts[existingIdx], ...newOrUpdatedItem };
-      } else {
-        databaseProducts.unshift(newOrUpdatedItem);
-      }
-      renderProductsTable(databaseProducts);
-      localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
-      if (typeof HARINAMA_DATA !== 'undefined') {
-        HARINAMA_DATA.products = databaseProducts;
-        window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
-          detail: { products: databaseProducts, categories: HARINAMA_DATA.categories }
-        }));
-      }
-
       let savedSuccessfully = false;
-      let responseMsg = id ? 'Product updated successfully! 🌸' : 'New product added to inventory and store! 🌸';
-      let serverError = null;
+      let targetProdId = null;
+      let errorMessage = null;
 
-      // 2. Sync to Backend Express API
-      try {
-        const endpoint = id ? `/api/products/${id}` : '/api/products';
-        const method = id ? 'PUT' : 'POST';
+      const sb = initSupabase();
 
-        const apiRes = await fetch(endpoint, {
-          method,
-          headers: getAuthHeaders(),
-          body: JSON.stringify({
-            ...newOrUpdatedItem,
-            price: price,
-            compare_price: validComparePrice,
-            old_price: validComparePrice,
-            category_id: resolvedCatId,
-            category_name: category,
-            images: validImages,
-            gallery: validImages,
-            sku: newOrUpdatedItem.sku
-          })
-        });
+      // 1. Direct Supabase Mutation
+      if (sb) {
+        try {
+          if (id) {
+            // Update Existing Product
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+            let targetId = id;
+            if (!isUuid) {
+              const { data: rec } = await sb.from('products').select('id').eq('slug', id).maybeSingle();
+              if (rec) targetId = rec.id;
+            }
 
-        if (apiRes.ok) {
-          const json = await apiRes.json();
-          if (json.success) {
-            savedSuccessfully = true;
-            if (json.data && json.data.id) {
-              const idx = databaseProducts.findIndex(p => p.id === prodId || p.slug === productSlug || p.id === id);
-              if (idx !== -1) {
-                databaseProducts[idx] = { 
-                  ...databaseProducts[idx], 
-                  ...json.data,
-                  gallery: validImages,
-                  images: validImages
-                };
-                localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
-                renderProductsTable(databaseProducts);
-              }
+            const updatePayload = {
+              name,
+              description: description || name,
+              price,
+              compare_price: validComparePrice,
+              stock,
+              specifications: { material: material || 'Standard' },
+              updated_at: new Date().toISOString()
+            };
+            if (selectedCatId) updatePayload.category_id = selectedCatId;
+
+            const { data: updatedProd, error: updateError } = await sb
+              .from('products')
+              .update(updatePayload)
+              .eq('id', targetId)
+              .select()
+              .maybeSingle();
+
+            if (updateError) {
+              errorMessage = updateError.message;
+              console.error('[AdminProducts] Supabase update failed:', updateError);
+            } else if (updatedProd) {
+              savedSuccessfully = true;
+              targetProdId = updatedProd.id;
+            }
+          } else {
+            // Insert New Product
+            const insertPayload = {
+              name,
+              slug: productSlug,
+              description: description || name,
+              short_description: description ? description.slice(0, 160) : '',
+              price,
+              compare_price: validComparePrice,
+              sku: generatedSku,
+              stock,
+              status: 'active',
+              specifications: { material: material || 'Standard' },
+              rating: 5.0,
+              reviews_count: 0
+            };
+            if (selectedCatId) insertPayload.category_id = selectedCatId;
+
+            const { data: createdProd, error: insertError } = await sb
+              .from('products')
+              .insert(insertPayload)
+              .select()
+              .maybeSingle();
+
+            if (insertError) {
+              errorMessage = insertError.message;
+              console.error('[AdminProducts] Supabase insert failed:', insertError);
+            } else if (createdProd) {
+              savedSuccessfully = true;
+              targetProdId = createdProd.id;
             }
           }
+
+          // Sync images into product_images table if product saved
+          if (targetProdId && validImages.length > 0) {
+            try {
+              await sb.from('product_images').delete().eq('product_id', targetProdId);
+              const imgRows = validImages.map((imgUrl, idx) => ({
+                product_id: targetProdId,
+                image_url: imgUrl,
+                alt_text: name,
+                sort_order: idx + 1,
+                is_primary: idx === 0
+              }));
+              await sb.from('product_images').insert(imgRows);
+            } catch (imgErr) {
+              console.warn('[AdminProducts] product_images table notice:', imgErr);
+            }
+          }
+        } catch (sbEx) {
+          errorMessage = sbEx.message;
+          console.error('[AdminProducts] Supabase operation exception:', sbEx);
         }
-      } catch (apiErr) {
-        console.warn('[AdminProducts] /api/products sync notice:', apiErr);
       }
 
-      // 3. Sync to Supabase directly
+      // 2. Fallback to Express Backend API if Supabase client errored
       if (!savedSuccessfully) {
         try {
-          const sb = initSupabase();
-          if (sb) {
-            // Dynamically resolve real category UUID from database if available
-            let realCatId = null;
-            try {
-              const { data: dbCats } = await sb.from('categories').select('id, name, slug');
-              if (Array.isArray(dbCats) && dbCats.length > 0) {
-                const match = dbCats.find(c => 
-                  c.name.toLowerCase() === category.toLowerCase() || 
-                  c.slug.toLowerCase() === category.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-                );
-                if (match) realCatId = match.id;
-              }
-            } catch (catLookupErr) {
-              console.warn('[AdminProducts] Category lookup notice:', catLookupErr);
-            }
+          const endpoint = id ? `/api/products/${id}` : '/api/products';
+          const method = id ? 'PUT' : 'POST';
 
-            let targetProdId = null;
+          const apiRes = await fetch(endpoint, {
+            method,
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+              name,
+              title: name,
+              slug: productSlug,
+              category: selectedCatName,
+              category_id: selectedCatId,
+              category_name: selectedCatName,
+              material: material || 'Standard',
+              price,
+              old_price: validComparePrice,
+              compare_price: validComparePrice,
+              stock,
+              images: validImages,
+              gallery: validImages,
+              primary_image: primaryImage,
+              description,
+              sku: generatedSku
+            })
+          });
 
-            if (id) {
-              const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-              let targetId = id;
-              if (!isUuid) {
-                const { data: rec } = await sb.from('products').select('id').eq('slug', id).maybeSingle();
-                if (rec) targetId = rec.id;
-              }
-              targetProdId = targetId;
-
-              const updatePayload = {
-                name,
-                description: description || name,
-                price,
-                compare_price: validComparePrice,
-                stock,
-                specifications: { material: material || 'Standard' },
-                updated_at: new Date().toISOString()
-              };
-              if (realCatId) updatePayload.category_id = realCatId;
-
-              const { data: updatedProd, error: updateError } = await sb
-                .from('products')
-                .update(updatePayload)
-                .eq('id', targetId)
-                .select()
-                .maybeSingle();
-
-              if (updateError) {
-                console.error('[AdminProducts] Supabase update error:', updateError);
-                serverError = updateError.message;
-              } else if (updatedProd) {
-                savedSuccessfully = true;
-                targetProdId = updatedProd.id;
-              }
-            } else {
-              const insertPayload = {
-                name,
-                slug: productSlug,
-                description: description || name,
-                short_description: description ? description.slice(0, 160) : '',
-                price,
-                compare_price: validComparePrice,
-                sku: generatedSku,
-                stock,
-                status: 'active',
-                specifications: { material: material || 'Standard' },
-                rating: 5.0,
-                reviews_count: 0
-              };
-              if (realCatId) insertPayload.category_id = realCatId;
-
-              const { data: createdProd, error: insertError } = await sb
-                .from('products')
-                .insert(insertPayload)
-                .select()
-                .maybeSingle();
-
-              if (insertError) {
-                console.error('[AdminProducts] Supabase insert error:', insertError);
-                serverError = insertError.message;
-              } else if (createdProd) {
-                savedSuccessfully = true;
-                targetProdId = createdProd.id;
-                const idx = databaseProducts.findIndex(p => p.id === prodId || p.slug === productSlug);
-                if (idx !== -1) {
-                  databaseProducts[idx].id = createdProd.id;
-                  localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
-                }
-              }
-            }
-
-            // Sync images in Supabase product_images table
-            if (targetProdId && validImages.length > 0) {
-              try {
-                await sb.from('product_images').delete().eq('product_id', targetProdId);
-                const imgRows = validImages.map((imgUrl, idx) => ({
-                  product_id: targetProdId,
-                  image_url: imgUrl,
-                  alt_text: name,
-                  sort_order: idx + 1,
-                  is_primary: idx === 0
-                }));
-                await sb.from('product_images').insert(imgRows);
-              } catch (imgSyncErr) {
-                console.warn('[AdminProducts] Supabase product_images sync notice:', imgSyncErr);
-              }
+          if (apiRes.ok) {
+            const json = await apiRes.json();
+            if (json.success) {
+              savedSuccessfully = true;
+              errorMessage = null;
             }
           }
-        } catch (sbDirectErr) {
-          console.error('[AdminProducts] Supabase sync exception:', sbDirectErr);
-          serverError = sbDirectErr.message;
+        } catch (apiErr) {
+          console.warn('[AdminProducts] Backend API fallback notice:', apiErr);
         }
       }
 
-      if (!savedSuccessfully && serverError) {
-        showToast('Error saving product to database: ' + serverError);
-      } else {
-        showToast(responseMsg);
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = origText;
       }
+
+      if (!savedSuccessfully) {
+        showToast('Database Error: ' + (errorMessage || 'Failed to save product. Please ensure you are logged in as admin.'), 'danger');
+        return;
+      }
+
+      showToast(id ? 'Product updated successfully! 🌸' : 'New product added to inventory and store! 🌸', 'success');
 
       try {
         const modalEl = document.getElementById('productModal');
@@ -1042,39 +1012,17 @@
         if (modal) modal.hide();
         await loadProductsFromDatabase();
       } catch (err) {
-        console.error('[AdminProducts] Modal hide / reload notice:', err);
-      } finally {
-        if (saveBtn) {
-          saveBtn.disabled = false;
-          saveBtn.innerHTML = origText;
-        }
+        console.error('[AdminProducts] Reload notice:', err);
       }
     }
 
     async function deleteProduct(id) {
-      if (!confirm('Are you sure you want to permanently delete this product from the inventory and live database?')) return;
+      if (!confirm('Are you sure you want to permanently delete this product from the live database?')) return;
 
-      // Immediately update local list & storage
-      databaseProducts = databaseProducts.filter(p => p.id !== id && p.slug !== id);
-      renderProductsTable(databaseProducts);
-      localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
-      if (typeof HARINAMA_DATA !== 'undefined') {
-        HARINAMA_DATA.products = databaseProducts;
-        window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
-          detail: { products: databaseProducts, categories: HARINAMA_DATA.categories }
-        }));
-      }
-      showToast('Product permanently removed from inventory.');
+      let deleted = false;
+      let deleteError = null;
 
-      // Try Backend delete
-      try {
-        await fetch(`/api/products/${id}`, {
-          method: 'DELETE',
-          headers: getAuthHeaders()
-        });
-      } catch (err) {}
-
-      // Try Supabase direct delete
+      // 1. Try Supabase direct delete
       try {
         const sb = initSupabase();
         if (sb) {
@@ -1086,10 +1034,40 @@
           }
           if (targetId) {
             await sb.from('product_images').delete().eq('product_id', targetId);
-            await sb.from('products').delete().eq('id', targetId);
+            const { error: delErr } = await sb.from('products').delete().eq('id', targetId);
+            if (delErr) {
+              deleteError = delErr.message;
+              console.error('[AdminProducts] Supabase delete error:', delErr);
+            } else {
+              deleted = true;
+            }
           }
         }
-      } catch (sbErr) {}
+      } catch (sbDelErr) {
+        deleteError = sbDelErr.message;
+      }
+
+      // 2. Try Backend delete fallback
+      if (!deleted) {
+        try {
+          const res = await fetch(`/api/products/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+          });
+          if (res.ok) {
+            deleted = true;
+            deleteError = null;
+          }
+        } catch (err) {}
+      }
+
+      if (!deleted) {
+        showToast('Error deleting product: ' + (deleteError || 'Permission denied or product not found.'), 'danger');
+        return;
+      }
+
+      showToast('Product permanently deleted from database.', 'info');
+      await loadProductsFromDatabase();
     }
   </script>
 </body>

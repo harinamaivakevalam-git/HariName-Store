@@ -193,18 +193,16 @@
     let databaseCategories = [];
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
-    const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTMzODg1NiwiZXhwIjoyMTA0OTE0ODU2fQ.eV63FZ0bvtf5lAv_l4sGHtnk-ngpklZQbGxoxyHEzTs';
 
-    let adminSupabaseClient = null;
     function initSupabase() {
-      if (!adminSupabaseClient && window.supabase && typeof window.supabase.createClient === 'function') {
+      if (!window.supabaseClient && window.supabase && typeof window.supabase.createClient === 'function') {
         try {
-          adminSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+          window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         } catch (e) {
-          console.error('[AdminCategories] Supabase init error:', e);
+          console.error('[AdminCategories] Supabase init warning:', e);
         }
       }
-      return adminSupabaseClient || window.supabaseClient;
+      return window.supabaseClient;
     }
 
     function getAuthHeaders() {
@@ -219,30 +217,10 @@
 
     async function loadCategoriesFromDatabase() {
       const tbody = document.getElementById('categories-table-body');
-      
-      // 1. Try API
-      try {
-        const res = await fetch('/api/categories');
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-            databaseCategories = json.data.map(c => ({
-              id: c.id,
-              name: c.name,
-              slug: c.slug,
-              count: c.product_count !== undefined ? c.product_count : (c.count || 0),
-              desc: c.description || c.desc || 'Sacred collection',
-              status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
-            }));
-            renderCategoriesTable();
-            return;
-          }
-        }
-      } catch (e) {
-        console.warn('[AdminCategories] API notice, attempting direct Supabase query:', e);
-      }
+      let loaded = false;
+      let remoteCategories = [];
 
-      // 2. Direct Supabase Query Fallback
+      // 1. Direct Supabase Query
       try {
         const sb = initSupabase();
         if (sb) {
@@ -252,8 +230,8 @@
           ]);
 
           if (catRes.status === 'fulfilled' && !catRes.value.error && Array.isArray(catRes.value.data) && catRes.value.data.length > 0) {
-            const activeProducts = (prodRes.status === 'fulfilled' && !prodRes.value.error) ? prodRes.value.data : [];
-            databaseCategories = catRes.value.data.map(c => {
+            const activeProducts = (prodRes.status === 'fulfilled' && !prodRes.value.error && Array.isArray(prodRes.value.data)) ? prodRes.value.data : [];
+            remoteCategories = catRes.value.data.map(c => {
               const count = activeProducts.filter(p => p.category_id === c.id).length;
               return {
                 id: c.id,
@@ -264,22 +242,38 @@
                 status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
               };
             });
-            renderCategoriesTable();
-            return;
+            loaded = true;
           }
         }
       } catch (sbErr) {
-        console.warn('[AdminCategories] Supabase direct query error:', sbErr);
+        console.warn('[AdminCategories] Supabase direct query notice:', sbErr);
       }
 
-      // 3. Fallback
-      databaseCategories = [
-        { id: 'c0000001-0000-0000-0000-000000000001', name: 'Devotional Keychains', slug: 'devotional-keychains', count: 8, desc: 'Peacock Feather, Maha-Mantra, Flute, and Deity keychains', status: 'Active' },
-        { id: 'c0000001-0000-0000-0000-000000000002', name: 'Sacred Books & Shastras', slug: 'sacred-books', count: 3, desc: 'Bhagavad Gita As It Is, Srimad Bhagavatam, and Vedic literature', status: 'Active' },
-        { id: 'c0000001-0000-0000-0000-000000000003', name: 'Japa & Chanting', slug: 'japa-chanting', count: 3, desc: 'Neem & Tulasi Japa Malas, Cotton Gomukhi Bead Bags, and counters', status: 'Active' },
-        { id: 'c0000001-0000-0000-0000-000000000004', name: 'Gift Sets & Bundles', slug: 'gift-sets', count: 3, desc: 'Devotional starter bundles and multi-item gift sets', status: 'Active' }
-      ];
-      renderCategoriesTable();
+      // 2. API Fallback
+      if (!loaded) {
+        try {
+          const res = await fetch('/api/categories');
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+              remoteCategories = json.data.map(c => ({
+                id: c.id,
+                name: c.name,
+                slug: c.slug,
+                count: c.product_count !== undefined ? c.product_count : (c.count || 0),
+                desc: c.description || c.desc || 'Sacred collection',
+                status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
+              }));
+              loaded = true;
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (loaded) {
+        databaseCategories = remoteCategories;
+        renderCategoriesTable();
+      }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -335,54 +329,73 @@
       const desc = document.getElementById('cat-desc').value.trim();
 
       let saved = false;
+      let saveError = null;
 
-      // 1. Try API
-      try {
-        const endpoint = id ? `/api/categories/${id}` : '/api/categories';
-        const method = id ? 'PUT' : 'POST';
-
-        const res = await fetch(endpoint, {
-          method,
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ name, slug, description: desc })
-        });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success) saved = true;
-        }
-      } catch (err) {
-        console.warn('[AdminCategories] API save notice, trying direct Supabase:', err);
-      }
-
-      // 2. Direct Supabase Fallback
-      if (!saved) {
+      // 1. Direct Supabase Mutation
+      const sb = initSupabase();
+      if (sb) {
         try {
-          const sb = initSupabase();
-          if (sb) {
-            if (id) {
-              const { error } = await sb.from('categories').update({
-                name,
-                slug,
-                description: desc,
-                updated_at: new Date().toISOString()
-              }).eq('id', id);
-              if (!error) saved = true;
+          if (id) {
+            const { error } = await sb.from('categories').update({
+              name,
+              slug,
+              description: desc,
+              updated_at: new Date().toISOString()
+            }).eq('id', id);
+
+            if (error) {
+              saveError = error.message;
+              console.error('[AdminCategories] Update failed:', error);
             } else {
-              const { error } = await sb.from('categories').insert({
-                name,
-                slug,
-                description: desc,
-                status: 'active'
-              });
-              if (!error) saved = true;
+              saved = true;
+            }
+          } else {
+            const { error } = await sb.from('categories').insert({
+              name,
+              slug,
+              description: desc,
+              status: 'active'
+            });
+
+            if (error) {
+              saveError = error.message;
+              console.error('[AdminCategories] Insert failed:', error);
+            } else {
+              saved = true;
             }
           }
-        } catch (sbErr) {
-          console.error('[AdminCategories] Supabase direct save error:', sbErr);
+        } catch (sbEx) {
+          saveError = sbEx.message;
         }
       }
 
-      showToast(id ? 'Collection updated in live database! 🌸' : 'New collection created in live database! 🌸');
+      // 2. Backend Fallback
+      if (!saved) {
+        try {
+          const endpoint = id ? `/api/categories/${id}` : '/api/categories';
+          const method = id ? 'PUT' : 'POST';
+
+          const res = await fetch(endpoint, {
+            method,
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ name, slug, description: desc })
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success) {
+              saved = true;
+              saveError = null;
+            }
+          }
+        } catch (err) {}
+      }
+
+      if (!saved) {
+        showToast('Error saving collection: ' + (saveError || 'Please ensure you are logged in as admin.'), 'danger');
+        return;
+      }
+
+      showToast(id ? 'Collection updated in live database! 🌸' : 'New collection created in live database! 🌸', 'success');
 
       const modalEl = document.getElementById('categoryModal');
       const modal = bootstrap.Modal.getInstance(modalEl);
@@ -394,37 +407,54 @@
     async function deleteCategory(id) {
       if (!confirm('Are you sure you want to remove this collection?')) return;
       let deleted = false;
+      let deleteError = null;
 
-      // 1. Try API
-      try {
-        const res = await fetch(`/api/categories/${id}`, {
-          method: 'DELETE',
-          headers: getAuthHeaders()
-        });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success) deleted = true;
-        }
-      } catch (err) {
-        console.warn('[AdminCategories] API delete notice:', err);
-      }
-
-      // 2. Direct Supabase Fallback
-      if (!deleted) {
+      // Check if products exist in category
+      const sb = initSupabase();
+      if (sb) {
         try {
-          const sb = initSupabase();
-          if (sb) {
-            const { error } = await sb.from('categories').delete().eq('id', id);
-            if (!error) deleted = true;
+          const { data: prods } = await sb.from('products').select('id').eq('category_id', id);
+          if (Array.isArray(prods) && prods.length > 0) {
+            showToast(`Cannot delete collection: ${prods.length} product(s) are currently assigned to it. Reassign or delete those products first.`, 'warning');
+            return;
+          }
+        } catch (chkErr) {}
+
+        try {
+          const { error } = await sb.from('categories').delete().eq('id', id);
+          if (error) {
+            deleteError = error.message;
+            console.error('[AdminCategories] Supabase delete error:', error);
+          } else {
+            deleted = true;
           }
         } catch (sbErr) {
-          console.error('[AdminCategories] Direct Supabase delete error:', sbErr);
+          deleteError = sbErr.message;
         }
       }
 
-      databaseCategories = databaseCategories.filter(c => c.id !== id);
-      renderCategoriesTable();
-      showToast('Collection removed from database.');
+      if (!deleted) {
+        try {
+          const res = await fetch(`/api/categories/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success) {
+              deleted = true;
+              deleteError = null;
+            }
+          }
+        } catch (err) {}
+      }
+
+      if (!deleted) {
+        showToast('Error removing collection: ' + (deleteError || 'Permission denied.'), 'danger');
+        return;
+      }
+
+      showToast('Collection removed from database.', 'info');
       await loadCategoriesFromDatabase();
     }
   </script>

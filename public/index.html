@@ -643,18 +643,19 @@
         const trustCapEl = document.querySelector('.hn-trust-caption');
         if (trustCapEl && h.trust_caption) trustCapEl.innerText = h.trust_caption;
 
-        // Hero Media (Image or Video with Auto-detection)
+        // Hero Media (Image or Video)
         const mediaWrap = document.querySelector('.hn-hero-image-wrap');
         if (mediaWrap) {
-          const rawHeroUrl = (h.video_url || h.image_url || '').trim();
-          const isHeroVideo = (h.media_type === 'video') || isVideoMediaUrl(h.video_url) || isVideoMediaUrl(h.image_url);
+          const isHeroVideo = h.media_type === 'video';
+          const heroVideoSrc = (h.video_url || '').trim();
+          const heroImageSrc = (h.image_url || '').trim();
           const existingMedia = mediaWrap.querySelector('.hn-hero-img, .hn-hero-video-player, iframe');
 
-          if (isHeroVideo && rawHeroUrl) {
-            if (rawHeroUrl.includes('youtube.com') || rawHeroUrl.includes('youtu.be')) {
-              let embedUrl = rawHeroUrl;
-              if (rawHeroUrl.includes('watch?v=')) embedUrl = rawHeroUrl.replace('watch?v=', 'embed/');
-              else if (rawHeroUrl.includes('youtu.be/')) embedUrl = rawHeroUrl.replace('youtu.be/', 'www.youtube.com/embed/');
+          if (isHeroVideo && heroVideoSrc) {
+            if (heroVideoSrc.includes('youtube.com') || heroVideoSrc.includes('youtu.be')) {
+              let embedUrl = heroVideoSrc;
+              if (heroVideoSrc.includes('watch?v=')) embedUrl = heroVideoSrc.replace('watch?v=', 'embed/');
+              else if (heroVideoSrc.includes('youtu.be/')) embedUrl = heroVideoSrc.replace('youtu.be/', 'www.youtube.com/embed/');
               if (existingMedia) existingMedia.remove();
               const iframe = document.createElement('iframe');
               iframe.src = embedUrl + (embedUrl.includes('?') ? '&' : '?') + 'autoplay=1&mute=1&loop=1&playsinline=1';
@@ -665,7 +666,7 @@
             } else {
               if (existingMedia) existingMedia.remove();
               const video = document.createElement('video');
-              video.src = rawHeroUrl;
+              video.src = heroVideoSrc;
               video.className = 'hn-hero-img hn-hero-video-player';
               video.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 24px;';
               video.autoplay = true;
@@ -680,7 +681,7 @@
               video.play().catch(() => {});
             }
           } else {
-            const finalHeroImg = rawHeroUrl || '/assets/images/krishna_hero_keychain.jpg';
+            const finalHeroImg = (!isVideoMediaUrl(heroImageSrc) && heroImageSrc) ? heroImageSrc : '/assets/images/krishna_hero_keychain.jpg';
             if (existingMedia && existingMedia.tagName === 'IMG') {
               existingMedia.src = finalHeroImg;
             } else {
@@ -717,17 +718,18 @@
         const mantraChant = document.querySelector('.hn-mantra-chant');
         if (mantraChant && (p.chant || p.mantra_chant)) mantraChant.innerText = p.chant || p.mantra_chant;
 
-        // Promo Media (Automatic Video or Image Detection)
+        // Promo Media (Image or Video)
         const promoImgWrap = document.querySelector('.hn-promo-img-wrap');
         if (promoImgWrap) {
-          const rawUrl = (p.video_url || p.image_url || '').trim();
-          const isVideo = (p.media_type === 'video') || isVideoMediaUrl(p.video_url) || isVideoMediaUrl(p.image_url);
+          const isVideo = p.media_type === 'video';
+          const videoSrc = (p.video_url || '').trim();
+          const imageSrc = (p.image_url || '').trim();
 
-          if (isVideo && rawUrl) {
-            if (rawUrl.includes('youtube.com') || rawUrl.includes('youtu.be')) {
-              let embedUrl = rawUrl;
-              if (rawUrl.includes('watch?v=')) embedUrl = rawUrl.replace('watch?v=', 'embed/');
-              else if (rawUrl.includes('youtu.be/')) embedUrl = rawUrl.replace('youtu.be/', 'www.youtube.com/embed/');
+          if (isVideo && videoSrc) {
+            if (videoSrc.includes('youtube.com') || videoSrc.includes('youtu.be')) {
+              let embedUrl = videoSrc;
+              if (videoSrc.includes('watch?v=')) embedUrl = videoSrc.replace('watch?v=', 'embed/');
+              else if (videoSrc.includes('youtu.be/')) embedUrl = videoSrc.replace('youtu.be/', 'www.youtube.com/embed/');
               promoImgWrap.innerHTML = '';
               const iframe = document.createElement('iframe');
               iframe.src = embedUrl + (embedUrl.includes('?') ? '&' : '?') + 'autoplay=1&mute=1&loop=1&playsinline=1';
@@ -738,7 +740,7 @@
             } else {
               promoImgWrap.innerHTML = '';
               const video = document.createElement('video');
-              video.src = rawUrl;
+              video.src = videoSrc;
               video.className = 'hn-promo-img hn-promo-video-player';
               video.style.cssText = 'width: 100%; height: 100%; min-height: 280px; object-fit: cover; border-radius: 12px;';
               video.autoplay = true;
@@ -753,10 +755,10 @@
               video.play().catch(() => {});
             }
           } else {
-            const finalImgUrl = rawUrl || '/assets/images/krishna-logo.jpg';
+            const finalImg = (!isVideoMediaUrl(imageSrc) && imageSrc) ? imageSrc : '/assets/images/krishna-logo.jpg';
             promoImgWrap.innerHTML = '';
             const img = document.createElement('img');
-            img.src = finalImgUrl;
+            img.src = finalImg;
             img.className = 'hn-promo-img';
             img.alt = p.title || 'Sacred Devotional Item';
             promoImgWrap.appendChild(img);

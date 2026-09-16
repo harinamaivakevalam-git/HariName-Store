@@ -16,6 +16,7 @@ const reviewRoutes = require('./reviewRoutes');
 const notificationRoutes = require('./notificationRoutes');
 const adminRoutes = require('./adminRoutes');
 const uploadRoutes = require('./uploadRoutes');
+const homepageRoutes = require('./homepageRoutes');
 
 // API Health Check
 router.get('/health', (req, res) => {
@@ -43,5 +44,6 @@ router.use('/reviews', reviewRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/admin', adminRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/homepage', homepageRoutes);
 
 module.exports = router;

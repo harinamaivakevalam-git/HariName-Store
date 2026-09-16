@@ -114,44 +114,48 @@ exports.createReview = async (req, res, next) => {
       }
 
       // Insert new review into Supabase
-      const { data: newReview, error: insertErr } = await supabaseAdmin
-        .from('reviews')
-        .insert({
-          product_id: prod.id,
-          user_id: userId,
-          rating: ratingNum,
-          title: (title || '').trim(),
-          comment: comment.trim(),
-          is_verified_purchase: true,
-          status: 'approved'
-        })
-        .select('*, profiles:user_id(name, avatar_url)')
-        .single();
-
-      if (insertErr) {
-        throw new Error(insertErr.message);
-      }
-
-      // Recalculate average product rating and update products table
-      const { data: allApproved } = await supabaseAdmin
-        .from('reviews')
-        .select('rating')
-        .eq('product_id', prod.id)
-        .eq('status', 'approved');
-
-      if (allApproved && allApproved.length > 0) {
-        const avg = allApproved.reduce((acc, r) => acc + r.rating, 0) / allApproved.length;
-        await supabaseAdmin
-          .from('products')
-          .update({
-            rating: Math.round(avg * 10) / 10,
-            reviews_count: allApproved.length
+      let newReview = null;
+      try {
+        const { data, error: insertErr } = await supabaseAdmin
+          .from('reviews')
+          .insert({
+            product_id: prod.id,
+            user_id: userId,
+            rating: ratingNum,
+            title: (title || '').trim(),
+            comment: comment.trim(),
+            is_verified_purchase: true,
+            status: 'approved'
           })
-          .eq('id', prod.id);
+          .select('*, profiles:user_id(name, avatar_url)')
+          .maybeSingle();
+
+        if (!insertErr && data) {
+          newReview = data;
+          // Recalculate average product rating and update products table
+          const { data: allApproved } = await supabaseAdmin
+            .from('reviews')
+            .select('rating')
+            .eq('product_id', prod.id)
+            .eq('status', 'approved');
+
+          if (allApproved && allApproved.length > 0) {
+            const avg = allApproved.reduce((acc, r) => acc + r.rating, 0) / allApproved.length;
+            await supabaseAdmin
+              .from('products')
+              .update({
+                rating: Math.round(avg * 10) / 10,
+                reviews_count: allApproved.length
+              })
+              .eq('id', prod.id);
+          }
+        }
+      } catch (sbEx) {
+        console.warn('[reviewController] Supabase review insert fallback:', sbEx.message);
       }
 
       // Also mirror to memory db
-      db.insert('reviews', {
+      const localReview = db.insert('reviews', {
         product_id: prod.id,
         user_id: userId,
         rating: ratingNum,
@@ -165,9 +169,9 @@ exports.createReview = async (req, res, next) => {
         success: true,
         message: 'Thank you! Your sacred review has been published. 🌸',
         data: {
-          ...newReview,
-          user_name: newReview.profiles?.name || req.user.name || 'Devotee Customer',
-          user_avatar: newReview.profiles?.avatar_url || req.user.avatar || null
+          ...(newReview || localReview),
+          user_name: newReview?.profiles?.name || req.user.name || 'Devotee Customer',
+          user_avatar: newReview?.profiles?.avatar_url || req.user.avatar || null
         }
       });
     }

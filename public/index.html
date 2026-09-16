@@ -556,9 +556,206 @@
       }
     }
 
+    // Dynamic Homepage Sections Config (Hero with Video/Image, Promo, Why, Gallery, Trust)
+    async function renderDynamicHomepageSections() {
+      let config = null;
+
+      // 0. Instant Cache
+      try {
+        const cached = localStorage.getItem('hn_homepage_config');
+        if (cached) config = JSON.parse(cached);
+      } catch (_) {}
+
+      // 1. Live Supabase fetch
+      try {
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+          const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          const { data, error } = await sb.from('homepage_sections').select('*').eq('is_active', true);
+          if (!error && Array.isArray(data) && data.length > 0) {
+            config = {};
+            data.forEach(s => {
+              config[s.id] = typeof s.content === 'object' ? s.content : JSON.parse(s.content || '{}');
+            });
+            localStorage.setItem('hn_homepage_config', JSON.stringify(config));
+          }
+        }
+      } catch (_) {}
+
+      // 2. Fallback to API
+      if (!config) {
+        try {
+          const res = await fetch('/api/homepage');
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.data) {
+              config = {};
+              Object.keys(json.data).forEach(k => {
+                config[k] = json.data[k].content;
+              });
+              localStorage.setItem('hn_homepage_config', JSON.stringify(config));
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (!config) return;
+
+      // A. HERO SECTION
+      if (config.hero) {
+        const h = config.hero;
+        const titleEl = document.querySelector('.hn-hero-title');
+        if (titleEl) {
+          titleEl.innerHTML = `${h.title_prefix || 'Carry'} <span class="hn-title-accent">${h.title_accent || 'Krishna'}</span><br>${h.title_suffix || 'Wherever You Go'}`;
+        }
+
+        const descEl = document.querySelector('.hn-hero-desc');
+        if (descEl && h.description) descEl.innerText = h.description;
+
+        const ctaBtn = document.querySelector('.hn-hero-section .hn-btn-gold');
+        if (ctaBtn) {
+          if (h.cta_text) ctaBtn.querySelector('span').innerText = h.cta_text;
+          if (h.cta_link) ctaBtn.href = h.cta_link;
+        }
+
+        const quoteVerseEl = document.querySelector('.hn-quote-verse');
+        if (quoteVerseEl && h.quote_verse) quoteVerseEl.innerText = h.quote_verse;
+
+        const quoteSubEl = document.querySelector('.hn-quote-sub');
+        if (quoteSubEl && h.quote_subtitle) quoteSubEl.innerText = h.quote_subtitle;
+
+        const trustRatingEl = document.querySelector('.hn-trust-details span.fw-bold');
+        if (trustRatingEl && h.trust_rating) trustRatingEl.innerText = h.trust_rating;
+
+        const trustCapEl = document.querySelector('.hn-trust-caption');
+        if (trustCapEl && h.trust_caption) trustCapEl.innerText = h.trust_caption;
+
+        // Hero Media (Image or Video)
+        const mediaWrap = document.querySelector('.hn-hero-image-wrap');
+        if (mediaWrap) {
+          const existingMedia = mediaWrap.querySelector('.hn-hero-img, .hn-hero-video-player, iframe');
+          if (h.media_type === 'video' && h.video_url) {
+            const vUrl = h.video_url.trim();
+            if (vUrl.includes('youtube.com') || vUrl.includes('youtu.be')) {
+              let embedUrl = vUrl;
+              if (vUrl.includes('watch?v=')) embedUrl = vUrl.replace('watch?v=', 'embed/');
+              else if (vUrl.includes('youtu.be/')) embedUrl = vUrl.replace('youtu.be/', 'www.youtube.com/embed/');
+              if (existingMedia) existingMedia.remove();
+              const iframe = document.createElement('iframe');
+              iframe.src = embedUrl + '?autoplay=1&mute=1&loop=1';
+              iframe.className = 'hn-hero-video-player';
+              iframe.style.cssText = 'width: 100%; height: 380px; border-radius: 24px; border: none;';
+              iframe.allow = 'autoplay; encrypted-media';
+              mediaWrap.prepend(iframe);
+            } else {
+              if (existingMedia) existingMedia.remove();
+              const video = document.createElement('video');
+              video.src = vUrl;
+              video.className = 'hn-hero-img hn-hero-video-player';
+              video.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 24px;';
+              video.autoplay = true;
+              video.loop = true;
+              video.muted = true;
+              video.playsInline = true;
+              mediaWrap.prepend(video);
+            }
+          } else if (h.image_url) {
+            if (existingMedia && existingMedia.tagName === 'IMG') {
+              existingMedia.src = h.image_url;
+            } else {
+              if (existingMedia) existingMedia.remove();
+              const img = document.createElement('img');
+              img.src = h.image_url;
+              img.className = 'hn-hero-img';
+              img.alt = 'Harinama Devotional Showcase';
+              mediaWrap.prepend(img);
+            }
+          }
+        }
+      }
+
+      // B. PROMO BANNER
+      if (config.promo_banner) {
+        const p = config.promo_banner;
+        const bannerTitle = document.querySelector('.hn-promo-title');
+        if (bannerTitle && p.title) bannerTitle.innerText = p.title;
+
+        const bannerSub = document.querySelector('.hn-promo-subtitle');
+        if (bannerSub && p.subtitle) bannerSub.innerText = p.subtitle;
+
+        const bannerDesc = document.querySelector('.hn-promo-desc');
+        if (bannerDesc && p.description) bannerDesc.innerText = p.description;
+
+        const mantraVerse = document.querySelector('.hn-mantra-verse');
+        if (mantraVerse && p.mantra_verse) mantraVerse.innerHTML = p.mantra_verse.replace(/\n/g, '<br>');
+
+        const mantraChant = document.querySelector('.hn-mantra-chant');
+        if (mantraChant && (p.chant || p.mantra_chant)) mantraChant.innerText = p.chant || p.mantra_chant;
+      }
+
+      // C. WHY CARRY KRISHNA SECTION
+      if (config.why_krishna) {
+        const w = config.why_krishna;
+        const sectionHeader = document.querySelector('.hn-why-section .hn-section-title');
+        if (sectionHeader && w.title) sectionHeader.innerText = w.title;
+
+        const sectionSub = document.querySelector('.hn-why-section .hn-section-subtitle');
+        if (sectionSub && w.subtitle) sectionSub.innerText = w.subtitle;
+
+        const quoteEl = document.querySelector('.hn-why-quote');
+        if (quoteEl && w.quote) quoteEl.innerText = w.quote;
+
+        if (Array.isArray(w.cards)) {
+          const cardEls = document.querySelectorAll('.hn-why-card');
+          w.cards.forEach((c, idx) => {
+            if (cardEls[idx]) {
+              const iconEl = cardEls[idx].querySelector('.hn-why-circle i');
+              if (iconEl && c.icon) iconEl.className = `bi ${c.icon}`;
+              const tEl = cardEls[idx].querySelector('.hn-why-title');
+              if (tEl && c.title) tEl.innerText = c.title;
+              const descEl = cardEls[idx].querySelector('.hn-why-text');
+              if (descEl && (c.text || c.desc)) descEl.innerText = c.text || c.desc;
+            }
+          });
+        }
+      }
+
+      // D. LIFESTYLE GALLERY
+      if (config.lifestyle_gallery) {
+        const g = config.lifestyle_gallery;
+        const gTitle = document.querySelector('section:has(.hn-lifestyle-grid) .hn-section-title');
+        if (gTitle && g.title) gTitle.innerText = g.title;
+
+        const gSub = document.querySelector('section:has(.hn-lifestyle-grid) .hn-section-subtitle');
+        if (gSub && g.subtitle) gSub.innerText = g.subtitle;
+
+        if (Array.isArray(g.items)) {
+          const imgs = document.querySelectorAll('.hn-lifestyle-item img');
+          g.items.forEach((item, idx) => {
+            if (imgs[idx]) {
+              imgs[idx].src = typeof item === 'string' ? item : item.url;
+            }
+          });
+        }
+      }
+
+      // E. TRUST BAR
+      if (config.trust_bar && Array.isArray(config.trust_bar.badges)) {
+        const badgeEls = document.querySelectorAll('.hn-service-item');
+        config.trust_bar.badges.forEach((b, idx) => {
+          if (badgeEls[idx]) {
+            const iconEl = badgeEls[idx].querySelector('i');
+            if (iconEl && b.icon) iconEl.className = `bi ${b.icon}`;
+            const spanEl = badgeEls[idx].querySelector('span');
+            if (spanEl && b.label) spanEl.innerText = b.label;
+          }
+        });
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       renderHeader('home');
       renderFooter();
+      renderDynamicHomepageSections();
       renderFeaturedSection();
       updatePromoSection();
       renderCombosSection();

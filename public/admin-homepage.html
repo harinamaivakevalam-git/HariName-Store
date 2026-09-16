@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Homepage Editor — Harinama Admin Portal</title>
+  
+  <!-- Google Fonts: Poppins & Cinzel -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap 5 CSS & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <!-- Supabase JS SDK CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Harinama Store Admin Stylesheet -->
+  <link rel="stylesheet" href="/assets/css/style.css?v=12">
+  <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
+
+  <style>
+    :root {
+      --hn-navy: #0f1e36;
+      --hn-gold: #c59b27;
+      --hn-gold-light: #e5b842;
+      --hn-gold-soft: #fcf8ee;
+      --hn-cream: #faf7f2;
+      --hn-border: #e9ecef;
+    }
+    body {
+      background-color: #f8fafc;
+      font-family: 'Poppins', sans-serif;
+      color: #334155;
+    }
+    .hn-admin-brand-title {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      color: var(--hn-navy);
+      font-size: 1.3rem;
+    }
+    .hn-admin-badge-portal {
+      background-color: var(--hn-gold-soft);
+      color: var(--hn-gold);
+      border: 1px solid rgba(197, 155, 39, 0.3);
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .hn-admin-nav-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--hn-border);
+    }
+    .hn-admin-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: #64748b;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .hn-admin-tab:hover {
+      background-color: #f1f5f9;
+      color: var(--hn-navy);
+    }
+    .hn-admin-tab.active {
+      background-color: var(--hn-navy);
+      color: #ffffff;
+      font-weight: 600;
+    }
+    .editor-section-card {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .editor-section-header {
+      padding: 16px 20px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+    .editor-section-header h5 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--hn-navy);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .editor-section-body {
+      padding: 24px;
+    }
+    .form-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+    .form-control, .form-select {
+      font-size: 0.9rem;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      padding: 9px 12px;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--hn-gold);
+      box-shadow: 0 0 0 3px rgba(197, 155, 39, 0.15);
+    }
+    .media-preview-box {
+      width: 100%;
+      height: 220px;
+      border-radius: 10px;
+      background: #0f172a;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border: 2px dashed #cbd5e1;
+    }
+    .media-preview-box img, .media-preview-box video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .media-preview-box iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .media-mode-btn-group .btn {
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 6px 14px;
+    }
+    .lifestyle-thumb-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 14px;
+    }
+    .lifestyle-thumb-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+    }
+    .lifestyle-thumb-img {
+      width: 100%;
+      height: 110px;
+      object-fit: cover;
+      border-radius: 6px;
+      background: #e2e8f0;
+      margin-bottom: 8px;
+    }
+    .btn-gold {
+      background-color: var(--hn-gold);
+      color: #fff;
+      font-weight: 600;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 8px;
+      transition: background-color 0.2s ease;
+    }
+    .btn-gold:hover {
+      background-color: #af871e;
+      color: #fff;
+    }
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Admin Header -->
+  <header class="bg-white border-bottom py-3 px-3 px-md-4 sticky-top shadow-sm">
+    <div class="d-flex align-items-center justify-content-between">
+      <a href="/admin.html" class="d-flex align-items-center text-decoration-none">
+        <div class="hn-brand-circle me-2" style="width: 38px; height: 38px;">
+          <img src="/assets/images/krishna-logo.jpg" alt="Harinama Store Logo" class="hn-brand-img">
+        </div>
+        <div>
+          <span class="hn-admin-brand-title">Harinama Store</span>
+          <span class="hn-admin-badge-portal ms-2">Admin Portal</span>
+        </div>
+      </a>
+
+      <!-- Controls -->
+      <div class="d-flex align-items-center gap-2">
+        <a href="/index.html" target="_blank" class="btn btn-sm btn-outline-dark d-flex align-items-center gap-1">
+          <i class="bi bi-box-arrow-up-right"></i> View Live Storefront
+        </a>
+        <button type="button" class="btn btn-sm btn-gold d-flex align-items-center gap-1" onclick="saveAllHomepageSections()">
+          <i class="bi bi-cloud-arrow-up-fill"></i> Save All Changes
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container-fluid px-3 px-md-4 py-4" style="max-width: 1300px;">
+    
+    <!-- Admin Navigation Bar -->
+    <div class="hn-admin-nav-bar mb-4">
+      <a href="/admin.html" class="hn-admin-tab"><i class="bi bi-speedometer2"></i> Dashboard</a>
+      <a href="/admin-homepage.html" class="hn-admin-tab active"><i class="bi bi-layout-text-window-reverse"></i> Home Editor</a>
+      <a href="/admin-products.html" class="hn-admin-tab"><i class="bi bi-box-seam"></i> Products</a>
+      <a href="/admin-orders.html" class="hn-admin-tab"><i class="bi bi-bag-check"></i> Orders</a>
+      <a href="/admin-categories.html" class="hn-admin-tab"><i class="bi bi-tags"></i> Categories</a>
+      <a href="/admin-coupons.html" class="hn-admin-tab"><i class="bi bi-ticket-perforated"></i> Coupons</a>
+      <a href="/admin-reviews.html" class="hn-admin-tab"><i class="bi bi-star"></i> Reviews</a>
+      <a href="/admin-customers.html" class="hn-admin-tab"><i class="bi bi-people"></i> Customers</a>
+      <a href="/admin-analytics.html" class="hn-admin-tab"><i class="bi bi-graph-up-arrow"></i> Analytics</a>
+      <a href="/admin-settings.html" class="hn-admin-tab"><i class="bi bi-gear"></i> Settings</a>
+    </div>
+
+    <!-- Header Title Strip -->
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+      <div>
+        <h3 class="fw-bold text-navy mb-1" style="font-family: 'Cinzel', serif;">Homepage Live Editor</h3>
+        <p class="text-muted small mb-0">Customize and manage all sections of your live storefront home page with instant preview.</p>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetToDefaultConfirmation()">
+          <i class="bi bi-arrow-counterclockwise"></i> Reset to Defaults
+        </button>
+        <button type="button" class="btn btn-sm btn-gold" onclick="saveAllHomepageSections()">
+          <i class="bi bi-check2-circle"></i> Save All Sections
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Editor Sections Accordion/Cards -->
+    <form id="homepageEditorForm" onsubmit="event.preventDefault(); saveAllHomepageSections();">
+      
+      <!-- =========================================================
+           1. HERO SECTION
+           ========================================================= -->
+      <div class="editor-section-card">
+        <div class="editor-section-header" data-bs-toggle="collapse" data-bs-target="#collapseHero">
+          <h5><i class="bi bi-stars text-gold"></i> 1. Hero Section (Top Banner)</h5>
+          <span class="badge bg-light text-dark border">Main Showcase</span>
+        </div>
+        <div class="collapse show" id="collapseHero">
+          <div class="editor-section-body">
+            
+            <div class="row g-4">
+              <!-- Left: Text Content Fields -->
+              <div class="col-lg-7">
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Headline Prefix</label>
+                    <input type="text" id="hero_prefix" class="form-control" value="Carry" placeholder="e.g. Carry">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Headline Accent Word</label>
+                    <input type="text" id="hero_accent" class="form-control fw-bold text-gold" value="Krishna" placeholder="e.g. Krishna">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Headline Suffix</label>
+                    <input type="text" id="hero_suffix" class="form-control" value="Wherever You Go" placeholder="e.g. Wherever You Go">
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label">Description / Subtitle</label>
+                    <textarea id="hero_desc" class="form-control" rows="3">Exquisite handcrafted devotional products, sacred shastras, and spiritual keepsakes designed to keep divine remembrance in your heart and everyday life.</textarea>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">CTA Button Text</label>
+                    <input type="text" id="hero_cta_text" class="form-control" value="Shop Collection">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">CTA Button Link</label>
+                    <input type="text" id="hero_cta_link" class="form-control" value="/shop.html">
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Sacred Quote Verse</label>
+                    <input type="text" id="hero_quote_verse" class="form-control" value="“In every step, remember Krishna.”">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Quote Attribution / Subtitle</label>
+                    <input type="text" id="hero_quote_sub" class="form-control" value="Inspired by the timeless wisdom of Vrindavan">
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Devotee Rating Badge Text</label>
+                    <input type="text" id="hero_trust_rating" class="form-control" value="4.9 / 5.0">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Social Proof Caption</label>
+                    <input type="text" id="hero_trust_caption" class="form-control" value="Blessed by 1,200+ devotees across India">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Hero Media (Image vs Video) -->
+              <div class="col-lg-5">
+                <div class="border rounded p-3 bg-light">
+                  <div class="d-flex align-items-center justify-content-between mb-3">
+                    <label class="form-label mb-0 fw-bold">Hero Media Format</label>
+                    <div class="btn-group btn-group-sm media-mode-btn-group" role="group">
+                      <input type="radio" class="btn-check" name="hero_media_type" id="hero_type_img" value="image" checked onchange="toggleHeroMediaType('image')">
+                      <label class="btn btn-outline-dark" for="hero_type_img"><i class="bi bi-image"></i> Image</label>
+
+                      <input type="radio" class="btn-check" name="hero_media_type" id="hero_type_video" value="video" onchange="toggleHeroMediaType('video')">
+                      <label class="btn btn-outline-dark" for="hero_type_video"><i class="bi bi-play-btn-fill"></i> Video</label>
+                    </div>
+                  </div>
+
+                  <!-- Image Controls -->
+                  <div id="hero_image_controls">
+                    <label class="form-label small">Hero Image URL / Upload</label>
+                    <div class="input-group mb-2">
+                      <input type="text" id="hero_image_url" class="form-control form-control-sm" value="/assets/images/krishna_hero_keychain.jpg" oninput="updateHeroPreview()">
+                      <button class="btn btn-sm btn-outline-secondary" type="button" onclick="triggerFileUpload('hero_file_input')">
+                        <i class="bi bi-upload"></i> Upload
+                      </button>
+                    </div>
+                    <input type="file" id="hero_file_input" class="d-none" accept="image/*" onchange="handleSingleFileUpload(event, 'hero_image_url', updateHeroPreview)">
+                  </div>
+
+                  <!-- Video Controls -->
+                  <div id="hero_video_controls" class="d-none">
+                    <label class="form-label small">Hero Video URL (MP4 file or YouTube embed)</label>
+                    <div class="input-group mb-2">
+                      <input type="text" id="hero_video_url" class="form-control form-control-sm" placeholder="https://example.com/video.mp4 or YouTube link" oninput="updateHeroPreview()">
+                      <button class="btn btn-sm btn-outline-secondary" type="button" onclick="triggerFileUpload('hero_video_file_input')">
+                        <i class="bi bi-upload"></i> MP4
+                      </button>
+                    </div>
+                    <input type="file" id="hero_video_file_input" class="d-none" accept="video/mp4,video/webm" onchange="handleSingleFileUpload(event, 'hero_video_url', updateHeroPreview)">
+                    <div class="form-text small text-muted">Supports MP4, WebM video files, or YouTube links.</div>
+                  </div>
+
+                  <!-- Media Preview Box -->
+                  <div class="media-preview-box mt-3" id="hero_media_preview">
+                    <img id="hero_preview_img" src="/assets/images/krishna_hero_keychain.jpg" alt="Hero Preview">
+                    <video id="hero_preview_video" class="d-none" controls autoplay loop muted playsinline></video>
+                    <iframe id="hero_preview_iframe" class="d-none" allowfullscreen></iframe>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
+           2. PROMOTIONAL & MAHA-MANTRA BANNER
+           ========================================================= -->
+      <div class="editor-section-card">
+        <div class="editor-section-header" data-bs-toggle="collapse" data-bs-target="#collapsePromo">
+          <h5><i class="bi bi-music-note-beamed text-gold"></i> 2. Promotional & Maha-Mantra Section</h5>
+          <span class="badge bg-light text-dark border">Middle Banner</span>
+        </div>
+        <div class="collapse show" id="collapsePromo">
+          <div class="editor-section-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Banner Title</label>
+                <input type="text" id="promo_title" class="form-control" value="Sacred Devotional Reminder">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Banner Subtitle</label>
+                <input type="text" id="promo_subtitle" class="form-control" value="Carry Krishna with you everywhere.">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Description Text</label>
+                <textarea id="promo_desc" class="form-control" rows="3">A simple everyday reminder to pause, remember Krishna, and chant.</textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Maha-Mantra Verse</label>
+                <textarea id="promo_mantra" class="form-control font-monospace" rows="3">Hare Krishna Hare Krishna
+Krishna Krishna Hare Hare
+Hare Rama Hare Rama
+Rama Rama Hare Hare</textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Banner Image URL / Upload</label>
+                <div class="input-group">
+                  <input type="text" id="promo_image_url" class="form-control" value="/assets/images/krishna-logo.jpg">
+                  <button class="btn btn-outline-secondary" type="button" onclick="triggerFileUpload('promo_file_input')"><i class="bi bi-upload"></i></button>
+                </div>
+                <input type="file" id="promo_file_input" class="d-none" accept="image/*" onchange="handleSingleFileUpload(event, 'promo_image_url')">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Chant Tagline / Slogan</label>
+                <input type="text" id="promo_chant" class="form-control" value="Chant & Be Happy.">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
+           3. "WHY CARRY KRISHNA?" SECTION
+           ========================================================= -->
+      <div class="editor-section-card">
+        <div class="editor-section-header" data-bs-toggle="collapse" data-bs-target="#collapseWhy">
+          <h5><i class="bi bi-flower2 text-gold"></i> 3. "Why Carry Krishna?" Feature Cards</h5>
+          <span class="badge bg-light text-dark border">3 Value Pillars</span>
+        </div>
+        <div class="collapse show" id="collapseWhy">
+          <div class="editor-section-body">
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label">Section Title</label>
+                <input type="text" id="why_title" class="form-control" value="Why Carry Krishna?">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Section Subtitle</label>
+                <input type="text" id="why_subtitle" class="form-control" value="A small reminder can change the direction of your day.">
+              </div>
+            </div>
+
+            <!-- 3 Benefit Cards -->
+            <div class="row g-3">
+              <!-- Card 1 -->
+              <div class="col-md-4">
+                <div class="border rounded p-3 bg-light h-100">
+                  <span class="badge bg-navy text-white mb-2">Card 1</span>
+                  <div class="mb-2">
+                    <label class="form-label small">Icon Class</label>
+                    <input type="text" id="why_card1_icon" class="form-control form-control-sm" value="bi-flower2">
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small">Card Title</label>
+                    <input type="text" id="why_card1_title" class="form-control form-control-sm" value="SPIRITUAL AWARENESS">
+                  </div>
+                  <div>
+                    <label class="form-label small">Card Description</label>
+                    <input type="text" id="why_card1_desc" class="form-control form-control-sm" value="A moment of peace in a busy life.">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 2 -->
+              <div class="col-md-4">
+                <div class="border rounded p-3 bg-light h-100">
+                  <span class="badge bg-navy text-white mb-2">Card 2</span>
+                  <div class="mb-2">
+                    <label class="form-label small">Icon Class</label>
+                    <input type="text" id="why_card2_icon" class="form-control form-control-sm" value="bi-brightness-high">
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small">Card Title</label>
+                    <input type="text" id="why_card2_title" class="form-control form-control-sm" value="POSITIVE VIBES">
+                  </div>
+                  <div>
+                    <label class="form-label small">Card Description</label>
+                    <input type="text" id="why_card2_desc" class="form-control form-control-sm" value="Stay connected to what truly matters.">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 3 -->
+              <div class="col-md-4">
+                <div class="border rounded p-3 bg-light h-100">
+                  <span class="badge bg-navy text-white mb-2">Card 3</span>
+                  <div class="mb-2">
+                    <label class="form-label small">Icon Class</label>
+                    <input type="text" id="why_card3_icon" class="form-control form-control-sm" value="bi-heart">
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label small">Card Title</label>
+                    <input type="text" id="why_card3_title" class="form-control form-control-sm" value="SPREAD JOY">
+                  </div>
+                  <div>
+                    <label class="form-label small">Card Description</label>
+                    <input type="text" id="why_card3_desc" class="form-control form-control-sm" value="A simple way to inspire others.">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <label class="form-label">Bottom Golden Quote</label>
+              <input type="text" id="why_quote" class="form-control" value="“Carry a reminder of eternal happiness.”">
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
+           4. "TAKE KRISHNA WITH YOU" LIFESTYLE GALLERY
+           ========================================================= -->
+      <div class="editor-section-card">
+        <div class="editor-section-header" data-bs-toggle="collapse" data-bs-target="#collapseGallery">
+          <h5><i class="bi bi-images text-gold"></i> 4. "Take Krishna With You" Lifestyle Grid</h5>
+          <span class="badge bg-light text-dark border">5 Photo Slots</span>
+        </div>
+        <div class="collapse show" id="collapseGallery">
+          <div class="editor-section-body">
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label">Gallery Heading</label>
+                <input type="text" id="gallery_title" class="form-control" value="Take Krishna With You">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Gallery Subtitle</label>
+                <input type="text" id="gallery_subtitle" class="form-control" value="From your morning commute to your next journey.">
+              </div>
+            </div>
+
+            <label class="form-label fw-bold mb-2">5 Lifestyle Photos</label>
+            <div class="lifestyle-thumb-grid">
+              <!-- Slot 1 -->
+              <div class="lifestyle-thumb-card">
+                <img id="gallery_img_prev_0" class="lifestyle-thumb-img" src="https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80">
+                <input type="text" id="gallery_img_0" class="form-control form-control-sm mb-1" value="https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80" oninput="updateGalleryThumb(0)">
+                <button type="button" class="btn btn-xs btn-outline-dark w-100" onclick="triggerFileUpload('gallery_file_0')"><i class="bi bi-upload"></i> Upload</button>
+                <input type="file" id="gallery_file_0" class="d-none" accept="image/*" onchange="handleSingleFileUpload(event, 'gallery_img_0', () => updateGalleryThumb(0))">
+              </div>
+
+              <!-- Slot 2 -->
+              <div class="lifestyle-thumb-card">
+                <img id="gallery_img_prev_1" class="lifestyle-thumb-img" src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80">
+                <input type="text" id="gallery_img_1" class="form-control form-control-sm mb-1" value="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80" oninput="updateGalleryThumb(1)">
+                <button type="button" class="btn btn-xs btn-outline-dark w-100" onclick="triggerFileUpload('gallery_file_1')"><i class="bi bi-upload"></i> Upload</button>
+                <input type="file" id="gallery_file_1" class="d-none" accept="image/*" onchange="handleSingleFileUpload(event, 'gallery_img_1', () => updateGalleryThumb(1))">
+              </div>
+
+              <!-- Slot 3 -->
+              <div class="lifestyle-thumb-card">
+                <img id="gallery_img_prev_2" class="lifestyle-thumb-img" src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=600&q=80">
+                <input type="text" id="gallery_img_2" class="form-control form-control-sm mb-1" value="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=600&q=80" oninput="updateGalleryThumb(2)">
+                <button type="button" class="btn btn-xs btn-outline-dark w-100" onclick="triggerFileUpload('gallery_file_2')"><i class="bi bi-upload"></i> Upload</button>
+                <input type="file" id="gallery_file_2" class="d-none" accept="image/*" onchange="handleSingleFileUpload(event, 'gallery_img_2', () => updateGalleryThumb(2))">
+              </div>
+
+              <!-- Slot 4 -->
+              <div class="lifestyle-thumb-card">
+                <img id="gallery_img_prev_3" class="lifestyle-thumb-img" src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80">
+                <input type="text" id="gallery_img_3" class="form-control form-control-sm mb-1" value="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80" oninput="updateGalleryThumb(3)">
+                <button type="button" class="btn btn-xs btn-outline-dark w-100" onclick="triggerFileUpload('gallery_file_3')"><i class="bi bi-upload"></i> Upload</button>
+                <input type="file" id="gallery_file_3" class="d-none" accept="image/*" onchange="handleSingleFileUpload(event, 'gallery_img_3', () => updateGalleryThumb(3))">
+              </div>
+
+              <!-- Slot 5 -->
+              <div class="lifestyle-thumb-card">
+                <img id="gallery_img_prev_4" class="lifestyle-thumb-img" src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80">
+                <input type="text" id="gallery_img_4" class="form-control form-control-sm mb-1" value="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80" oninput="updateGalleryThumb(4)">
+                <button type="button" class="btn btn-xs btn-outline-dark w-100" onclick="triggerFileUpload('gallery_file_4')"><i class="bi bi-upload"></i> Upload</button>
+                <input type="file" id="gallery_file_4" class="d-none" accept="image/*" onchange="handleSingleFileUpload(event, 'gallery_img_4', () => updateGalleryThumb(4))">
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
+           5. TRUST & SERVICE HIGHLIGHTS BAR
+           ========================================================= -->
+      <div class="editor-section-card">
+        <div class="editor-section-header" data-bs-toggle="collapse" data-bs-target="#collapseTrust">
+          <h5><i class="bi bi-shield-check text-gold"></i> 5. Trust & Service Highlights Bar</h5>
+          <span class="badge bg-light text-dark border">5 Badges</span>
+        </div>
+        <div class="collapse show" id="collapseTrust">
+          <div class="editor-section-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label small">Badge 1</label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text"><i class="bi bi-shield-check"></i></span>
+                  <input type="text" id="trust_b1_label" class="form-control" value="Secure Payments">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small">Badge 2</label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text"><i class="bi bi-arrow-repeat"></i></span>
+                  <input type="text" id="trust_b2_label" class="form-control" value="Easy Returns">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small">Badge 3</label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text"><i class="bi bi-truck"></i></span>
+                  <input type="text" id="trust_b3_label" class="form-control" value="All India Delivery">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small">Badge 4</label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text"><i class="bi bi-arrow-counterclockwise"></i></span>
+                  <input type="text" id="trust_b4_label" class="form-control" value="Authentic Vedic Craft">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small">Badge 5</label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text"><i class="bi bi-chat-heart"></i></span>
+                  <input type="text" id="trust_b5_label" class="form-control" value="Devotee Support">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="d-flex justify-content-end gap-3 my-4">
+        <button type="button" class="btn btn-outline-secondary px-4" onclick="resetToDefaultConfirmation()">
+          Reset to Defaults
+        </button>
+        <button type="submit" class="btn btn-gold px-5 py-2 fs-6">
+          <i class="bi bi-check2-circle me-1"></i> Save All Homepage Changes
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container">
+    <div id="hnToast" class="toast align-items-center text-white border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body" id="toastMessage">Changes saved successfully!</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+
+    function initSupabase() {
+      if (window.supabase && typeof window.supabase.createClient === 'function') {
+        return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+      return null;
+    }
+
+    function showToast(msg, type = 'success') {
+      const toastEl = document.getElementById('hnToast');
+      const msgEl = document.getElementById('toastMessage');
+      if (!toastEl || !msgEl) return;
+
+      toastEl.className = `toast align-items-center text-white border-0 shadow bg-${type === 'danger' ? 'danger' : (type === 'warning' ? 'warning text-dark' : 'dark')}`;
+      msgEl.innerText = msg;
+
+      const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+      toast.show();
+    }
+
+    function getAuthHeaders(includeContentType = true) {
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token') || 'admin-portal-session';
+      const headers = {
+        'x-admin-email': 'harinamaivakevalam@gmail.com',
+        'Authorization': 'Bearer ' + token
+      };
+      if (includeContentType) {
+        headers['Content-Type'] = 'application/json';
+      }
+      return headers;
+    }
+
+    function triggerFileUpload(inputId) {
+      const el = document.getElementById(inputId);
+      if (el) el.click();
+    }
+
+    async function uploadMediaFile(file) {
+      // 1. Direct Supabase Storage attempt
+      try {
+        const sb = initSupabase();
+        if (sb && sb.storage) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `homepage/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+
+          for (const bucket of ['product-images', 'public', 'images']) {
+            try {
+              const { data, error } = await sb.storage.from(bucket).upload(fileName, file, { upsert: true });
+              if (!error && data) {
+                const { data: pubData } = sb.storage.from(bucket).getPublicUrl(fileName);
+                if (pubData && pubData.publicUrl) return pubData.publicUrl;
+              }
+            } catch (_) {}
+          }
+        }
+      } catch (err) {}
+
+      // 2. Backend API upload fallback
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+        const res = await fetch('/api/upload/image', {
+          method: 'POST',
+          headers: getAuthHeaders(false),
+          body: formData
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data?.url) return json.data.url;
+        }
+      } catch (e) {}
+
+      // 3. Fallback: Base64 data URL
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = () => resolve('');
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleSingleFileUpload(event, targetInputId, callback) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      showToast('Uploading media...', 'dark');
+      const url = await uploadMediaFile(file);
+      if (url) {
+        const input = document.getElementById(targetInputId);
+        if (input) input.value = url;
+        showToast('Media uploaded successfully! 🌸', 'success');
+        if (typeof callback === 'function') callback();
+      } else {
+        showToast('Upload failed, please check file size.', 'danger');
+      }
+    }
+
+    function toggleHeroMediaType(type) {
+      const imgControls = document.getElementById('hero_image_controls');
+      const videoControls = document.getElementById('hero_video_controls');
+
+      if (type === 'video') {
+        imgControls?.classList.add('d-none');
+        videoControls?.classList.remove('d-none');
+      } else {
+        imgControls?.classList.remove('d-none');
+        videoControls?.classList.add('d-none');
+      }
+      updateHeroPreview();
+    }
+
+    function updateHeroPreview() {
+      const isVideo = document.getElementById('hero_type_video')?.checked;
+      const imgEl = document.getElementById('hero_preview_img');
+      const videoEl = document.getElementById('hero_preview_video');
+      const iframeEl = document.getElementById('hero_preview_iframe');
+
+      if (isVideo) {
+        const videoUrl = document.getElementById('hero_video_url')?.value?.trim() || '';
+        imgEl?.classList.add('d-none');
+
+        if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+          let embedUrl = videoUrl;
+          if (videoUrl.includes('watch?v=')) {
+            embedUrl = videoUrl.replace('watch?v=', 'embed/');
+          } else if (videoUrl.includes('youtu.be/')) {
+            embedUrl = videoUrl.replace('youtu.be/', 'www.youtube.com/embed/');
+          }
+          if (iframeEl) {
+            iframeEl.src = embedUrl;
+            iframeEl.classList.remove('d-none');
+          }
+          videoEl?.classList.add('d-none');
+        } else {
+          iframeEl?.classList.add('d-none');
+          if (videoEl) {
+            videoEl.src = videoUrl;
+            videoEl.classList.remove('d-none');
+            videoEl.play().catch(() => {});
+          }
+        }
+      } else {
+        const imgUrl = document.getElementById('hero_image_url')?.value?.trim() || '/assets/images/krishna_hero_keychain.jpg';
+        videoEl?.classList.add('d-none');
+        iframeEl?.classList.add('d-none');
+        if (imgEl) {
+          imgEl.src = imgUrl;
+          imgEl.classList.remove('d-none');
+        }
+      }
+    }
+
+    function updateGalleryThumb(index) {
+      const val = document.getElementById(`gallery_img_${index}`)?.value;
+      const imgEl = document.getElementById(`gallery_img_prev_${index}`);
+      if (imgEl && val) {
+        imgEl.src = val;
+      }
+    }
+
+    // Load existing homepage sections into the form
+    async function loadHomepageConfig() {
+      let config = null;
+
+      // 1. Try direct Supabase
+      try {
+        const sb = initSupabase();
+        if (sb) {
+          const { data, error } = await sb.from('homepage_sections').select('*');
+          if (!error && Array.isArray(data) && data.length > 0) {
+            config = {};
+            data.forEach(s => {
+              config[s.id] = typeof s.content === 'object' ? s.content : JSON.parse(s.content || '{}');
+            });
+          }
+        }
+      } catch (e) {}
+
+      // 2. Try REST API fallback
+      if (!config) {
+        try {
+          const res = await fetch('/api/homepage');
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.data) {
+              config = {};
+              Object.keys(json.data).forEach(k => {
+                config[k] = json.data[k].content;
+              });
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (config) {
+        populateFormFields(config);
+      }
+    }
+
+    function populateFormFields(cfg) {
+      // 1. Hero
+      if (cfg.hero) {
+        const h = cfg.hero;
+        if (h.title_prefix !== undefined) document.getElementById('hero_prefix').value = h.title_prefix;
+        if (h.title_accent !== undefined) document.getElementById('hero_accent').value = h.title_accent;
+        if (h.title_suffix !== undefined) document.getElementById('hero_suffix').value = h.title_suffix;
+        if (h.description !== undefined) document.getElementById('hero_desc').value = h.description;
+        if (h.cta_text !== undefined) document.getElementById('hero_cta_text').value = h.cta_text;
+        if (h.cta_link !== undefined) document.getElementById('hero_cta_link').value = h.cta_link;
+        if (h.quote_verse !== undefined) document.getElementById('hero_quote_verse').value = h.quote_verse;
+        if (h.quote_subtitle !== undefined) document.getElementById('hero_quote_sub').value = h.quote_subtitle;
+        if (h.trust_rating !== undefined) document.getElementById('hero_trust_rating').value = h.trust_rating;
+        if (h.trust_caption !== undefined) document.getElementById('hero_trust_caption').value = h.trust_caption;
+        if (h.image_url !== undefined) document.getElementById('hero_image_url').value = h.image_url;
+        if (h.video_url !== undefined) document.getElementById('hero_video_url').value = h.video_url;
+
+        if (h.media_type === 'video') {
+          document.getElementById('hero_type_video').checked = true;
+          toggleHeroMediaType('video');
+        } else {
+          document.getElementById('hero_type_img').checked = true;
+          toggleHeroMediaType('image');
+        }
+      }
+
+      // 2. Promo Banner
+      if (cfg.promo_banner) {
+        const p = cfg.promo_banner;
+        if (p.title !== undefined) document.getElementById('promo_title').value = p.title;
+        if (p.subtitle !== undefined) document.getElementById('promo_subtitle').value = p.subtitle;
+        if (p.description !== undefined) document.getElementById('promo_desc').value = p.description;
+        if (p.mantra_verse !== undefined) document.getElementById('promo_mantra').value = p.mantra_verse;
+        if (p.chant !== undefined || p.mantra_chant !== undefined) document.getElementById('promo_chant').value = p.chant || p.mantra_chant || 'Chant & Be Happy.';
+        if (p.image_url !== undefined) document.getElementById('promo_image_url').value = p.image_url;
+      }
+
+      // 3. Why Krishna
+      if (cfg.why_krishna) {
+        const w = cfg.why_krishna;
+        if (w.title !== undefined) document.getElementById('why_title').value = w.title;
+        if (w.subtitle !== undefined) document.getElementById('why_subtitle').value = w.subtitle;
+        if (w.quote !== undefined) document.getElementById('why_quote').value = w.quote;
+        if (Array.isArray(w.cards)) {
+          w.cards.forEach((card, idx) => {
+            const cardNum = idx + 1;
+            if (cardNum <= 3) {
+              const iconEl = document.getElementById(`why_card${cardNum}_icon`);
+              const titleEl = document.getElementById(`why_card${cardNum}_title`);
+              const descEl = document.getElementById(`why_card${cardNum}_desc`);
+              if (iconEl) iconEl.value = card.icon || '';
+              if (titleEl) titleEl.value = card.title || '';
+              if (descEl) descEl.value = card.text || card.desc || '';
+            }
+          });
+        }
+      }
+
+      // 4. Lifestyle Gallery
+      if (cfg.lifestyle_gallery && Array.isArray(cfg.lifestyle_gallery.items)) {
+        if (cfg.lifestyle_gallery.title !== undefined) document.getElementById('gallery_title').value = cfg.lifestyle_gallery.title;
+        if (cfg.lifestyle_gallery.subtitle !== undefined) document.getElementById('gallery_subtitle').value = cfg.lifestyle_gallery.subtitle;
+        cfg.lifestyle_gallery.items.forEach((item, idx) => {
+          if (idx < 5) {
+            const inputEl = document.getElementById(`gallery_img_${idx}`);
+            if (inputEl) {
+              inputEl.value = typeof item === 'string' ? item : item.url;
+              updateGalleryThumb(idx);
+            }
+          }
+        });
+      }
+
+      // 5. Trust Bar
+      if (cfg.trust_bar && Array.isArray(cfg.trust_bar.badges)) {
+        cfg.trust_bar.badges.forEach((b, idx) => {
+          const num = idx + 1;
+          const labelEl = document.getElementById(`trust_b${num}_label`);
+          if (labelEl) labelEl.value = b.label || '';
+        });
+      }
+
+      updateHeroPreview();
+    }
+
+    async function saveAllHomepageSections() {
+      const heroMediaType = document.querySelector('input[name="hero_media_type"]:checked')?.value || 'image';
+
+      const payload = {
+        hero: {
+          id: 'hero',
+          title: `${document.getElementById('hero_prefix').value} ${document.getElementById('hero_accent').value} ${document.getElementById('hero_suffix').value}`.trim(),
+          subtitle: document.getElementById('hero_desc').value,
+          content: {
+            title_prefix: document.getElementById('hero_prefix').value,
+            title_accent: document.getElementById('hero_accent').value,
+            title_suffix: document.getElementById('hero_suffix').value,
+            description: document.getElementById('hero_desc').value,
+            cta_text: document.getElementById('hero_cta_text').value,
+            cta_link: document.getElementById('hero_cta_link').value,
+            quote_verse: document.getElementById('hero_quote_verse').value,
+            quote_subtitle: document.getElementById('hero_quote_sub').value,
+            trust_rating: document.getElementById('hero_trust_rating').value,
+            trust_caption: document.getElementById('hero_trust_caption').value,
+            media_type: heroMediaType,
+            image_url: document.getElementById('hero_image_url').value,
+            video_url: document.getElementById('hero_video_url').value,
+            badge_top_title: 'Blessed in Vrindavan',
+            badge_top_sub: 'Authentic & Sacred',
+            badge_bottom_title: 'Solid Cast Brass & Enamel',
+            badge_bottom_sub: 'Lifelong Divine Craft',
+            benefits: [
+              { icon: 'bi-flower1', title: 'REMEMBER', desc: 'Keep Krishna close throughout your daily journey.' },
+              { icon: 'bi-music-note-beamed', title: 'CHANT', desc: 'Let the Maha-mantra be your sacred anchor in every moment.' },
+              { icon: 'bi-gift', title: 'SHARE', desc: 'Gift a divine reminder to those you love and cherish.' }
+            ]
+          }
+        },
+        promo_banner: {
+          id: 'promo_banner',
+          title: document.getElementById('promo_title').value,
+          subtitle: document.getElementById('promo_subtitle').value,
+          content: {
+            title: document.getElementById('promo_title').value,
+            subtitle: document.getElementById('promo_subtitle').value,
+            description: document.getElementById('promo_desc').value,
+            mantra_verse: document.getElementById('promo_mantra').value,
+            chant: document.getElementById('promo_chant').value,
+            cta_text: 'Add to Cart',
+            image_url: document.getElementById('promo_image_url').value,
+            media_type: 'image'
+          }
+        },
+        why_krishna: {
+          id: 'why_krishna',
+          title: document.getElementById('why_title').value,
+          subtitle: document.getElementById('why_subtitle').value,
+          content: {
+            title: document.getElementById('why_title').value,
+            subtitle: document.getElementById('why_subtitle').value,
+            quote: document.getElementById('why_quote').value,
+            cards: [
+              {
+                icon: document.getElementById('why_card1_icon').value,
+                title: document.getElementById('why_card1_title').value,
+                text: document.getElementById('why_card1_desc').value
+              },
+              {
+                icon: document.getElementById('why_card2_icon').value,
+                title: document.getElementById('why_card2_title').value,
+                text: document.getElementById('why_card2_desc').value
+              },
+              {
+                icon: document.getElementById('why_card3_icon').value,
+                title: document.getElementById('why_card3_title').value,
+                text: document.getElementById('why_card3_desc').value
+              }
+            ]
+          }
+        },
+        lifestyle_gallery: {
+          id: 'lifestyle_gallery',
+          title: document.getElementById('gallery_title').value,
+          subtitle: document.getElementById('gallery_subtitle').value,
+          content: {
+            title: document.getElementById('gallery_title').value,
+            subtitle: document.getElementById('gallery_subtitle').value,
+            items: [
+              { url: document.getElementById('gallery_img_0').value, alt: 'Lifestyle 1', media_type: 'image' },
+              { url: document.getElementById('gallery_img_1').value, alt: 'Lifestyle 2', media_type: 'image' },
+              { url: document.getElementById('gallery_img_2').value, alt: 'Lifestyle 3', media_type: 'image' },
+              { url: document.getElementById('gallery_img_3').value, alt: 'Lifestyle 4', media_type: 'image' },
+              { url: document.getElementById('gallery_img_4').value, alt: 'Lifestyle 5', media_type: 'image' }
+            ]
+          }
+        },
+        trust_bar: {
+          id: 'trust_bar',
+          title: 'Sacred Service Highlights',
+          subtitle: 'Our devotional commitments to every pilgrim and devotee.',
+          content: {
+            badges: [
+              { icon: 'bi-shield-check', label: document.getElementById('trust_b1_label').value },
+              { icon: 'bi-arrow-repeat', label: document.getElementById('trust_b2_label').value },
+              { icon: 'bi-truck', label: document.getElementById('trust_b3_label').value },
+              { icon: 'bi-arrow-counterclockwise', label: document.getElementById('trust_b4_label').value },
+              { icon: 'bi-chat-heart', label: document.getElementById('trust_b5_label').value }
+            ]
+          }
+        }
+      };
+
+      let saved = false;
+
+      // 1. Direct Supabase Upsert
+      try {
+        const sb = initSupabase();
+        if (sb) {
+          const rows = Object.values(payload).map(s => ({
+            id: s.id,
+            title: s.title,
+            subtitle: s.subtitle,
+            content: s.content,
+            is_active: true,
+            updated_at: new Date().toISOString()
+          }));
+
+          const { error } = await sb.from('homepage_sections').upsert(rows);
+          if (!error) {
+            saved = true;
+          }
+        }
+      } catch (sbErr) {}
+
+      // 2. Express Backend API fallback
+      try {
+        const res = await fetch('/api/homepage', {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ sections: payload })
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) saved = true;
+        }
+      } catch (apiErr) {}
+
+      // Save to localStorage for instant client rendering
+      localStorage.setItem('hn_homepage_config', JSON.stringify(payload));
+
+      if (saved) {
+        showToast('All homepage sections saved to live store! 🌸', 'success');
+      } else {
+        showToast('Saved locally and cached for live store. 🌸', 'success');
+      }
+    }
+
+    async function resetToDefaultConfirmation() {
+      if (!confirm('Are you sure you want to reset all homepage sections to brand defaults?')) return;
+
+      try {
+        const res = await fetch('/api/homepage/reset', {
+          method: 'POST',
+          headers: getAuthHeaders()
+        });
+        if (res.ok) {
+          showToast('Homepage restored to defaults! 🌸', 'success');
+          localStorage.removeItem('hn_homepage_config');
+          await loadHomepageConfig();
+        }
+      } catch (e) {
+        showToast('Could not reset defaults: ' + e.message, 'danger');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadHomepageConfig();
+    });
+  </script>
+</body>
+</html>

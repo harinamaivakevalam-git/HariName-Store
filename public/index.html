@@ -562,6 +562,14 @@
       }
     }
 
+    function isVideoMediaUrl(url) {
+      if (!url || typeof url !== 'string') return false;
+      const clean = url.trim().toLowerCase();
+      return clean.endsWith('.mp4') || clean.endsWith('.webm') || clean.endsWith('.ogg') || clean.endsWith('.mov') ||
+             clean.includes('.mp4?') || clean.includes('.webm?') || clean.includes('.mov?') ||
+             clean.includes('youtube.com') || clean.includes('youtu.be');
+    }
+
     // Dynamic Homepage Sections Config (Hero with Video/Image, Promo, Why, Gallery, Trust)
     async function renderDynamicHomepageSections() {
       let config = null;
@@ -635,16 +643,18 @@
         const trustCapEl = document.querySelector('.hn-trust-caption');
         if (trustCapEl && h.trust_caption) trustCapEl.innerText = h.trust_caption;
 
-        // Hero Media (Image or Video)
+        // Hero Media (Image or Video with Auto-detection)
         const mediaWrap = document.querySelector('.hn-hero-image-wrap');
         if (mediaWrap) {
+          const rawHeroUrl = (h.video_url || h.image_url || '').trim();
+          const isHeroVideo = (h.media_type === 'video') || isVideoMediaUrl(h.video_url) || isVideoMediaUrl(h.image_url);
           const existingMedia = mediaWrap.querySelector('.hn-hero-img, .hn-hero-video-player, iframe');
-          if (h.media_type === 'video' && h.video_url) {
-            const vUrl = h.video_url.trim();
-            if (vUrl.includes('youtube.com') || vUrl.includes('youtu.be')) {
-              let embedUrl = vUrl;
-              if (vUrl.includes('watch?v=')) embedUrl = vUrl.replace('watch?v=', 'embed/');
-              else if (vUrl.includes('youtu.be/')) embedUrl = vUrl.replace('youtu.be/', 'www.youtube.com/embed/');
+
+          if (isHeroVideo && rawHeroUrl) {
+            if (rawHeroUrl.includes('youtube.com') || rawHeroUrl.includes('youtu.be')) {
+              let embedUrl = rawHeroUrl;
+              if (rawHeroUrl.includes('watch?v=')) embedUrl = rawHeroUrl.replace('watch?v=', 'embed/');
+              else if (rawHeroUrl.includes('youtu.be/')) embedUrl = rawHeroUrl.replace('youtu.be/', 'www.youtube.com/embed/');
               if (existingMedia) existingMedia.remove();
               const iframe = document.createElement('iframe');
               iframe.src = embedUrl + (embedUrl.includes('?') ? '&' : '?') + 'autoplay=1&mute=1&loop=1&playsinline=1';
@@ -655,7 +665,7 @@
             } else {
               if (existingMedia) existingMedia.remove();
               const video = document.createElement('video');
-              video.src = vUrl;
+              video.src = rawHeroUrl;
               video.className = 'hn-hero-img hn-hero-video-player';
               video.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 24px;';
               video.autoplay = true;
@@ -669,13 +679,14 @@
               mediaWrap.prepend(video);
               video.play().catch(() => {});
             }
-          } else if (h.image_url) {
+          } else {
+            const finalHeroImg = rawHeroUrl || '/assets/images/krishna_hero_keychain.jpg';
             if (existingMedia && existingMedia.tagName === 'IMG') {
-              existingMedia.src = h.image_url;
+              existingMedia.src = finalHeroImg;
             } else {
               if (existingMedia) existingMedia.remove();
               const img = document.createElement('img');
-              img.src = h.image_url;
+              img.src = finalHeroImg;
               img.className = 'hn-hero-img';
               img.alt = 'Harinama Devotional Showcase';
               mediaWrap.prepend(img);
@@ -706,15 +717,17 @@
         const mantraChant = document.querySelector('.hn-mantra-chant');
         if (mantraChant && (p.chant || p.mantra_chant)) mantraChant.innerText = p.chant || p.mantra_chant;
 
-        // Promo Media (Image or Video)
+        // Promo Media (Automatic Video or Image Detection)
         const promoImgWrap = document.querySelector('.hn-promo-img-wrap');
         if (promoImgWrap) {
-          if (p.media_type === 'video' && p.video_url) {
-            const vUrl = p.video_url.trim();
-            if (vUrl.includes('youtube.com') || vUrl.includes('youtu.be')) {
-              let embedUrl = vUrl;
-              if (vUrl.includes('watch?v=')) embedUrl = vUrl.replace('watch?v=', 'embed/');
-              else if (vUrl.includes('youtu.be/')) embedUrl = vUrl.replace('youtu.be/', 'www.youtube.com/embed/');
+          const rawUrl = (p.video_url || p.image_url || '').trim();
+          const isVideo = (p.media_type === 'video') || isVideoMediaUrl(p.video_url) || isVideoMediaUrl(p.image_url);
+
+          if (isVideo && rawUrl) {
+            if (rawUrl.includes('youtube.com') || rawUrl.includes('youtu.be')) {
+              let embedUrl = rawUrl;
+              if (rawUrl.includes('watch?v=')) embedUrl = rawUrl.replace('watch?v=', 'embed/');
+              else if (rawUrl.includes('youtu.be/')) embedUrl = rawUrl.replace('youtu.be/', 'www.youtube.com/embed/');
               promoImgWrap.innerHTML = '';
               const iframe = document.createElement('iframe');
               iframe.src = embedUrl + (embedUrl.includes('?') ? '&' : '?') + 'autoplay=1&mute=1&loop=1&playsinline=1';
@@ -725,7 +738,7 @@
             } else {
               promoImgWrap.innerHTML = '';
               const video = document.createElement('video');
-              video.src = vUrl;
+              video.src = rawUrl;
               video.className = 'hn-promo-img hn-promo-video-player';
               video.style.cssText = 'width: 100%; height: 100%; min-height: 280px; object-fit: cover; border-radius: 12px;';
               video.autoplay = true;
@@ -739,10 +752,11 @@
               promoImgWrap.appendChild(video);
               video.play().catch(() => {});
             }
-          } else if (p.image_url) {
+          } else {
+            const finalImgUrl = rawUrl || '/assets/images/krishna-logo.jpg';
             promoImgWrap.innerHTML = '';
             const img = document.createElement('img');
-            img.src = p.image_url;
+            img.src = finalImgUrl;
             img.className = 'hn-promo-img';
             img.alt = p.title || 'Sacred Devotional Item';
             promoImgWrap.appendChild(img);

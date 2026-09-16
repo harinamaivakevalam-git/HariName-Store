@@ -377,10 +377,27 @@
 Krishna Krishna Hare Hare
 Hare Rama Hare Rama
 Rama Rama Hare Hare</textarea>
-                  </div>
-                  <div class="col-12">
+                  <div class="col-md-6">
                     <label class="form-label">Chant Tagline / Slogan</label>
                     <input type="text" id="promo_chant" class="form-control" value="Chant & Be Happy.">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Price Display (Leave blank to remove)</label>
+                    <input type="text" id="promo_price" class="form-control" placeholder="e.g. ₹122 or Special Edition">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Button Text (Leave blank to remove)</label>
+                    <input type="text" id="promo_cta_text" class="form-control" value="" placeholder="e.g. Add to Cart or Shop Now">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Button Link URL</label>
+                    <input type="text" id="promo_cta_link" class="form-control" placeholder="e.g. /shop.html (or leave blank)">
+                  </div>
+                  <div class="col-12">
+                    <div class="form-check form-switch mt-1">
+                      <input class="form-check-input" type="checkbox" id="promo_show_cta">
+                      <label class="form-check-label fw-bold small" for="promo_show_cta">Show Price &amp; Action Button in Banner</label>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -921,6 +938,11 @@ Rama Rama Hare Hare</textarea>
         if (p.description !== undefined) document.getElementById('promo_desc').value = p.description;
         if (p.mantra_verse !== undefined) document.getElementById('promo_mantra').value = p.mantra_verse;
         if (p.chant !== undefined || p.mantra_chant !== undefined) document.getElementById('promo_chant').value = p.chant || p.mantra_chant || 'Chant & Be Happy ✨.';
+        if (p.price !== undefined) document.getElementById('promo_price').value = p.price;
+        if (p.cta_text !== undefined) document.getElementById('promo_cta_text').value = p.cta_text;
+        if (p.cta_link !== undefined) document.getElementById('promo_cta_link').value = p.cta_link;
+        if (p.show_cta !== undefined) document.getElementById('promo_show_cta').checked = Boolean(p.show_cta);
+        else document.getElementById('promo_show_cta').checked = Boolean(p.price || p.cta_text);
 
         const promoMedia = (p.media_type === 'video' ? p.video_url : p.image_url) || p.video_url || p.image_url || '/assets/images/krishna-logo.jpg';
         const promoInput = document.getElementById('promo_media_url');
@@ -1023,7 +1045,10 @@ Rama Rama Hare Hare</textarea>
             description: document.getElementById('promo_desc').value,
             mantra_verse: document.getElementById('promo_mantra').value,
             chant: document.getElementById('promo_chant').value,
-            cta_text: 'Add to Cart',
+            price: document.getElementById('promo_price').value.trim(),
+            cta_text: document.getElementById('promo_cta_text').value.trim(),
+            cta_link: document.getElementById('promo_cta_link').value.trim(),
+            show_cta: document.getElementById('promo_show_cta').checked,
             image_url: isPromoVid ? '' : promoMedia,
             video_url: isPromoVid ? promoMedia : '',
             media_type: isPromoVid ? 'video' : 'image'

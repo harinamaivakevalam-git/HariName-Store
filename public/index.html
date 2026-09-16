@@ -435,34 +435,30 @@
       const wrapper = document.getElementById('hn-promo-section-wrapper');
       if (!wrapper) return;
 
+      if (window.__hn_homepage_custom_promo) return;
+
       const prods = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
       if (prods.length === 0) {
-        if (!window.__hn_homepage_custom_promo) {
-          wrapper.style.display = 'none';
-        }
+        wrapper.style.display = 'none';
         return;
       }
 
       const promoProd = prods.find(p => (p.slug && p.slug.includes('mantra')) || p.featured) || prods[0];
       if (!promoProd) {
-        if (!window.__hn_homepage_custom_promo) {
-          wrapper.style.display = 'none';
-        }
+        wrapper.style.display = 'none';
         return;
       }
 
-      if (!window.__hn_homepage_custom_promo) {
-        const titleEl = wrapper.querySelector('.hn-promo-title');
-        if (titleEl) titleEl.innerText = promoProd.title || promoProd.name;
+      const titleEl = wrapper.querySelector('.hn-promo-title');
+      if (titleEl) titleEl.innerText = promoProd.title || promoProd.name;
 
-        const descEl = wrapper.querySelector('.hn-promo-desc');
-        if (descEl && promoProd.description) descEl.innerText = promoProd.description;
+      const descEl = wrapper.querySelector('.hn-promo-desc');
+      if (descEl && promoProd.description) descEl.innerText = promoProd.description;
 
-        const imgEl = wrapper.querySelector('.hn-promo-img');
-        if (imgEl && (promoProd.image || promoProd.primary_image)) {
-          imgEl.src = promoProd.image || promoProd.primary_image;
-          imgEl.alt = promoProd.title || promoProd.name;
-        }
+      const imgEl = wrapper.querySelector('.hn-promo-img');
+      if (imgEl && (promoProd.image || promoProd.primary_image)) {
+        imgEl.src = promoProd.image || promoProd.primary_image;
+        imgEl.alt = promoProd.title || promoProd.name;
       }
 
       const priceEl = wrapper.querySelector('.hn-promo-price');
@@ -699,6 +695,32 @@
 
         const mantraChant = document.querySelector('.hn-mantra-chant');
         if (mantraChant && (promo.chant || promo.mantra_chant)) mantraChant.innerText = promo.chant || promo.mantra_chant;
+
+        // Pricing & Action Button (Editable or Removable)
+        const promoPriceEl = promoWrapper.querySelector('.hn-promo-price');
+        const promoBtnEl = promoWrapper.querySelector('.hn-promo-content button');
+        const showPromoCta = promo.show_cta !== false && promo.show_cta !== 'false';
+
+        if (promoPriceEl) {
+          if (showPromoCta && promo.price && promo.price.trim()) {
+            promoPriceEl.innerText = promo.price.trim();
+            promoPriceEl.style.display = 'block';
+          } else {
+            promoPriceEl.style.display = 'none';
+          }
+        }
+
+        if (promoBtnEl) {
+          if (showPromoCta && promo.cta_text && promo.cta_text.trim()) {
+            promoBtnEl.innerText = promo.cta_text.trim();
+            if (promoBtnEl.parentElement) promoBtnEl.parentElement.style.display = 'block';
+            if (promo.cta_link && promo.cta_link.trim()) {
+              promoBtnEl.onclick = () => window.location.href = promo.cta_link.trim();
+            }
+          } else {
+            if (promoBtnEl.parentElement) promoBtnEl.parentElement.style.display = 'none';
+          }
+        }
 
         // Promo Media (Image or Video)
         const promoImgWrap = document.querySelector('.hn-promo-img-wrap');

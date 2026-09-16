@@ -139,8 +139,9 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/assets/js/data.js"></script>
-  <script src="/assets/js/components.js?v=15"></script>
+  <script src="/assets/js/components.js"></script>
   <script>
     let activeCollection = 'all';
 
@@ -227,7 +228,7 @@
 
     function applyFilters() {
       renderShopCategories();
-      let filtered = [...HARINAMA_DATA.products];
+      let filtered = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.products)) ? [...HARINAMA_DATA.products] : [];
 
       // Search query filter
       const searchInput = document.getElementById('hn-shop-search');
@@ -308,6 +309,7 @@
 
       renderShopCategories();
       applyFilters();
+
       window.addEventListener('hn:catalog-loaded', () => {
         renderShopCategories();
         applyFilters();

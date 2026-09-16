@@ -319,6 +319,7 @@
           if (json.success && Array.isArray(json.data) && json.data.length > 0) {
             databaseProducts = json.data;
             renderProductsTable(databaseProducts);
+            localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
             
             // Sync with global catalog in memory
             if (typeof HARINAMA_DATA !== 'undefined') {
@@ -349,6 +350,7 @@
               const img = imgList[0] || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
               return {
                 id: p.id,
+                sku: p.sku,
                 name: p.name,
                 title: p.title || p.name,
                 slug: p.slug,
@@ -367,6 +369,13 @@
               };
             });
             renderProductsTable(databaseProducts);
+            localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
+            if (typeof HARINAMA_DATA !== 'undefined') {
+              HARINAMA_DATA.products = databaseProducts;
+              window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
+                detail: { products: databaseProducts, categories: HARINAMA_DATA.categories }
+              }));
+            }
             return;
           }
         }
@@ -378,6 +387,7 @@
       if (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) {
         databaseProducts = [...HARINAMA_DATA.products];
         renderProductsTable(databaseProducts);
+        localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
       }
     }
 

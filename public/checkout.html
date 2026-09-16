@@ -271,6 +271,7 @@
       const submitBtn = document.getElementById('hn-btn-place-order') || document.getElementById('hn-place-order-btn');
       const discountRow = document.getElementById('hn-co-discount-row');
       const discountEl = document.getElementById('hn-co-discount');
+      const msg = document.getElementById('hn-checkout-coupon-msg');
 
       if (!cart || cart.length === 0) {
         if (countBadge) countBadge.innerText = '0 items';
@@ -287,6 +288,7 @@
         }
         if (submitBtn) submitBtn.disabled = true;
         if (discountRow) discountRow.classList.add('d-none');
+        if (msg) msg.innerHTML = '';
         document.getElementById('hn-co-subtotal').innerText = '₹0';
         document.getElementById('hn-co-shipping').innerText = 'FREE';
         document.getElementById('hn-co-total').innerText = '₹0';
@@ -325,9 +327,15 @@
         if (discountRow) discountRow.classList.remove('d-none');
         if (discountEl) discountEl.innerText = `-₹${checkoutDiscount}`;
         const couponInput = document.getElementById('hn-checkout-coupon');
-        if (couponInput) couponInput.value = checkoutCouponCode;
-        const msg = document.getElementById('hn-checkout-coupon-msg');
-        if (msg) msg.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> Applied: ${checkoutCouponCode} (-₹${checkoutDiscount})</span>`;
+        if (couponInput && !couponInput.value) couponInput.value = checkoutCouponCode;
+        if (msg) {
+          msg.innerHTML = `
+            <div class="d-flex align-items-center justify-content-between mt-1">
+              <span class="text-success small fw-semibold"><i class="bi bi-check-circle"></i> Applied: ${checkoutCouponCode} (-₹${checkoutDiscount})</span>
+              <button type="button" class="btn btn-link btn-sm text-danger p-0 text-decoration-none small" onclick="removeCheckoutCoupon()">Remove</button>
+            </div>
+          `;
+        }
       } else {
         if (discountRow) discountRow.classList.add('d-none');
       }
@@ -338,17 +346,18 @@
     }
 
     async function applyCheckoutCoupon() {
-      const code = (document.getElementById('hn-checkout-coupon').value || '').trim().toUpperCase();
+      const input = document.getElementById('hn-checkout-coupon');
+      const code = (input ? input.value : '').trim().toUpperCase();
       const msg = document.getElementById('hn-checkout-coupon-msg');
       if (!code) {
-        msg.innerHTML = '<span class="text-danger small">Please enter a coupon code.</span>';
+        if (msg) msg.innerHTML = '<span class="text-danger small">Please enter a coupon code.</span>';
         return;
       }
 
-      msg.innerHTML = '<span class="text-muted small"><i class="bi bi-arrow-repeat spin"></i> Validating coupon...</span>';
+      if (msg) msg.innerHTML = '<span class="text-muted small"><i class="bi bi-arrow-repeat spin"></i> Validating coupon...</span>';
       
       const cart = getCheckoutCart();
-      const subtotal = cart.reduce((acc, i) => acc + (i.price * (i.qty || 1)), 0);
+      const subtotal = cart.reduce((acc, i) => acc + ((parseFloat(i.price) || 0) * (parseInt(i.qty, 10) || 1)), 0);
 
       try {
         const result = await HARINAMA_DATA.validateCoupon(code, subtotal);
@@ -357,19 +366,38 @@
           checkoutCouponCode = result.code || code;
           sessionStorage.setItem('hn_checkout_discount', String(checkoutDiscount));
           sessionStorage.setItem('hn_coupon_code', checkoutCouponCode);
-          msg.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> ${result.message || `Coupon ${checkoutCouponCode} applied!`}</span>`;
+          if (msg) {
+            msg.innerHTML = `
+              <div class="d-flex align-items-center justify-content-between mt-1">
+                <span class="text-success small fw-semibold"><i class="bi bi-check-circle"></i> ${result.message || `Coupon ${checkoutCouponCode} applied!`}</span>
+                <button type="button" class="btn btn-link btn-sm text-danger p-0 text-decoration-none small" onclick="removeCheckoutCoupon()">Remove</button>
+              </div>
+            `;
+          }
           renderCheckoutSummary();
         } else {
           checkoutDiscount = 0;
           checkoutCouponCode = '';
           sessionStorage.removeItem('hn_checkout_discount');
           sessionStorage.removeItem('hn_coupon_code');
-          msg.innerHTML = `<span class="text-danger small">${result ? result.message : 'Invalid coupon code.'}</span>`;
+          if (msg) msg.innerHTML = `<span class="text-danger small">${result ? result.message : 'Invalid coupon code.'}</span>`;
           renderCheckoutSummary();
         }
       } catch (err) {
-        msg.innerHTML = '<span class="text-danger small">Unable to validate coupon at this time.</span>';
+        if (msg) msg.innerHTML = '<span class="text-danger small">Unable to validate coupon at this time.</span>';
       }
+    }
+
+    function removeCheckoutCoupon() {
+      checkoutDiscount = 0;
+      checkoutCouponCode = '';
+      sessionStorage.removeItem('hn_checkout_discount');
+      sessionStorage.removeItem('hn_coupon_code');
+      const input = document.getElementById('hn-checkout-coupon');
+      if (input) input.value = '';
+      const msg = document.getElementById('hn-checkout-coupon-msg');
+      if (msg) msg.innerHTML = '';
+      renderCheckoutSummary();
     }
 
     async function handlePlaceOrder(e) {

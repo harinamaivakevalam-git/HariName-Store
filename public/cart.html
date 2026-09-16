@@ -275,7 +275,12 @@
           appliedCouponCode = result.code || code;
           sessionStorage.setItem('hn_checkout_discount', String(cartDiscount));
           sessionStorage.setItem('hn_coupon_code', appliedCouponCode);
-          feedback.innerHTML = `<span class="text-success fw-semibold"><i class="bi bi-check-circle"></i> ${result.message || `Coupon ${appliedCouponCode} applied!`}</span>`;
+          feedback.innerHTML = `
+            <div class="d-flex align-items-center justify-content-between mt-1">
+              <span class="text-success fw-semibold"><i class="bi bi-check-circle"></i> ${result.message || `Coupon ${appliedCouponCode} applied!`}</span>
+              <button type="button" class="btn btn-link btn-sm text-danger p-0 text-decoration-none small" onclick="removeCartCoupon()">Remove</button>
+            </div>
+          `;
           renderCart();
         } else {
           cartDiscount = 0;
@@ -288,6 +293,18 @@
       } catch (err) {
         feedback.innerHTML = '<span class="text-danger small">Unable to validate coupon at this time.</span>';
       }
+    }
+
+    function removeCartCoupon() {
+      cartDiscount = 0;
+      appliedCouponCode = '';
+      sessionStorage.removeItem('hn_checkout_discount');
+      sessionStorage.removeItem('hn_coupon_code');
+      const input = document.getElementById('hn-coupon-code');
+      if (input) input.value = '';
+      const feedback = document.getElementById('hn-coupon-feedback');
+      if (feedback) feedback.innerHTML = '';
+      renderCart();
     }
 
     function handleProceedToCheckout(e) {

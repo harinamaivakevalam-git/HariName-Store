@@ -591,7 +591,11 @@ exports.createProduct = async (req, res, next) => {
 
       if (!error && newProd) {
         // Insert images
-        const allImages = Array.isArray(images) && images.length > 0 ? images : (req.body.image ? [req.body.image] : []);
+        const allImages = Array.isArray(images) && images.length > 0
+          ? images
+          : (Array.isArray(req.body.gallery) && req.body.gallery.length > 0
+            ? req.body.gallery
+            : (req.body.image ? [req.body.image] : []));
         if (allImages.length > 0) {
           const imgRows = allImages.map((img, idx) => ({
             product_id: newProd.id,
@@ -764,7 +768,11 @@ exports.updateProduct = async (req, res, next) => {
 
         if (!error && updated) {
           // Handle images update
-          const imagesList = Array.isArray(req.body.images) ? req.body.images : (req.body.image ? [req.body.image] : null);
+          const imagesList = Array.isArray(req.body.images) && req.body.images.length > 0
+            ? req.body.images
+            : (Array.isArray(req.body.gallery) && req.body.gallery.length > 0
+              ? req.body.gallery
+              : (req.body.image ? [req.body.image] : null));
           if (imagesList && imagesList.length > 0) {
             await client.from('product_images').delete().eq('product_id', targetId);
             const imgRows = imagesList.map((img, idx) => ({

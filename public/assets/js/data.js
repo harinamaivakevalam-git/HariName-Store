@@ -588,6 +588,7 @@ HARINAMA_DATA.syncWithApi = async function() {
               reviews_count: p.reviews_count || 0,
               image: img,
               primary_image: img,
+              images: imgList.length > 0 ? imgList : [img],
               gallery: imgList.length > 0 ? imgList : [img],
               description: p.description || '',
               featured: Boolean(p.featured),

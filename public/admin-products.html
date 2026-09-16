@@ -485,6 +485,18 @@
       return headers;
     }
 
+    function getAuthHeaders() {
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-admin-email': 'harinamaivakevalam@gmail.com'
+      };
+      if (token) {
+        headers['Authorization'] = 'Bearer ' + token;
+      }
+      return headers;
+    }
+
     function renderImageSlots() {
       const grid = document.getElementById('hn-image-upload-grid');
       if (!grid) return;
@@ -705,26 +717,28 @@
     }
 
     function editProduct(id) {
-      const p = databaseProducts.find(item => item.id === id || item.slug === id);
+      const p = databaseProducts.find(item => String(item.id) === String(id) || item.slug === id);
       if (!p) return;
 
       document.getElementById('edit-prod-id').value = p.id;
-      document.getElementById('prod-name').value = p.name || p.title;
+      document.getElementById('prod-name').value = p.name || p.title || '';
       document.getElementById('prod-category').value = p.category || p.category_name || 'Devotional Keychains';
-      document.getElementById('prod-price').value = p.price;
+      document.getElementById('prod-price').value = p.price !== undefined ? p.price : '';
       document.getElementById('prod-old-price').value = p.old_price || p.compare_price || '';
       document.getElementById('prod-stock').value = p.stock !== undefined ? p.stock : 25;
-      document.getElementById('prod-material').value = p.material || '';
+      document.getElementById('prod-material').value = p.material || (p.specifications && p.specifications.material) || '';
       document.getElementById('prod-description').value = p.description || '';
 
       // Populate existing images into up to 5 slots
       let imgs = [];
       if (Array.isArray(p.gallery) && p.gallery.length > 0) {
-        imgs = p.gallery.map(img => typeof img === 'string' ? img : (img.image_url || img.url)).filter(Boolean);
+        imgs = p.gallery.map(img => typeof img === 'string' ? img : (img?.image_url || img?.url)).filter(Boolean);
       } else if (Array.isArray(p.images) && p.images.length > 0) {
-        imgs = p.images.map(img => typeof img === 'string' ? img : (img.image_url || img.url)).filter(Boolean);
+        imgs = p.images.map(img => typeof img === 'string' ? img : (img?.image_url || img?.url)).filter(Boolean);
+      } else if (Array.isArray(p.product_images) && p.product_images.length > 0) {
+        imgs = p.product_images.map(img => typeof img === 'string' ? img : (img?.image_url || img?.url)).filter(Boolean);
       } else if (p.image || p.primary_image) {
-        imgs = [p.image || p.primary_image];
+        imgs = [p.image || p.primary_image].filter(Boolean);
       }
 
       productImages = ['', '', '', '', ''];
@@ -739,7 +753,8 @@
 
       document.getElementById('productModalTitle').innerText = 'Edit Product — ' + (p.name || p.title);
 
-      const modal = new bootstrap.Modal(document.getElementById('productModal'));
+      const modalEl = document.getElementById('productModal');
+      const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
       modal.show();
     }
 
@@ -759,6 +774,16 @@
         showToast(`Please upload at least 3 product images (${validImages.length}/5 uploaded).`);
         return;
       }
+
+      const id = document.getElementById('edit-prod-id').value;
+      const name = document.getElementById('prod-name').value.trim();
+      const category = document.getElementById('prod-category').value;
+      const price = parseFloat(document.getElementById('prod-price').value) || 0;
+      const old_price = document.getElementById('prod-old-price').value ? parseFloat(document.getElementById('prod-old-price').value) : null;
+      const stock = parseInt(document.getElementById('prod-stock').value, 10) || 0;
+      const material = document.getElementById('prod-material').value.trim();
+      const description = document.getElementById('prod-description').value.trim();
+      const primaryImage = validImages[0] || '';
 
       const saveBtn = e.target.querySelector('button[type="submit"]');
       const origText = saveBtn ? saveBtn.innerHTML : 'Save Product';
@@ -796,7 +821,7 @@
       };
 
       // 1. Immediately update local inventory table & memory so user sees it instantly
-      const existingIdx = databaseProducts.findIndex(p => p.id === id || p.slug === id);
+      const existingIdx = databaseProducts.findIndex(p => String(p.id) === String(id) || p.slug === id);
       if (existingIdx !== -1) {
         databaseProducts[existingIdx] = { ...databaseProducts[existingIdx], ...newOrUpdatedItem };
       } else {
@@ -824,6 +849,8 @@
           headers: getAuthHeaders(),
           body: JSON.stringify({
             ...newOrUpdatedItem,
+            images: validImages,
+            gallery: validImages,
             sku: newOrUpdatedItem.sku
           })
         });
@@ -835,7 +862,12 @@
             if (json.data && json.data.id) {
               const idx = databaseProducts.findIndex(p => p.id === prodId || p.slug === productSlug);
               if (idx !== -1) {
-                databaseProducts[idx] = { ...databaseProducts[idx], ...json.data };
+                databaseProducts[idx] = { 
+                  ...databaseProducts[idx], 
+                  ...json.data,
+                  gallery: validImages,
+                  images: validImages
+                };
                 localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
                 renderProductsTable(databaseProducts);
               }
@@ -857,6 +889,8 @@
               if (catRec) categoryId = catRec.id;
             } catch (cErr) {}
 
+            let targetProdId = null;
+
             if (id) {
               const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
               let targetId = id;
@@ -864,6 +898,7 @@
                 const { data: rec } = await sb.from('products').select('id').eq('slug', id).maybeSingle();
                 if (rec) targetId = rec.id;
               }
+              targetProdId = targetId;
 
               const { data: updatedProd, error: updateError } = await sb
                 .from('products')
@@ -883,6 +918,7 @@
 
               if (!updateError && updatedProd) {
                 savedSuccessfully = true;
+                targetProdId = updatedProd.id;
               }
             } else {
               const { data: createdProd, error: insertError } = await sb
@@ -907,6 +943,24 @@
 
               if (!insertError && createdProd) {
                 savedSuccessfully = true;
+                targetProdId = createdProd.id;
+              }
+            }
+
+            // Sync images in Supabase product_images table
+            if (targetProdId && validImages.length > 0) {
+              try {
+                await sb.from('product_images').delete().eq('product_id', targetProdId);
+                const imgRows = validImages.map((imgUrl, idx) => ({
+                  product_id: targetProdId,
+                  image_url: imgUrl,
+                  alt_text: name,
+                  sort_order: idx + 1,
+                  is_primary: idx === 0
+                }));
+                await sb.from('product_images').insert(imgRows);
+              } catch (imgSyncErr) {
+                console.warn('[AdminProducts] Supabase product_images sync notice:', imgSyncErr);
               }
             }
           }

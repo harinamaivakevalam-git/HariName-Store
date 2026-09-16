@@ -168,9 +168,9 @@
     </section>
 
     <!-- ====================================================================
-         3. PROMOTIONAL MAHA-MANTRA SECTION
+         3. PROMOTIONAL MAHA-MANTRA SECTION (Dynamic Database Item)
          ==================================================================== -->
-    <section class="py-4">
+    <section class="py-4" id="hn-promo-section-wrapper" style="display: none;">
       <div class="container">
         <div class="hn-promo-banner hn-reveal">
           <div class="row g-0 align-items-stretch">
@@ -178,20 +178,20 @@
             <!-- Left: Macro Keychain Image -->
             <div class="col-md-4">
               <div class="hn-promo-img-wrap">
-                <img src="https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=700&q=80" alt="The Maha-Mantra Keychain" class="hn-promo-img">
+                <img src="" alt="Sacred Item" class="hn-promo-img">
               </div>
             </div>
 
             <!-- Center: Text & Pricing -->
             <div class="col-md-4 d-flex flex-column justify-content-center hn-promo-content">
-              <h3 class="hn-promo-title">The Maha-Mantra Keychain</h3>
-              <div class="hn-promo-subtitle">Carry the Maha-Mantra with you.</div>
+              <h3 class="hn-promo-title">Sacred Devotional Reminder</h3>
+              <div class="hn-promo-subtitle">Carry Krishna with you everywhere.</div>
               <p class="hn-promo-desc">
                 A simple everyday reminder to pause, remember Krishna, and chant.
               </p>
-              <div class="hn-promo-price">₹149</div>
+              <div class="hn-promo-price">₹0</div>
               <div>
-                <button class="btn hn-btn-gold px-4" onclick="handleAddToCart('prod-003')">Add to Cart</button>
+                <button class="btn hn-btn-gold px-4">Add to Cart</button>
               </div>
             </div>
 
@@ -294,7 +294,7 @@
     <!-- ====================================================================
          6. GIFT SECTION (Give a Reminder, Not Just a Gift)
          ==================================================================== -->
-    <section class="py-5" style="background-color: var(--hn-cream);">
+    <section class="py-5" id="hn-combos-section-wrapper" style="background-color: var(--hn-cream); display: none;">
       <div class="container">
         
         <div class="hn-section-header hn-reveal">
@@ -394,69 +394,109 @@
 
       const prods = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
       if (prods.length === 0) {
-        grid.innerHTML = `
-          <div class="col-12 text-center py-5 text-muted">
-            <div class="spinner-border text-gold mb-2" role="status"></div>
-            <p class="small mb-0">Connecting to sacred database...</p>
-          </div>
-        `;
+        if (!HARINAMA_DATA.isLoaded) {
+          grid.innerHTML = `
+            <div class="col-12 text-center py-5 text-muted">
+              <div class="spinner-border text-gold mb-2" role="status"></div>
+              <p class="small mb-0">Connecting to sacred database...</p>
+            </div>
+          `;
+        } else {
+          grid.innerHTML = `
+            <div class="col-12 text-center py-5 text-muted">
+              <i class="bi bi-flower1 fs-1 text-gold d-block mb-3"></i>
+              <h5 class="fw-bold text-navy">Sacred Catalog Updating</h5>
+              <p class="small text-secondary mb-0">Our holy offerings are currently being updated in our live database. Please check back shortly!</p>
+            </div>
+          `;
+        }
         return;
       }
 
       const featured = prods.filter(p => p.featured).slice(0, 6);
       const displayList = featured.length > 0 ? featured : prods.slice(0, 6);
       grid.innerHTML = displayList.map(p => renderProductCard(p)).join('');
-      initScrollAnimations();
+      if (typeof initScrollAnimations === 'function') initScrollAnimations();
     }
 
     // Dynamic Promo Item Binding
     function updatePromoSection() {
+      const wrapper = document.getElementById('hn-promo-section-wrapper');
+      if (!wrapper) return;
+
       const prods = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
-      if (prods.length === 0) return;
+      if (prods.length === 0) {
+        wrapper.style.display = 'none';
+        return;
+      }
 
-      const promoProd = prods.find(p => p.slug && p.slug.includes('mantra')) || prods[0];
-      if (!promoProd) return;
+      const promoProd = prods.find(p => (p.slug && p.slug.includes('mantra')) || p.featured) || prods[0];
+      if (!promoProd) {
+        wrapper.style.display = 'none';
+        return;
+      }
 
-      const titleEl = document.querySelector('.hn-promo-title');
+      const titleEl = wrapper.querySelector('.hn-promo-title');
       if (titleEl) titleEl.innerText = promoProd.title || promoProd.name;
 
-      const priceEl = document.querySelector('.hn-promo-price');
+      const priceEl = wrapper.querySelector('.hn-promo-price');
       if (priceEl) priceEl.innerText = formatPrice(promoProd.price);
 
-      const imgEl = document.querySelector('.hn-promo-img');
-      if (imgEl && promoProd.image) imgEl.src = promoProd.image;
+      const descEl = wrapper.querySelector('.hn-promo-desc');
+      if (descEl && promoProd.description) descEl.innerText = promoProd.description;
 
-      const btn = document.querySelector('.hn-promo-content button');
-      if (btn) btn.setAttribute('onclick', `handleAddToCart('${promoProd.id}')`);
+      const imgEl = wrapper.querySelector('.hn-promo-img');
+      if (imgEl && (promoProd.image || promoProd.primary_image)) {
+        imgEl.src = promoProd.image || promoProd.primary_image;
+        imgEl.alt = promoProd.title || promoProd.name;
+      }
+
+      const btn = wrapper.querySelector('.hn-promo-content button');
+      if (btn) {
+        btn.setAttribute('onclick', `handleAddToCart('${promoProd.id}')`);
+      }
+
+      wrapper.style.display = 'block';
     }
 
     // Dynamic Combo Sets Binding
     function renderCombosSection() {
+      const wrapper = document.getElementById('hn-combos-section-wrapper');
       const container = document.getElementById('hn-home-combos-grid');
-      if (!container) return;
+      if (!wrapper || !container) return;
 
       const prods = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
-      if (prods.length === 0) return;
+      if (prods.length === 0) {
+        wrapper.style.display = 'none';
+        return;
+      }
 
       const combos = prods.filter(p => (p.category && (p.category.includes('Combo') || p.category.includes('Gift'))));
       const displayCombos = combos.length > 0 ? combos.slice(0, 2) : prods.slice(0, 2);
+
+      if (displayCombos.length === 0) {
+        wrapper.style.display = 'none';
+        return;
+      }
 
       container.innerHTML = displayCombos.map(p => `
         <div class="col-md-6 col-lg-5">
           <div class="hn-gift-card">
             <div class="hn-gift-img-box">
-              <img src="${p.image}" alt="${p.title || p.name}">
+              <img src="${p.image || p.primary_image || ''}" alt="${p.title || p.name}">
             </div>
             <h4 class="hn-gift-title">${p.title || p.name}</h4>
             <div class="hn-gift-price-row">
               <span class="hn-gift-price">${formatPrice(p.price)}</span>
               ${p.old_price ? `<span class="hn-gift-old-price">${formatPrice(p.old_price)}</span>` : ''}
-              ${p.old_price ? `<span class="hn-gift-badge">Save ${formatPrice(p.old_price - p.price)}</span>` : ''}
+              ${(p.old_price && p.old_price > p.price) ? `<span class="hn-gift-badge">Save ${formatPrice(p.old_price - p.price)}</span>` : ''}
             </div>
             <button class="btn hn-btn-gold mt-auto" onclick="handleAddToCart('${p.id}')">Add to Cart</button>
           </div>
         </div>
       `).join('');
+
+      wrapper.style.display = 'block';
     }
 
     // Dynamic Approved Reviews from Supabase

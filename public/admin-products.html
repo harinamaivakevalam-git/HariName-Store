@@ -407,9 +407,8 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Clear stale local mock storage to prevent outdated states
+      // Clear legacy unused key only
       localStorage.removeItem('harinama_admin_products');
-      localStorage.removeItem('hn_live_products');
       renderImageSlots();
       loadProductsFromDatabase();
     });
@@ -774,6 +773,13 @@
       modal.show();
     }
 
+    const CATEGORY_UUID_MAP = {
+      'Devotional Keychains': 'c0000001-0000-0000-0000-000000000001',
+      'Sacred Books & Shastras': 'c0000001-0000-0000-0000-000000000002',
+      'Japa & Chanting': 'c0000001-0000-0000-0000-000000000003',
+      'Gift Sets & Bundles': 'c0000001-0000-0000-0000-000000000004'
+    };
+
     async function saveProduct(e) {
       e.preventDefault();
 
@@ -795,11 +801,13 @@
       const name = document.getElementById('prod-name').value.trim();
       const category = document.getElementById('prod-category').value;
       const price = parseFloat(document.getElementById('prod-price').value) || 0;
-      const old_price = document.getElementById('prod-old-price').value ? parseFloat(document.getElementById('prod-old-price').value) : null;
+      const rawOldPrice = document.getElementById('prod-old-price').value ? parseFloat(document.getElementById('prod-old-price').value) : null;
+      const validComparePrice = (rawOldPrice !== null && !isNaN(rawOldPrice) && rawOldPrice > price) ? rawOldPrice : null;
       const stock = parseInt(document.getElementById('prod-stock').value, 10) || 0;
       const material = document.getElementById('prod-material').value.trim();
       const description = document.getElementById('prod-description').value.trim();
       const primaryImage = validImages[0] || '';
+      const resolvedCatId = CATEGORY_UUID_MAP[category] || null;
 
       const saveBtn = e.target.querySelector('button[type="submit"]');
       const origText = saveBtn ? saveBtn.innerHTML : 'Save Product';
@@ -821,10 +829,11 @@
         slug: productSlug,
         category,
         category_name: category,
+        category_id: resolvedCatId,
         material: material || 'Standard',
         price,
-        old_price,
-        compare_price: old_price,
+        old_price: validComparePrice,
+        compare_price: validComparePrice,
         stock,
         rating: 5.0,
         reviews_count: 0,
@@ -865,6 +874,11 @@
           headers: getAuthHeaders(),
           body: JSON.stringify({
             ...newOrUpdatedItem,
+            price: price,
+            compare_price: validComparePrice,
+            old_price: validComparePrice,
+            category_id: resolvedCatId,
+            category_name: category,
             images: validImages,
             gallery: validImages,
             sku: newOrUpdatedItem.sku
@@ -876,7 +890,7 @@
           if (json.success) {
             savedSuccessfully = true;
             if (json.data && json.data.id) {
-              const idx = databaseProducts.findIndex(p => p.id === prodId || p.slug === productSlug);
+              const idx = databaseProducts.findIndex(p => p.id === prodId || p.slug === productSlug || p.id === id);
               if (idx !== -1) {
                 databaseProducts[idx] = { 
                   ...databaseProducts[idx], 
@@ -899,12 +913,6 @@
         try {
           const sb = initSupabase();
           if (sb) {
-            let categoryId = null;
-            try {
-              const { data: catRec } = await sb.from('categories').select('id').ilike('name', `%${category}%`).maybeSingle();
-              if (catRec) categoryId = catRec.id;
-            } catch (cErr) {}
-
             let targetProdId = null;
 
             if (id) {
@@ -922,10 +930,10 @@
                   name,
                   description: description || name,
                   price,
-                  compare_price: old_price,
+                  compare_price: validComparePrice,
                   stock,
                   specifications: { material: material || 'Standard' },
-                  category_id: categoryId || null,
+                  category_id: resolvedCatId,
                   updated_at: new Date().toISOString()
                 })
                 .eq('id', targetId)
@@ -945,10 +953,11 @@
                   description: description || name,
                   short_description: description ? description.slice(0, 160) : '',
                   price,
-                  compare_price: old_price,
+                  compare_price: validComparePrice,
                   sku: generatedSku,
                   stock,
-                  category_id: categoryId || null,
+                  category_id: resolvedCatId,
+                  brand_id: 'b0000001-0000-0000-0000-000000000001',
                   status: 'active',
                   specifications: { material: material || 'Standard' },
                   rating: 5.0,
@@ -960,6 +969,11 @@
               if (!insertError && createdProd) {
                 savedSuccessfully = true;
                 targetProdId = createdProd.id;
+                const idx = databaseProducts.findIndex(p => p.id === prodId || p.slug === productSlug);
+                if (idx !== -1) {
+                  databaseProducts[idx].id = createdProd.id;
+                  localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
+                }
               }
             }
 
@@ -990,8 +1004,9 @@
         const modalEl = document.getElementById('productModal');
         const modal = bootstrap.Modal.getInstance(modalEl);
         if (modal) modal.hide();
+        await loadProductsFromDatabase();
       } catch (err) {
-        console.error('[AdminProducts] Modal hide notice:', err);
+        console.error('[AdminProducts] Modal hide / reload notice:', err);
       } finally {
         if (saveBtn) {
           saveBtn.disabled = false;

@@ -1251,43 +1251,42 @@
         }
       }
 
-      // If no orders from API, show devotee order history so UI is rich and never blank
+      // Check localStorage as well
       if (orders.length === 0) {
-        orders = [
-          {
-            order_number: 'HN-2026-98214',
-            created_at: '2026-09-10T10:30:00Z',
-            order_status: 'Delivered',
-            total: 298,
-            tracking_info: 'India Post Speed Post #IN98214',
-            items: [
-              {
-                product_name: 'Maha-Mantra Sacred Keychain (Hare Krishna)',
-                product_image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=150&q=80',
-                price: 149,
-                quantity: 2
-              }
-            ]
-          },
-          {
-            order_number: 'HN-2026-98102',
-            created_at: '2026-09-02T14:15:00Z',
-            order_status: 'Dispatched',
-            total: 398,
-            tracking_info: 'Blue Dart Express #BD88392',
-            items: [
-              {
-                product_name: 'Peacock Feather Divine Keychain + Tulsi Japa Mala',
-                product_image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=150&q=80',
-                price: 398,
-                quantity: 1
-              }
-            ]
+        try {
+          const localOrders = JSON.parse(localStorage.getItem('hn_orders') || '[]');
+          if (Array.isArray(localOrders) && localOrders.length > 0) {
+            orders = localOrders.map(o => ({
+              order_number: o.orderId || o.id,
+              created_at: o.date || new Date().toISOString(),
+              order_status: o.status || 'Confirmed',
+              total: o.total || 0,
+              items: (o.items || []).map(it => ({
+                product_name: it.name || 'Devotional Item',
+                product_image: it.image || '',
+                price: it.price || 0,
+                quantity: it.qty || 1
+              }))
+            }));
           }
-        ];
+        } catch (_) {}
       }
 
       if (statOrders) statOrders.innerText = orders.length;
+
+      if (orders.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-5 bg-light rounded-3 border">
+            <i class="bi bi-box-seam fs-1 text-gold d-block mb-3"></i>
+            <h5 class="fw-bold text-navy">No Orders Found</h5>
+            <p class="text-secondary small mb-4">You haven't placed any devotional orders yet.</p>
+            <a href="/shop.html" class="btn hn-btn-gold px-4 py-2">
+              <i class="bi bi-bag-plus me-1"></i> Browse Store
+            </a>
+          </div>
+        `;
+        return;
+      }
 
       container.innerHTML = orders.map(ord => {
         const isDelivered = (ord.order_status || '').toLowerCase().includes('deliver');

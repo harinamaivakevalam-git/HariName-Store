@@ -557,14 +557,27 @@ exports.createProduct = async (req, res, next) => {
 
       // Map category name to UUID if needed
       let resolvedCatId = category_id;
-      if (!resolvedCatId && (req.body.category_name || req.body.category)) {
-        const catName = req.body.category_name || req.body.category;
-        const { data: catRec } = await client
-          .from('categories')
-          .select('id')
-          .or(`name.ilike.%${catName}%,slug.ilike.%${catName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}%`)
-          .maybeSingle();
-        if (catRec) resolvedCatId = catRec.id;
+      const isCatUuid = resolvedCatId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedCatId);
+      if (!isCatUuid) {
+        const catName = resolvedCatId || req.body.category_name || req.body.category;
+        if (catName) {
+          const { data: catRec } = await client
+            .from('categories')
+            .select('id')
+            .or(`name.ilike.%${catName}%,slug.ilike.%${catName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}%`)
+            .maybeSingle();
+          if (catRec) resolvedCatId = catRec.id;
+          else resolvedCatId = null;
+        } else {
+          resolvedCatId = null;
+        }
+      }
+
+      const numPrice = parseFloat(price) || 0;
+      let rawCompare = compare_price !== undefined ? compare_price : (req.body.old_price !== undefined ? req.body.old_price : null);
+      let numCompare = rawCompare ? parseFloat(rawCompare) : null;
+      if (numCompare !== null && (isNaN(numCompare) || numCompare <= numPrice)) {
+        numCompare = null;
       }
 
       const { data: newProd, error } = await client
@@ -574,8 +587,8 @@ exports.createProduct = async (req, res, next) => {
           slug,
           description: description || name,
           short_description: short_description || (description ? description.slice(0, 160) : ''),
-          price: parseFloat(price),
-          compare_price: compare_price ? parseFloat(compare_price) : (req.body.old_price ? parseFloat(req.body.old_price) : null),
+          price: numPrice,
+          compare_price: numCompare,
           sku: finalSku,
           stock: parseInt(stock, 10) || 0,
           category_id: resolvedCatId || null,
@@ -717,16 +730,22 @@ exports.updateProduct = async (req, res, next) => {
       const targetId = targetRecord ? targetRecord.id : (isUuid ? id : null);
 
       if (targetId) {
-        // Map category if provided as name
+        // Map category if provided as name or non-UUID
         let categoryId = req.body.category_id;
-        if (!categoryId && (req.body.category_name || req.body.category)) {
-          const catName = req.body.category_name || req.body.category;
-          const { data: catRec } = await client
-            .from('categories')
-            .select('id')
-            .or(`name.ilike.%${catName}%,slug.ilike.%${catName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}%`)
-            .maybeSingle();
-          if (catRec) categoryId = catRec.id;
+        const isCatUuid = categoryId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryId);
+        if (!isCatUuid) {
+          const catName = categoryId || req.body.category_name || req.body.category;
+          if (catName) {
+            const { data: catRec } = await client
+              .from('categories')
+              .select('id')
+              .or(`name.ilike.%${catName}%,slug.ilike.%${catName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}%`)
+              .maybeSingle();
+            if (catRec) categoryId = catRec.id;
+            else categoryId = null;
+          } else {
+            categoryId = null;
+          }
         }
 
         const allowedCols = [
@@ -754,6 +773,13 @@ exports.updateProduct = async (req, res, next) => {
           updates.compare_price = req.body.old_price ? parseFloat(req.body.old_price) : null;
         } else if (updates.compare_price !== undefined) {
           updates.compare_price = updates.compare_price ? parseFloat(updates.compare_price) : null;
+        }
+
+        const effectivePrice = updates.price !== undefined ? updates.price : (targetRecord ? parseFloat(targetRecord.price) : 0);
+        if (updates.compare_price !== undefined && updates.compare_price !== null) {
+          if (isNaN(updates.compare_price) || updates.compare_price <= effectivePrice) {
+            updates.compare_price = null;
+          }
         }
         if (updates.stock !== undefined) updates.stock = parseInt(updates.stock, 10);
         if (updates.featured !== undefined) updates.featured = Boolean(updates.featured);
@@ -847,7 +873,14 @@ exports.deleteProduct = async (req, res, next) => {
 
     if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       const client = supabaseAdmin || supabase;
-      const { error } = await client.from('products').delete().eq('id', id);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      let query = client.from('products').delete();
+      if (isUuid) {
+        query = query.or(`id.eq.${id},slug.eq.${id}`);
+      } else {
+        query = query.eq('slug', id);
+      }
+      const { error } = await query;
       if (!error) {
         return res.json({ success: true, message: 'Product deleted from Supabase.' });
       }

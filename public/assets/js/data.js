@@ -5,20 +5,33 @@
 
 const HARINAMA_AUTHENTIC_PRODUCTS = [];
 
-function computeCategoryCounts(productsList) {
-  const catNames = [
-    { id: 'cat-all', name: 'All Products', slug: 'all-products', desc: 'Browse all divine items.', image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80' },
-    { id: 'c0000001-0000-0000-0000-000000000001', name: 'Devotional Keychains', slug: 'devotional-keychains', desc: 'Carry Krishna with you everywhere.', image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80' },
-    { id: 'c0000001-0000-0000-0000-000000000002', name: 'Sacred Books & Shastras', slug: 'sacred-books', desc: 'Transcendental literature and timeless wisdom.', image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80' },
-    { id: 'c0000001-0000-0000-0000-000000000003', name: 'Japa & Chanting', slug: 'japa-chanting', desc: 'Authentic malas, japa bags, and chanting accessories.', image: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=600&q=80' },
-    { id: 'c0000001-0000-0000-0000-000000000004', name: 'Gift Sets & Bundles', slug: 'gift-sets', desc: 'Thoughtfully curated gift sets with sacred significance.', image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80' }
-  ];
+// Dynamic Category Counts based on Database Categories & Products
+function computeCategoryCounts(productsList, dbCategories = null) {
+  let catList = dbCategories;
+  if (!catList || !Array.isArray(catList) || catList.length === 0) {
+    catList = [
+      { id: 'cat-all', name: 'All Products', slug: 'all-products', desc: 'Browse all divine items.', image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80' },
+      { id: 'c0000001-0000-0000-0000-000000000001', name: 'Devotional Keychains', slug: 'devotional-keychains', desc: 'Carry Krishna with you everywhere.', image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80' },
+      { id: 'c0000001-0000-0000-0000-000000000002', name: 'Sacred Books & Shastras', slug: 'sacred-books', desc: 'Transcendental literature and timeless wisdom.', image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80' },
+      { id: 'c0000001-0000-0000-0000-000000000003', name: 'Japa & Chanting', slug: 'japa-chanting', desc: 'Authentic malas, japa bags, and chanting accessories.', image: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=600&q=80' },
+      { id: 'c0000001-0000-0000-0000-000000000004', name: 'Gift Sets & Bundles', slug: 'gift-sets', desc: 'Thoughtfully curated gift sets with sacred significance.', image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80' }
+    ];
+  } else {
+    // Ensure "All Products" is at the start
+    if (!catList.some(c => c.slug === 'all-products' || c.id === 'cat-all')) {
+      catList = [
+        { id: 'cat-all', name: 'All Products', slug: 'all-products', desc: 'Browse all divine items.', image: catList[0]?.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80' },
+        ...catList
+      ];
+    }
+  }
 
-  return catNames.map(c => {
+  return catList.map(c => {
     if (c.slug === 'all-products' || c.id === 'cat-all') {
       return { ...c, count: productsList.length };
     }
     const count = productsList.filter(p => 
+      p.category_id === c.id ||
       p.category === c.name || 
       p.category_slug === c.slug ||
       (p.category && p.category.toLowerCase().includes(c.name.toLowerCase().split(' ')[0]))
@@ -30,10 +43,10 @@ function computeCategoryCounts(productsList) {
 // Get initial cached products if admin modified them
 function getInitialProducts() {
   try {
-    const saved = localStorage.getItem('hn_live_products') || localStorage.getItem('harinama_admin_products');
+    const saved = localStorage.getItem('hn_live_products');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         return parsed;
       }
     }
@@ -45,7 +58,8 @@ const initialProducts = getInitialProducts();
 
 const HARINAMA_DATA = {
   products: initialProducts,
-  categories: computeCategoryCounts(initialProducts)
+  categories: computeCategoryCounts(initialProducts),
+  isLoaded: false
 };
 
 // Backwards compatibility alias
@@ -73,19 +87,9 @@ HARINAMA_DATA.syncWithApi = async function() {
   const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
 
-  // Check admin local updates first
-  try {
-    const savedAdmin = localStorage.getItem('hn_live_products') || localStorage.getItem('harinama_admin_products');
-    if (savedAdmin) {
-      const parsed = JSON.parse(savedAdmin);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        HARINAMA_DATA.products = parsed;
-        HARINAMA_DATA.categories = computeCategoryCounts(parsed);
-      }
-    }
-  } catch (e) {}
-
   let databaseLoaded = false;
+  let fetchedProducts = [];
+  let fetchedCategories = null;
 
   // 1. Try Backend Express API
   try {
@@ -94,14 +98,25 @@ HARINAMA_DATA.syncWithApi = async function() {
       fetch('/api/categories').then(r => r.json())
     ]);
 
-    if (prodRes.status === 'fulfilled' && prodRes.value && prodRes.value.success && Array.isArray(prodRes.value.data) && prodRes.value.data.length > 0) {
-      HARINAMA_DATA.products = prodRes.value.data.map(p => ({
+    if (catRes.status === 'fulfilled' && catRes.value && catRes.value.success && Array.isArray(catRes.value.data)) {
+      fetchedCategories = catRes.value.data.map(c => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        desc: c.description || 'Sacred collection',
+        image: c.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80'
+      }));
+    }
+
+    if (prodRes.status === 'fulfilled' && prodRes.value && prodRes.value.success && Array.isArray(prodRes.value.data)) {
+      fetchedProducts = prodRes.value.data.map(p => ({
         id: p.id,
         sku: p.sku,
         name: p.name,
         title: p.title || p.name,
         slug: p.slug,
         category: p.category_name || p.category || 'Devotional Items',
+        category_id: p.category_id,
         category_slug: p.category_slug || '',
         material: p.material || 'Standard',
         price: parseFloat(p.price) || 0,
@@ -110,34 +125,48 @@ HARINAMA_DATA.syncWithApi = async function() {
         stock: p.stock !== undefined ? p.stock : 25,
         rating: parseFloat(p.rating) || 5.0,
         reviews_count: p.reviews_count || 0,
-        image: p.primary_image || p.image,
-        primary_image: p.primary_image || p.image,
-        gallery: (p.images && p.images.length > 0) ? p.images.map(img => (typeof img === 'string' ? img : (img.image_url || img.url))) : [p.primary_image || p.image],
+        image: p.primary_image || p.image || (p.images && p.images[0]) || '',
+        primary_image: p.primary_image || p.image || (p.images && p.images[0]) || '',
+        images: (p.images && p.images.length > 0) ? p.images.map(img => (typeof img === 'string' ? img : (img.image_url || img.url))) : (p.primary_image ? [p.primary_image] : []),
+        gallery: (p.images && p.images.length > 0) ? p.images.map(img => (typeof img === 'string' ? img : (img.image_url || img.url))) : (p.primary_image ? [p.primary_image] : []),
         description: p.description || '',
         featured: Boolean(p.featured),
         trending: Boolean(p.trending)
       }));
-      HARINAMA_DATA.categories = computeCategoryCounts(HARINAMA_DATA.products);
+      HARINAMA_DATA.products = fetchedProducts;
+      HARINAMA_DATA.categories = computeCategoryCounts(fetchedProducts, fetchedCategories);
+      HARINAMA_DATA.isLoaded = true;
       databaseLoaded = true;
     }
   } catch (e) {}
 
-  // 2. Direct Supabase Query
+  // 2. Direct Supabase Query fallback
   if (!databaseLoaded) {
     try {
       if (window.supabase && typeof window.supabase.createClient === 'function') {
         const sb = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         window.supabaseClient = sb;
 
-        const { data, error } = await sb
-          .from('products')
-          .select('*, product_images(*), categories(id, name, slug)')
-          .order('created_at', { ascending: false });
+        const [prodResult, catResult] = await Promise.allSettled([
+          sb.from('products').select('*, product_images(*), categories(id, name, slug)').order('created_at', { ascending: false }),
+          sb.from('categories').select('*').eq('status', 'active').order('sort_order', { ascending: true })
+        ]);
 
-        if (!error && Array.isArray(data) && data.length > 0) {
-          HARINAMA_DATA.products = data.map(p => {
+        if (catResult.status === 'fulfilled' && !catResult.value.error && Array.isArray(catResult.value.data)) {
+          fetchedCategories = catResult.value.data.map(c => ({
+            id: c.id,
+            name: c.name,
+            slug: c.slug,
+            desc: c.description || 'Sacred collection',
+            image: c.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80'
+          }));
+        }
+
+        if (prodResult.status === 'fulfilled' && !prodResult.value.error && Array.isArray(prodResult.value.data)) {
+          const data = prodResult.value.data;
+          fetchedProducts = data.map(p => {
             const imgList = (p.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(i => i.image_url);
-            const img = imgList[0] || p.primary_image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
+            const img = imgList[0] || p.primary_image || '';
             return {
               id: p.id,
               sku: p.sku,
@@ -145,6 +174,7 @@ HARINAMA_DATA.syncWithApi = async function() {
               title: p.title || p.name,
               slug: p.slug,
               category: p.categories?.name || p.category || 'Devotional Items',
+              category_id: p.category_id || p.categories?.id,
               category_slug: p.categories?.slug || 'devotional-keychains',
               material: p.material || 'Standard',
               price: parseFloat(p.price) || 0,
@@ -155,14 +185,16 @@ HARINAMA_DATA.syncWithApi = async function() {
               reviews_count: p.reviews_count || 0,
               image: img,
               primary_image: img,
-              images: imgList.length > 0 ? imgList : [img],
-              gallery: imgList.length > 0 ? imgList : [img],
+              images: imgList.length > 0 ? imgList : (img ? [img] : []),
+              gallery: imgList.length > 0 ? imgList : (img ? [img] : []),
               description: p.description || '',
               featured: Boolean(p.featured),
               trending: Boolean(p.trending)
             };
           });
-          HARINAMA_DATA.categories = computeCategoryCounts(HARINAMA_DATA.products);
+          HARINAMA_DATA.products = fetchedProducts;
+          HARINAMA_DATA.categories = computeCategoryCounts(fetchedProducts, fetchedCategories);
+          HARINAMA_DATA.isLoaded = true;
           databaseLoaded = true;
         }
       }

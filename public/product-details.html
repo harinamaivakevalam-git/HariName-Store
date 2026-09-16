@@ -30,8 +30,8 @@
   <main class="py-4">
     <div class="container" id="hn-product-detail-container">
       
-      <!-- Injected dynamically via JS or falls back to Peacock Feather Keychain -->
-      <div class="row g-4 g-lg-5 my-2">
+      <!-- Injected dynamically via JS from live database -->
+      <div class="row g-4 g-lg-5 my-2" id="hn-detail-main-row">
         
         <!-- Left Gallery (Thumbnails on left + Main Image) -->
         <div class="col-lg-6">
@@ -44,7 +44,7 @@
 
             <!-- Main Product Image -->
             <div class="flex-grow-1">
-              <img id="hn-main-image" src="https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80" alt="Peacock Feather Keychain" class="hn-detail-main-img">
+              <img id="hn-main-image" src="" alt="Sacred Item" class="hn-detail-main-img" style="min-height: 320px; background: #fafafa;">
             </div>
 
           </div>
@@ -53,7 +53,7 @@
         <!-- Right Product Info & Actions -->
         <div class="col-lg-6">
           
-          <h1 class="hn-section-title text-start mb-2" id="hn-product-title">Loading Product Details...</h1>
+          <h1 class="hn-section-title text-start mb-2" id="hn-product-title">Loading Sacred Product...</h1>
           
           <div class="d-flex align-items-center gap-2 mb-3">
             <div class="hn-card-rating mb-0" id="hn-product-rating">
@@ -69,17 +69,18 @@
           <div class="fs-2 fw-bold text-navy mb-3" style="color: var(--hn-navy);" id="hn-product-price">--</div>
 
           <p class="text-secondary mb-4" id="hn-product-desc" style="line-height: 1.6;">
-            Connecting to sacred catalog...
+            Fetching details directly from the database...
           </p>
 
           <!-- Selectors Form -->
           <div class="row g-3 mb-4">
             <div class="col-6">
-              <label class="form-label small fw-bold text-secondary">Material</label>
+              <label class="form-label small fw-bold text-secondary">Material / Type</label>
               <select class="form-select" id="hn-material-select">
                 <option value="Acrylic">Acrylic</option>
                 <option value="Metal">Metal</option>
                 <option value="Wood">Wood</option>
+                <option value="Standard">Standard</option>
               </select>
             </div>
 
@@ -120,7 +121,7 @@
       </div>
 
       <!-- Tabs Section (Description, Specifications, Shipping, Returns) -->
-      <div class="mt-5 pt-4">
+      <div class="mt-5 pt-4" id="hn-detail-tabs-wrap">
         <ul class="nav nav-tabs hn-nav-tabs border-bottom" id="productTabs" role="tablist">
           <li class="nav-item">
             <button class="nav-link active" id="desc-tab" data-bs-toggle="tab" data-bs-target="#desc-content" type="button" role="tab">Description</button>
@@ -136,7 +137,7 @@
           </li>
           <li class="nav-item">
             <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews-content" type="button" role="tab">
-              <i class="bi bi-star-fill text-warning me-1"></i> Devotee Reviews (<span id="hn-tab-reviews-count">24</span>)
+              <i class="bi bi-star-fill text-warning me-1"></i> Devotee Reviews (<span id="hn-tab-reviews-count">0</span>)
             </button>
           </li>
         </ul>
@@ -144,15 +145,12 @@
         <div class="tab-content py-4 bg-white p-4 border border-top-0 rounded-bottom" id="productTabsContent">
           <div class="tab-pane fade show active" id="desc-content" role="tabpanel">
             <p id="hn-tab-desc">
-              This elegant peacock feather keychain is designed to keep Krishna close to you. Perfect for keys, bags, backpacks or as a devotional gift to family and friends.
+              Loading authentic devotional description...
             </p>
           </div>
           <div class="tab-pane fade" id="spec-content" role="tabpanel">
             <ul class="list-unstyled mb-0" id="hn-tab-specs">
-              <li class="py-1"><strong>Material:</strong> Premium Hard Acrylic with Gold Ring</li>
-              <li class="py-1"><strong>Dimensions:</strong> 6.5 cm x 3.2 cm</li>
-              <li class="py-1"><strong>Weight:</strong> 22 grams</li>
-              <li class="py-1"><strong>Origin:</strong> Vrindavan Dham handcrafted</li>
+              <li class="py-1"><strong>Loading specifications...</strong></li>
             </ul>
           </div>
           <div class="tab-pane fade" id="ship-content" role="tabpanel">

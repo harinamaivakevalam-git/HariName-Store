@@ -81,40 +81,18 @@
 
       let storedOrders = JSON.parse(localStorage.getItem('hn_orders') || '[]');
 
-      // Default sample orders if no orders stored yet
       if (!storedOrders || storedOrders.length === 0) {
-        storedOrders = [
-          {
-            orderId: 'HN-2026-98124',
-            date: '12 Sep 2026',
-            status: 'Delivered',
-            total: 526,
-            items: [
-              {
-                name: 'Peacock Feather Keychain + Maha-Mantra Set',
-                material: 'Acrylic / Metal',
-                price: 263,
-                qty: 2,
-                image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=200&q=80'
-              }
-            ]
-          },
-          {
-            orderId: 'HN-2026-88219',
-            date: '05 Sep 2026',
-            status: 'Dispatched',
-            total: 299,
-            items: [
-              {
-                name: '3-Keychain Devotional Gift Set',
-                material: 'Deluxe Box Edition',
-                price: 299,
-                qty: 1,
-                image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=200&q=80'
-              }
-            ]
-          }
-        ];
+        container.innerHTML = `
+          <div class="col-12 py-5 text-center bg-white border rounded shadow-sm">
+            <i class="bi bi-box-seam fs-1 text-gold d-block mb-3"></i>
+            <h4 class="fw-bold text-navy mb-2">No Orders Placed Yet</h4>
+            <p class="text-secondary small mb-4">You haven't placed any devotional orders yet. Explore our sacred store to find blessed items!</p>
+            <a href="/shop.html" class="btn hn-btn-gold px-4 py-2">
+              <i class="bi bi-bag-plus me-1"></i> Browse Devotional Store
+            </a>
+          </div>
+        `;
+        return;
       }
 
       container.innerHTML = storedOrders.map(order => {

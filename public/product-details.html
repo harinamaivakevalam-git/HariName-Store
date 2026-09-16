@@ -203,52 +203,61 @@
     </div>
   </main>
 
-  <!-- Review Modal Overlay -->
-  <div class="hn-auth-overlay" id="hnReviewModalOverlay" onclick="handleReviewOverlayClick(event)">
-    <div class="hn-auth-card" style="max-width: 520px;" onclick="event.stopPropagation()">
-      <button type="button" class="hn-auth-close-btn" onclick="closeReviewModal()" aria-label="Close modal">
+  <!-- Devotional Review Submission Modal -->
+  <div class="hn-review-modal-overlay" id="hnReviewModalOverlay" onclick="handleReviewOverlayClick(event)">
+    <div class="hn-review-card" onclick="event.stopPropagation()">
+      <button type="button" class="hn-review-close-btn" onclick="closeReviewModal()" aria-label="Close modal" title="Close">
         <i class="bi bi-x-lg"></i>
       </button>
 
-      <div class="hn-auth-header">
-        <div class="hn-auth-emblem">
-          <i class="bi bi-chat-heart"></i>
+      <div class="hn-review-header">
+        <div class="hn-review-emblem">
+          <i class="bi bi-chat-heart-fill"></i>
         </div>
-        <h3 class="hn-auth-title">Share Your Experience</h3>
-        <p class="hn-auth-subtitle">Your review inspires devotees around the world 🌸</p>
+        <h3 class="hn-review-title">Share Your Experience</h3>
+        <p class="hn-review-subtitle">Your review inspires devotees around the world 🌸</p>
       </div>
 
-      <div class="hn-auth-alert" id="hnReviewAlert"></div>
+      <div class="hn-review-rating-box">
+        <span class="hn-review-rating-label">Your Rating</span>
+        <div class="hn-review-stars" id="hnStarRatingWidget">
+          <i class="bi bi-star-fill" data-val="1" onclick="selectStar(1)" onmouseover="hoverStars(1)" onmouseout="resetStars()"></i>
+          <i class="bi bi-star-fill" data-val="2" onclick="selectStar(2)" onmouseover="hoverStars(2)" onmouseout="resetStars()"></i>
+          <i class="bi bi-star-fill" data-val="3" onclick="selectStar(3)" onmouseover="hoverStars(3)" onmouseout="resetStars()"></i>
+          <i class="bi bi-star-fill" data-val="4" onclick="selectStar(4)" onmouseover="hoverStars(4)" onmouseout="resetStars()"></i>
+          <i class="bi bi-star-fill" data-val="5" onclick="selectStar(5)" onmouseover="hoverStars(5)" onmouseout="resetStars()"></i>
+        </div>
+        <div>
+          <span class="hn-review-rating-badge" id="hnRatingBadge">★★★★★ Divine & Blessed (5/5)</span>
+        </div>
+        <input type="hidden" id="hnSelectedRating" value="5">
+      </div>
+
+      <div class="hn-review-alert" id="hnReviewAlert"></div>
 
       <form id="hnReviewForm" onsubmit="handleReviewSubmit(event)">
-        <div class="mb-3 text-center">
-          <label class="hn-auth-label d-block mb-2">Your Rating</label>
-          <div class="d-inline-flex gap-2 fs-3" id="hnStarRatingWidget" style="color: var(--hn-gold); cursor: pointer;">
-            <i class="bi bi-star-fill" data-val="1" onclick="selectStar(1)" onmouseover="hoverStars(1)" onmouseout="resetStars()"></i>
-            <i class="bi bi-star-fill" data-val="2" onclick="selectStar(2)" onmouseover="hoverStars(2)" onmouseout="resetStars()"></i>
-            <i class="bi bi-star-fill" data-val="3" onclick="selectStar(3)" onmouseover="hoverStars(3)" onmouseout="resetStars()"></i>
-            <i class="bi bi-star-fill" data-val="4" onclick="selectStar(4)" onmouseover="hoverStars(4)" onmouseout="resetStars()"></i>
-            <i class="bi bi-star-fill" data-val="5" onclick="selectStar(5)" onmouseover="hoverStars(5)" onmouseout="resetStars()"></i>
-          </div>
-          <input type="hidden" id="hnSelectedRating" value="5">
-        </div>
-
-        <div class="hn-auth-group mb-3">
-          <label class="hn-auth-label" for="hnReviewTitle">Review Title</label>
-          <div class="hn-auth-input-wrap">
-            <i class="bi bi-card-heading hn-input-icon"></i>
-            <input type="text" id="hnReviewTitle" class="hn-auth-input" placeholder="e.g. Blessed craftsmanship & pure quality" required>
+        <div class="hn-review-form-group">
+          <label class="hn-review-label" for="hnReviewTitle">
+            <span>Review Title</span>
+            <span class="text-muted small fw-normal">e.g. Blessed craftsmanship</span>
+          </label>
+          <div class="hn-review-input-wrap">
+            <i class="bi bi-card-heading hn-review-input-icon"></i>
+            <input type="text" id="hnReviewTitle" class="hn-review-input" placeholder="e.g. Blessed craftsmanship & pure quality" required autocomplete="off">
           </div>
         </div>
 
-        <div class="hn-auth-group mb-3">
-          <label class="hn-auth-label" for="hnReviewComment">Devotional Experience</label>
-          <textarea id="hnReviewComment" class="form-control" rows="4" placeholder="How did this product bring Krishna into your day? Share your sacred experience..." required style="border: 1.5px solid #E5E7EB; border-radius: 10px; font-size: 0.92rem; padding: 0.75rem;"></textarea>
+        <div class="hn-review-form-group">
+          <label class="hn-review-label" for="hnReviewComment">
+            <span>Devotional Experience</span>
+            <span class="text-muted small fw-normal" id="hnCharCount">0 / 500</span>
+          </label>
+          <textarea id="hnReviewComment" class="hn-review-textarea" rows="4" maxlength="500" placeholder="How did this product bring Krishna into your day? Share your sacred experience..." required oninput="updateReviewCharCount(this)"></textarea>
         </div>
 
-        <button type="submit" class="hn-auth-submit-btn" id="hnReviewSubmitBtn">
+        <button type="submit" class="hn-review-submit-btn" id="hnReviewSubmitBtn">
           <span>Publish Sacred Review</span>
-          <i class="bi bi-send-fill ms-2"></i>
+          <i class="bi bi-send-fill ms-1"></i>
         </button>
       </form>
     </div>
@@ -323,16 +332,58 @@
       }
     }
 
-    // Review Stars Widget Handlers
+    // Review Stars & Modal Handlers
+    const RATING_DESCRIPTIONS = {
+      5: '★★★★★ Divine & Blessed (5/5)',
+      4: '★★★★☆ Highly Recommended (4/5)',
+      3: '★★★☆☆ Peaceful & Good (3/5)',
+      2: '★★☆☆☆ Needs Improvement (2/5)',
+      1: '★☆☆☆☆ Disappointed (1/5)'
+    };
+
+    function selectStar(n) {
+      selectedRating = n;
+      const hiddenInput = document.getElementById('hnSelectedRating');
+      if (hiddenInput) hiddenInput.value = n;
+      renderStarUI(n);
+    }
+
     function hoverStars(n) {
+      renderStarUI(n);
+    }
+
+    function resetStars() {
+      renderStarUI(selectedRating);
+    }
+
+    function renderStarUI(n) {
       const stars = document.querySelectorAll('#hnStarRatingWidget i');
       stars.forEach((s, idx) => {
         if (idx < n) {
-          s.className = 'bi bi-star-fill text-warning';
+          s.className = 'bi bi-star-fill';
+          s.style.color = '#F59E0B';
         } else {
-          s.className = 'bi bi-star text-muted';
+          s.className = 'bi bi-star';
+          s.style.color = '#CBD5E1';
         }
       });
+      const badge = document.getElementById('hnRatingBadge');
+      if (badge) {
+        badge.innerText = RATING_DESCRIPTIONS[n] || `${n}/5 Stars`;
+      }
+    }
+
+    function updateReviewCharCount(el) {
+      const counter = document.getElementById('hnCharCount');
+      if (counter) {
+        const len = (el.value || '').length;
+        counter.innerText = `${len} / 500`;
+        if (len >= 450) {
+          counter.className = 'text-warning small fw-bold';
+        } else {
+          counter.className = 'text-muted small fw-normal';
+        }
+      }
     }
 
     function triggerWriteReview() {
@@ -355,10 +406,14 @@
           setTimeout(() => titleInput.focus(), 150);
         }
         const commentInput = document.getElementById('hnReviewComment');
-        if (commentInput) commentInput.value = '';
+        if (commentInput) {
+          commentInput.value = '';
+          updateReviewCharCount(commentInput);
+        }
         const alertEl = document.getElementById('hnReviewAlert');
         if (alertEl) {
-          alertEl.className = 'hn-auth-alert';
+          alertEl.className = 'hn-review-alert';
+          alertEl.style.display = 'none';
           alertEl.innerText = '';
         }
       }
@@ -388,7 +443,7 @@
 
       const originalBtnContent = btn.innerHTML;
       btn.disabled = true;
-      btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Publishing...`;
+      btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Publishing Sacred Review...`;
 
       try {
         let success = false;
@@ -428,20 +483,22 @@
         }
 
         if (alertEl) {
-          alertEl.className = 'hn-auth-alert success';
-          alertEl.innerText = 'Your review has been published! Hare Krishna. 🌸';
+          alertEl.className = 'hn-review-alert success';
+          alertEl.style.display = 'flex';
+          alertEl.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> Your review has been published! Hare Krishna. 🌸';
         }
 
         setTimeout(() => {
           closeReviewModal();
           showToast('Thank you! Your sacred review has been published. 🌸');
           loadProductReviews(currentProduct.id);
-        }, 600);
+        }, 800);
 
       } catch (err) {
         if (alertEl) {
-          alertEl.className = 'hn-auth-alert error';
-          alertEl.innerText = err.message || 'Failed to publish review.';
+          alertEl.className = 'hn-review-alert error';
+          alertEl.style.display = 'flex';
+          alertEl.innerHTML = `<i class="bi bi-exclamation-circle-fill me-2"></i> ${err.message || 'Failed to publish review.'}`;
         }
       } finally {
         btn.disabled = false;

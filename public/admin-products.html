@@ -322,6 +322,7 @@
       }
 
       let remoteProducts = [];
+      let remoteLoaded = false;
 
       // 1. Try Express API
       try {
@@ -331,8 +332,9 @@
 
         if (res.ok) {
           const json = await res.json();
-          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          if (json.success && Array.isArray(json.data)) {
             remoteProducts = json.data;
+            remoteLoaded = true;
           }
         }
       } catch (err) {
@@ -340,7 +342,7 @@
       }
 
       // 2. Fallback: direct Supabase query if API didn't return data
-      if (remoteProducts.length === 0) {
+      if (!remoteLoaded) {
         try {
           const sb = initSupabase();
           if (sb) {
@@ -349,7 +351,8 @@
               .select('*, product_images(*), categories(id, name, slug)')
               .order('created_at', { ascending: false });
 
-            if (!error && Array.isArray(data) && data.length > 0) {
+            if (!error && Array.isArray(data)) {
+              remoteLoaded = true;
               remoteProducts = data.map(p => {
                 const imgList = (p.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(i => i.image_url);
                 const img = imgList[0] || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80';
@@ -381,13 +384,9 @@
         }
       }
 
-      // If remote products were fetched, merge with local state
-      if (remoteProducts.length > 0) {
-        const remoteIds = new Set(remoteProducts.map(p => String(p.id)));
-        const remoteSlugs = new Set(remoteProducts.map(p => String(p.slug)));
-
-        const localOnly = databaseProducts.filter(p => !remoteIds.has(String(p.id)) && !remoteSlugs.has(String(p.slug)));
-        databaseProducts = [...localOnly, ...remoteProducts];
+      // If remote products were fetched (even if 0 items)
+      if (remoteLoaded) {
+        databaseProducts = remoteProducts;
         renderProductsTable(databaseProducts);
         localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
       } else if (databaseProducts.length === 0) {
@@ -410,6 +409,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       // Clear stale local mock storage to prevent outdated states
       localStorage.removeItem('harinama_admin_products');
+      localStorage.removeItem('hn_live_products');
       renderImageSlots();
       loadProductsFromDatabase();
     });

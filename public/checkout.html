@@ -255,14 +255,22 @@
     let checkoutCouponCode = sessionStorage.getItem('hn_coupon_code') || '';
 
     function getCheckoutCart() {
-      return JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
+      try {
+        const raw = localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || sessionStorage.getItem('hn_cart');
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
     }
 
     function renderCheckoutSummary() {
       const cart = getCheckoutCart();
       const listContainer = document.getElementById('hn-checkout-items-list');
       const countBadge = document.getElementById('hn-checkout-item-count');
-      const submitBtn = document.getElementById('hn-place-order-btn');
+      const submitBtn = document.getElementById('hn-btn-place-order') || document.getElementById('hn-place-order-btn');
+      const discountRow = document.getElementById('hn-co-discount-row');
+      const discountEl = document.getElementById('hn-co-discount');
 
       if (!cart || cart.length === 0) {
         if (countBadge) countBadge.innerText = '0 items';
@@ -278,18 +286,22 @@
           `;
         }
         if (submitBtn) submitBtn.disabled = true;
+        if (discountRow) discountRow.classList.add('d-none');
         document.getElementById('hn-co-subtotal').innerText = '₹0';
+        document.getElementById('hn-co-shipping').innerText = 'FREE';
         document.getElementById('hn-co-total').innerText = '₹0';
         return;
       }
 
       if (submitBtn) submitBtn.disabled = false;
-      const totalItemsCount = cart.reduce((acc, i) => acc + (i.qty || 1), 0);
+      const totalItemsCount = cart.reduce((acc, i) => acc + (parseInt(i.qty, 10) || 1), 0);
       if (countBadge) countBadge.innerText = `${totalItemsCount} ${totalItemsCount === 1 ? 'item' : 'items'}`;
 
       let subtotal = 0;
       listContainer.innerHTML = cart.map(item => {
-        const itemTotal = item.price * (item.qty || 1);
+        const qty = parseInt(item.qty, 10) || 1;
+        const price = parseFloat(item.price) || 0;
+        const itemTotal = price * qty;
         subtotal += itemTotal;
         return `
           <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
@@ -297,7 +309,7 @@
               <img src="${item.image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80'}" alt="${item.name}" class="rounded border" style="width: 44px; height: 44px; object-fit: cover;">
               <div>
                 <div class="fw-semibold text-dark small text-truncate" style="max-width: 180px;">${item.name}</div>
-                <div class="text-muted" style="font-size: 0.75rem;">Qty: ${item.qty || 1} &nbsp;|&nbsp; ${item.material || 'Standard'}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Qty: ${qty} &nbsp;|&nbsp; ${item.material || 'Standard'}</div>
               </div>
             </div>
             <div class="fw-bold small text-navy">₹${itemTotal}</div>
@@ -305,17 +317,20 @@
         `;
       }).join('');
 
-      // Shipping is FREE for orders above ₹499 or flat ₹0 promotional
-      const shipping = subtotal >= 499 ? 0 : 0; // Promotional Free Shipping
-      document.getElementById('hn-co-shipping').innerText = shipping === 0 ? 'FREE' : `₹${shipping}`;
+      // Shipping is FREE promotional
+      const shipping = 0;
+      document.getElementById('hn-co-shipping').innerText = 'FREE';
 
       if (checkoutCouponCode && checkoutDiscount > 0) {
-        document.getElementById('hn-co-discount-row').classList.remove('d-none');
-        document.getElementById('hn-co-discount').innerText = `-₹${checkoutDiscount}`;
+        if (discountRow) discountRow.classList.remove('d-none');
+        if (discountEl) discountEl.innerText = `-₹${checkoutDiscount}`;
         const couponInput = document.getElementById('hn-checkout-coupon');
         if (couponInput) couponInput.value = checkoutCouponCode;
         const msg = document.getElementById('hn-checkout-coupon-msg');
         if (msg) msg.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> Applied: ${checkoutCouponCode} (-₹${checkoutDiscount})</span>`;
+      } else {
+        if (discountRow) discountRow.classList.add('d-none');
+      }
 
       const finalTotal = Math.max(0, subtotal + shipping - checkoutDiscount);
       document.getElementById('hn-co-subtotal').innerText = `₹${subtotal}`;
@@ -679,6 +694,9 @@
       renderHeader('checkout');
       renderFooter();
       renderCheckoutSummary();
+
+      window.addEventListener('hn_cart_updated', renderCheckoutSummary);
+      window.addEventListener('storage', renderCheckoutSummary);
 
       // Prefill customer details if user is logged in
       if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {

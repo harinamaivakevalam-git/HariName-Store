@@ -517,31 +517,36 @@ exports.createProduct = async (req, res, next) => {
   try {
     const {
       name,
-      description,
+      description = '',
       short_description,
       price,
       compare_price,
       sku,
-      stock,
+      stock = 25,
       category_id,
       brand_id,
       material,
+      status = 'active',
       featured,
       trending,
-      specifications,
-      tags,
+      specifications = {},
+      tags = [],
       images = [],
       variants = []
     } = req.body;
 
-    if (!name || !description || price === undefined || !sku) {
+    if (!name || price === undefined) {
       return res.status(400).json({
         success: false,
-        message: 'Name, description, price, and SKU are required fields.'
+        message: 'Name and price are required fields.'
       });
     }
 
+    const finalSku = sku || req.body.sku || `HN-PROD-${Date.now().toString().slice(-6)}`;
     let slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+
+    const finalSpecs = typeof specifications === 'object' && specifications !== null ? { ...specifications } : {};
+    if (material) finalSpecs.material = material;
 
     if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       const client = supabaseAdmin || supabase;
@@ -566,21 +571,19 @@ exports.createProduct = async (req, res, next) => {
         .from('products')
         .insert({
           name,
-          title: req.body.title || name,
           slug,
-          description,
-          short_description: short_description || '',
+          description: description || name,
+          short_description: short_description || (description ? description.slice(0, 160) : ''),
           price: parseFloat(price),
           compare_price: compare_price ? parseFloat(compare_price) : (req.body.old_price ? parseFloat(req.body.old_price) : null),
-          sku: sku || `HN-PROD-${Date.now().toString().slice(-6)}`,
+          sku: finalSku,
           stock: parseInt(stock, 10) || 0,
           category_id: resolvedCatId || null,
           brand_id: brand_id || 'b0000001-0000-0000-0000-000000000001',
-          material: material || null,
-          status: 'active',
+          status: status || 'active',
           featured: Boolean(featured),
           trending: Boolean(trending),
-          specifications: typeof specifications === 'object' ? specifications : {},
+          specifications: finalSpecs,
           tags: Array.isArray(tags) ? tags : []
         })
         .select()
@@ -723,15 +726,22 @@ exports.updateProduct = async (req, res, next) => {
         }
 
         const allowedCols = [
-          'name', 'title', 'slug', 'description', 'short_description',
+          'name', 'slug', 'description', 'short_description',
           'price', 'compare_price', 'sku', 'stock', 'category_id',
-          'brand_id', 'material', 'status', 'featured', 'trending',
+          'brand_id', 'status', 'featured', 'trending',
           'rating', 'reviews_count', 'specifications', 'tags', 'updated_at'
         ];
 
         const updates = { updated_at: new Date().toISOString() };
         for (const col of allowedCols) {
           if (req.body[col] !== undefined) updates[col] = req.body[col];
+        }
+
+        if (req.body.material) {
+          updates.specifications = {
+            ...(typeof updates.specifications === 'object' && updates.specifications !== null ? updates.specifications : {}),
+            material: req.body.material
+          };
         }
 
         if (categoryId) updates.category_id = categoryId;

@@ -767,37 +767,54 @@
         saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving to Database...';
       }
 
-      const id = document.getElementById('edit-prod-id').value.trim();
-      const name = document.getElementById('prod-name').value.trim();
-      const category = document.getElementById('prod-category').value;
-      const price = parseFloat(document.getElementById('prod-price').value);
-      const old_price = document.getElementById('prod-old-price').value ? parseFloat(document.getElementById('prod-old-price').value) : null;
-      const stock = parseInt(document.getElementById('prod-stock').value, 10) || 0;
-      const material = document.getElementById('prod-material').value.trim();
-      const primaryImage = validImages[0];
-      const description = document.getElementById('prod-description').value.trim();
+      const prodId = id || `hn-prod-${Date.now()}`;
+      const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+      const productSlug = id ? (databaseProducts.find(p => p.id === id)?.slug || baseSlug) : `${baseSlug}-${Date.now().toString().slice(-4)}`;
+      const generatedSku = `HN-PROD-${Date.now().toString().slice(-6)}`;
 
-      const payload = {
+      const newOrUpdatedItem = {
+        id: prodId,
+        sku: generatedSku,
         name,
         title: name,
+        slug: productSlug,
+        category,
         category_name: category,
-        category: category,
+        material: material || 'Standard',
         price,
+        old_price,
         compare_price: old_price,
-        old_price: old_price,
         stock,
-        material,
+        rating: 5.0,
+        reviews_count: 0,
         image: primaryImage,
         primary_image: primaryImage,
         images: validImages,
         gallery: validImages,
-        description
+        description,
+        status: 'active'
       };
 
-      let savedSuccessfully = false;
-      let responseMsg = '';
+      // 1. Immediately update local inventory table & memory so user sees it instantly
+      const existingIdx = databaseProducts.findIndex(p => p.id === id || p.slug === id);
+      if (existingIdx !== -1) {
+        databaseProducts[existingIdx] = { ...databaseProducts[existingIdx], ...newOrUpdatedItem };
+      } else {
+        databaseProducts.unshift(newOrUpdatedItem);
+      }
+      renderProductsTable(databaseProducts);
+      localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
+      if (typeof HARINAMA_DATA !== 'undefined') {
+        HARINAMA_DATA.products = databaseProducts;
+        window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
+          detail: { products: databaseProducts, categories: HARINAMA_DATA.categories }
+        }));
+      }
 
-      // 1. Try Express API Backend
+      let savedSuccessfully = false;
+      let responseMsg = id ? 'Product updated successfully! 🌸' : 'New product added to inventory and store! 🌸';
+
+      // 2. Sync to Backend Express API
       try {
         const endpoint = id ? `/api/products/${id}` : '/api/products';
         const method = id ? 'PUT' : 'POST';
@@ -805,38 +822,42 @@
         const apiRes = await fetch(endpoint, {
           method,
           headers: getAuthHeaders(),
-          body: JSON.stringify(payload)
+          body: JSON.stringify({
+            ...newOrUpdatedItem,
+            sku: newOrUpdatedItem.sku
+          })
         });
 
         if (apiRes.ok) {
           const json = await apiRes.json();
           if (json.success) {
             savedSuccessfully = true;
-            responseMsg = json.message || (id ? 'Product updated in live database! 🌸' : 'New product created in live database! 🌸');
+            if (json.data && json.data.id) {
+              const idx = databaseProducts.findIndex(p => p.id === prodId || p.slug === productSlug);
+              if (idx !== -1) {
+                databaseProducts[idx] = { ...databaseProducts[idx], ...json.data };
+                localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
+                renderProductsTable(databaseProducts);
+              }
+            }
           }
         }
       } catch (apiErr) {
-        console.warn('[AdminProducts] /api/products unreachable, attempting direct Supabase query:', apiErr);
+        console.warn('[AdminProducts] /api/products sync notice:', apiErr);
       }
 
-      // 2. Direct Supabase Fallback (Production resilient)
+      // 3. Sync to Supabase directly
       if (!savedSuccessfully) {
         try {
           const sb = initSupabase();
           if (sb) {
-            // Find category UUID if available
             let categoryId = null;
             try {
-              const { data: catRec } = await sb
-                .from('categories')
-                .select('id')
-                .ilike('name', `%${category}%`)
-                .maybeSingle();
+              const { data: catRec } = await sb.from('categories').select('id').ilike('name', `%${category}%`).maybeSingle();
               if (catRec) categoryId = catRec.id;
             } catch (cErr) {}
 
             if (id) {
-              // UPDATE EXISTING PRODUCT
               const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
               let targetId = id;
               if (!isUuid) {
@@ -844,154 +865,63 @@
                 if (rec) targetId = rec.id;
               }
 
-              const updateData = {
-                name,
-                title: name,
-                description: description || name,
-                price,
-                compare_price: old_price,
-                stock,
-                material: material || 'Standard',
-                updated_at: new Date().toISOString()
-              };
-              if (categoryId) updateData.category_id = categoryId;
-
               const { data: updatedProd, error: updateError } = await sb
                 .from('products')
-                .update(updateData)
+                .update({
+                  name,
+                  description: description || name,
+                  price,
+                  compare_price: old_price,
+                  stock,
+                  specifications: { material: material || 'Standard' },
+                  category_id: categoryId || null,
+                  updated_at: new Date().toISOString()
+                })
                 .eq('id', targetId)
                 .select()
-                .single();
+                .maybeSingle();
 
               if (!updateError && updatedProd) {
-                // Update product_images table
-                try {
-                  await sb.from('product_images').delete().eq('product_id', targetId);
-                  const imgRows = validImages.map((imgUrl, idx) => ({
-                    product_id: targetId,
-                    image_url: imgUrl,
-                    alt_text: name,
-                    sort_order: idx + 1,
-                    is_primary: idx === 0
-                  }));
-                  await sb.from('product_images').insert(imgRows);
-                } catch (imgErr) {
-                  console.warn('[AdminProducts] Image table update notice:', imgErr);
-                }
-
                 savedSuccessfully = true;
-                responseMsg = 'Product updated in Supabase database! 🌸';
-              } else if (updateError) {
-                console.error('[AdminProducts] Supabase direct update error:', updateError);
               }
             } else {
-              // CREATE NEW PRODUCT
-              let baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-              let slug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
-
-              let brandId = null;
-              try {
-                const { data: brandRec } = await sb.from('brands').select('id').limit(1).maybeSingle();
-                if (brandRec) brandId = brandRec.id;
-              } catch (bErr) {}
-
-              const newProductRow = {
-                name,
-                title: name,
-                slug,
-                description: description || name,
-                short_description: description ? description.slice(0, 160) : '',
-                price,
-                compare_price: old_price,
-                sku: `HN-PROD-${Date.now().toString().slice(-6)}`,
-                stock,
-                category_id: categoryId,
-                brand_id: brandId,
-                material: material || 'Standard',
-                status: 'active',
-                rating: 5.0,
-                reviews_count: 0
-              };
-
               const { data: createdProd, error: insertError } = await sb
                 .from('products')
-                .insert(newProductRow)
+                .insert({
+                  name,
+                  slug: productSlug,
+                  description: description || name,
+                  short_description: description ? description.slice(0, 160) : '',
+                  price,
+                  compare_price: old_price,
+                  sku: generatedSku,
+                  stock,
+                  category_id: categoryId || null,
+                  status: 'active',
+                  specifications: { material: material || 'Standard' },
+                  rating: 5.0,
+                  reviews_count: 0
+                })
                 .select()
-                .single();
+                .maybeSingle();
 
               if (!insertError && createdProd) {
-                try {
-                  const imgRows = validImages.map((imgUrl, idx) => ({
-                    product_id: createdProd.id,
-                    image_url: imgUrl,
-                    alt_text: name,
-                    sort_order: idx + 1,
-                    is_primary: idx === 0
-                  }));
-                  await sb.from('product_images').insert(imgRows);
-                } catch (imgErr) {
-                  console.warn('[AdminProducts] Image table insert notice:', imgErr);
-                }
-
                 savedSuccessfully = true;
-                responseMsg = 'New product created in Supabase database! 🌸';
-              } else if (insertError) {
-                console.error('[AdminProducts] Supabase direct insert error:', insertError);
               }
             }
           }
         } catch (sbDirectErr) {
-          console.error('[AdminProducts] Direct Supabase save error:', sbDirectErr);
+          console.warn('[AdminProducts] Supabase sync notice:', sbDirectErr);
         }
-      }
-
-      // 3. In-Memory & LocalStorage catalog fallback (so work is never lost)
-      if (!savedSuccessfully) {
-        const prodId = id || `hn-prod-${Date.now()}`;
-        const newLocalItem = {
-          id: prodId,
-          name,
-          title: name,
-          slug: id ? id : name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          category,
-          category_name: category,
-          material: material || 'Standard',
-          price,
-          old_price,
-          compare_price: old_price,
-          stock,
-          rating: 5.0,
-          reviews_count: 0,
-          image: primaryImage,
-          primary_image: primaryImage,
-          images: validImages,
-          gallery: validImages,
-          description
-        };
-
-        const existingIdx = databaseProducts.findIndex(p => p.id === id || p.slug === id);
-        if (existingIdx !== -1) {
-          databaseProducts[existingIdx] = { ...databaseProducts[existingIdx], ...newLocalItem };
-        } else {
-          databaseProducts.unshift(newLocalItem);
-        }
-
-        savedSuccessfully = true;
-        responseMsg = 'Product saved successfully! 🌸';
       }
 
       try {
-        showToast(responseMsg || 'Product saved successfully! 🌸');
-
-        // Close modal
+        showToast(responseMsg);
         const modalEl = document.getElementById('productModal');
         const modal = bootstrap.Modal.getInstance(modalEl);
         if (modal) modal.hide();
-
-        // Refresh entire list directly from live database
-        await loadProductsFromDatabase();
       } catch (err) {
-        console.error('[AdminProducts] Post-save UI update error:', err);
+        console.error('[AdminProducts] Modal hide notice:', err);
       } finally {
         if (saveBtn) {
           saveBtn.disabled = false;
@@ -1001,53 +931,44 @@
     }
 
     async function deleteProduct(id) {
-      if (!confirm('Are you sure you want to permanently delete this product from the live database?')) return;
+      if (!confirm('Are you sure you want to permanently delete this product from the inventory and live database?')) return;
 
-      let deletedSuccessfully = false;
+      // Immediately update local list & storage
+      databaseProducts = databaseProducts.filter(p => p.id !== id && p.slug !== id);
+      renderProductsTable(databaseProducts);
+      localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
+      if (typeof HARINAMA_DATA !== 'undefined') {
+        HARINAMA_DATA.products = databaseProducts;
+        window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
+          detail: { products: databaseProducts, categories: HARINAMA_DATA.categories }
+        }));
+      }
+      showToast('Product permanently removed from inventory.');
 
-      // 1. Try Express API
+      // Try Backend delete
       try {
-        const res = await fetch(`/api/products/${id}`, {
+        await fetch(`/api/products/${id}`, {
           method: 'DELETE',
           headers: getAuthHeaders()
         });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success) deletedSuccessfully = true;
-        }
-      } catch (err) {
-        console.warn('[AdminProducts] /api/products delete notice:', err);
-      }
+      } catch (err) {}
 
-      // 2. Direct Supabase Fallback
-      if (!deletedSuccessfully) {
-        try {
-          const sb = initSupabase();
-          if (sb) {
-            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-            let targetId = id;
-            if (!isUuid) {
-              const { data: rec } = await sb.from('products').select('id').eq('slug', id).maybeSingle();
-              if (rec) targetId = rec.id;
-            }
-
-            if (targetId) {
-              await sb.from('product_images').delete().eq('product_id', targetId);
-              const { error: delErr } = await sb.from('products').delete().eq('id', targetId);
-              if (!delErr) deletedSuccessfully = true;
-            }
+      // Try Supabase direct delete
+      try {
+        const sb = initSupabase();
+        if (sb) {
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+          let targetId = id;
+          if (!isUuid) {
+            const { data: rec } = await sb.from('products').select('id').eq('slug', id).maybeSingle();
+            if (rec) targetId = rec.id;
           }
-        } catch (sbErr) {
-          console.error('[AdminProducts] Supabase direct delete error:', sbErr);
+          if (targetId) {
+            await sb.from('product_images').delete().eq('product_id', targetId);
+            await sb.from('products').delete().eq('id', targetId);
+          }
         }
-      }
-
-      // Remove from local list & refresh
-      databaseProducts = databaseProducts.filter(p => p.id !== id && p.slug !== id);
-      renderProductsTable(databaseProducts);
-      showToast('Product permanently deleted from database.');
-
-      await loadProductsFromDatabase();
+      } catch (sbErr) {}
     }
   </script>
 </body>

@@ -1516,11 +1516,13 @@
   };
   window.findCatalogProduct = findCatalogProduct;
 
-  // Render Product Card (Exact match to reference image with dual-ID wishlist awareness)
+  // Render Product Card (Exact match to reference image with dual-ID wishlist awareness & resilient fallback images)
   const renderProductCard = (p) => {
     if (!p) return '';
     const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
     const isWish = wishlist.includes(p.id) || (p.legacy_id && wishlist.includes(p.legacy_id)) || (p.slug && wishlist.includes(p.slug));
+    const imgSrc = p.image || p.primary_image || (p.images && p.images[0]) || '/assets/images/krishna-logo.jpg';
+    const prodTitle = p.name || p.title || 'Sacred Devotional Item';
 
     return `
     <div class="col-6 col-md-4 col-lg-2">
@@ -1531,11 +1533,11 @@
         </button>
 
         <a href="/product-details.html?id=${p.id}" class="hn-card-img-box">
-          <img src="${p.image || p.primary_image}" alt="${p.name || p.title}" loading="lazy">
+          <img src="${imgSrc}" alt="${prodTitle}" onerror="this.onerror=null;this.src='/assets/images/krishna-logo.jpg';" loading="lazy">
         </a>
 
         <div class="hn-card-title">
-          <a href="/product-details.html?id=${p.id}">${p.name || p.title}</a>
+          <a href="/product-details.html?id=${p.id}">${prodTitle}</a>
         </div>
 
         <div class="hn-card-price">

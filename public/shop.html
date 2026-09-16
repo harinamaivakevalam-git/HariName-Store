@@ -166,7 +166,7 @@
               </button>
 
               <a href="/product-details.html?id=${p.id}" class="hn-card-img-box">
-                <img src="${p.image || p.primary_image}" alt="${p.name || p.title}" loading="lazy">
+                <img src="${p.image || p.primary_image || '/assets/images/krishna-logo.jpg'}" alt="${p.name || p.title || 'Sacred Item'}" onerror="this.onerror=null;this.src='/assets/images/krishna-logo.jpg';" loading="lazy">
               </a>
 
               <div class="hn-card-title">

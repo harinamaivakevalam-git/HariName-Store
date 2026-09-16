@@ -387,7 +387,7 @@
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
 
-    // Render Featured Products from Database
+    // Render Featured Products from Database with Daily Dynamic Rotation
     function renderFeaturedSection() {
       const grid = document.getElementById('hn-featured-grid');
       if (!grid) return;
@@ -413,8 +413,19 @@
         return;
       }
 
-      const featured = prods.filter(p => p.featured).slice(0, 6);
-      const displayList = featured.length > 0 ? featured : prods.slice(0, 6);
+      // Daily Dynamic Showcase: Rotate product showcase everyday based on current calendar date
+      const today = new Date();
+      const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+      
+      // Calculate dynamic daily offset
+      const offset = prods.length > 0 ? (dayOfYear % prods.length) : 0;
+      const dailyRotated = [...prods.slice(offset), ...prods.slice(0, offset)];
+
+      // Featured products prioritized first, then remainder of catalog
+      const featured = dailyRotated.filter(p => p.featured);
+      const others = dailyRotated.filter(p => !p.featured);
+      const displayList = [...featured, ...others].slice(0, 12);
+
       grid.innerHTML = displayList.map(p => renderProductCard(p)).join('');
       if (typeof initScrollAnimations === 'function') initScrollAnimations();
     }

@@ -867,6 +867,7 @@
 
       let savedSuccessfully = false;
       let responseMsg = id ? 'Product updated successfully! 🌸' : 'New product added to inventory and store! 🌸';
+      let serverError = null;
 
       // 2. Sync to Backend Express API
       try {
@@ -917,6 +918,21 @@
         try {
           const sb = initSupabase();
           if (sb) {
+            // Dynamically resolve real category UUID from database if available
+            let realCatId = null;
+            try {
+              const { data: dbCats } = await sb.from('categories').select('id, name, slug');
+              if (Array.isArray(dbCats) && dbCats.length > 0) {
+                const match = dbCats.find(c => 
+                  c.name.toLowerCase() === category.toLowerCase() || 
+                  c.slug.toLowerCase() === category.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+                );
+                if (match) realCatId = match.id;
+              }
+            } catch (catLookupErr) {
+              console.warn('[AdminProducts] Category lookup notice:', catLookupErr);
+            }
+
             let targetProdId = null;
 
             if (id) {
@@ -928,49 +944,58 @@
               }
               targetProdId = targetId;
 
+              const updatePayload = {
+                name,
+                description: description || name,
+                price,
+                compare_price: validComparePrice,
+                stock,
+                specifications: { material: material || 'Standard' },
+                updated_at: new Date().toISOString()
+              };
+              if (realCatId) updatePayload.category_id = realCatId;
+
               const { data: updatedProd, error: updateError } = await sb
                 .from('products')
-                .update({
-                  name,
-                  description: description || name,
-                  price,
-                  compare_price: validComparePrice,
-                  stock,
-                  specifications: { material: material || 'Standard' },
-                  category_id: resolvedCatId,
-                  updated_at: new Date().toISOString()
-                })
+                .update(updatePayload)
                 .eq('id', targetId)
                 .select()
                 .maybeSingle();
 
-              if (!updateError && updatedProd) {
+              if (updateError) {
+                console.error('[AdminProducts] Supabase update error:', updateError);
+                serverError = updateError.message;
+              } else if (updatedProd) {
                 savedSuccessfully = true;
                 targetProdId = updatedProd.id;
               }
             } else {
+              const insertPayload = {
+                name,
+                slug: productSlug,
+                description: description || name,
+                short_description: description ? description.slice(0, 160) : '',
+                price,
+                compare_price: validComparePrice,
+                sku: generatedSku,
+                stock,
+                status: 'active',
+                specifications: { material: material || 'Standard' },
+                rating: 5.0,
+                reviews_count: 0
+              };
+              if (realCatId) insertPayload.category_id = realCatId;
+
               const { data: createdProd, error: insertError } = await sb
                 .from('products')
-                .insert({
-                  name,
-                  slug: productSlug,
-                  description: description || name,
-                  short_description: description ? description.slice(0, 160) : '',
-                  price,
-                  compare_price: validComparePrice,
-                  sku: generatedSku,
-                  stock,
-                  category_id: resolvedCatId,
-                  brand_id: 'b0000001-0000-0000-0000-000000000001',
-                  status: 'active',
-                  specifications: { material: material || 'Standard' },
-                  rating: 5.0,
-                  reviews_count: 0
-                })
+                .insert(insertPayload)
                 .select()
                 .maybeSingle();
 
-              if (!insertError && createdProd) {
+              if (insertError) {
+                console.error('[AdminProducts] Supabase insert error:', insertError);
+                serverError = insertError.message;
+              } else if (createdProd) {
                 savedSuccessfully = true;
                 targetProdId = createdProd.id;
                 const idx = databaseProducts.findIndex(p => p.id === prodId || p.slug === productSlug);
@@ -999,12 +1024,18 @@
             }
           }
         } catch (sbDirectErr) {
-          console.warn('[AdminProducts] Supabase sync notice:', sbDirectErr);
+          console.error('[AdminProducts] Supabase sync exception:', sbDirectErr);
+          serverError = sbDirectErr.message;
         }
       }
 
-      try {
+      if (!savedSuccessfully && serverError) {
+        showToast('Error saving product to database: ' + serverError);
+      } else {
         showToast(responseMsg);
+      }
+
+      try {
         const modalEl = document.getElementById('productModal');
         const modal = bootstrap.Modal.getInstance(modalEl);
         if (modal) modal.hide();

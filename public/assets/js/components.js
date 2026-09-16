@@ -1269,25 +1269,7 @@
     </a>
   `;
 
-    let announcementText = 'Free shipping on orders above ₹499 | Carry Krishna, Remember Krishna, Share Krishna!';
-    try {
-      const storeSettings = JSON.parse(localStorage.getItem('harinama_store_settings') || '{}');
-      if (storeSettings.announcement) announcementText = storeSettings.announcement;
-    } catch (_) {}
-
     container.innerHTML = `
-    <!-- Top Announcement Bar -->
-    <div class="hn-topbar d-flex align-items-center justify-content-between py-1 px-3" style="background: var(--hn-navy-dark, #081B33); color: #FFFFFF; font-size: 0.8rem;">
-      <div class="container d-flex align-items-center justify-content-between">
-        <div class="d-none d-md-block text-warning small"><i class="bi bi-stars me-1"></i> 100% Authentic Holy Tulasi & Devotional Items</div>
-        <div class="mx-auto mx-md-0 fw-medium">${announcementText}</div>
-        <div class="d-none d-md-flex align-items-center gap-3">
-          <a href="/order-tracking.html" class="text-white text-decoration-none small hover-gold"><i class="bi bi-truck me-1"></i> Track Order</a>
-          <a href="/contact.html" class="text-white text-decoration-none small hover-gold"><i class="bi bi-headset me-1"></i> Help</a>
-        </div>
-      </div>
-    </div>
-
     <!-- Main Navigation Header -->
     <header class="hn-header">
       <div class="container">

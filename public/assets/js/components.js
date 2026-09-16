@@ -961,10 +961,14 @@
     if (client && client.auth) {
       showToast('Redirecting to Google Secure Sign-In... 🌸');
       try {
+        const redirectParam = new URLSearchParams(window.location.search).get('redirect') || '/account.html';
+        const origin = window.location.origin.startsWith('http') ? window.location.origin : ('https://' + window.location.host);
+        const targetRedirect = redirectParam.startsWith('http') ? redirectParam : (origin + (redirectParam.startsWith('/') ? redirectParam : '/' + redirectParam));
+
         const { data, error } = await client.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: window.location.origin + '/account.html'
+            redirectTo: targetRedirect
           }
         });
         if (error) {

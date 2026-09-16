@@ -8,10 +8,10 @@
         var u = raw ? JSON.parse(raw) : null;
         var scope = atob('aGFyaW5hbWFpdmFrZXZhbGFtQGdtYWlsLmNvbQ==');
         if (!u || !u.email || (u.role !== 'admin' && String(u.email).toLowerCase().trim() !== scope)) {
-          window.location.replace('/404.html');
+          window.location.replace('/login.html?redirect=' + encodeURIComponent(window.location.pathname));
         }
       } catch(e) {
-        window.location.replace('/404.html');
+        window.location.replace('/login.html?redirect=' + encodeURIComponent(window.location.pathname));
       }
     })();
   </script>

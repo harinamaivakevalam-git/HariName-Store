@@ -792,16 +792,17 @@ Rama Rama Hare Hare</textarea>
     function isVideoUrl(url) {
       if (!url || typeof url !== 'string') return false;
       const clean = url.trim().toLowerCase();
-      return clean.endsWith('.mp4') || clean.endsWith('.webm') || clean.endsWith('.ogg') || clean.endsWith('.mov') ||
+      return clean.endsWith('.mp4') || clean.endsWith('.webm') || clean.endsWith('.ogg') || clean.endsWith('.mov') || clean.endsWith('.m4v') ||
              clean.includes('.mp4?') || clean.includes('.webm?') || clean.includes('.mov?') ||
-             clean.includes('youtube.com') || clean.includes('youtu.be');
+             clean.includes('/video') || clean.includes('video%2f') || clean.includes('video/') ||
+             clean.includes('youtube.com') || clean.includes('youtu.be') || clean.includes('vimeo.com');
     }
 
     async function handleSingleFileUpload(event, targetInputId, callback) {
       const file = event.target.files?.[0];
       if (!file) return;
 
-      const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|ogg)$/i.test(file.name);
+      const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|ogg|m4v)$/i.test(file.name);
 
       if (targetInputId.includes('promo')) {
         if (isVideo) {
@@ -809,6 +810,11 @@ Rama Rama Hare Hare</textarea>
           const r = document.getElementById('promo_type_video');
           if (r) r.checked = true;
           togglePromoMediaType('video');
+        } else {
+          targetInputId = 'promo_image_url';
+          const r = document.getElementById('promo_type_img');
+          if (r) r.checked = true;
+          togglePromoMediaType('image');
         }
       } else if (targetInputId.includes('hero')) {
         if (isVideo) {
@@ -816,6 +822,11 @@ Rama Rama Hare Hare</textarea>
           const r = document.getElementById('hero_type_video');
           if (r) r.checked = true;
           toggleHeroMediaType('video');
+        } else {
+          targetInputId = 'hero_image_url';
+          const r = document.getElementById('hero_type_img');
+          if (r) r.checked = true;
+          toggleHeroMediaType('image');
         }
       }
 
@@ -833,7 +844,7 @@ Rama Rama Hare Hare</textarea>
       }
     }
 
-    function toggleHeroMediaType(type) {
+    function toggleHeroMediaType(type, triggerPreview = true) {
       const imgControls = document.getElementById('hero_image_controls');
       const videoControls = document.getElementById('hero_video_controls');
 
@@ -844,10 +855,10 @@ Rama Rama Hare Hare</textarea>
         imgControls?.classList.remove('d-none');
         videoControls?.classList.add('d-none');
       }
-      updateHeroPreview();
+      if (triggerPreview) updateHeroPreview();
     }
 
-    function togglePromoMediaType(type) {
+    function togglePromoMediaType(type, triggerPreview = true) {
       const imgControls = document.getElementById('promo_image_controls');
       const videoControls = document.getElementById('promo_video_controls');
 
@@ -858,94 +869,124 @@ Rama Rama Hare Hare</textarea>
         imgControls?.classList.remove('d-none');
         videoControls?.classList.add('d-none');
       }
-      updatePromoPreview();
+      if (triggerPreview) updatePromoPreview();
     }
 
     function updateHeroPreview() {
-      const isVideo = document.getElementById('hero_type_video')?.checked;
-      const heroVidUrl = document.getElementById('hero_video_url')?.value?.trim() || '';
-      const heroImgUrl = document.getElementById('hero_image_url')?.value?.trim() || '/assets/images/krishna_hero_keychain.jpg';
+      const heroVidVal = document.getElementById('hero_video_url')?.value?.trim() || '';
+      const heroImgVal = document.getElementById('hero_image_url')?.value?.trim() || '';
+      const isRadioVideo = document.getElementById('hero_type_video')?.checked;
+
+      let isVideo = Boolean(isRadioVideo);
+      const activeUrl = isRadioVideo ? heroVidVal : heroImgVal;
+
+      if (isVideoUrl(activeUrl)) {
+        isVideo = true;
+        const r = document.getElementById('hero_type_video');
+        if (r && !r.checked) {
+          r.checked = true;
+          toggleHeroMediaType('video', false);
+        }
+        if (!heroVidVal && heroImgVal) {
+          document.getElementById('hero_video_url').value = heroImgVal;
+        }
+      }
 
       const imgEl = document.getElementById('hero_preview_img');
       const videoEl = document.getElementById('hero_preview_video');
       const iframeEl = document.getElementById('hero_preview_iframe');
 
-      if (isVideo) {
+      const videoSrc = (isVideoUrl(heroVidVal) ? heroVidVal : (isVideoUrl(heroImgVal) ? heroImgVal : heroVidVal)).trim();
+      const imageSrc = (!isVideoUrl(heroImgVal) && heroImgVal ? heroImgVal : '/assets/images/krishna_hero_keychain.jpg').trim();
+
+      if (isVideo && videoSrc) {
         imgEl?.classList.add('d-none');
 
-        if (heroVidUrl.includes('youtube.com') || heroVidUrl.includes('youtu.be')) {
-          let embedUrl = heroVidUrl;
-          if (heroVidUrl.includes('watch?v=')) {
-            embedUrl = heroVidUrl.replace('watch?v=', 'embed/');
-          } else if (heroVidUrl.includes('youtu.be/')) {
-            embedUrl = heroVidUrl.replace('youtu.be/', 'www.youtube.com/embed/');
+        if (videoSrc.includes('youtube.com') || videoSrc.includes('youtu.be')) {
+          let embedUrl = videoSrc;
+          if (videoSrc.includes('watch?v=')) {
+            embedUrl = videoSrc.replace('watch?v=', 'embed/');
+          } else if (videoSrc.includes('youtu.be/')) {
+            embedUrl = videoSrc.replace('youtu.be/', 'www.youtube.com/embed/');
           }
           if (iframeEl) {
             iframeEl.src = embedUrl;
             iframeEl.classList.remove('d-none');
           }
           videoEl?.classList.add('d-none');
-        } else if (heroVidUrl) {
+        } else {
           iframeEl?.classList.add('d-none');
           if (videoEl) {
-            videoEl.src = heroVidUrl;
+            videoEl.src = videoSrc;
             videoEl.classList.remove('d-none');
             videoEl.play().catch(() => {});
           }
-        } else {
-          iframeEl?.classList.add('d-none');
-          videoEl?.classList.add('d-none');
         }
       } else {
         videoEl?.classList.add('d-none');
         iframeEl?.classList.add('d-none');
         if (imgEl) {
-          imgEl.src = heroImgUrl;
+          imgEl.src = imageSrc;
           imgEl.classList.remove('d-none');
         }
       }
     }
 
     function updatePromoPreview() {
-      const isVideo = document.getElementById('promo_type_video')?.checked;
-      const promoVidUrl = document.getElementById('promo_video_url')?.value?.trim() || '';
-      const promoImgUrl = document.getElementById('promo_image_url')?.value?.trim() || '/assets/images/krishna-logo.jpg';
+      const promoVidVal = document.getElementById('promo_video_url')?.value?.trim() || '';
+      const promoImgVal = document.getElementById('promo_image_url')?.value?.trim() || '';
+      const isRadioVideo = document.getElementById('promo_type_video')?.checked;
+
+      let isVideo = Boolean(isRadioVideo);
+      const activeUrl = isRadioVideo ? promoVidVal : promoImgVal;
+
+      if (isVideoUrl(activeUrl)) {
+        isVideo = true;
+        const r = document.getElementById('promo_type_video');
+        if (r && !r.checked) {
+          r.checked = true;
+          togglePromoMediaType('video', false);
+        }
+        if (!promoVidVal && promoImgVal) {
+          document.getElementById('promo_video_url').value = promoImgVal;
+        }
+      }
 
       const imgEl = document.getElementById('promo_preview_img');
       const videoEl = document.getElementById('promo_preview_video');
       const iframeEl = document.getElementById('promo_preview_iframe');
 
-      if (isVideo) {
+      const videoSrc = (isVideoUrl(promoVidVal) ? promoVidVal : (isVideoUrl(promoImgVal) ? promoImgVal : promoVidVal)).trim();
+      const imageSrc = (!isVideoUrl(promoImgVal) && promoImgVal ? promoImgVal : '/assets/images/krishna-logo.jpg').trim();
+
+      if (isVideo && videoSrc) {
         imgEl?.classList.add('d-none');
 
-        if (promoVidUrl.includes('youtube.com') || promoVidUrl.includes('youtu.be')) {
-          let embedUrl = promoVidUrl;
-          if (promoVidUrl.includes('watch?v=')) {
-            embedUrl = promoVidUrl.replace('watch?v=', 'embed/');
-          } else if (promoVidUrl.includes('youtu.be/')) {
-            embedUrl = promoVidUrl.replace('youtu.be/', 'www.youtube.com/embed/');
+        if (videoSrc.includes('youtube.com') || videoSrc.includes('youtu.be')) {
+          let embedUrl = videoSrc;
+          if (videoSrc.includes('watch?v=')) {
+            embedUrl = videoSrc.replace('watch?v=', 'embed/');
+          } else if (videoSrc.includes('youtu.be/')) {
+            embedUrl = videoSrc.replace('youtu.be/', 'www.youtube.com/embed/');
           }
           if (iframeEl) {
             iframeEl.src = embedUrl;
             iframeEl.classList.remove('d-none');
           }
           videoEl?.classList.add('d-none');
-        } else if (promoVidUrl) {
+        } else {
           iframeEl?.classList.add('d-none');
           if (videoEl) {
-            videoEl.src = promoVidUrl;
+            videoEl.src = videoSrc;
             videoEl.classList.remove('d-none');
             videoEl.play().catch(() => {});
           }
-        } else {
-          iframeEl?.classList.add('d-none');
-          videoEl?.classList.add('d-none');
         }
       } else {
         videoEl?.classList.add('d-none');
         iframeEl?.classList.add('d-none');
         if (imgEl) {
-          imgEl.src = promoImgUrl;
+          imgEl.src = imageSrc;
           imgEl.classList.remove('d-none');
         }
       }
@@ -1100,14 +1141,23 @@ Rama Rama Hare Hare</textarea>
     }
 
     async function saveAllHomepageSections() {
-      const heroMediaType = document.querySelector('input[name="hero_media_type"]:checked')?.value || 'image';
-      const promoMediaType = document.querySelector('input[name="promo_media_type"]:checked')?.value || 'image';
+      const rawHeroImg = document.getElementById('hero_image_url').value.trim();
+      const rawHeroVid = document.getElementById('hero_video_url').value.trim();
+      const heroRadio = document.querySelector('input[name="hero_media_type"]:checked')?.value || 'image';
 
-      const heroImg = document.getElementById('hero_image_url').value.trim();
-      const heroVid = document.getElementById('hero_video_url').value.trim();
+      const isHeroVid = heroRadio === 'video' || isVideoUrl(rawHeroVid) || isVideoUrl(rawHeroImg);
+      const heroMediaType = isHeroVid ? 'video' : 'image';
+      const heroVideoUrl = isHeroVid ? (isVideoUrl(rawHeroVid) ? rawHeroVid : (isVideoUrl(rawHeroImg) ? rawHeroImg : rawHeroVid)) : '';
+      const heroImageUrl = !isHeroVid ? (rawHeroImg || '/assets/images/krishna_hero_keychain.jpg') : (rawHeroImg && !isVideoUrl(rawHeroImg) ? rawHeroImg : '/assets/images/krishna_hero_keychain.jpg');
 
-      const promoImg = document.getElementById('promo_image_url').value.trim();
-      const promoVid = document.getElementById('promo_video_url').value.trim();
+      const rawPromoImg = document.getElementById('promo_image_url').value.trim();
+      const rawPromoVid = document.getElementById('promo_video_url').value.trim();
+      const promoRadio = document.querySelector('input[name="promo_media_type"]:checked')?.value || 'image';
+
+      const isPromoVid = promoRadio === 'video' || isVideoUrl(rawPromoVid) || isVideoUrl(rawPromoImg);
+      const promoMediaType = isPromoVid ? 'video' : 'image';
+      const promoVideoUrl = isPromoVid ? (isVideoUrl(rawPromoVid) ? rawPromoVid : (isVideoUrl(rawPromoImg) ? rawPromoImg : rawPromoVid)) : '';
+      const promoImageUrl = !isPromoVid ? (rawPromoImg || '/assets/images/krishna-logo.jpg') : (rawPromoImg && !isVideoUrl(rawPromoImg) ? rawPromoImg : '/assets/images/krishna-logo.jpg');
 
       const payload = {
         hero: {
@@ -1126,8 +1176,8 @@ Rama Rama Hare Hare</textarea>
             trust_rating: document.getElementById('hero_trust_rating').value,
             trust_caption: document.getElementById('hero_trust_caption').value,
             media_type: heroMediaType,
-            image_url: heroMediaType === 'image' ? (heroImg || '/assets/images/krishna_hero_keychain.jpg') : heroImg,
-            video_url: heroMediaType === 'video' ? heroVid : '',
+            image_url: heroImageUrl,
+            video_url: heroVideoUrl,
             badge_top_title: 'Blessed in Vrindavan',
             badge_top_sub: 'Authentic & Sacred',
             badge_bottom_title: 'Solid Cast Brass & Enamel',
@@ -1150,8 +1200,8 @@ Rama Rama Hare Hare</textarea>
             mantra_verse: document.getElementById('promo_mantra').value,
             chant: document.getElementById('promo_chant').value,
             cta_text: 'Add to Cart',
-            image_url: promoMediaType === 'image' ? (promoImg || '/assets/images/krishna-logo.jpg') : promoImg,
-            video_url: promoMediaType === 'video' ? promoVid : '',
+            image_url: promoImageUrl,
+            video_url: promoVideoUrl,
             media_type: promoMediaType
           }
         },

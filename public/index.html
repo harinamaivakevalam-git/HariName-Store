@@ -618,9 +618,9 @@
         // Hero Media (Image or Video)
         const mediaWrap = document.querySelector('.hn-hero-image-wrap');
         if (mediaWrap) {
-          const isHeroVideo = hero.media_type === 'video';
-          const heroVideoSrc = (hero.video_url || '').trim();
-          const heroImageSrc = (hero.image_url || '').trim();
+          const isHeroVideo = (hero.media_type === 'video') || isVideoMediaUrl(hero.video_url) || isVideoMediaUrl(hero.image_url);
+          const heroVideoSrc = (isVideoMediaUrl(hero.video_url) ? hero.video_url : (isVideoMediaUrl(hero.image_url) ? hero.image_url : hero.video_url || '')).trim();
+          const heroImageSrc = (!isVideoMediaUrl(hero.image_url) && hero.image_url ? hero.image_url : (!isVideoMediaUrl(hero.video_url) && hero.video_url ? hero.video_url : '')).trim();
           const existingMedia = mediaWrap.querySelector('.hn-hero-img, .hn-hero-video-player, iframe');
 
           if (isHeroVideo && heroVideoSrc) {
@@ -692,9 +692,9 @@
         // Promo Media (Image or Video)
         const promoImgWrap = document.querySelector('.hn-promo-img-wrap');
         if (promoImgWrap) {
-          const isVideo = promo.media_type === 'video';
-          const videoSrc = (promo.video_url || '').trim();
-          const imageSrc = (promo.image_url || '').trim();
+          const isVideo = (promo.media_type === 'video') || isVideoMediaUrl(promo.video_url) || isVideoMediaUrl(promo.image_url);
+          const videoSrc = (isVideoMediaUrl(promo.video_url) ? promo.video_url : (isVideoMediaUrl(promo.image_url) ? promo.image_url : promo.video_url || '')).trim();
+          const imageSrc = (!isVideoMediaUrl(promo.image_url) && promo.image_url ? promo.image_url : (!isVideoMediaUrl(promo.video_url) && promo.video_url ? promo.video_url : '')).trim();
 
           if (isVideo && videoSrc) {
             if (videoSrc.includes('youtube.com') || videoSrc.includes('youtu.be')) {

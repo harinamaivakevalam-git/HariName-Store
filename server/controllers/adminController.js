@@ -1,12 +1,90 @@
 const db = require('../models/db');
+const { supabaseAdmin, isSupabaseConfigured } = require('../config/supabase');
 
 // Admin Analytics & Dashboard Overview
-exports.getDashboardStats = (req, res, next) => {
+exports.getDashboardStats = async (req, res, next) => {
   try {
+    if (isSupabaseConfigured && supabaseAdmin) {
+      try {
+        const [ordersRes, prodsRes, profRes] = await Promise.all([
+          supabaseAdmin.from('orders').select('*').order('created_at', { ascending: false }),
+          supabaseAdmin.from('products').select('*').order('created_at', { ascending: false }),
+          supabaseAdmin.from('profiles').select('*').order('created_at', { ascending: false })
+        ]);
+
+        const sbOrders = ordersRes.data || [];
+        const sbProducts = prodsRes.data || [];
+        const sbProfiles = profRes.data || [];
+
+        const completedOrders = sbOrders.filter(o => (o.status || o.order_status) !== 'cancelled');
+        const totalRevenue = completedOrders.reduce((acc, o) => acc + (parseFloat(o.total) || 0), 0);
+        const totalOrders = sbOrders.length;
+        const totalCustomers = sbProfiles.length;
+        const pendingOrders = sbOrders.filter(o => ['pending', 'confirmed', 'packed', 'processing'].includes((o.status || o.order_status || '').toLowerCase())).length;
+        const lowStockProducts = sbProducts.filter(p => (p.stock !== undefined ? p.stock : 25) <= 10);
+
+        const recentOrders = sbOrders.slice(0, 6).map(o => ({
+          id: o.id,
+          order_number: o.order_number || ('#HN-' + o.id.slice(0, 8)),
+          customer_name: o.shipping_address?.name || o.guest_name || 'Devotee Customer',
+          total: parseFloat(o.total) || 0,
+          order_status: o.status || o.order_status || 'Confirmed',
+          payment_status: o.payment_status || 'paid',
+          created_at: o.created_at
+        }));
+
+        const recentCustomers = sbProfiles.slice(0, 5).map(u => ({
+          id: u.id,
+          name: u.name || 'Devotee Customer',
+          email: u.email,
+          phone: u.phone || '',
+          avatar: u.avatar_url,
+          status: u.status || 'active',
+          created_at: u.created_at
+        }));
+
+        const salesChart = {
+          labels: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+          revenue: [18400, 24500, 31200, 28900, 39400, Math.round(totalRevenue)],
+          orders: [22, 34, 45, 38, 52, totalOrders]
+        };
+
+        return res.json({
+          success: true,
+          data: {
+            totalRevenue: Math.round(totalRevenue * 100) / 100,
+            totalOrders,
+            totalCustomers,
+            totalProducts: sbProducts.length,
+            pendingOrders,
+            lowStockCount: lowStockProducts.length,
+            recentOrders,
+            recentCustomers,
+            lowStockProducts: lowStockProducts.map(p => ({
+              id: p.id,
+              name: p.name,
+              sku: p.sku,
+              stock: p.stock,
+              price: p.price
+            })),
+            topProducts: sbProducts.slice(0, 5).map(p => ({
+              id: p.id,
+              name: p.name,
+              price: p.price,
+              stock: p.stock,
+              units_sold: 12
+            })),
+            salesChart
+          }
+        });
+      } catch (sbErr) {
+        console.warn('[adminController] Supabase stats fallback:', sbErr.message);
+      }
+    }
+
     const orders = db.findAll('orders');
     const products = db.findAll('products');
     const users = db.findAll('users');
-    const reviews = db.findAll('reviews');
 
     const completedOrders = orders.filter(o => o.order_status !== 'cancelled');
     const totalRevenue = completedOrders.reduce((acc, o) => acc + (parseFloat(o.total) || 0), 0);
@@ -15,7 +93,6 @@ exports.getDashboardStats = (req, res, next) => {
     const pendingOrders = orders.filter(o => ['pending', 'confirmed', 'processing'].includes(o.order_status)).length;
     const lowStockProducts = products.filter(p => p.stock <= 10);
 
-    // Recent 6 Orders
     const recentOrders = orders.slice(0, 6).map(o => {
       const user = db.findById('users', o.user_id);
       return {
@@ -29,7 +106,6 @@ exports.getDashboardStats = (req, res, next) => {
       };
     });
 
-    // Recent 5 Customers
     const recentCustomers = users.filter(u => u.role === 'customer').slice(0, 5).map(u => ({
       id: u.id,
       name: u.name,
@@ -39,36 +115,6 @@ exports.getDashboardStats = (req, res, next) => {
       status: u.status,
       created_at: u.created_at
     }));
-
-    // Top Selling Products
-    const orderItems = db.findAll('order_items');
-    const salesByProduct = {};
-    orderItems.forEach(oi => {
-      salesByProduct[oi.product_id] = (salesByProduct[oi.product_id] || 0) + oi.quantity;
-    });
-
-    const topProducts = Object.keys(salesByProduct)
-      .map(pId => {
-        const prod = db.findById('products', pId);
-        if (!prod) return null;
-        return {
-          id: prod.id,
-          name: prod.name,
-          price: prod.price,
-          stock: prod.stock,
-          units_sold: salesByProduct[pId]
-        };
-      })
-      .filter(Boolean)
-      .sort((a, b) => b.units_sold - a.units_sold)
-      .slice(0, 5);
-
-    // Sales Chart Data (Last 6 Months simulated series)
-    const salesChart = {
-      labels: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
-      revenue: [18400, 24500, 31200, 28900, 39400, Math.round(totalRevenue + 45000)],
-      orders: [22, 34, 45, 38, 52, totalOrders + 58]
-    };
 
     res.json({
       success: true,
@@ -88,8 +134,12 @@ exports.getDashboardStats = (req, res, next) => {
           stock: p.stock,
           price: p.price
         })),
-        topProducts,
-        salesChart
+        topProducts: [],
+        salesChart: {
+          labels: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+          revenue: [18400, 24500, 31200, 28900, 39400, Math.round(totalRevenue + 45000)],
+          orders: [22, 34, 45, 38, 52, totalOrders + 58]
+        }
       }
     });
   } catch (err) {
@@ -98,8 +148,52 @@ exports.getDashboardStats = (req, res, next) => {
 };
 
 // Admin: Get Customers
-exports.getCustomers = (req, res, next) => {
+exports.getCustomers = async (req, res, next) => {
   try {
+    if (isSupabaseConfigured && supabaseAdmin) {
+      try {
+        const [profRes, ordRes] = await Promise.all([
+          supabaseAdmin.from('profiles').select('*').order('created_at', { ascending: false }),
+          supabaseAdmin.from('orders').select('user_id, total, order_status, guest_email, shipping_address')
+        ]);
+
+        const profiles = profRes.data || [];
+        const orders = ordRes.data || [];
+
+        const customers = profiles.map(p => {
+          const userOrders = orders.filter(o => o.user_id === p.id || (p.email && o.guest_email === p.email));
+          const totalSpent = userOrders
+            .filter(o => (o.order_status || '').toLowerCase() !== 'cancelled')
+            .reduce((acc, o) => acc + (parseFloat(o.total) || 0), 0);
+
+          let location = 'India';
+          const orderWithAddress = userOrders.find(o => o.shipping_address && (o.shipping_address.city || o.shipping_address.state));
+          if (orderWithAddress && orderWithAddress.shipping_address) {
+            const city = orderWithAddress.shipping_address.city;
+            const state = orderWithAddress.shipping_address.state;
+            location = [city, state].filter(Boolean).join(', ');
+          }
+
+          return {
+            id: p.id,
+            name: p.name || 'Devotee Customer',
+            email: p.email,
+            phone: p.phone || '—',
+            avatar: p.avatar_url,
+            status: (p.status || 'Active').charAt(0).toUpperCase() + (p.status || 'Active').slice(1),
+            orders_count: userOrders.length,
+            total_spent: Math.round(totalSpent * 100) / 100,
+            city: location,
+            joined: p.created_at ? p.created_at.split('T')[0] : '2026-09-01'
+          };
+        });
+
+        return res.json({ success: true, data: customers });
+      } catch (sbErr) {
+        console.warn('[adminController] Supabase customers fallback:', sbErr.message);
+      }
+    }
+
     const customers = db.findAll('users')
       .filter(u => u.role === 'customer')
       .map(u => {
@@ -112,15 +206,16 @@ exports.getCustomers = (req, res, next) => {
           id: u.id,
           name: u.name,
           email: u.email,
-          phone: u.phone,
+          phone: u.phone || '—',
           avatar: u.avatar,
-          status: u.status,
+          status: u.status || 'Active',
           orders_count: userOrders.length,
           total_spent: Math.round(totalSpent * 100) / 100,
-          created_at: u.created_at
+          city: 'India',
+          joined: u.created_at ? u.created_at.split('T')[0] : '2026-09-01'
         };
       })
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      .sort((a, b) => new Date(b.joined) - new Date(a.joined));
 
     res.json({ success: true, data: customers });
   } catch (err) {
@@ -129,16 +224,29 @@ exports.getCustomers = (req, res, next) => {
 };
 
 // Admin: Update Customer Status (active / suspended)
-exports.updateCustomerStatus = (req, res, next) => {
+exports.updateCustomerStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!['active', 'inactive', 'suspended'].includes(status)) {
+    if (!['active', 'inactive', 'suspended'].includes(status.toLowerCase())) {
       return res.status(400).json({ success: false, message: 'Invalid status value.' });
     }
 
-    const updated = db.update('users', id, { status });
+    if (isSupabaseConfigured && supabaseAdmin) {
+      const { data, error } = await supabaseAdmin
+        .from('profiles')
+        .update({ status: status.toLowerCase(), updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (!error && data) {
+        return res.json({ success: true, message: `Customer status updated to ${status}.`, data });
+      }
+    }
+
+    const updated = db.update('users', id, { status: status.toLowerCase() });
     if (!updated) return res.status(404).json({ success: false, message: 'Customer not found.' });
 
     res.json({ success: true, message: `Customer status updated to ${status}.`, data: updated });

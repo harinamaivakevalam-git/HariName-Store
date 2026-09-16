@@ -461,31 +461,18 @@ HARINAMA_DATA.syncWithApi = async function() {
 
     let mergedProducts = [...(HARINAMA_DATA._staticProducts || HARINAMA_DATA.products)];
 
-    // 1. Merge any admin-added products from browser storage immediately
+    // 1. Clean up stale browser storage so it never overrides database
     try {
-      const storedAdminProds = localStorage.getItem('harinama_admin_products');
-      if (storedAdminProds) {
-        const adminList = JSON.parse(storedAdminProds);
-        if (Array.isArray(adminList) && adminList.length > 0) {
-          const existingSlugs = new Set(mergedProducts.map(p => p.slug || p.id));
-          adminList.forEach(ap => {
-            const key = ap.slug || ap.id;
-            const existingIdx = mergedProducts.findIndex(p => (p.slug === key || p.id === key));
-            if (existingIdx > -1) {
-              mergedProducts[existingIdx] = { ...mergedProducts[existingIdx], ...ap };
-            } else {
-              mergedProducts.unshift(ap);
-            }
-          });
-        }
-      }
+      localStorage.removeItem('harinama_admin_products');
     } catch (e) {}
 
-    // 2. Fetch from Backend API
+    // 2. Fetch live from Backend API (reads directly from Supabase PostgreSQL)
     const [prodRes, catRes] = await Promise.allSettled([
       fetch('/api/products?limit=100').then(r => r.json()),
       fetch('/api/categories').then(r => r.json())
     ]);
+
+    let databaseLoaded = false;
 
     if (prodRes.status === 'fulfilled' && prodRes.value && prodRes.value.success && Array.isArray(prodRes.value.data) && prodRes.value.data.length > 0) {
       const apiProducts = prodRes.value.data.map((p, idx) => ({
@@ -499,13 +486,14 @@ HARINAMA_DATA.syncWithApi = async function() {
         material: p.material || 'Sacred Material',
         price: parseFloat(p.price) || 0,
         old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+        compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
         save_amount: (p.compare_price && p.compare_price > p.price) ? Math.round(p.compare_price - p.price) : 0,
         rating: parseFloat(p.rating) || 5.0,
         reviews_count: p.reviews_count || 0,
         image: p.primary_image || p.image,
         primary_image: p.primary_image || p.image,
         secondary_image: p.secondary_image || p.primary_image || p.image,
-        gallery: (p.images && p.images.length > 0) ? p.images.map(img => (typeof img === 'string' ? img : img.image_url)) : [p.primary_image || p.image],
+        gallery: (p.images && p.images.length > 0) ? p.images.map(img => (typeof img === 'string' ? img : (img.image_url || img.url))) : [p.primary_image || p.image],
         description: p.description || '',
         short_description: p.short_description || '',
         specifications: p.specifications || {},
@@ -515,33 +503,47 @@ HARINAMA_DATA.syncWithApi = async function() {
         variants: p.variants || []
       }));
 
-      const apiSlugs = new Set(apiProducts.map(p => p.slug || p.id));
-      mergedProducts = [...apiProducts, ...mergedProducts.filter(p => !apiSlugs.has(p.slug || p.id))];
+      // Set database products as the single source of truth for all users
+      HARINAMA_DATA.products = apiProducts;
+      databaseLoaded = true;
     } else {
-      // 3. Fallback: Directly query Supabase client if API backend is not present (e.g. static hosting)
+      // 3. Direct Supabase client query fallback
       try {
         if (window.supabase && typeof window.supabase.createClient === 'function') {
           const sb = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
           window.supabaseClient = sb;
-          const { data: sbProds, error: sbErr } = await sb.from('products').select('*');
+          const { data: sbProds, error: sbErr } = await sb
+            .from('products')
+            .select('*, product_images(*), categories(id, name, slug)')
+            .eq('status', 'active')
+            .order('created_at', { ascending: false });
+
           if (!sbErr && Array.isArray(sbProds) && sbProds.length > 0) {
-            const mappedSb = sbProds.map(p => ({
-              id: p.id,
-              name: p.name,
-              title: p.title || p.name,
-              slug: p.slug,
-              category: p.category || 'Devotional Keychains',
-              material: p.material || 'Sacred Material',
-              price: parseFloat(p.price) || 0,
-              old_price: p.compare_price ? parseFloat(p.compare_price) : null,
-              rating: parseFloat(p.rating) || 5.0,
-              reviews_count: p.reviews_count || 0,
-              image: p.image || p.primary_image,
-              description: p.description || '',
-              stock: p.stock !== undefined ? p.stock : 25
-            }));
-            const sbSlugs = new Set(mappedSb.map(p => p.slug || p.id));
-            mergedProducts = [...mappedSb, ...mergedProducts.filter(p => !sbSlugs.has(p.slug || p.id))];
+            HARINAMA_DATA.products = sbProds.map(p => {
+              const img = p.product_images?.[0]?.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
+              return {
+                id: p.id,
+                name: p.name,
+                title: p.title || p.name,
+                slug: p.slug,
+                category: p.categories?.name || 'Devotional Keychains',
+                category_slug: p.categories?.slug || 'devotional-keychains',
+                material: p.material || 'Sacred Material',
+                price: parseFloat(p.price) || 0,
+                old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+                compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
+                rating: parseFloat(p.rating) || 5.0,
+                reviews_count: p.reviews_count || 0,
+                image: img,
+                primary_image: img,
+                gallery: p.product_images?.length ? p.product_images.map(i => i.image_url) : [img],
+                description: p.description || '',
+                stock: p.stock !== undefined ? p.stock : 25,
+                featured: Boolean(p.featured),
+                trending: Boolean(p.trending)
+              };
+            });
+            databaseLoaded = true;
           }
         }
       } catch (sbE) {}

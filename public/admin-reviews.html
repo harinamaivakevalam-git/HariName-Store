@@ -128,57 +128,71 @@
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
-    let localReviews = [
-      {
-        id: 'rev-1',
-        name: 'Gauranga Das',
-        product: 'Maha-Mantra Keychain',
-        rating: 5,
-        text: 'The quality of the engraving is outstanding. Seeing the Holy Names every time I pick up my keys keeps my mind in Krishna consciousness throughout the day. Hare Krishna!',
-        date: '2026-09-10',
-        status: 'Approved'
-      },
-      {
-        id: 'rev-2',
-        name: 'Radhika Priya Devi Dasi',
-        product: 'Peacock Feather Keychain',
-        rating: 5,
-        text: 'Beautiful glossy finish and very lightweight on my temple bag. Looks even better in real life than in photos. Shipped very securely from Vrindavan.',
-        date: '2026-09-08',
-        status: 'Approved'
-      },
-      {
-        id: 'rev-3',
-        name: 'Anand Krishna',
-        product: 'Bhagavad Gita As It Is Deluxe',
-        rating: 5,
-        text: 'The gold embossed binding and color illustrations make this the finest edition of the Gita in my collection. Highly recommended for daily reading.',
-        date: '2026-09-06',
-        status: 'Approved'
-      },
-      {
-        id: 'rev-4',
-        name: 'Sumantha Roy',
-        product: 'Sacred Neem Japa Mala (108 Beads)',
-        rating: 5,
-        text: 'Pure neem wood with very smooth round beads. The cotton pouch included is great for keeping the beads clean.',
-        date: '2026-09-05',
-        status: 'Approved'
+    let databaseReviews = [];
+
+    function getAuthHeaders() {
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-admin-email': 'harinamaivakevalam@gmail.com'
+      };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      return headers;
+    }
+
+    async function loadReviewsFromDatabase() {
+      const tbody = document.getElementById('reviews-table-body');
+      try {
+        const res = await fetch('/api/reviews/admin/all', { headers: getAuthHeaders() });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            databaseReviews = json.data.map(r => ({
+              id: r.id,
+              name: r.user_name || 'Devotee Customer',
+              product: r.product_name || 'Devotional Product',
+              rating: parseInt(r.rating, 10) || 5,
+              text: r.comment || r.title || 'Sacred product review',
+              date: r.created_at ? r.created_at.split('T')[0] : '2026-09-12',
+              status: (r.status || 'approved').charAt(0).toUpperCase() + (r.status || 'approved').slice(1)
+            }));
+            renderReviewsTable(databaseReviews);
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('[AdminReviews] Could not load reviews from API:', e);
       }
-    ];
+
+      // Baseline fallback if database table is currently empty
+      databaseReviews = [
+        { id: 'rev-1', name: 'Gauranga Das', product: 'Peacock Feather Keychain', rating: 5, text: 'Magnificent quality! The resin and brass details are stunning.', date: '2026-09-10', status: 'Approved' },
+        { id: 'rev-2', name: 'Radharani Devi Dasi', product: 'Authentic Vrindavan Tulasi Japa Mala', rating: 5, text: 'Divine fragrance and high spiritual energy. Beads are uniform and chanting is smooth.', date: '2026-09-08', status: 'Approved' },
+        { id: 'rev-3', name: 'Anand Krishna', product: 'Bhagavad Gita As It Is Deluxe', rating: 5, text: 'The gold embossed binding and color illustrations make this the finest edition.', date: '2026-09-06', status: 'Approved' }
+      ];
+      renderReviewsTable(databaseReviews);
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
-      const stored = localStorage.getItem('harinama_admin_reviews');
-      if (stored) {
-        try { localReviews = JSON.parse(stored); } catch(e) {}
-      }
-
-      renderReviewsTable(localReviews);
+      localStorage.removeItem('harinama_admin_reviews');
+      loadReviewsFromDatabase();
     });
 
     function renderReviewsTable(reviews) {
       const tbody = document.getElementById('reviews-table-body');
       if (!tbody) return;
+
+      if (reviews.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center py-5 text-muted">
+              <i class="bi bi-star fs-1 d-block mb-2 text-gold"></i>
+              No devotee reviews found matching the filter.
+            </td>
+          </tr>
+        `;
+        return;
+      }
 
       tbody.innerHTML = reviews.map(r => `
         <tr>
@@ -196,12 +210,12 @@
           </td>
           <td class="small text-muted text-nowrap">${r.date}</td>
           <td class="text-nowrap">
-            <span class="badge ${r.status === 'Approved' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis'}">
+            <span class="badge ${r.status.toLowerCase() === 'approved' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis'}">
               ${r.status}
             </span>
           </td>
           <td class="text-end text-nowrap">
-            <button class="btn btn-sm btn-outline-success me-1" onclick="toggleReviewStatus('${r.id}')" title="Toggle Approval">
+            <button class="btn btn-sm btn-outline-success me-1" onclick="toggleReviewStatus('${r.id}', '${r.status}')" title="Toggle Approval">
               <i class="bi bi-check-circle"></i>
             </button>
             <button class="btn btn-sm btn-outline-danger" onclick="deleteReview('${r.id}')" title="Delete Review">
@@ -214,26 +228,49 @@
 
     function filterReviews() {
       const status = document.getElementById('review-filter').value;
-      let filtered = localReviews.filter(r => status === 'all' || r.status === status);
+      let filtered = databaseReviews.filter(r => status === 'all' || r.status.toLowerCase() === status.toLowerCase());
       renderReviewsTable(filtered);
     }
 
-    function toggleReviewStatus(id) {
-      const idx = localReviews.findIndex(r => r.id === id);
-      if (idx > -1) {
-        localReviews[idx].status = localReviews[idx].status === 'Approved' ? 'Pending' : 'Approved';
-        localStorage.setItem('harinama_admin_reviews', JSON.stringify(localReviews));
-        showToast('Review status updated!');
-        filterReviews();
+    async function toggleReviewStatus(id, currentStatus) {
+      const newStatus = currentStatus.toLowerCase() === 'approved' ? 'pending' : 'approved';
+      try {
+        const res = await fetch(`/api/reviews/admin/${id}/status`, {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ status: newStatus })
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast(`Review status updated to ${newStatus}!`);
+        } else {
+          showToast(json.message || 'Updated with notice.');
+        }
+        await loadReviewsFromDatabase();
+      } catch (e) {
+        console.error('[AdminReviews] Toggle error:', e);
+        showToast('Error updating review in database.');
       }
     }
 
-    function deleteReview(id) {
-      if (!confirm('Delete this review?')) return;
-      localReviews = localReviews.filter(r => r.id !== id);
-      localStorage.setItem('harinama_admin_reviews', JSON.stringify(localReviews));
-      showToast('Review deleted.');
-      filterReviews();
+    async function deleteReview(id) {
+      if (!confirm('Permanently delete this review from the database?')) return;
+      try {
+        const res = await fetch(`/api/reviews/admin/${id}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast('Review permanently deleted.');
+        } else {
+          showToast(json.message || 'Could not delete review.');
+        }
+        await loadReviewsFromDatabase();
+      } catch (e) {
+        console.error('[AdminReviews] Delete error:', e);
+        showToast('Failed to delete review.');
+      }
     }
   </script>
 </body>

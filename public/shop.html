@@ -49,6 +49,18 @@
           <div class="collapse d-lg-block" id="hnShopSidebarCollapse">
             <div class="hn-shop-sidebar mb-4 mb-lg-0">
               
+              <!-- Search Bar -->
+              <div class="mb-4">
+                <div class="hn-filter-title">Search Products</div>
+                <div class="position-relative">
+                  <input type="text" id="hn-shop-search" class="form-control" placeholder="Search devotional items..." oninput="applyFilters()" style="padding-left: 36px; padding-right: 32px; font-size: 0.88rem; border-radius: 6px; border-color: var(--hn-border, #E2E8F0);">
+                  <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-2 text-muted" style="font-size: 0.85rem; pointer-events: none;"></i>
+                  <button type="button" id="hn-shop-search-clear" class="btn btn-sm btn-link position-absolute top-50 end-0 translate-middle-y me-1 text-muted text-decoration-none p-0 d-none" onclick="clearShopSearch()" title="Clear search" style="width: 24px; height: 24px; line-height: 1;">
+                    <i class="bi bi-x-circle-fill" style="font-size: 0.85rem;"></i>
+                  </button>
+                </div>
+              </div>
+
               <!-- Collections Filter -->
               <div class="mb-4">
                 <div class="hn-filter-title">Collections & Categories</div>
@@ -187,8 +199,37 @@
       applyFilters();
     }
 
+    function clearShopSearch() {
+      const input = document.getElementById('hn-shop-search');
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
+      applyFilters();
+    }
+
     function applyFilters() {
       let filtered = [...HARINAMA_DATA.products];
+
+      // Search query filter
+      const searchInput = document.getElementById('hn-shop-search');
+      const searchQuery = (searchInput ? searchInput.value : '').toLowerCase().trim();
+      const clearBtn = document.getElementById('hn-shop-search-clear');
+      if (clearBtn) {
+        if (searchQuery) clearBtn.classList.remove('d-none');
+        else clearBtn.classList.add('d-none');
+      }
+
+      if (searchQuery) {
+        filtered = filtered.filter(p => {
+          const name = (p.name || '').toLowerCase();
+          const title = (p.title || '').toLowerCase();
+          const desc = (p.description || '').toLowerCase();
+          const cat = (p.category || '').toLowerCase();
+          const mat = (p.material || '').toLowerCase();
+          return name.includes(searchQuery) || title.includes(searchQuery) || desc.includes(searchQuery) || cat.includes(searchQuery) || mat.includes(searchQuery);
+        });
+      }
 
       // Collection filter
       if (activeCollection !== 'all') {
@@ -230,8 +271,14 @@
       renderHeader('shop');
       renderFooter();
 
-      // Check URL parameters for category
+      // Check URL parameters for search or category
       const urlParams = new URLSearchParams(window.location.search);
+      const searchParam = urlParams.get('search') || urlParams.get('q');
+      const searchInput = document.getElementById('hn-shop-search');
+      if (searchParam && searchInput) {
+        searchInput.value = searchParam;
+      }
+
       const catParam = urlParams.get('category');
       if (catParam) {
         activeCollection = catParam;

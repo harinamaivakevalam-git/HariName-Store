@@ -461,10 +461,45 @@
       } catch (sbErr) {}
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      // 1. Populate preview products
+    async function loadAdminDashboardProducts() {
       const tbody = document.getElementById('admin-products-preview-tbody');
-      if (tbody && HARINAMA_DATA && HARINAMA_DATA.products) {
+      try {
+        const res = await fetch('/api/products?limit=10');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            if (tbody) {
+              tbody.innerHTML = json.data.slice(0, 6).map(p => {
+                const imgSrc = p.image || p.primary_image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
+                return `
+                  <tr>
+                    <td>
+                      <img src="${imgSrc}" alt="${p.name || p.title}" class="hn-table-thumb">
+                    </td>
+                    <td class="fw-bold text-navy text-nowrap">${p.name || p.title}</td>
+                    <td><span class="badge bg-light text-dark border">${p.category || p.category_name || 'Devotional'}</span></td>
+                    <td>${p.material || 'Standard'}</td>
+                    <td class="fw-bold text-nowrap">₹${p.price}</td>
+                    <td><span class="badge bg-success-subtle text-success">${p.stock !== undefined ? p.stock : 25} in stock</span></td>
+                    <td class="text-nowrap"><i class="bi bi-star-fill text-warning"></i> ${p.rating || '5.0'} (${p.reviews_count || 0})</td>
+                    <td class="text-end">
+                      <a href="/admin-products.html" class="btn btn-sm btn-outline-dark"><i class="bi bi-pencil"></i></a>
+                    </td>
+                  </tr>
+                `;
+              }).join('');
+            }
+            const kpiProds = document.getElementById('admin-kpi-products');
+            if (kpiProds) kpiProds.innerText = json.total || json.data.length;
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('[AdminDashboard] Could not fetch products from API:', e);
+      }
+
+      // Fallback to HARINAMA_DATA if API temporarily unavailable
+      if (tbody && typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) {
         tbody.innerHTML = HARINAMA_DATA.products.slice(0, 6).map(p => `
           <tr>
             <td>
@@ -485,9 +520,17 @@
         const kpiProds = document.getElementById('admin-kpi-products');
         if (kpiProds) kpiProds.innerText = HARINAMA_DATA.products.length;
       }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Populate live products directly from database
+      loadAdminDashboardProducts();
 
       // 2. Load live orders from database
       loadAdminDashboardOrders();
+
+      // Listen for updates
+      window.addEventListener('hn:catalog-loaded', () => loadAdminDashboardProducts());
     });
   </script>
 </body>

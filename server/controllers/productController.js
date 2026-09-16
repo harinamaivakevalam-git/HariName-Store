@@ -550,20 +550,32 @@ exports.createProduct = async (req, res, next) => {
         slug = `${slug}-${Date.now().toString().slice(-4)}`;
       }
 
+      // Map category name to UUID if needed
+      let resolvedCatId = category_id;
+      if (!resolvedCatId && (req.body.category_name || req.body.category)) {
+        const catName = req.body.category_name || req.body.category;
+        const { data: catRec } = await client
+          .from('categories')
+          .select('id')
+          .or(`name.ilike.%${catName}%,slug.ilike.%${catName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}%`)
+          .maybeSingle();
+        if (catRec) resolvedCatId = catRec.id;
+      }
+
       const { data: newProd, error } = await client
         .from('products')
         .insert({
           name,
-          title: name,
+          title: req.body.title || name,
           slug,
           description,
           short_description: short_description || '',
           price: parseFloat(price),
-          compare_price: compare_price ? parseFloat(compare_price) : null,
-          sku,
+          compare_price: compare_price ? parseFloat(compare_price) : (req.body.old_price ? parseFloat(req.body.old_price) : null),
+          sku: sku || `HN-PROD-${Date.now().toString().slice(-6)}`,
           stock: parseInt(stock, 10) || 0,
-          category_id: category_id || null,
-          brand_id: brand_id || null,
+          category_id: resolvedCatId || null,
+          brand_id: brand_id || 'b0000001-0000-0000-0000-000000000001',
           material: material || null,
           status: 'active',
           featured: Boolean(featured),
@@ -576,10 +588,11 @@ exports.createProduct = async (req, res, next) => {
 
       if (!error && newProd) {
         // Insert images
-        if (Array.isArray(images) && images.length > 0) {
-          const imgRows = images.map((img, idx) => ({
+        const allImages = Array.isArray(images) && images.length > 0 ? images : (req.body.image ? [req.body.image] : []);
+        if (allImages.length > 0) {
+          const imgRows = allImages.map((img, idx) => ({
             product_id: newProd.id,
-            image_url: typeof img === 'string' ? img : img.image_url,
+            image_url: typeof img === 'string' ? img : (img.image_url || img.url),
             alt_text: name,
             sort_order: idx + 1,
             is_primary: idx === 0
@@ -684,48 +697,90 @@ exports.updateProduct = async (req, res, next) => {
 
     if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       const client = supabaseAdmin || supabase;
-      const updates = { ...req.body, updated_at: new Date().toISOString() };
-      delete updates.id;
-      delete updates.product_images;
-      delete updates.product_variants;
-      delete updates.categories;
-      delete updates.brands;
+      
+      // Resolve target product in Supabase by UUID or slug
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      let query = client.from('products').select('id, name, slug');
+      if (isUuid) {
+        query = query.or(`id.eq.${id},slug.eq.${id}`);
+      } else {
+        query = query.eq('slug', id);
+      }
+      const { data: targetRecord } = await query.maybeSingle();
+      const targetId = targetRecord ? targetRecord.id : (isUuid ? id : null);
 
-      if (updates.price) updates.price = parseFloat(updates.price);
-      if (updates.compare_price) updates.compare_price = parseFloat(updates.compare_price);
-      if (updates.stock !== undefined) updates.stock = parseInt(updates.stock, 10);
-
-      const { data: updated, error } = await client
-        .from('products')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (!error && updated) {
-        if (Array.isArray(req.body.images)) {
-          await client.from('product_images').delete().eq('product_id', id);
-          const imgRows = req.body.images.map((img, idx) => ({
-            product_id: id,
-            image_url: typeof img === 'string' ? img : img.image_url,
-            alt_text: updated.name,
-            sort_order: idx + 1,
-            is_primary: idx === 0
-          }));
-          await client.from('product_images').insert(imgRows);
+      if (targetId) {
+        // Map category if provided as name
+        let categoryId = req.body.category_id;
+        if (!categoryId && (req.body.category_name || req.body.category)) {
+          const catName = req.body.category_name || req.body.category;
+          const { data: catRec } = await client
+            .from('categories')
+            .select('id')
+            .or(`name.ilike.%${catName}%,slug.ilike.%${catName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}%`)
+            .maybeSingle();
+          if (catRec) categoryId = catRec.id;
         }
 
-        const { data: fullProduct } = await client
+        const allowedCols = [
+          'name', 'title', 'slug', 'description', 'short_description',
+          'price', 'compare_price', 'sku', 'stock', 'category_id',
+          'brand_id', 'material', 'status', 'featured', 'trending',
+          'rating', 'reviews_count', 'specifications', 'tags', 'updated_at'
+        ];
+
+        const updates = { updated_at: new Date().toISOString() };
+        for (const col of allowedCols) {
+          if (req.body[col] !== undefined) updates[col] = req.body[col];
+        }
+
+        if (categoryId) updates.category_id = categoryId;
+        if (updates.price !== undefined) updates.price = parseFloat(updates.price);
+        if (req.body.old_price !== undefined && updates.compare_price === undefined) {
+          updates.compare_price = req.body.old_price ? parseFloat(req.body.old_price) : null;
+        } else if (updates.compare_price !== undefined) {
+          updates.compare_price = updates.compare_price ? parseFloat(updates.compare_price) : null;
+        }
+        if (updates.stock !== undefined) updates.stock = parseInt(updates.stock, 10);
+        if (updates.featured !== undefined) updates.featured = Boolean(updates.featured);
+        if (updates.trending !== undefined) updates.trending = Boolean(updates.trending);
+
+        const { data: updated, error } = await client
           .from('products')
-          .select('*, product_images(*), product_variants(*), categories(id, name, slug), brands(id, name, slug)')
-          .eq('id', id)
+          .update(updates)
+          .eq('id', targetId)
+          .select()
           .single();
 
-        return res.json({
-          success: true,
-          message: 'Product updated in Supabase.',
-          data: fullProduct ? normalizeSupabaseProduct(fullProduct) : updated
-        });
+        if (!error && updated) {
+          // Handle images update
+          const imagesList = Array.isArray(req.body.images) ? req.body.images : (req.body.image ? [req.body.image] : null);
+          if (imagesList && imagesList.length > 0) {
+            await client.from('product_images').delete().eq('product_id', targetId);
+            const imgRows = imagesList.map((img, idx) => ({
+              product_id: targetId,
+              image_url: typeof img === 'string' ? img : (img.image_url || img.url),
+              alt_text: updated.name,
+              sort_order: idx + 1,
+              is_primary: idx === 0
+            }));
+            await client.from('product_images').insert(imgRows);
+          }
+
+          const { data: fullProduct } = await client
+            .from('products')
+            .select('*, product_images(*), product_variants(*), categories(id, name, slug), brands(id, name, slug)')
+            .eq('id', targetId)
+            .single();
+
+          return res.json({
+            success: true,
+            message: 'Product updated successfully in Supabase database.',
+            data: fullProduct ? normalizeSupabaseProduct(fullProduct) : updated
+          });
+        } else if (error) {
+          console.warn('[productController] Supabase update error:', error.message);
+        }
       }
     }
 

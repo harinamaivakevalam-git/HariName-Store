@@ -175,27 +175,62 @@
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
-    let localCoupons = [
-      { id: 'cp-1', code: 'KRISHNA10', type: 'percentage', value: 10, min: 200, used: 42, expiry: '2026-12-31', status: 'Active' },
-      { id: 'cp-2', code: 'VRINDAVAN', type: 'fixed', value: 50, min: 499, used: 18, expiry: '2026-10-15', status: 'Active' },
-      { id: 'cp-3', code: 'BHAKTI50', type: 'fixed', value: 50, min: 399, used: 64, expiry: '2026-11-30', status: 'Active' },
-      { id: 'cp-4', code: 'RADHA20', type: 'percentage', value: 20, min: 600, used: 12, expiry: '2026-09-30', status: 'Active' }
-    ];
+    let databaseCoupons = [];
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const stored = localStorage.getItem('harinama_admin_coupons');
-      if (stored) {
-        try { localCoupons = JSON.parse(stored); } catch(e) {}
+    function getAuthHeaders() {
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-admin-email': 'harinamaivakevalam@gmail.com'
+      };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      return headers;
+    }
+
+    async function loadCouponsFromDatabase() {
+      const tbody = document.getElementById('coupons-table-body');
+      try {
+        const res = await fetch('/api/coupons', { headers: getAuthHeaders() });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            databaseCoupons = json.data.map(c => ({
+              id: c.id,
+              code: c.code,
+              type: c.discount_type || c.type || 'fixed',
+              value: parseFloat(c.discount_value || c.value || 0),
+              min: parseFloat(c.minimum_order || c.min || 0),
+              used: c.times_used || c.used || 0,
+              expiry: c.expiry_date ? c.expiry_date.split('T')[0] : (c.expiry || ''),
+              status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
+            }));
+            renderCouponsTable();
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('[AdminCoupons] Could not load coupons from API:', e);
       }
 
+      // Fallback
+      databaseCoupons = [
+        { id: 'd6b958cf-205d-45ee-bb9b-ffcc0afe1b95', code: 'WELCOME10', type: 'fixed', value: 50, min: 199, used: 0, expiry: '2027-09-14', status: 'Active' },
+        { id: '68cf15c1-b8e8-4cf4-bfca-01758fa11d26', code: 'KRISHNA50', type: 'fixed', value: 50, min: 249, used: 0, expiry: '2027-09-14', status: 'Active' },
+        { id: '7a04b500-ff6a-4fbb-a8c3-43db1e63b0a3', code: 'RADHA100', type: 'fixed', value: 100, min: 499, used: 0, expiry: '2027-09-14', status: 'Active' }
+      ];
       renderCouponsTable();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      localStorage.removeItem('harinama_admin_coupons');
+      loadCouponsFromDatabase();
     });
 
     function renderCouponsTable() {
       const tbody = document.getElementById('coupons-table-body');
       if (!tbody) return;
 
-      tbody.innerHTML = localCoupons.map(c => `
+      tbody.innerHTML = databaseCoupons.map(c => `
         <tr>
           <td>
             <span class="badge bg-primary-subtle text-primary border px-2 py-1 fs-6 fw-bold text-nowrap">${c.code}</span>
@@ -220,7 +255,7 @@
     }
 
     function editCoupon(id) {
-      const c = localCoupons.find(item => item.id === id);
+      const c = databaseCoupons.find(item => item.id === id);
       if (!c) return;
       document.getElementById('edit-coup-id').value = c.id;
       document.getElementById('coup-code').value = c.code;
@@ -234,49 +269,67 @@
       modal.show();
     }
 
-    function saveCoupon(e) {
+    async function saveCoupon(e) {
       e.preventDefault();
       const id = document.getElementById('edit-coup-id').value;
       const code = document.getElementById('coup-code').value.trim().toUpperCase();
-      const type = document.getElementById('coup-type').value;
-      const value = parseFloat(document.getElementById('coup-value').value);
-      const min = document.getElementById('coup-min').value ? parseFloat(document.getElementById('coup-min').value) : 0;
-      const expiry = document.getElementById('coup-expiry').value;
+      const discount_type = document.getElementById('coup-type').value;
+      const discount_value = parseFloat(document.getElementById('coup-value').value);
+      const minimum_order = document.getElementById('coup-min').value ? parseFloat(document.getElementById('coup-min').value) : 0;
+      const expiry_date = document.getElementById('coup-expiry').value || new Date(Date.now() + 365*24*3600*1000).toISOString().split('T')[0];
 
-      if (id) {
-        const idx = localCoupons.findIndex(c => c.id === id);
-        if (idx > -1) {
-          localCoupons[idx] = { ...localCoupons[idx], code, type, value, min, expiry };
-          showToast('Coupon updated!');
-        }
-      } else {
-        localCoupons.push({
-          id: 'cp-' + Date.now().toString().slice(-4),
-          code,
-          type,
-          value,
-          min,
-          expiry,
-          used: 0,
-          status: 'Active'
+      try {
+        const endpoint = id ? `/api/coupons/${id}` : '/api/coupons';
+        const method = id ? 'PUT' : 'POST';
+
+        const res = await fetch(endpoint, {
+          method,
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            code,
+            discount_type,
+            discount_value,
+            minimum_order,
+            expiry_date
+          })
         });
-        showToast('New coupon created!');
+
+        const json = await res.json();
+        if (json.success) {
+          showToast(id ? 'Coupon updated in database!' : 'New coupon created in database!');
+        } else {
+          showToast(json.message || 'Saved with notice.');
+        }
+
+        const modalEl = document.getElementById('couponModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+
+        await loadCouponsFromDatabase();
+      } catch (err) {
+        console.error('[AdminCoupons] Save error:', err);
+        showToast('Error saving coupon to database.');
       }
-
-      localStorage.setItem('harinama_admin_coupons', JSON.stringify(localCoupons));
-      const modalEl = document.getElementById('couponModal');
-      const modal = bootstrap.Modal.getInstance(modalEl);
-      if (modal) modal.hide();
-
-      renderCouponsTable();
     }
 
-    function deleteCoupon(id) {
-      if (!confirm('Delete this coupon?')) return;
-      localCoupons = localCoupons.filter(c => c.id !== id);
-      localStorage.setItem('harinama_admin_coupons', JSON.stringify(localCoupons));
-      showToast('Coupon deleted.');
-      renderCouponsTable();
+    async function deleteCoupon(id) {
+      if (!confirm('Permanently delete this coupon from the database?')) return;
+      try {
+        const res = await fetch(`/api/coupons/${id}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast('Coupon deleted from database.');
+        } else {
+          showToast(json.message || 'Could not delete coupon.');
+        }
+        await loadCouponsFromDatabase();
+      } catch (err) {
+        console.error('[AdminCoupons] Delete error:', err);
+        showToast('Failed to delete coupon.');
+      }
     }
   </script>
 </body>

@@ -216,17 +216,117 @@
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
-    let localProducts = [];
+    let databaseProducts = [];
+    const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const stored = localStorage.getItem('harinama_admin_products');
-      if (stored) {
-        try { localProducts = JSON.parse(stored); } catch(e) { localProducts = HARINAMA_DATA.products; }
-      } else {
-        localProducts = [...HARINAMA_DATA.products];
+    function initSupabase() {
+      if (!window.supabaseClient && window.supabase && typeof window.supabase.createClient === 'function') {
+        try {
+          window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (e) {}
+      }
+      return window.supabaseClient;
+    }
+
+    function getAuthHeaders() {
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-admin-email': 'harinamaivakevalam@gmail.com'
+      };
+      if (token) {
+        headers['Authorization'] = 'Bearer ' + token;
+      }
+      return headers;
+    }
+
+    async function loadProductsFromDatabase() {
+      const tbody = document.getElementById('products-table-body');
+      if (tbody && databaseProducts.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="text-center py-5 text-muted">
+              <div class="spinner-border text-warning mb-2" role="status"></div>
+              <div class="small fw-semibold">Loading live products from database...</div>
+            </td>
+          </tr>
+        `;
       }
 
-      renderProductsTable(localProducts);
+      try {
+        const res = await fetch('/api/products?limit=100', {
+          headers: getAuthHeaders()
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            databaseProducts = json.data;
+            renderProductsTable(databaseProducts);
+            
+            // Sync with global catalog in memory
+            if (typeof HARINAMA_DATA !== 'undefined') {
+              HARINAMA_DATA.products = databaseProducts;
+              window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
+                detail: { products: databaseProducts, categories: HARINAMA_DATA.categories }
+              }));
+            }
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('[AdminProducts] Failed to fetch via /api/products, attempting direct Supabase query:', err);
+      }
+
+      // Fallback: direct Supabase query
+      try {
+        const sb = initSupabase();
+        if (sb) {
+          const { data, error } = await sb
+            .from('products')
+            .select('*, product_images(*), categories(id, name, slug)')
+            .order('created_at', { ascending: false });
+
+          if (!error && Array.isArray(data) && data.length > 0) {
+            databaseProducts = data.map(p => {
+              const img = p.product_images?.[0]?.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
+              return {
+                id: p.id,
+                name: p.name,
+                title: p.title || p.name,
+                slug: p.slug,
+                category: p.categories?.name || 'Devotional Items',
+                material: p.material || 'Standard',
+                price: parseFloat(p.price) || 0,
+                old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+                stock: p.stock !== undefined ? p.stock : 25,
+                rating: parseFloat(p.rating) || 5.0,
+                reviews_count: p.reviews_count || 0,
+                image: img,
+                primary_image: img,
+                description: p.description || ''
+              };
+            });
+            renderProductsTable(databaseProducts);
+            return;
+          }
+        }
+      } catch (sbErr) {
+        console.error('[AdminProducts] Direct Supabase query error:', sbErr);
+      }
+
+      // Ultimate fallback: HARINAMA_DATA
+      if (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) {
+        databaseProducts = [...HARINAMA_DATA.products];
+        renderProductsTable(databaseProducts);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Clear stale local mock storage to prevent outdated states
+      localStorage.removeItem('harinama_admin_products');
+      loadProductsFromDatabase();
     });
 
     function renderProductsTable(products) {
@@ -245,25 +345,27 @@
         return;
       }
 
-      tbody.innerHTML = products.map(p => `
+      tbody.innerHTML = products.map(p => {
+        const imgSrc = p.image || p.primary_image || (Array.isArray(p.images) && p.images[0]?.image_url) || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
+        return `
         <tr>
           <td>
-            <img src="${p.image}" alt="${p.name}" class="hn-table-thumb">
+            <img src="${imgSrc}" alt="${p.name || p.title}" class="hn-table-thumb">
           </td>
           <td>
             <div class="fw-bold text-navy text-nowrap">${p.name || p.title}</div>
             <div class="small text-muted">${p.slug || ''}</div>
           </td>
-          <td><span class="badge bg-light text-dark border">${p.category}</span></td>
+          <td><span class="badge bg-light text-dark border">${p.category || p.category_name || 'General'}</span></td>
           <td>${p.material || 'Standard'}</td>
           <td class="fw-bold text-navy text-nowrap">₹${p.price}</td>
-          <td class="text-muted text-decoration-line-through text-nowrap">${p.old_price ? '₹' + p.old_price : '—'}</td>
+          <td class="text-muted text-decoration-line-through text-nowrap">${p.old_price || p.compare_price ? '₹' + (p.old_price || p.compare_price) : '—'}</td>
           <td>
-            <span class="badge ${ (p.stock || 25) > 10 ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis'}">
-              ${p.stock || 25} in stock
+            <span class="badge ${ (p.stock !== undefined ? p.stock : 25) > 10 ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis'}">
+              ${p.stock !== undefined ? p.stock : 25} in stock
             </span>
           </td>
-          <td class="text-nowrap"><i class="bi bi-star-fill text-warning"></i> ${p.rating || '5.0'} (${p.reviews_count || 18})</td>
+          <td class="text-nowrap"><i class="bi bi-star-fill text-warning"></i> ${p.rating || '5.0'} (${p.reviews_count || 0})</td>
           <td class="text-end text-nowrap">
             <button class="btn btn-sm btn-outline-dark me-1" onclick="editProduct('${p.id}')" title="Edit Product">
               <i class="bi bi-pencil"></i>
@@ -273,18 +375,22 @@
             </button>
           </td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
     }
 
     function filterProducts() {
-      const query = document.getElementById('product-search').value.toLowerCase();
+      const query = document.getElementById('product-search').value.toLowerCase().trim();
       const cat = document.getElementById('category-filter').value;
       const stock = document.getElementById('stock-filter').value;
 
-      let filtered = localProducts.filter(p => {
-        const matchesQuery = (p.name && p.name.toLowerCase().includes(query)) || (p.title && p.title.toLowerCase().includes(query)) || (p.description && p.description.toLowerCase().includes(query));
-        const matchesCat = cat === 'all' || p.category === cat;
-        const pStock = p.stock || 25;
+      let filtered = databaseProducts.filter(p => {
+        const pName = (p.name || p.title || '').toLowerCase();
+        const pDesc = (p.description || '').toLowerCase();
+        const pCat = p.category || p.category_name || '';
+        const matchesQuery = !query || pName.includes(query) || pDesc.includes(query);
+        const matchesCat = cat === 'all' || pCat === cat;
+        const pStock = p.stock !== undefined ? p.stock : 25;
         const matchesStock = stock === 'all' || (stock === 'in-stock' && pStock > 10) || (stock === 'low-stock' && pStock <= 10);
         return matchesQuery && matchesCat && matchesStock;
       });
@@ -300,17 +406,17 @@
     }
 
     function editProduct(id) {
-      const p = localProducts.find(item => item.id === id);
+      const p = databaseProducts.find(item => item.id === id || item.slug === id);
       if (!p) return;
 
       document.getElementById('edit-prod-id').value = p.id;
       document.getElementById('prod-name').value = p.name || p.title;
-      document.getElementById('prod-category').value = p.category;
+      document.getElementById('prod-category').value = p.category || p.category_name || 'Devotional Keychains';
       document.getElementById('prod-price').value = p.price;
-      document.getElementById('prod-old-price').value = p.old_price || '';
-      document.getElementById('prod-stock').value = p.stock || 25;
+      document.getElementById('prod-old-price').value = p.old_price || p.compare_price || '';
+      document.getElementById('prod-stock').value = p.stock !== undefined ? p.stock : 25;
       document.getElementById('prod-material').value = p.material || '';
-      document.getElementById('prod-image').value = p.image;
+      document.getElementById('prod-image').value = p.image || p.primary_image || '';
       document.getElementById('prod-description').value = p.description || '';
 
       document.getElementById('productModalTitle').innerText = 'Edit Product — ' + (p.name || p.title);
@@ -319,178 +425,96 @@
       modal.show();
     }
 
-    const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
-
-    function initSupabase() {
-      if (!window.supabaseClient && window.supabase && typeof window.supabase.createClient === 'function') {
-        try {
-          window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        } catch (e) {}
-      }
-      return window.supabaseClient;
-    }
-
     async function saveProduct(e) {
       e.preventDefault();
-      const id = document.getElementById('edit-prod-id').value;
+      const saveBtn = e.target.querySelector('button[type="submit"]');
+      const origText = saveBtn ? saveBtn.innerHTML : 'Save Product';
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving to Database...';
+      }
+
+      const id = document.getElementById('edit-prod-id').value.trim();
       const name = document.getElementById('prod-name').value.trim();
       const category = document.getElementById('prod-category').value;
       const price = parseFloat(document.getElementById('prod-price').value);
       const old_price = document.getElementById('prod-old-price').value ? parseFloat(document.getElementById('prod-old-price').value) : null;
-      const stock = parseInt(document.getElementById('prod-stock').value) || 25;
-      const material = document.getElementById('prod-material').value;
+      const stock = parseInt(document.getElementById('prod-stock').value, 10) || 0;
+      const material = document.getElementById('prod-material').value.trim();
       const image = document.getElementById('prod-image').value.trim();
       const description = document.getElementById('prod-description').value.trim();
 
-      let targetProduct = null;
+      const payload = {
+        name,
+        title: name,
+        category_name: category,
+        category: category,
+        price,
+        compare_price: old_price,
+        old_price: old_price,
+        stock,
+        material,
+        image,
+        images: [image],
+        description
+      };
 
-      if (id) {
-        const idx = localProducts.findIndex(p => p.id === id);
-        if (idx > -1) {
-          localProducts[idx] = {
-            ...localProducts[idx],
-            name,
-            title: name,
-            category,
-            price,
-            old_price,
-            stock,
-            material,
-            image,
-            description
-          };
-          targetProduct = localProducts[idx];
-          showToast('Product updated successfully!');
-        }
-      } else {
-        const generatedSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-        const newProduct = {
-          id: 'prod-' + Date.now().toString().slice(-4),
-          name,
-          title: name,
-          slug: generatedSlug,
-          category,
-          category_slug: category.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          price,
-          old_price,
-          stock,
-          material,
-          rating: 5.0,
-          reviews_count: 1,
-          image,
-          primary_image: image,
-          description
-        };
-        localProducts.unshift(newProduct);
-        targetProduct = newProduct;
-        showToast('New product added to catalog!');
-      }
-
-      // 1. Save to local storage
-      localStorage.setItem('harinama_admin_products', JSON.stringify(localProducts));
-
-      // 2. Mirror into HARINAMA_DATA catalog immediately
-      if (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) {
-        const existingIdx = HARINAMA_DATA.products.findIndex(p => p.id === targetProduct.id || p.slug === targetProduct.slug);
-        if (existingIdx > -1) {
-          HARINAMA_DATA.products[existingIdx] = { ...HARINAMA_DATA.products[existingIdx], ...targetProduct };
-        } else {
-          HARINAMA_DATA.products.unshift(targetProduct);
-        }
-        window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
-          detail: { products: HARINAMA_DATA.products, categories: HARINAMA_DATA.categories }
-        }));
-      }
-
-      // 3. Sync to Backend API
       try {
-        const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = 'Bearer ' + token;
-
         const endpoint = id ? `/api/products/${id}` : '/api/products';
         const method = id ? 'PUT' : 'POST';
 
-        fetch(endpoint, {
+        const apiRes = await fetch(endpoint, {
           method,
-          headers,
-          body: JSON.stringify({
-            name,
-            title: name,
-            description,
-            price,
-            compare_price: old_price,
-            sku: targetProduct.sku || `HN-${targetProduct.slug || 'ITEM'}`.toUpperCase(),
-            stock,
-            material,
-            image,
-            category_name: category
-          })
-        }).catch(err => console.warn('[AdminProducts] API sync notice:', err));
-      } catch (err) {}
+          headers: getAuthHeaders(),
+          body: JSON.stringify(payload)
+        });
 
-      // 4. Sync to Supabase Database directly
-      try {
-        const sb = initSupabase();
-        if (sb) {
-          const payload = {
-            name,
-            title: name,
-            slug: targetProduct.slug,
-            description,
-            price,
-            compare_price: old_price,
-            stock,
-            material,
-            image,
-            primary_image: image,
-            status: 'active'
-          };
-
-          if (id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
-            sb.from('products').update(payload).eq('id', id).then(() => {});
-          } else {
-            sb.from('products').insert(payload).then(() => {});
-          }
+        const json = await apiRes.json();
+        if (json.success) {
+          showToast(id ? 'Product updated in live database! 🌸' : 'New product created in live database! 🌸');
+        } else {
+          showToast(json.message || 'Saved with notice.');
         }
-      } catch (sbErr) {}
 
-      const modalEl = document.getElementById('productModal');
-      const modal = bootstrap.Modal.getInstance(modalEl);
-      if (modal) modal.hide();
+        // Close modal
+        const modalEl = document.getElementById('productModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
 
-      filterProducts();
+        // Refresh entire list directly from live database
+        await loadProductsFromDatabase();
+      } catch (err) {
+        console.error('[AdminProducts] Save error:', err);
+        showToast('Error connecting to database. Please check connection.');
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = origText;
+        }
+      }
     }
 
     async function deleteProduct(id) {
-      if (!confirm('Are you sure you want to remove this product from the catalog?')) return;
-      localProducts = localProducts.filter(p => p.id !== id);
-      localStorage.setItem('harinama_admin_products', JSON.stringify(localProducts));
+      if (!confirm('Are you sure you want to permanently delete this product from the live database?')) return;
 
-      if (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) {
-        HARINAMA_DATA.products = HARINAMA_DATA.products.filter(p => p.id !== id);
-        window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
-          detail: { products: HARINAMA_DATA.products, categories: HARINAMA_DATA.categories }
-        }));
+      try {
+        const res = await fetch(`/api/products/${id}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast('Product permanently deleted from database.');
+        } else {
+          showToast(json.message || 'Could not delete product.');
+        }
+
+        // Refresh list from database
+        await loadProductsFromDatabase();
+      } catch (err) {
+        console.error('[AdminProducts] Delete error:', err);
+        showToast('Failed to delete product from database.');
       }
-
-      // API delete
-      try {
-        const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-        const headers = {};
-        if (token) headers['Authorization'] = 'Bearer ' + token;
-        fetch(`/api/products/${id}`, { method: 'DELETE', headers }).catch(() => {});
-      } catch(e) {}
-
-      // Supabase delete
-      try {
-        const sb = initSupabase();
-        if (sb) sb.from('products').delete().eq('id', id).then(() => {});
-      } catch(e) {}
-
-      showToast('Product removed.');
-      filterProducts();
     }
   </script>
 </body>

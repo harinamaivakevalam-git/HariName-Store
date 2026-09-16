@@ -159,28 +159,61 @@
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
-    let localCategories = [
-      { id: 'cat-all', name: 'All Products', slug: 'all-products', count: 16, desc: 'Complete catalog of all sacred devotional products', status: 'Active' },
-      { id: 'cat-keychains', name: 'Devotional Keychains', slug: 'devotional-keychains', count: 8, desc: 'Peacock Feather, Maha-Mantra, Flute, and Deity keychains', status: 'Active' },
-      { id: 'cat-books', name: 'Sacred Books & Shastras', slug: 'sacred-books', count: 3, desc: 'Bhagavad Gita As It Is, Srimad Bhagavatam, and Vedic literature', status: 'Active' },
-      { id: 'cat-japa', name: 'Japa & Chanting', slug: 'japa-chanting', count: 3, desc: 'Neem & Tulasi Japa Malas, Cotton Gomukhi Bead Bags, and counters', status: 'Active' },
-      { id: 'cat-gifts', name: 'Gift Sets & Bundles', slug: 'gift-sets', count: 2, desc: 'Devotional starter bundles and multi-item gift sets', status: 'Active' }
-    ];
+    let databaseCategories = [];
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const stored = localStorage.getItem('harinama_admin_categories');
-      if (stored) {
-        try { localCategories = JSON.parse(stored); } catch(e) {}
+    function getAuthHeaders() {
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-admin-email': 'harinamaivakevalam@gmail.com'
+      };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      return headers;
+    }
+
+    async function loadCategoriesFromDatabase() {
+      const tbody = document.getElementById('categories-table-body');
+      try {
+        const res = await fetch('/api/categories');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            databaseCategories = json.data.map(c => ({
+              id: c.id,
+              name: c.name,
+              slug: c.slug,
+              count: c.product_count !== undefined ? c.product_count : (c.count || 0),
+              desc: c.description || c.desc || 'Sacred collection',
+              status: c.status || 'Active'
+            }));
+            renderCategoriesTable();
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('[AdminCategories] Could not fetch from /api/categories:', e);
       }
 
+      // Fallback
+      databaseCategories = [
+        { id: 'c0000001-0000-0000-0000-000000000001', name: 'Devotional Keychains', slug: 'devotional-keychains', count: 8, desc: 'Peacock Feather, Maha-Mantra, Flute, and Deity keychains', status: 'Active' },
+        { id: 'c0000001-0000-0000-0000-000000000002', name: 'Sacred Books & Shastras', slug: 'sacred-books', count: 3, desc: 'Bhagavad Gita As It Is, Srimad Bhagavatam, and Vedic literature', status: 'Active' },
+        { id: 'c0000001-0000-0000-0000-000000000003', name: 'Japa & Chanting', slug: 'japa-chanting', count: 3, desc: 'Neem & Tulasi Japa Malas, Cotton Gomukhi Bead Bags, and counters', status: 'Active' },
+        { id: 'c0000001-0000-0000-0000-000000000004', name: 'Gift Sets & Bundles', slug: 'gift-sets', count: 3, desc: 'Devotional starter bundles and multi-item gift sets', status: 'Active' }
+      ];
       renderCategoriesTable();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      localStorage.removeItem('harinama_admin_categories');
+      loadCategoriesFromDatabase();
     });
 
     function renderCategoriesTable() {
       const tbody = document.getElementById('categories-table-body');
       if (!tbody) return;
 
-      tbody.innerHTML = localCategories.map(c => `
+      tbody.innerHTML = databaseCategories.map(c => `
         <tr>
           <td>
             <div class="fw-bold text-navy text-nowrap">${c.name}</div>
@@ -188,7 +221,7 @@
           <td class="text-nowrap"><code>/shop.html?category=${c.slug}</code></td>
           <td class="text-muted small">${c.desc}</td>
           <td class="text-nowrap"><span class="badge bg-light text-dark border">${c.count} items</span></td>
-          <td class="text-nowrap"><span class="badge bg-success-subtle text-success">Active</span></td>
+          <td class="text-nowrap"><span class="badge bg-success-subtle text-success">${c.status}</span></td>
           <td class="text-end text-nowrap">
             <button class="btn btn-sm btn-outline-dark me-1" onclick="editCategory('${c.id}')"><i class="bi bi-pencil"></i></button>
             <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory('${c.id}')"><i class="bi bi-trash"></i></button>
@@ -204,7 +237,7 @@
     }
 
     function editCategory(id) {
-      const c = localCategories.find(item => item.id === id);
+      const c = databaseCategories.find(item => item.id === id);
       if (!c) return;
       document.getElementById('edit-cat-id').value = c.id;
       document.getElementById('cat-name').value = c.name;
@@ -216,45 +249,58 @@
       modal.show();
     }
 
-    function saveCategory(e) {
+    async function saveCategory(e) {
       e.preventDefault();
       const id = document.getElementById('edit-cat-id').value;
       const name = document.getElementById('cat-name').value.trim();
-      const slug = document.getElementById('cat-slug').value.trim();
+      const slug = document.getElementById('cat-slug').value.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       const desc = document.getElementById('cat-desc').value.trim();
 
-      if (id) {
-        const idx = localCategories.findIndex(c => c.id === id);
-        if (idx > -1) {
-          localCategories[idx] = { ...localCategories[idx], name, slug, desc };
-          showToast('Collection updated!');
-        }
-      } else {
-        localCategories.push({
-          id: 'cat-' + Date.now().toString().slice(-4),
-          name,
-          slug,
-          desc,
-          count: 0,
-          status: 'Active'
+      try {
+        const endpoint = id ? `/api/categories/${id}` : '/api/categories';
+        const method = id ? 'PUT' : 'POST';
+
+        const res = await fetch(endpoint, {
+          method,
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ name, slug, description: desc })
         });
-        showToast('New collection created!');
+        const json = await res.json();
+        if (json.success) {
+          showToast(id ? 'Collection updated in database!' : 'New collection created in database!');
+        } else {
+          showToast(json.message || 'Saved with notice.');
+        }
+
+        const modalEl = document.getElementById('categoryModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+
+        await loadCategoriesFromDatabase();
+      } catch (err) {
+        console.error('[AdminCategories] Save error:', err);
+        showToast('Error saving category to database.');
       }
-
-      localStorage.setItem('harinama_admin_categories', JSON.stringify(localCategories));
-      const modalEl = document.getElementById('categoryModal');
-      const modal = bootstrap.Modal.getInstance(modalEl);
-      if (modal) modal.hide();
-
-      renderCategoriesTable();
     }
 
-    function deleteCategory(id) {
+    async function deleteCategory(id) {
       if (!confirm('Are you sure you want to remove this collection?')) return;
-      localCategories = localCategories.filter(c => c.id !== id);
-      localStorage.setItem('harinama_admin_categories', JSON.stringify(localCategories));
-      showToast('Collection removed.');
-      renderCategoriesTable();
+      try {
+        const res = await fetch(`/api/categories/${id}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success) {
+          showToast('Collection removed from database.');
+        } else {
+          showToast(json.message || 'Could not delete category.');
+        }
+        await loadCategoriesFromDatabase();
+      } catch (err) {
+        console.error('[AdminCategories] Delete error:', err);
+        showToast('Failed to delete category.');
+      }
     }
   </script>
 </body>

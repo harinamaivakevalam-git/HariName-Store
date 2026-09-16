@@ -382,37 +382,78 @@
         </div>
         <div class="collapse show" id="collapsePromo">
           <div class="editor-section-body">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Banner Title</label>
-                <input type="text" id="promo_title" class="form-control" value="Sacred Devotional Reminder">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Banner Subtitle</label>
-                <input type="text" id="promo_subtitle" class="form-control" value="Carry Krishna with you everywhere.">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Description Text</label>
-                <textarea id="promo_desc" class="form-control" rows="3">A simple everyday reminder to pause, remember Krishna, and chant.</textarea>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Maha-Mantra Verse</label>
-                <textarea id="promo_mantra" class="form-control font-monospace" rows="3">Hare Krishna Hare Krishna
+            <div class="row g-4">
+              <!-- Left: Text Fields -->
+              <div class="col-lg-7">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Banner Title</label>
+                    <input type="text" id="promo_title" class="form-control" value="Sacred Devotional Reminder">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Banner Subtitle</label>
+                    <input type="text" id="promo_subtitle" class="form-control" value="Carry Krishna with you everywhere.">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Description Text</label>
+                    <textarea id="promo_desc" class="form-control" rows="2">A simple everyday reminder to pause, remember Krishna, and chant.</textarea>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Maha-Mantra Verse</label>
+                    <textarea id="promo_mantra" class="form-control font-monospace" rows="3">Hare Krishna Hare Krishna
 Krishna Krishna Hare Hare
 Hare Rama Hare Rama
 Rama Rama Hare Hare</textarea>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Banner Image URL / Upload</label>
-                <div class="input-group">
-                  <input type="text" id="promo_image_url" class="form-control" value="/assets/images/krishna-logo.jpg">
-                  <button class="btn btn-outline-secondary" type="button" onclick="triggerFileUpload('promo_file_input')"><i class="bi bi-upload"></i></button>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Chant Tagline / Slogan</label>
+                    <input type="text" id="promo_chant" class="form-control" value="Chant & Be Happy.">
+                  </div>
                 </div>
-                <input type="file" id="promo_file_input" class="d-none" accept="image/*" onchange="handleSingleFileUpload(event, 'promo_image_url')">
               </div>
-              <div class="col-md-6">
-                <label class="form-label">Chant Tagline / Slogan</label>
-                <input type="text" id="promo_chant" class="form-control" value="Chant & Be Happy.">
+
+              <!-- Right: Media Controls (Image vs Video) -->
+              <div class="col-lg-5">
+                <div class="border rounded p-3 bg-light h-100 d-flex flex-column">
+                  <div class="d-flex align-items-center justify-content-between mb-3">
+                    <label class="form-label mb-0 fw-bold">Banner Media Format</label>
+                    <div class="btn-group btn-group-sm media-mode-btn-group" role="group">
+                      <input type="radio" class="btn-check" name="promo_media_type" id="promo_type_img" value="image" checked onchange="togglePromoMediaType('image')">
+                      <label class="btn btn-outline-dark" for="promo_type_img"><i class="bi bi-image"></i> Image</label>
+
+                      <input type="radio" class="btn-check" name="promo_media_type" id="promo_type_video" value="video" onchange="togglePromoMediaType('video')">
+                      <label class="btn btn-outline-dark" for="promo_type_video"><i class="bi bi-play-btn-fill"></i> Video</label>
+                    </div>
+                  </div>
+
+                  <!-- Image Controls -->
+                  <div id="promo_image_controls">
+                    <label class="form-label small">Banner Image URL / Upload</label>
+                    <div class="input-group mb-2">
+                      <input type="text" id="promo_image_url" class="form-control form-control-sm" value="/assets/images/krishna-logo.jpg" oninput="updatePromoPreview()">
+                      <button class="btn btn-sm btn-outline-secondary" type="button" onclick="triggerFileUpload('promo_file_input')"><i class="bi bi-upload"></i> Upload</button>
+                    </div>
+                    <input type="file" id="promo_file_input" class="d-none" accept="image/*" onchange="handleSingleFileUpload(event, 'promo_image_url', updatePromoPreview)">
+                  </div>
+
+                  <!-- Video Controls -->
+                  <div id="promo_video_controls" class="d-none">
+                    <label class="form-label small">Banner Video URL (MP4 / WebM / YouTube link)</label>
+                    <div class="input-group mb-2">
+                      <input type="text" id="promo_video_url" class="form-control form-control-sm" placeholder="https://example.com/video.mp4 or YouTube link" oninput="updatePromoPreview()">
+                      <button class="btn btn-sm btn-outline-secondary" type="button" onclick="triggerFileUpload('promo_video_file_input')"><i class="bi bi-upload"></i> MP4</button>
+                    </div>
+                    <input type="file" id="promo_video_file_input" class="d-none" accept="video/mp4,video/webm" onchange="handleSingleFileUpload(event, 'promo_video_url', updatePromoPreview)">
+                    <div class="form-text small text-muted">Videos automatically autoplay in loop &amp; muted format.</div>
+                  </div>
+
+                  <!-- Media Preview Box -->
+                  <div class="media-preview-box mt-auto" id="promo_media_preview">
+                    <img id="promo_preview_img" src="/assets/images/krishna-logo.jpg" alt="Promo Preview">
+                    <video id="promo_preview_video" class="d-none" controls autoplay loop muted playsinline></video>
+                    <iframe id="promo_preview_iframe" class="d-none" allowfullscreen></iframe>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -767,6 +808,20 @@ Rama Rama Hare Hare</textarea>
       updateHeroPreview();
     }
 
+    function togglePromoMediaType(type) {
+      const imgControls = document.getElementById('promo_image_controls');
+      const videoControls = document.getElementById('promo_video_controls');
+
+      if (type === 'video') {
+        imgControls?.classList.add('d-none');
+        videoControls?.classList.remove('d-none');
+      } else {
+        imgControls?.classList.remove('d-none');
+        videoControls?.classList.add('d-none');
+      }
+      updatePromoPreview();
+    }
+
     function updateHeroPreview() {
       const isVideo = document.getElementById('hero_type_video')?.checked;
       const imgEl = document.getElementById('hero_preview_img');
@@ -799,6 +854,47 @@ Rama Rama Hare Hare</textarea>
         }
       } else {
         const imgUrl = document.getElementById('hero_image_url')?.value?.trim() || '/assets/images/krishna_hero_keychain.jpg';
+        videoEl?.classList.add('d-none');
+        iframeEl?.classList.add('d-none');
+        if (imgEl) {
+          imgEl.src = imgUrl;
+          imgEl.classList.remove('d-none');
+        }
+      }
+    }
+
+    function updatePromoPreview() {
+      const isVideo = document.getElementById('promo_type_video')?.checked;
+      const imgEl = document.getElementById('promo_preview_img');
+      const videoEl = document.getElementById('promo_preview_video');
+      const iframeEl = document.getElementById('promo_preview_iframe');
+
+      if (isVideo) {
+        const videoUrl = document.getElementById('promo_video_url')?.value?.trim() || '';
+        imgEl?.classList.add('d-none');
+
+        if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+          let embedUrl = videoUrl;
+          if (videoUrl.includes('watch?v=')) {
+            embedUrl = videoUrl.replace('watch?v=', 'embed/');
+          } else if (videoUrl.includes('youtu.be/')) {
+            embedUrl = videoUrl.replace('youtu.be/', 'www.youtube.com/embed/');
+          }
+          if (iframeEl) {
+            iframeEl.src = embedUrl;
+            iframeEl.classList.remove('d-none');
+          }
+          videoEl?.classList.add('d-none');
+        } else {
+          iframeEl?.classList.add('d-none');
+          if (videoEl) {
+            videoEl.src = videoUrl;
+            videoEl.classList.remove('d-none');
+            videoEl.play().catch(() => {});
+          }
+        }
+      } else {
+        const imgUrl = document.getElementById('promo_image_url')?.value?.trim() || '/assets/images/krishna-logo.jpg';
         videoEl?.classList.add('d-none');
         iframeEl?.classList.add('d-none');
         if (imgEl) {
@@ -890,6 +986,15 @@ Rama Rama Hare Hare</textarea>
         if (p.mantra_verse !== undefined) document.getElementById('promo_mantra').value = p.mantra_verse;
         if (p.chant !== undefined || p.mantra_chant !== undefined) document.getElementById('promo_chant').value = p.chant || p.mantra_chant || 'Chant & Be Happy.';
         if (p.image_url !== undefined) document.getElementById('promo_image_url').value = p.image_url;
+        if (p.video_url !== undefined) document.getElementById('promo_video_url').value = p.video_url;
+
+        if (p.media_type === 'video') {
+          document.getElementById('promo_type_video').checked = true;
+          togglePromoMediaType('video');
+        } else {
+          document.getElementById('promo_type_img').checked = true;
+          togglePromoMediaType('image');
+        }
       }
 
       // 3. Why Krishna
@@ -938,10 +1043,12 @@ Rama Rama Hare Hare</textarea>
       }
 
       updateHeroPreview();
+      updatePromoPreview();
     }
 
     async function saveAllHomepageSections() {
       const heroMediaType = document.querySelector('input[name="hero_media_type"]:checked')?.value || 'image';
+      const promoMediaType = document.querySelector('input[name="promo_media_type"]:checked')?.value || 'image';
 
       const payload = {
         hero: {
@@ -985,7 +1092,8 @@ Rama Rama Hare Hare</textarea>
             chant: document.getElementById('promo_chant').value,
             cta_text: 'Add to Cart',
             image_url: document.getElementById('promo_image_url').value,
-            media_type: 'image'
+            video_url: document.getElementById('promo_video_url').value,
+            media_type: promoMediaType
           }
         },
         why_krishna: {

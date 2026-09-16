@@ -641,7 +641,7 @@
               else if (vUrl.includes('youtu.be/')) embedUrl = vUrl.replace('youtu.be/', 'www.youtube.com/embed/');
               if (existingMedia) existingMedia.remove();
               const iframe = document.createElement('iframe');
-              iframe.src = embedUrl + '?autoplay=1&mute=1&loop=1';
+              iframe.src = embedUrl + (embedUrl.includes('?') ? '&' : '?') + 'autoplay=1&mute=1&loop=1&playsinline=1';
               iframe.className = 'hn-hero-video-player';
               iframe.style.cssText = 'width: 100%; height: 380px; border-radius: 24px; border: none;';
               iframe.allow = 'autoplay; encrypted-media';
@@ -656,7 +656,12 @@
               video.loop = true;
               video.muted = true;
               video.playsInline = true;
+              video.setAttribute('playsinline', '');
+              video.setAttribute('muted', '');
+              video.setAttribute('autoplay', '');
+              video.setAttribute('loop', '');
               mediaWrap.prepend(video);
+              video.play().catch(() => {});
             }
           } else if (h.image_url) {
             if (existingMedia && existingMedia.tagName === 'IMG') {
@@ -676,6 +681,9 @@
       // B. PROMO BANNER
       if (config.promo_banner) {
         const p = config.promo_banner;
+        const promoWrapper = document.getElementById('hn-promo-section-wrapper');
+        if (promoWrapper) promoWrapper.style.display = 'block';
+
         const bannerTitle = document.querySelector('.hn-promo-title');
         if (bannerTitle && p.title) bannerTitle.innerText = p.title;
 
@@ -690,6 +698,49 @@
 
         const mantraChant = document.querySelector('.hn-mantra-chant');
         if (mantraChant && (p.chant || p.mantra_chant)) mantraChant.innerText = p.chant || p.mantra_chant;
+
+        // Promo Media (Image or Video)
+        const promoImgWrap = document.querySelector('.hn-promo-img-wrap');
+        if (promoImgWrap) {
+          if (p.media_type === 'video' && p.video_url) {
+            const vUrl = p.video_url.trim();
+            if (vUrl.includes('youtube.com') || vUrl.includes('youtu.be')) {
+              let embedUrl = vUrl;
+              if (vUrl.includes('watch?v=')) embedUrl = vUrl.replace('watch?v=', 'embed/');
+              else if (vUrl.includes('youtu.be/')) embedUrl = vUrl.replace('youtu.be/', 'www.youtube.com/embed/');
+              promoImgWrap.innerHTML = '';
+              const iframe = document.createElement('iframe');
+              iframe.src = embedUrl + (embedUrl.includes('?') ? '&' : '?') + 'autoplay=1&mute=1&loop=1&playsinline=1';
+              iframe.className = 'hn-promo-video-player';
+              iframe.style.cssText = 'width: 100%; height: 100%; min-height: 280px; border-radius: 12px; border: none;';
+              iframe.allow = 'autoplay; encrypted-media';
+              promoImgWrap.appendChild(iframe);
+            } else {
+              promoImgWrap.innerHTML = '';
+              const video = document.createElement('video');
+              video.src = vUrl;
+              video.className = 'hn-promo-img hn-promo-video-player';
+              video.style.cssText = 'width: 100%; height: 100%; min-height: 280px; object-fit: cover; border-radius: 12px;';
+              video.autoplay = true;
+              video.loop = true;
+              video.muted = true;
+              video.playsInline = true;
+              video.setAttribute('playsinline', '');
+              video.setAttribute('muted', '');
+              video.setAttribute('autoplay', '');
+              video.setAttribute('loop', '');
+              promoImgWrap.appendChild(video);
+              video.play().catch(() => {});
+            }
+          } else if (p.image_url) {
+            promoImgWrap.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = p.image_url;
+            img.className = 'hn-promo-img';
+            img.alt = p.title || 'Sacred Devotional Item';
+            promoImgWrap.appendChild(img);
+          }
+        }
       }
 
       // C. WHY CARRY KRISHNA SECTION

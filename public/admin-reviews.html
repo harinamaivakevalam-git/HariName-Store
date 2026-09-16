@@ -31,6 +31,42 @@
   <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
   <link rel="shortcut icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/assets/images/krishna-logo.jpg">
+  <style>
+    .star-rating-select i {
+      cursor: pointer;
+      font-size: 1.4rem;
+      color: #ffc107;
+      transition: transform 0.15s ease;
+    }
+    .star-rating-select i:hover {
+      transform: scale(1.2);
+    }
+    .review-action-btn {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    .review-action-btn:hover {
+      transform: translateY(-2px);
+    }
+    .devotee-avatar-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1e293b, #334155);
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+  </style>
 </head>
 <body class="hn-admin-body-bg">
 
@@ -117,41 +153,125 @@
       <a href="/admin-settings.html" class="hn-admin-tab"><i class="bi bi-gear"></i> Settings</a>
     </div>
 
-    <!-- Filter Bar -->
-    <div class="hn-admin-filter-bar d-flex flex-wrap align-items-center justify-content-between gap-3">
-      <p class="mb-0 text-muted">Moderate and showcase heartfelt devotee testimonials across the store.</p>
+    <!-- Filter & Action Bar -->
+    <div class="hn-admin-filter-bar d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 bg-white rounded-3 border mb-3 shadow-sm">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-chat-heart text-maroon fs-5"></i>
+        <div>
+          <h6 class="mb-0 fw-bold text-navy">Devotee Reviews Database</h6>
+          <small class="text-muted">Manage, moderate, and publish heartfelt testimonials across the store.</small>
+        </div>
+      </div>
       
-      <div class="d-flex gap-2">
-        <select id="review-filter" class="form-select form-select-sm" style="width: 180px;" onchange="filterReviews()">
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <div class="input-group input-group-sm" style="max-width: 250px;">
+          <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" id="review-search" class="form-control form-control-sm border-start-0" placeholder="Search reviews..." oninput="filterReviews()">
+        </div>
+
+        <select id="review-filter" class="form-select form-select-sm" style="width: 150px;" onchange="filterReviews()">
           <option value="all">All Reviews</option>
           <option value="Approved">Approved</option>
-          <option value="Pending">Pending Review</option>
+          <option value="Pending">Pending</option>
+          <option value="Rejected">Rejected</option>
         </select>
+
+        <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 shadow-sm" style="background-color: var(--hn-navy); border-color: var(--hn-navy);" onclick="openAddReviewModal()">
+          <i class="bi bi-plus-lg"></i> Add Review
+        </button>
       </div>
     </div>
 
     <!-- Reviews Table Card -->
-    <div class="hn-admin-card mb-4">
+    <div class="hn-admin-card card border-0 shadow-sm rounded-3 mb-4 overflow-hidden">
       <div class="table-responsive">
         <table class="table hn-table align-middle mb-0">
-          <thead>
-            <tr>
-              <th style="min-width: 180px;">Devotee / Customer</th>
-              <th style="min-width: 220px;">Product Name</th>
-              <th style="min-width: 120px;">Rating</th>
-              <th style="min-width: 340px;">Review Text</th>
-              <th style="min-width: 120px;">Date</th>
+          <thead class="table-light">
+            <tr class="text-uppercase small text-muted font-monospace" style="font-size: 0.78rem;">
+              <th style="min-width: 190px;" class="ps-3">Devotee / Customer</th>
+              <th style="min-width: 210px;">Product Name</th>
+              <th style="min-width: 130px;">Rating</th>
+              <th style="min-width: 320px;">Review Text</th>
+              <th style="min-width: 110px;">Date</th>
               <th style="min-width: 110px;">Status</th>
-              <th style="min-width: 100px;" class="text-end">Actions</th>
+              <th style="min-width: 130px;" class="text-end pe-3">Actions</th>
             </tr>
           </thead>
           <tbody id="reviews-table-body">
-            <!-- Populated by JS -->
+            <tr>
+              <td colspan="7" class="text-center py-5 text-muted">
+                <div class="spinner-border spinner-border-sm text-gold me-2" role="status"></div>
+                Loading reviews from database...
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
     </div>
 
+  </div>
+
+  <!-- Add / Edit Review Modal -->
+  <div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-navy text-white py-3">
+          <h5 class="modal-title fs-6 fw-bold" id="reviewModalLabel">
+            <i class="bi bi-pencil-square me-1"></i> Add Devotee Review
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="reviewForm" onsubmit="saveReview(event)">
+          <input type="hidden" id="modal-review-id" value="">
+          <div class="modal-body p-3 p-md-4">
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-navy">Devotee / Customer Name</label>
+              <input type="text" id="modal-devotee-name" class="form-control form-control-sm" placeholder="e.g. Gauranga Das" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-navy">Associated Product</label>
+              <select id="modal-product-select" class="form-select form-select-sm">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-navy d-block">Rating</label>
+              <div class="d-flex align-items-center gap-2 star-rating-select" id="star-rating-picker">
+                <i class="bi bi-star-fill text-warning" data-val="1" onclick="setModalRating(1)"></i>
+                <i class="bi bi-star-fill text-warning" data-val="2" onclick="setModalRating(2)"></i>
+                <i class="bi bi-star-fill text-warning" data-val="3" onclick="setModalRating(3)"></i>
+                <i class="bi bi-star-fill text-warning" data-val="4" onclick="setModalRating(4)"></i>
+                <i class="bi bi-star-fill text-warning" data-val="5" onclick="setModalRating(5)"></i>
+                <span class="badge bg-light text-dark border ms-2" id="modal-rating-text">5.0 / 5</span>
+              </div>
+              <input type="hidden" id="modal-rating-val" value="5">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-navy">Review Text / Testimonial</label>
+              <textarea id="modal-review-text" rows="3" class="form-control form-control-sm" placeholder="Write devotional review feedback..." required></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-navy">Status</label>
+              <select id="modal-status-select" class="form-select form-select-sm">
+                <option value="approved">Approved (Visible on Storefront)</option>
+                <option value="pending">Pending Review</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer bg-light py-2 px-3">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" id="save-review-btn" class="btn btn-sm btn-primary" style="background-color: var(--hn-navy); border-color: var(--hn-navy);">
+              <i class="bi bi-cloud-arrow-up me-1"></i> Save to Database
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
   <!-- Scripts -->
@@ -172,6 +292,8 @@
     }
 
     let databaseReviews = [];
+    let availableProducts = [];
+    let reviewModalInstance = null;
 
     function getAuthHeaders() {
       const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
@@ -181,6 +303,39 @@
       };
       if (token) headers['Authorization'] = 'Bearer ' + token;
       return headers;
+    }
+
+    async function loadProductsList() {
+      try {
+        const res = await fetch('/api/products?limit=100');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            availableProducts = json.data;
+          }
+        }
+      } catch (e) {}
+
+      if (availableProducts.length === 0) {
+        try {
+          const client = initSupabase();
+          if (client) {
+            const { data } = await client.from('products').select('id, name').limit(100);
+            if (data && data.length > 0) availableProducts = data;
+          }
+        } catch (e) {}
+      }
+
+      if (availableProducts.length === 0 && window.HN_DATA && window.HN_DATA.products) {
+        availableProducts = window.HN_DATA.products;
+      }
+
+      const select = document.getElementById('modal-product-select');
+      if (select) {
+        select.innerHTML = availableProducts.map(p => `
+          <option value="${p.id}">${escapeHtml(p.name || 'Devotional Item')}</option>
+        `).join('');
+      }
     }
 
     async function loadReviewsFromDatabase() {
@@ -194,12 +349,13 @@
           if (json.success && Array.isArray(json.data) && json.data.length > 0) {
             databaseReviews = json.data.map(r => ({
               id: r.id,
+              product_id: r.product_id,
               name: r.user_name || 'Devotee Customer',
               product: r.product_name || 'Devotional Product',
               rating: parseInt(r.rating, 10) || 5,
               text: r.comment || r.title || 'Sacred product review',
               date: r.created_at ? r.created_at.split('T')[0] : '2026-09-12',
-              status: (r.status || 'approved').charAt(0).toUpperCase() + (r.status || 'approved').slice(1)
+              status: (r.status || 'approved').charAt(0).toUpperCase() + (r.status || 'approved').slice(1).toLowerCase()
             }));
             renderReviewsTable(databaseReviews);
             return;
@@ -215,18 +371,19 @@
         if (client) {
           const { data, error } = await client
             .from('reviews')
-            .select('*, products(name)')
+            .select('*, products(name), profiles:user_id(name, email)')
             .order('created_at', { ascending: false });
 
           if (!error && Array.isArray(data) && data.length > 0) {
             databaseReviews = data.map(r => ({
               id: r.id,
-              name: r.user_name || 'Devotee Customer',
+              product_id: r.product_id,
+              name: r.profiles?.name || r.user_name || 'Devotee Customer',
               product: r.products?.name || r.product_name || 'Devotional Item',
               rating: parseInt(r.rating, 10) || 5,
               text: r.comment || r.title || 'Sacred review',
               date: r.created_at ? r.created_at.split('T')[0] : '2026-09-12',
-              status: (r.status || 'approved').charAt(0).toUpperCase() + (r.status || 'approved').slice(1)
+              status: (r.status || 'approved').charAt(0).toUpperCase() + (r.status || 'approved').slice(1).toLowerCase()
             }));
             renderReviewsTable(databaseReviews);
             return;
@@ -236,20 +393,36 @@
         console.warn('[AdminReviews] Supabase query error:', sbErr);
       }
 
-      // Baseline fallback if database table is currently empty
-      databaseReviews = [
-        { id: 'rev-1', name: 'Gauranga Das', product: 'Peacock Feather Keychain', rating: 5, text: 'Magnificent quality! The resin and brass details are stunning.', date: '2026-09-10', status: 'Approved' },
-        { id: 'rev-2', name: 'Radharani Devi Dasi', product: 'Authentic Vrindavan Tulasi Japa Mala', rating: 5, text: 'Divine fragrance and high spiritual energy. Beads are uniform and chanting is smooth.', date: '2026-09-08', status: 'Approved' },
-        { id: 'rev-3', name: 'Anand Krishna', product: 'Bhagavad Gita As It Is Deluxe', rating: 5, text: 'The gold embossed binding and color illustrations make this the finest edition.', date: '2026-09-06', status: 'Approved' }
-      ];
+      // If empty
+      databaseReviews = [];
       renderReviewsTable(databaseReviews);
     }
 
     document.addEventListener('DOMContentLoaded', () => {
       localStorage.removeItem('harinama_admin_reviews');
       initSupabase();
+      loadProductsList();
       loadReviewsFromDatabase();
+      const modalEl = document.getElementById('reviewModal');
+      if (modalEl) reviewModalInstance = new bootstrap.Modal(modalEl);
     });
+
+    function getInitials(name) {
+      if (!name) return 'DV';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      return name.slice(0, 2).toUpperCase();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
 
     function renderReviewsTable(reviews) {
       const tbody = document.getElementById('reviews-table-body');
@@ -260,48 +433,82 @@
           <tr>
             <td colspan="7" class="text-center py-5 text-muted">
               <i class="bi bi-star fs-1 d-block mb-2 text-gold"></i>
-              No devotee reviews found matching the filter.
+              No devotee reviews found matching the criteria.
             </td>
           </tr>
         `;
         return;
       }
 
-      tbody.innerHTML = reviews.map(r => `
-        <tr>
-          <td>
-            <div class="fw-bold text-navy text-nowrap">${r.name}</div>
-          </td>
-          <td class="text-nowrap"><span class="badge bg-light text-dark border">${r.product}</span></td>
-          <td class="text-nowrap">
-            <div class="text-warning small">
-              ${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}
+      tbody.innerHTML = reviews.map(r => {
+        const isApproved = r.status.toLowerCase() === 'approved';
+        const isRejected = r.status.toLowerCase() === 'rejected';
+        const badgeClass = isApproved ? 'bg-success-subtle text-success border border-success-subtle' :
+                           isRejected ? 'bg-danger-subtle text-danger border border-danger-subtle' :
+                           'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
+        const initials = getInitials(r.name);
+
+        return `
+        <tr id="review-row-${r.id}">
+          <td class="ps-3">
+            <div class="d-flex align-items-center gap-2">
+              <div class="devotee-avatar-badge">${initials}</div>
+              <div>
+                <div class="fw-bold text-navy text-nowrap">${escapeHtml(r.name)}</div>
+                <div class="text-muted small" style="font-size: 0.72rem;"><i class="bi bi-patch-check-fill text-success"></i> Verified Devotee</div>
+              </div>
             </div>
           </td>
-          <td class="small text-muted">
-            "${r.text}"
+          <td class="text-nowrap">
+            <span class="badge bg-light text-dark border px-2 py-1">${escapeHtml(r.product)}</span>
+          </td>
+          <td class="text-nowrap">
+            <div class="d-flex align-items-center gap-1">
+              <div class="text-warning small" style="letter-spacing: 1px;">
+                ${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}
+              </div>
+              <span class="small fw-bold text-muted">${r.rating}.0</span>
+            </div>
+          </td>
+          <td class="small text-muted" style="max-width: 320px;">
+            <span class="text-dark">"${escapeHtml(r.text)}"</span>
           </td>
           <td class="small text-muted text-nowrap">${r.date}</td>
           <td class="text-nowrap">
-            <span class="badge ${r.status.toLowerCase() === 'approved' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis'}">
+            <span class="badge ${badgeClass} px-2 py-1">
+              <i class="bi ${isApproved ? 'bi-check-circle-fill' : isRejected ? 'bi-x-circle-fill' : 'bi-hourglass-split'} me-1"></i>
               ${r.status}
             </span>
           </td>
-          <td class="text-end text-nowrap">
-            <button class="btn btn-sm btn-outline-success me-1" onclick="toggleReviewStatus('${r.id}', '${r.status}')" title="Toggle Approval">
-              <i class="bi bi-check-circle"></i>
+          <td class="text-end text-nowrap pe-3">
+            <button class="btn btn-sm btn-outline-success review-action-btn me-1" onclick="toggleReviewStatus('${r.id}', '${r.status}')" title="${isApproved ? 'Set to Pending' : 'Approve Review'}">
+              <i class="bi ${isApproved ? 'bi-check2-circle' : 'bi-check-lg'}"></i>
             </button>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteReview('${r.id}')" title="Delete Review">
+            <button class="btn btn-sm btn-outline-primary review-action-btn me-1" onclick="openEditReviewModal('${r.id}')" title="Edit Review">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger review-action-btn" onclick="deleteReview('${r.id}')" title="Delete Review">
               <i class="bi bi-trash"></i>
             </button>
           </td>
         </tr>
-      `).join('');
+        `;
+      }).join('');
     }
 
     function filterReviews() {
       const status = document.getElementById('review-filter').value;
-      let filtered = databaseReviews.filter(r => status === 'all' || r.status.toLowerCase() === status.toLowerCase());
+      const search = (document.getElementById('review-search').value || '').trim().toLowerCase();
+
+      let filtered = databaseReviews.filter(r => {
+        const matchesStatus = (status === 'all' || r.status.toLowerCase() === status.toLowerCase());
+        const matchesSearch = !search || 
+          r.name.toLowerCase().includes(search) || 
+          r.product.toLowerCase().includes(search) || 
+          r.text.toLowerCase().includes(search);
+        return matchesStatus && matchesSearch;
+      });
+
       renderReviewsTable(filtered);
     }
 
@@ -331,7 +538,7 @@
           if (client) {
             const { error } = await client
               .from('reviews')
-              .update({ status: newStatus })
+              .update({ status: newStatus, updated_at: new Date().toISOString() })
               .eq('id', id);
             if (!error) updated = true;
           }
@@ -341,10 +548,10 @@
       }
 
       if (updated) {
-        showToast(`Review status updated to ${newStatus}!`);
+        showToast(`Review status updated to ${newStatus.toUpperCase()}! 🌸`);
         await loadReviewsFromDatabase();
       } else {
-        showToast('Error updating review in database.');
+        showToast('Error updating review in database.', 'danger');
       }
     }
 
@@ -383,10 +590,110 @@
       }
 
       if (deleted) {
-        showToast('Review permanently deleted.');
+        showToast('Review permanently deleted from database.');
         await loadReviewsFromDatabase();
       } else {
-        showToast('Failed to delete review.');
+        showToast('Failed to delete review.', 'danger');
+      }
+    }
+
+    function setModalRating(val) {
+      document.getElementById('modal-rating-val').value = val;
+      document.getElementById('modal-rating-text').textContent = val + '.0 / 5';
+      const icons = document.querySelectorAll('#star-rating-picker i');
+      icons.forEach((ic, idx) => {
+        if (idx < val) {
+          ic.className = 'bi bi-star-fill text-warning';
+        } else {
+          ic.className = 'bi bi-star text-muted';
+        }
+      });
+    }
+
+    function openAddReviewModal() {
+      document.getElementById('modal-review-id').value = '';
+      document.getElementById('reviewModalLabel').innerHTML = '<i class="bi bi-plus-circle me-1"></i> Add Devotee Review';
+      document.getElementById('modal-devotee-name').value = '';
+      document.getElementById('modal-review-text').value = '';
+      document.getElementById('modal-status-select').value = 'approved';
+      setModalRating(5);
+      if (reviewModalInstance) reviewModalInstance.show();
+    }
+
+    function openEditReviewModal(id) {
+      const rev = databaseReviews.find(r => r.id === id);
+      if (!rev) return;
+
+      document.getElementById('modal-review-id').value = rev.id;
+      document.getElementById('reviewModalLabel').innerHTML = '<i class="bi bi-pencil-square me-1"></i> Edit Devotee Review';
+      document.getElementById('modal-devotee-name').value = rev.name;
+      document.getElementById('modal-review-text').value = rev.text;
+      document.getElementById('modal-status-select').value = rev.status.toLowerCase();
+      if (rev.product_id) {
+        document.getElementById('modal-product-select').value = rev.product_id;
+      }
+      setModalRating(rev.rating || 5);
+      if (reviewModalInstance) reviewModalInstance.show();
+    }
+
+    async function saveReview(e) {
+      e.preventDefault();
+      const saveBtn = document.getElementById('save-review-btn');
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
+      const id = document.getElementById('modal-review-id').value;
+      const name = document.getElementById('modal-devotee-name').value.trim();
+      const productId = document.getElementById('modal-product-select').value;
+      const rating = parseInt(document.getElementById('modal-rating-val').value, 10) || 5;
+      const comment = document.getElementById('modal-review-text').value.trim();
+      const status = document.getElementById('modal-status-select').value;
+
+      try {
+        if (id) {
+          // Update existing review
+          const res = await fetch(`/api/reviews/admin/${id}`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ rating, comment, title: name, status })
+          });
+          const json = await res.json();
+          if (json.success) {
+            showToast('Review updated successfully in database! 🌸');
+            if (reviewModalInstance) reviewModalInstance.hide();
+            await loadReviewsFromDatabase();
+          } else {
+            showToast(json.message || 'Error updating review.', 'danger');
+          }
+        } else {
+          // Create new review
+          const res = await fetch('/api/reviews/admin/create', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+              product_id: productId,
+              user_name: name,
+              rating,
+              comment,
+              title: name,
+              status
+            })
+          });
+          const json = await res.json();
+          if (json.success) {
+            showToast('Devotee review published to database! 🌸');
+            if (reviewModalInstance) reviewModalInstance.hide();
+            await loadReviewsFromDatabase();
+          } else {
+            showToast(json.message || 'Error creating review.', 'danger');
+          }
+        }
+      } catch (err) {
+        console.error('Error saving review:', err);
+        showToast('Network error while saving review.', 'danger');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="bi bi-cloud-arrow-up me-1"></i> Save to Database';
       }
     }
   </script>

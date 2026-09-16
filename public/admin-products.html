@@ -215,13 +215,39 @@
             </div>
 
             <div class="row g-3 mb-3">
-              <div class="col-md-6">
+              <div class="col-md-12">
                 <label class="form-label fw-semibold">Material / Format</label>
-                <input type="text" id="prod-material" class="form-control" placeholder="e.g. Solid Brass, Neem Wood, Hardcover">
+                <input type="text" id="prod-material" class="form-control" placeholder="e.g. Solid Brass, Neem Wood, Hardcover, Silk">
               </div>
-              <div class="col-md-6">
-                <label class="form-label fw-semibold">Image URL *</label>
-                <input type="url" id="prod-image" class="form-control" placeholder="https://images.unsplash.com/..." required>
+            </div>
+
+            <!-- 5 Image Upload Boxes (Min 3, Max 5 required) -->
+            <div class="mb-3 p-3 rounded border bg-light-subtle">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                <label class="form-label fw-semibold mb-0 text-navy d-flex align-items-center gap-1">
+                  <i class="bi bi-images text-gold"></i> Product Images <span class="text-danger">*</span>
+                </label>
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning px-2 py-1" id="image-count-badge">
+                  <i class="bi bi-exclamation-circle me-1"></i> Min 3 Required (<span id="uploaded-count" class="fw-bold">0</span>/5 uploaded)
+                </span>
+              </div>
+              <p class="text-muted small mb-3">
+                Click on any <strong>+</strong> box to upload images from your files. Box #1 is your main cover image.
+              </p>
+
+              <!-- Hidden multi-file input -->
+              <input type="file" id="hn-file-input" accept="image/jpeg,image/png,image/webp,image/gif" multiple class="d-none" onchange="handleFileSelect(event)">
+
+              <!-- 5 Upload Preview Boxes Grid -->
+              <div class="hn-image-upload-grid" id="hn-image-upload-grid">
+                <!-- Rendered dynamically by JS -->
+              </div>
+
+              <div id="image-upload-error" class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mt-3 mb-0 d-none" role="alert">
+                <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+                <div class="small fw-semibold" id="image-upload-error-msg">
+                  Minimum 3 product images are required before saving.
+                </div>
               </div>
             </div>
 
@@ -319,7 +345,8 @@
 
           if (!error && Array.isArray(data) && data.length > 0) {
             databaseProducts = data.map(p => {
-              const img = p.product_images?.[0]?.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
+              const imgList = (p.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(i => i.image_url);
+              const img = imgList[0] || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
               return {
                 id: p.id,
                 name: p.name,
@@ -334,6 +361,8 @@
                 reviews_count: p.reviews_count || 0,
                 image: img,
                 primary_image: img,
+                images: imgList.length > 0 ? imgList : [img],
+                gallery: imgList.length > 0 ? imgList : [img],
                 description: p.description || ''
               };
             });
@@ -355,6 +384,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       // Clear stale local mock storage to prevent outdated states
       localStorage.removeItem('harinama_admin_products');
+      renderImageSlots();
       loadProductsFromDatabase();
     });
 
@@ -375,7 +405,7 @@
       }
 
       tbody.innerHTML = products.map(p => {
-        const imgSrc = p.image || p.primary_image || (Array.isArray(p.images) && p.images[0]?.image_url) || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
+        const imgSrc = p.image || p.primary_image || (Array.isArray(p.images) && p.images[0]?.image_url) || (Array.isArray(p.gallery) && p.gallery[0]) || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
         return `
         <tr>
           <td>
@@ -427,11 +457,179 @@
       renderProductsTable(filtered);
     }
 
+    // ==========================================
+    // 5-BOX IMAGE UPLOAD & VALIDATION LOGIC
+    // ==========================================
+    let productImages = ['', '', '', '', ''];
+    let targetUploadIndex = 0;
+    let isUploadingImage = [false, false, false, false, false];
+
+    function getUploadAuthHeaders() {
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+      const headers = {
+        'x-admin-email': 'harinamaivakevalam@gmail.com'
+      };
+      if (token) {
+        headers['Authorization'] = 'Bearer ' + token;
+      }
+      return headers;
+    }
+
+    function renderImageSlots() {
+      const grid = document.getElementById('hn-image-upload-grid');
+      if (!grid) return;
+
+      const filledImages = productImages.filter(url => Boolean(url && url.trim()));
+      const countEl = document.getElementById('uploaded-count');
+      const badgeEl = document.getElementById('image-count-badge');
+      const errorEl = document.getElementById('image-upload-error');
+
+      if (countEl) countEl.innerText = filledImages.length;
+      if (badgeEl) {
+        if (filledImages.length >= 3) {
+          badgeEl.className = 'badge bg-success-subtle text-success border border-success px-2 py-1';
+          badgeEl.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> ${filledImages.length}/5 Images Uploaded (Min 3 Met)`;
+          if (errorEl) errorEl.classList.add('d-none');
+        } else {
+          badgeEl.className = 'badge bg-warning-subtle text-warning-emphasis border border-warning px-2 py-1';
+          badgeEl.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i> Min 3 Required (${filledImages.length}/5 uploaded)`;
+        }
+      }
+
+      grid.innerHTML = productImages.map((imgUrl, idx) => {
+        const slotNum = idx + 1;
+        const isPrimary = idx === 0;
+        const isUploading = isUploadingImage[idx];
+        const isRequiredSlot = idx < 3;
+
+        if (isUploading) {
+          return `
+            <div class="hn-image-box is-uploading">
+              <div class="spinner-border text-gold spinner-border-sm mb-1" role="status"></div>
+              <span class="hn-image-box-label text-gold fw-bold">Uploading...</span>
+              <span class="hn-image-box-badge">${slotNum}</span>
+            </div>
+          `;
+        }
+
+        if (imgUrl && imgUrl.trim()) {
+          return `
+            <div class="hn-image-box has-image" onclick="triggerUploadForSlot(${idx})">
+              <span class="hn-image-box-badge ${isPrimary ? 'primary-badge' : ''}">${isPrimary ? '★ Cover' : '#' + slotNum}</span>
+              <button type="button" class="hn-image-box-remove" onclick="removeImageSlot(${idx}, event)" title="Remove image">&times;</button>
+              <img src="${imgUrl}" alt="Product Image ${slotNum}">
+              <div class="hn-image-box-replace-hint">Change</div>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="hn-image-box ${isRequiredSlot ? 'is-required' : ''}" onclick="triggerUploadForSlot(${idx})">
+            <span class="hn-image-box-badge ${isPrimary ? 'primary-badge' : ''}">${isPrimary ? '★ Cover' : '#' + slotNum}</span>
+            <div class="hn-image-box-plus">+</div>
+            <div class="hn-image-box-label">${isPrimary ? 'Main Photo *' : (isRequiredSlot ? 'Photo ' + slotNum + ' *' : 'Photo ' + slotNum)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function triggerUploadForSlot(index) {
+      targetUploadIndex = index;
+      const fileInput = document.getElementById('hn-file-input');
+      if (fileInput) {
+        fileInput.value = '';
+        fileInput.click();
+      }
+    }
+
+    async function handleFileSelect(event) {
+      const files = Array.from(event.target.files || []);
+      if (files.length === 0) return;
+
+      const errorEl = document.getElementById('image-upload-error');
+      if (errorEl) errorEl.classList.add('d-none');
+
+      let currentSlot = targetUploadIndex;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        let slotToFill = currentSlot;
+        if (i > 0) {
+          slotToFill = productImages.findIndex((img, idx) => idx >= currentSlot && (!img || !img.trim()));
+          if (slotToFill === -1) {
+            slotToFill = productImages.findIndex(img => !img || !img.trim());
+          }
+          if (slotToFill === -1 && currentSlot + i < 5) {
+            slotToFill = currentSlot + i;
+          }
+        }
+
+        if (slotToFill < 0 || slotToFill >= 5) break;
+
+        isUploadingImage[slotToFill] = true;
+        renderImageSlots();
+
+        try {
+          const formData = new FormData();
+          formData.append('image', file);
+
+          const res = await fetch('/api/upload/image', {
+            method: 'POST',
+            headers: getUploadAuthHeaders(),
+            body: formData
+          });
+
+          const json = await res.json();
+          if (json.success && json.data && json.data.url) {
+            productImages[slotToFill] = json.data.url;
+          } else {
+            const localDataUrl = await readFileAsDataURL(file);
+            productImages[slotToFill] = localDataUrl;
+          }
+        } catch (uploadErr) {
+          console.warn('[AdminProducts] Upload server notice, using local file preview:', uploadErr);
+          try {
+            const localDataUrl = await readFileAsDataURL(file);
+            productImages[slotToFill] = localDataUrl;
+          } catch (e) {}
+        } finally {
+          isUploadingImage[slotToFill] = false;
+        }
+
+        currentSlot = slotToFill + 1;
+      }
+
+      renderImageSlots();
+    }
+
+    function readFileAsDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function removeImageSlot(index, event) {
+      if (event) {
+        event.stopPropagation();
+      }
+      productImages[index] = '';
+      renderImageSlots();
+    }
+
     function prepareAddProduct() {
       document.getElementById('productForm').reset();
       document.getElementById('edit-prod-id').value = '';
       document.getElementById('productModalTitle').innerText = 'Add New Devotional Product';
-      document.getElementById('prod-image').value = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
+      
+      productImages = ['', '', '', '', ''];
+      isUploadingImage = [false, false, false, false, false];
+      const errorEl = document.getElementById('image-upload-error');
+      if (errorEl) errorEl.classList.add('d-none');
+      renderImageSlots();
     }
 
     function editProduct(id) {
@@ -445,8 +643,27 @@
       document.getElementById('prod-old-price').value = p.old_price || p.compare_price || '';
       document.getElementById('prod-stock').value = p.stock !== undefined ? p.stock : 25;
       document.getElementById('prod-material').value = p.material || '';
-      document.getElementById('prod-image').value = p.image || p.primary_image || '';
       document.getElementById('prod-description').value = p.description || '';
+
+      // Populate existing images into up to 5 slots
+      let imgs = [];
+      if (Array.isArray(p.gallery) && p.gallery.length > 0) {
+        imgs = p.gallery.map(img => typeof img === 'string' ? img : (img.image_url || img.url)).filter(Boolean);
+      } else if (Array.isArray(p.images) && p.images.length > 0) {
+        imgs = p.images.map(img => typeof img === 'string' ? img : (img.image_url || img.url)).filter(Boolean);
+      } else if (p.image || p.primary_image) {
+        imgs = [p.image || p.primary_image];
+      }
+
+      productImages = ['', '', '', '', ''];
+      imgs.slice(0, 5).forEach((url, i) => {
+        productImages[i] = url;
+      });
+
+      isUploadingImage = [false, false, false, false, false];
+      const errorEl = document.getElementById('image-upload-error');
+      if (errorEl) errorEl.classList.add('d-none');
+      renderImageSlots();
 
       document.getElementById('productModalTitle').innerText = 'Edit Product — ' + (p.name || p.title);
 
@@ -456,6 +673,21 @@
 
     async function saveProduct(e) {
       e.preventDefault();
+
+      const validImages = productImages.filter(img => Boolean(img && img.trim()));
+      const errorEl = document.getElementById('image-upload-error');
+      const errorMsgEl = document.getElementById('image-upload-error-msg');
+
+      if (validImages.length < 3) {
+        if (errorEl && errorMsgEl) {
+          errorMsgEl.innerHTML = `<strong>Minimum 3 images required!</strong> You currently have ${validImages.length} image${validImages.length === 1 ? '' : 's'} uploaded. Please upload at least ${3 - validImages.length} more image${3 - validImages.length === 1 ? '' : 's'}.`;
+          errorEl.classList.remove('d-none');
+          errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        showToast(`Please upload at least 3 product images (${validImages.length}/5 uploaded).`);
+        return;
+      }
+
       const saveBtn = e.target.querySelector('button[type="submit"]');
       const origText = saveBtn ? saveBtn.innerHTML : 'Save Product';
       if (saveBtn) {
@@ -470,7 +702,7 @@
       const old_price = document.getElementById('prod-old-price').value ? parseFloat(document.getElementById('prod-old-price').value) : null;
       const stock = parseInt(document.getElementById('prod-stock').value, 10) || 0;
       const material = document.getElementById('prod-material').value.trim();
-      const image = document.getElementById('prod-image').value.trim();
+      const primaryImage = validImages[0];
       const description = document.getElementById('prod-description').value.trim();
 
       const payload = {
@@ -483,8 +715,10 @@
         old_price: old_price,
         stock,
         material,
-        image,
-        images: [image],
+        image: primaryImage,
+        primary_image: primaryImage,
+        images: validImages,
+        gallery: validImages,
         description
       };
 
@@ -548,3 +782,4 @@
   </script>
 </body>
 </html>
+

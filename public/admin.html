@@ -472,8 +472,7 @@
       // 3. Fetch live from Supabase Database
       try {
         if (window.supabase && typeof window.supabase.createClient === 'function') {
-          const sb = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY);
-          window.supabaseClient = sb;
+          const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
           const { data: sbOrders, error } = await sb
             .from('orders')
             .select('*, order_items(*)')

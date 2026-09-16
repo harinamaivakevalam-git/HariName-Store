@@ -195,13 +195,16 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
     const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTMzODg1NiwiZXhwIjoyMTA0OTE0ODU2fQ.eV63FZ0bvtf5lAv_l4sGHtnk-ngpklZQbGxoxyHEzTs';
 
+    let adminSupabaseClient = null;
     function initSupabase() {
-      if (!window.supabaseClient && window.supabase && typeof window.supabase.createClient === 'function') {
+      if (!adminSupabaseClient && window.supabase && typeof window.supabase.createClient === 'function') {
         try {
-          window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY);
-        } catch (e) {}
+          adminSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+        } catch (e) {
+          console.error('[AdminCategories] Supabase init error:', e);
+        }
       }
-      return window.supabaseClient;
+      return adminSupabaseClient || window.supabaseClient;
     }
 
     function getAuthHeaders() {

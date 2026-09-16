@@ -87,6 +87,8 @@ exports.createOrder = async (req, res, next) => {
     let discountAmount = 0;
     let appliedCoupon = null;
 
+    let matchedCouponObj = null;
+
     if (coupon_code) {
       if (isSupabaseConfigured && supabaseAdmin) {
         const { data: cpn } = await supabaseAdmin
@@ -95,7 +97,11 @@ exports.createOrder = async (req, res, next) => {
           .eq('code', coupon_code.toUpperCase().trim())
           .eq('status', 'active')
           .maybeSingle();
-        if (cpn && new Date(cpn.expiry_date) >= new Date()) {
+
+        const isExpired = cpn && cpn.expiry_date && new Date(cpn.expiry_date) < new Date();
+        const isLimitReached = cpn && cpn.usage_limit && (cpn.times_used || 0) >= cpn.usage_limit;
+
+        if (cpn && !isExpired && !isLimitReached) {
           const minOrder = parseFloat(cpn.minimum_order || 0);
           if (subtotal >= minOrder) {
             if (cpn.discount_type === 'percentage') {
@@ -108,11 +114,15 @@ exports.createOrder = async (req, res, next) => {
             }
             discountAmount = Math.min(discountAmount, subtotal);
             appliedCoupon = cpn.code;
+            matchedCouponObj = { source: 'supabase', id: cpn.id, times_used: cpn.times_used || 0 };
           }
         }
       } else {
         const coupon = db.findOne('coupons', c => c.code.toUpperCase() === coupon_code.toUpperCase().trim());
-        if (coupon && coupon.status === 'active' && new Date(coupon.expiry_date) >= new Date()) {
+        const isExpired = coupon && coupon.expiry_date && new Date(coupon.expiry_date) < new Date();
+        const isLimitReached = coupon && coupon.usage_limit && (coupon.times_used || 0) >= coupon.usage_limit;
+
+        if (coupon && coupon.status === 'active' && !isExpired && !isLimitReached) {
           const minOrder = parseFloat(coupon.minimum_order || 0);
           if (subtotal >= minOrder) {
             if (coupon.discount_type === 'percentage') {
@@ -125,6 +135,7 @@ exports.createOrder = async (req, res, next) => {
             }
             discountAmount = Math.min(discountAmount, subtotal);
             appliedCoupon = coupon.code;
+            matchedCouponObj = { source: 'db', id: coupon.id, times_used: coupon.times_used || 0 };
           }
         }
       }
@@ -204,6 +215,18 @@ exports.createOrder = async (req, res, next) => {
             currency: 'INR',
             status: isOnlinePaid ? 'captured' : 'pending'
           });
+
+          // Increment coupon usage in Supabase
+          if (matchedCouponObj && matchedCouponObj.id) {
+            try {
+              await supabaseAdmin
+                .from('coupons')
+                .update({ times_used: matchedCouponObj.times_used + 1 })
+                .eq('id', matchedCouponObj.id);
+            } catch (cpnErr) {
+              console.warn('[Database] Failed to increment coupon usage in Supabase:', cpnErr);
+            }
+          }
         }
       } catch (sbErr) {
         console.warn('[Database] Supabase transaction failed:', sbErr.message);
@@ -247,6 +270,13 @@ exports.createOrder = async (req, res, next) => {
       currency: 'INR',
       status: isOnlinePaid ? 'captured' : 'pending'
     });
+
+    if (matchedCouponObj && matchedCouponObj.source === 'db') {
+      const cpnRec = db.findById('coupons', matchedCouponObj.id);
+      if (cpnRec) {
+        db.update('coupons', matchedCouponObj.id, { times_used: (cpnRec.times_used || 0) + 1 });
+      }
+    }
 
     res.status(201).json({
       success: true,

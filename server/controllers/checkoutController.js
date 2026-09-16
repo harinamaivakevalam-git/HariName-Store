@@ -78,7 +78,10 @@ exports.calculateCheckout = (req, res, next) => {
 
     if (coupon_code) {
       const coupon = db.findOne('coupons', c => c.code.toUpperCase() === coupon_code.toUpperCase().trim());
-      if (coupon && coupon.status === 'active' && new Date(coupon.expiry_date) >= new Date()) {
+      const isExpired = coupon && coupon.expiry_date && new Date(coupon.expiry_date) < new Date();
+      const isLimitReached = coupon && coupon.usage_limit && (coupon.times_used || 0) >= coupon.usage_limit;
+
+      if (coupon && coupon.status === 'active' && !isExpired && !isLimitReached) {
         const minOrder = parseFloat(coupon.minimum_order || 0);
         if (calculatedSubtotal >= minOrder) {
           if (coupon.discount_type === 'percentage') {

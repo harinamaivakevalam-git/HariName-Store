@@ -5,7 +5,7 @@ exports.uploadImage = (req, res, next) => {
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'No image file uploaded.'
+        message: 'No file uploaded.'
       });
     }
 
@@ -13,13 +13,41 @@ exports.uploadImage = (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: 'Image uploaded successfully.',
+      message: 'Media uploaded successfully.',
       data: {
         filename: req.file.filename,
         url: fileUrl,
         size: req.file.size,
         mimetype: req.file.mimetype
-      }
+      },
+      url: fileUrl
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.uploadMedia = (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No media file uploaded.'
+      });
+    }
+
+    const fileUrl = `/uploads/${req.file.filename}`;
+
+    res.status(201).json({
+      success: true,
+      message: 'Media file uploaded successfully.',
+      data: {
+        filename: req.file.filename,
+        url: fileUrl,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      },
+      url: fileUrl
     });
   } catch (err) {
     next(err);
@@ -44,7 +72,7 @@ exports.uploadImages = (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: `${uploadedFiles.length} image(s) uploaded successfully.`,
+      message: `${uploadedFiles.length} file(s) uploaded successfully.`,
       data: uploadedFiles,
       urls: uploadedFiles.map(f => f.url)
     });

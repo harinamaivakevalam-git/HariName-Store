@@ -426,30 +426,36 @@
 
       const prods = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
       if (prods.length === 0) {
-        wrapper.style.display = 'none';
+        if (!window.__hn_homepage_custom_promo) {
+          wrapper.style.display = 'none';
+        }
         return;
       }
 
       const promoProd = prods.find(p => (p.slug && p.slug.includes('mantra')) || p.featured) || prods[0];
       if (!promoProd) {
-        wrapper.style.display = 'none';
+        if (!window.__hn_homepage_custom_promo) {
+          wrapper.style.display = 'none';
+        }
         return;
       }
 
-      const titleEl = wrapper.querySelector('.hn-promo-title');
-      if (titleEl) titleEl.innerText = promoProd.title || promoProd.name;
+      if (!window.__hn_homepage_custom_promo) {
+        const titleEl = wrapper.querySelector('.hn-promo-title');
+        if (titleEl) titleEl.innerText = promoProd.title || promoProd.name;
+
+        const descEl = wrapper.querySelector('.hn-promo-desc');
+        if (descEl && promoProd.description) descEl.innerText = promoProd.description;
+
+        const imgEl = wrapper.querySelector('.hn-promo-img');
+        if (imgEl && (promoProd.image || promoProd.primary_image)) {
+          imgEl.src = promoProd.image || promoProd.primary_image;
+          imgEl.alt = promoProd.title || promoProd.name;
+        }
+      }
 
       const priceEl = wrapper.querySelector('.hn-promo-price');
       if (priceEl) priceEl.innerText = formatPrice(promoProd.price);
-
-      const descEl = wrapper.querySelector('.hn-promo-desc');
-      if (descEl && promoProd.description) descEl.innerText = promoProd.description;
-
-      const imgEl = wrapper.querySelector('.hn-promo-img');
-      if (imgEl && (promoProd.image || promoProd.primary_image)) {
-        imgEl.src = promoProd.image || promoProd.primary_image;
-        imgEl.alt = promoProd.title || promoProd.name;
-      }
 
       const btn = wrapper.querySelector('.hn-promo-content button');
       if (btn) {
@@ -680,6 +686,7 @@
 
       // B. PROMO BANNER
       if (config.promo_banner) {
+        window.__hn_homepage_custom_promo = true;
         const p = config.promo_banner;
         const promoWrapper = document.getElementById('hn-promo-section-wrapper');
         if (promoWrapper) promoWrapper.style.display = 'block';
@@ -803,18 +810,19 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       renderHeader('home');
       renderFooter();
-      renderDynamicHomepageSections();
+      await renderDynamicHomepageSections();
       renderFeaturedSection();
       updatePromoSection();
       renderCombosSection();
       loadHomeReviews();
 
-      window.addEventListener('hn:catalog-loaded', () => {
+      window.addEventListener('hn:catalog-loaded', async () => {
         renderFeaturedSection();
         updatePromoSection();
+        await renderDynamicHomepageSections();
         renderCombosSection();
       });
     });

@@ -735,14 +735,40 @@ Rama Rama Hare Hare</textarea>
     }
 
     async function uploadMediaFile(file) {
-      // 1. Direct Supabase Storage attempt
+      // 1. Backend API upload endpoint (supports both images and videos up to 100MB)
+      try {
+        const formData = new FormData();
+        formData.append('media', file);
+        formData.append('file', file);
+        formData.append('image', file);
+        formData.append('video', file);
+
+        const endpoints = ['/api/upload/media', '/api/upload/video', '/api/upload/image'];
+        for (const ep of endpoints) {
+          try {
+            const res = await fetch(ep, {
+              method: 'POST',
+              headers: getAuthHeaders(false),
+              body: formData
+            });
+            if (res.ok) {
+              const json = await res.json();
+              if (json.success && (json.data?.url || json.url)) {
+                return json.data?.url || json.url;
+              }
+            }
+          } catch (_) {}
+        }
+      } catch (e) {}
+
+      // 2. Direct Supabase Storage attempt
       try {
         const sb = initSupabase();
         if (sb && sb.storage) {
           const fileExt = file.name.split('.').pop();
           const fileName = `homepage/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
 
-          for (const bucket of ['product-images', 'public', 'images']) {
+          for (const bucket of ['product-images', 'public', 'images', 'media']) {
             try {
               const { data, error } = await sb.storage.from(bucket).upload(fileName, file, { upsert: true });
               if (!error && data) {
@@ -753,21 +779,6 @@ Rama Rama Hare Hare</textarea>
           }
         }
       } catch (err) {}
-
-      // 2. Backend API upload fallback
-      try {
-        const formData = new FormData();
-        formData.append('image', file);
-        const res = await fetch('/api/upload/image', {
-          method: 'POST',
-          headers: getAuthHeaders(false),
-          body: formData
-        });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && json.data?.url) return json.data.url;
-        }
-      } catch (e) {}
 
       // 3. Fallback: Base64 data URL
       return new Promise((resolve) => {

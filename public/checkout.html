@@ -264,22 +264,35 @@
     let checkoutCouponCode = sessionStorage.getItem('hn_coupon_code') || '';
 
     function getCheckoutCart() {
-      let cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
-      if (!cart || cart.length === 0) {
-        // Fallback to sample item if user arrived directly
-        cart = [
-          { id: 'prod-001', name: 'Peacock Feather Keychain', price: 99, qty: 1, image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80', material: 'Acrylic' }
-        ];
-        localStorage.setItem('hn_cart', JSON.stringify(cart));
-      }
-      return cart;
+      return JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
     }
 
     function renderCheckoutSummary() {
       const cart = getCheckoutCart();
       const listContainer = document.getElementById('hn-checkout-items-list');
       const countBadge = document.getElementById('hn-checkout-item-count');
+      const submitBtn = document.getElementById('hn-place-order-btn');
 
+      if (!cart || cart.length === 0) {
+        if (countBadge) countBadge.innerText = '0 items';
+        if (listContainer) {
+          listContainer.innerHTML = `
+            <div class="text-center py-4 text-muted small">
+              <i class="bi bi-cart-x fs-2 d-block mb-2 text-warning"></i>
+              Your cart is currently empty.
+              <div class="mt-2">
+                <a href="/shop.html" class="btn btn-sm hn-btn-gold px-3">Browse Live Products</a>
+              </div>
+            </div>
+          `;
+        }
+        if (submitBtn) submitBtn.disabled = true;
+        document.getElementById('hn-co-subtotal').innerText = '₹0';
+        document.getElementById('hn-co-total').innerText = '₹0';
+        return;
+      }
+
+      if (submitBtn) submitBtn.disabled = false;
       const totalItemsCount = cart.reduce((acc, i) => acc + (i.qty || 1), 0);
       if (countBadge) countBadge.innerText = `${totalItemsCount} ${totalItemsCount === 1 ? 'item' : 'items'}`;
 
@@ -290,7 +303,7 @@
         return `
           <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
             <div class="d-flex align-items-center gap-2">
-              <img src="${item.image}" alt="${item.name}" class="rounded border" style="width: 44px; height: 44px; object-fit: cover;">
+              <img src="${item.image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80'}" alt="${item.name}" class="rounded border" style="width: 44px; height: 44px; object-fit: cover;">
               <div>
                 <div class="fw-semibold text-dark small text-truncate" style="max-width: 180px;">${item.name}</div>
                 <div class="text-muted" style="font-size: 0.75rem;">Qty: ${item.qty || 1} &nbsp;|&nbsp; ${item.material || 'Standard'}</div>
@@ -312,7 +325,6 @@
         if (couponInput) couponInput.value = checkoutCouponCode;
         const msg = document.getElementById('hn-checkout-coupon-msg');
         if (msg) msg.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> Applied: ${checkoutCouponCode} (-₹${checkoutDiscount})</span>`;
-      }
 
       const finalTotal = Math.max(0, subtotal + shipping - checkoutDiscount);
       document.getElementById('hn-co-subtotal').innerText = `₹${subtotal}`;
@@ -399,7 +411,7 @@
         payment_method: selectedPaymentText,
         payment_status: isCod ? 'Pending (COD)' : 'Paid',
         items: cart.map(i => ({
-          id: i.id || 'prod-001',
+          id: i.id,
           name: i.name,
           product_name: i.name,
           qty: i.qty || 1,
@@ -436,7 +448,7 @@
             headers: headers,
             body: JSON.stringify({
               items: cart.map(i => ({
-                product_id: i.id || 'prod-001',
+                product_id: i.id,
                 product_name: i.name,
                 product_image: i.image,
                 quantity: i.qty || 1,

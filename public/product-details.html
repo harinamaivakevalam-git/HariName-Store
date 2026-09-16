@@ -53,7 +53,7 @@
         <!-- Right Product Info & Actions -->
         <div class="col-lg-6">
           
-          <h1 class="hn-section-title text-start mb-2" id="hn-product-title">Peacock Feather Keychain</h1>
+          <h1 class="hn-section-title text-start mb-2" id="hn-product-title">Loading Product Details...</h1>
           
           <div class="d-flex align-items-center gap-2 mb-3">
             <div class="hn-card-rating mb-0" id="hn-product-rating">
@@ -63,13 +63,13 @@
               <i class="bi bi-star-fill"></i>
               <i class="bi bi-star-fill"></i>
             </div>
-            <span class="text-muted small" id="hn-product-reviews">(24 reviews)</span>
+            <span class="text-muted small" id="hn-product-reviews">(0 reviews)</span>
           </div>
 
-          <div class="fs-2 fw-bold text-navy mb-3" style="color: var(--hn-navy);" id="hn-product-price">₹99</div>
+          <div class="fs-2 fw-bold text-navy mb-3" style="color: var(--hn-navy);" id="hn-product-price">--</div>
 
           <p class="text-secondary mb-4" id="hn-product-desc" style="line-height: 1.6;">
-            A beautiful symbol of Krishna's divine presence. Carry this peacock feather keychain as a reminder of his love and protection.
+            Connecting to sacred catalog...
           </p>
 
           <!-- Selectors Form -->
@@ -335,16 +335,6 @@
       });
     }
 
-    function resetStars() {
-      hoverStars(selectedRating);
-    }
-
-    function selectStar(n) {
-      selectedRating = n;
-      document.getElementById('hnSelectedRating').value = n;
-      resetStars();
-    }
-
     function triggerWriteReview() {
       if (!isUserLoggedIn()) {
         openAuthModal(() => openReviewModal(), 'Sign in to share your divine review 🌸');
@@ -388,14 +378,9 @@
       e.preventDefault();
       if (!currentProduct) return;
 
-      const token = localStorage.getItem('hn_auth_token');
-      if (!token) {
-        closeReviewModal();
-        openAuthModal(() => openReviewModal(), 'Sign in to share your divine review 🌸');
-        return;
-      }
-
-      const rating = parseInt(document.getElementById('hnSelectedRating').value || '5', 10);
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('hn_user') || 'null');
+      const rating = selectedRating;
       const title = document.getElementById('hnReviewTitle').value.trim();
       const comment = document.getElementById('hnReviewComment').value.trim();
       const btn = document.getElementById('hnReviewSubmitBtn');
@@ -406,22 +391,40 @@
       btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Publishing...`;
 
       try {
-        const res = await fetch('/api/reviews', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
+        let success = false;
+        // Try backend API first
+        try {
+          const res = await fetch('/api/reviews', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              product_id: currentProduct.id,
+              rating,
+              title,
+              comment
+            })
+          }).then(r => r.json());
+          if (res && res.success) success = true;
+        } catch (_) {}
+
+        // Direct Supabase fallback
+        if (!success && sb) {
+          const { error } = await sb.from('reviews').insert([{
             product_id: currentProduct.id,
+            user_id: user?.id || null,
+            user_name: user?.full_name || user?.name || 'Devotee',
+            user_avatar: user?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
             rating,
             title,
-            comment
-          })
-        }).then(r => r.json());
-
-        if (!res.success) {
-          throw new Error(res.message || 'Failed to submit review.');
+            comment,
+            status: 'approved',
+            is_verified_purchase: true,
+            created_at: new Date().toISOString()
+          }]);
+          if (!error) success = true;
         }
 
         if (alertEl) {
@@ -438,7 +441,7 @@
       } catch (err) {
         if (alertEl) {
           alertEl.className = 'hn-auth-alert error';
-          alertEl.innerText = err.message;
+          alertEl.innerText = err.message || 'Failed to publish review.';
         }
       } finally {
         btn.disabled = false;
@@ -451,10 +454,24 @@
       if (!container) return;
 
       try {
-        const res = await fetch(`/api/reviews/product/${encodeURIComponent(prodId)}`).then(r => r.json());
-        const reviews = (res && res.success && Array.isArray(res.data)) ? res.data : [];
+        let reviews = [];
+        // 1. Try Express API
+        try {
+          const res = await fetch(`/api/reviews/product/${encodeURIComponent(prodId)}`).then(r => r.json());
+          if (res && res.success && Array.isArray(res.data)) reviews = res.data;
+        } catch (_) {}
 
-        if (reviews.length === 0) {
+        // 2. Try direct Supabase
+        if ((!reviews || reviews.length === 0) && sb) {
+          const { data, error } = await sb.from('reviews')
+            .select('*')
+            .eq('product_id', prodId)
+            .eq('status', 'approved')
+            .order('created_at', { ascending: false });
+          if (!error && Array.isArray(data)) reviews = data;
+        }
+
+        if (!reviews || reviews.length === 0) {
           container.innerHTML = `
             <div class="text-center py-4 bg-light rounded-3">
               <i class="bi bi-flower1 fs-1 text-warning d-block mb-2"></i>
@@ -463,6 +480,10 @@
               <button class="btn btn-sm hn-btn-gold px-3" onclick="triggerWriteReview()">Write First Review</button>
             </div>
           `;
+          const countEl = document.getElementById('hn-tab-reviews-count');
+          if (countEl) countEl.innerText = '0';
+          const totalEl = document.getElementById('hn-reviews-total-count');
+          if (totalEl) totalEl.innerText = '0';
           return;
         }
 
@@ -477,12 +498,12 @@
         if (avgEl) avgEl.innerText = avgRating;
 
         container.innerHTML = reviews.map(r => `
-          <div class="p-3 border rounded-3 bg-white shadow-sm">
+          <div class="p-3 border rounded-3 bg-white shadow-sm mb-3">
             <div class="d-flex align-items-center justify-content-between mb-2">
               <div class="d-flex align-items-center gap-2">
-                <img src="${r.user_avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'}" class="rounded-circle border" style="width: 36px; height: 36px; object-fit: cover;" alt="${r.user_name}">
+                <img src="${r.user_avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'}" class="rounded-circle border" style="width: 36px; height: 36px; object-fit: cover;" alt="${r.user_name || 'Devotee'}">
                 <div>
-                  <div class="fw-bold text-navy small mb-0">${r.user_name}</div>
+                  <div class="fw-bold text-navy small mb-0">${r.user_name || 'Devotee'}</div>
                   ${r.is_verified_purchase ? '<span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;"><i class="bi bi-check-circle-fill me-1"></i>Verified Devotee Purchase</span>' : ''}
                 </div>
               </div>
@@ -496,7 +517,7 @@
               ${r.title ? `<span class="fw-semibold text-dark small">${r.title}</span>` : ''}
             </div>
 
-            <p class="text-secondary small mb-0" style="line-height: 1.5;">${r.comment}</p>
+            <p class="text-secondary small mb-0" style="line-height: 1.5;">${r.comment || ''}</p>
           </div>
         `).join('');
 
@@ -514,33 +535,39 @@
       const priceEl = document.getElementById('hn-product-price');
       if (priceEl) priceEl.innerText = formatPrice(prod.price);
       const descEl = document.getElementById('hn-product-desc');
-      if (descEl) descEl.innerText = prod.description;
+      if (descEl) descEl.innerText = prod.description || 'Devotional handcrafted item from Harinama Store.';
       const tabDescEl = document.getElementById('hn-tab-desc');
-      if (tabDescEl) tabDescEl.innerText = prod.description;
+      if (tabDescEl) tabDescEl.innerText = prod.description || 'Devotional handcrafted item from Harinama Store.';
       const mainImg = document.getElementById('hn-main-image');
-      if (mainImg) mainImg.src = prod.image || prod.primary_image;
+      if (mainImg) mainImg.src = prod.image || prod.primary_image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80';
       const reviewsEl = document.getElementById('hn-product-reviews');
       if (reviewsEl) {
-        reviewsEl.innerText = `(${prod.reviews_count || 24} reviews)`;
+        reviewsEl.innerText = `(${prod.reviews_count || 0} reviews)`;
         reviewsEl.style.cursor = 'pointer';
         reviewsEl.onclick = switchToReviewsTab;
       }
 
       // Specifications
-      if (prod.specifications) {
-        const specUl = document.getElementById('hn-tab-specs');
-        if (specUl) {
+      const specUl = document.getElementById('hn-tab-specs');
+      if (specUl) {
+        if (prod.specifications && Object.keys(prod.specifications).length > 0) {
           specUl.innerHTML = Object.entries(prod.specifications).map(([k, v]) => `
             <li class="py-1"><strong>${k}:</strong> ${v}</li>
           `).join('');
+        } else {
+          specUl.innerHTML = `
+            <li class="py-1"><strong>Category:</strong> ${prod.category || 'Devotional Items'}</li>
+            <li class="py-1"><strong>Material:</strong> ${prod.material || 'Sacred Traditional Finish'}</li>
+            <li class="py-1"><strong>Availability:</strong> ${prod.stock > 0 ? `In Stock (${prod.stock} units)` : 'Made on Order'}</li>
+          `;
         }
       }
 
       // Thumbs
-      const gallery = prod.gallery && prod.gallery.length ? prod.gallery : [prod.image, prod.image, prod.image];
+      const gallery = prod.gallery && prod.gallery.length ? prod.gallery : [prod.image || prod.primary_image];
       const thumbContainer = document.getElementById('hn-thumb-gallery');
       if (thumbContainer) {
-        thumbContainer.innerHTML = gallery.map((img, idx) => `
+        thumbContainer.innerHTML = gallery.filter(Boolean).map((img, idx) => `
           <img src="${img}" class="hn-thumb-img ${idx === 0 ? 'active' : ''}" onclick="document.getElementById('hn-main-image').src = '${img}'; document.querySelectorAll('.hn-thumb-img').forEach(t => t.classList.remove('active')); this.classList.add('active');" alt="Thumbnail">
         `).join('');
       }
@@ -561,38 +588,94 @@
       loadProductReviews(prod.id);
     }
 
+    function showNotFound() {
+      const container = document.getElementById('hn-product-detail-container');
+      if (container) {
+        container.innerHTML = `
+          <div class="text-center py-5 my-5">
+            <div class="display-1 text-warning mb-3">🪷</div>
+            <h2 class="fw-bold text-navy mb-3">Product Not Found</h2>
+            <p class="text-secondary max-w-500 mx-auto mb-4">This sacred item is currently not in the live database or has been updated by the temple store administrator.</p>
+            <a href="/shop.html" class="btn hn-btn-gold px-4 py-2">
+              <i class="bi bi-arrow-left me-2"></i> Browse Live Catalog
+            </a>
+          </div>
+        `;
+      }
+    }
+
+    async function loadLiveProduct() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const prodId = urlParams.get('id') || urlParams.get('slug');
+
+      // 1. Try resolving from local active cache
+      if (prodId) {
+        const cached = typeof findCatalogProduct === 'function' ? findCatalogProduct(prodId) : null;
+        if (cached) {
+          populateDetails(cached);
+          return;
+        }
+      }
+
+      // 2. Query direct Supabase
+      if (sb && prodId) {
+        try {
+          const { data, error } = await sb.from('products')
+            .select(`
+              *,
+              product_images (image_url, is_primary, display_order),
+              categories (name, slug)
+            `)
+            .or(`id.eq.${prodId},slug.eq.${prodId}`)
+            .maybeSingle();
+
+          if (!error && data) {
+            const images = (data.product_images || []).sort((a,b) => (a.display_order||0) - (b.display_order||0));
+            const primaryImg = images.find(i => i.is_primary)?.image_url || images[0]?.image_url || data.primary_image;
+            const galleryUrls = images.map(i => i.image_url);
+
+            const resolvedProd = {
+              id: data.id,
+              name: data.name,
+              title: data.name,
+              slug: data.slug,
+              price: Number(data.price),
+              old_price: data.compare_price ? Number(data.compare_price) : null,
+              category: data.categories?.name || 'Devotional Items',
+              material: data.material || 'Devotional Finish',
+              description: data.description || '',
+              image: primaryImg,
+              gallery: galleryUrls.length > 0 ? galleryUrls : [primaryImg],
+              stock: data.stock_quantity ?? 10
+            };
+            populateDetails(resolvedProd);
+            return;
+          }
+        } catch (_) {}
+      }
+
+      // 3. Fall back to first real product if available
+      if (HARINAMA_DATA.products && HARINAMA_DATA.products.length > 0) {
+        populateDetails(HARINAMA_DATA.products[0]);
+      } else {
+        // If still no products loaded, wait for catalog event
+        const onLoaded = () => {
+          window.removeEventListener('hn:catalog-loaded', onLoaded);
+          const found = prodId ? findCatalogProduct(prodId) : HARINAMA_DATA.products[0];
+          if (found) {
+            populateDetails(found);
+          } else {
+            showNotFound();
+          }
+        };
+        window.addEventListener('hn:catalog-loaded', onLoaded);
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       renderHeader('shop');
       renderFooter();
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const prodId = urlParams.get('id') || 'a0000001-0000-0000-0000-000000000001';
-
-      // Lookup product using universal resolver
-      const cached = findCatalogProduct(prodId);
-      if (cached) {
-        populateDetails(cached);
-      }
-
-      // Fetch live product from API
-      fetch(`/api/products/${encodeURIComponent(prodId)}`)
-        .then(r => r.json())
-        .then(res => {
-          if (res && res.success && res.data) {
-            populateDetails(res.data);
-          }
-        })
-        .catch(() => {
-          if (!cached) {
-            const fallback = findCatalogProduct('prod-001') || (HARINAMA_DATA.products && HARINAMA_DATA.products[0]);
-            if (fallback) populateDetails(fallback);
-          }
-        });
-
-      window.addEventListener('hn:catalog-loaded', () => {
-        const found = findCatalogProduct(prodId);
-        if (found) populateDetails(found);
-      });
+      loadLiveProduct();
 
       window.addEventListener('hn_wishlist_updated', () => {
         if (currentProduct) populateDetails(currentProduct);

@@ -14,6 +14,7 @@
   <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <!-- Harinama Store Master Stylesheet -->
   <link rel="stylesheet" href="/assets/css/style.css?v=12">
@@ -297,44 +298,12 @@
       <div class="container">
         
         <div class="hn-section-header hn-reveal">
-          <h2 class="hn-section-title">Give a Reminder, Not Just a Gift</h2>
-          <div class="hn-section-subtitle">Beautiful gift sets for your loved ones.</div>
+          <h2 class="hn-section-title">Sacred Devotional Gift Sets &amp; Combos</h2>
+          <div class="hn-section-subtitle">Specially curated blessed offerings from our live catalog.</div>
         </div>
 
-        <div class="row g-4 justify-content-center hn-reveal-stagger">
-          
-          <!-- Card 1: 3-Keychain Gift Set -->
-          <div class="col-md-6 col-lg-5">
-            <div class="hn-gift-card">
-              <div class="hn-gift-img-box">
-                <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80" alt="3-Keychain Gift Set">
-              </div>
-              <h4 class="hn-gift-title">3-Keychain Gift Set</h4>
-              <div class="hn-gift-price-row">
-                <span class="hn-gift-price">₹299</span>
-                <span class="hn-gift-old-price">₹357</span>
-                <span class="hn-gift-badge">Save ₹58</span>
-              </div>
-              <button class="btn hn-btn-gold mt-auto" onclick="handleAddToCart('prod-009')">Add to Cart</button>
-            </div>
-          </div>
-
-          <!-- Card 2: 5-Keychain Collection -->
-          <div class="col-md-6 col-lg-5">
-            <div class="hn-gift-card">
-              <div class="hn-gift-img-box">
-                <img src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=600&q=80" alt="5-Keychain Collection">
-              </div>
-              <h4 class="hn-gift-title">5-Keychain Collection</h4>
-              <div class="hn-gift-price-row">
-                <span class="hn-gift-price">₹499</span>
-                <span class="hn-gift-old-price">₹645</span>
-                <span class="hn-gift-badge">Save ₹146</span>
-              </div>
-              <button class="btn hn-btn-gold mt-auto" onclick="handleAddToCart('prod-010')">Add to Cart</button>
-            </div>
-          </div>
-
+        <div class="row g-4 justify-content-center hn-reveal-stagger" id="hn-home-combos-grid">
+          <!-- Dynamic Database Combos/Gift Sets -->
         </div>
 
       </div>
@@ -364,14 +333,21 @@
           <div class="col-6 col-md-3">
             <div class="hn-service-item">
               <i class="bi bi-truck"></i>
-              <span>Fast Shipping</span>
+              <span>All India Delivery</span>
             </div>
           </div>
 
           <div class="col-6 col-md-3">
             <div class="hn-service-item">
-              <i class="bi bi-heart-pulse"></i>
-              <span>Support with Care</span>
+              <i class="bi bi-arrow-counterclockwise"></i>
+              <span>Authentic Vedic Craft</span>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <div class="hn-service-item">
+              <i class="bi bi-chat-heart"></i>
+              <span>Devotee Support</span>
             </div>
           </div>
 
@@ -380,60 +356,18 @@
     </div>
 
     <!-- ====================================================================
-         8. CUSTOMER REVIEWS (Loved by Devotees)
+         8. DEVOTEE REVIEWS
          ==================================================================== -->
-    <section class="py-5" style="background-color: var(--hn-cream);">
+    <section class="hn-reviews-section hn-reveal" id="hn-reviews-home-wrapper">
       <div class="container">
         
-        <div class="hn-section-header hn-reveal">
-          <h2 class="hn-section-title">Loved by Devotees</h2>
-          <div class="hn-section-subtitle">Real experiences from our devotional community.</div>
+        <div class="hn-section-header">
+          <h2 class="hn-section-title">Loved by Devotees Across India</h2>
+          <div class="hn-section-subtitle">Real feedback from sincere practitioners and pilgrims.</div>
         </div>
 
-        <div class="row g-4 justify-content-center hn-reveal-stagger">
-          
-          <div class="col-md-4">
-            <div class="bg-white border rounded p-4 h-100 shadow-sm d-flex flex-column justify-content-between">
-              <div>
-                <div class="text-warning mb-2">
-                  <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                </div>
-                <p class="text-secondary small fst-italic mb-3">
-                  “The Maha-Mantra keychain is so beautifully made. It gives me an immediate pause of peace and chanting whenever I hold my keys.”
-                </p>
-              </div>
-              <div class="fw-bold small text-navy">— Radharani Devi Dasi, Vrindavan</div>
-            </div>
-          </div>
-
-          <div class="col-md-4">
-            <div class="bg-white border rounded p-4 h-100 shadow-sm d-flex flex-column justify-content-between">
-              <div>
-                <div class="text-warning mb-2">
-                  <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                </div>
-                <p class="text-secondary small fst-italic mb-3">
-                  “I bought one for myself and three as gifts for temple friends. The gold polish and peacock feather detail are supreme quality!”
-                </p>
-              </div>
-              <div class="fw-bold small text-navy">— Krishna Chaitanya Das, Mumbai</div>
-            </div>
-          </div>
-
-          <div class="col-md-4">
-            <div class="bg-white border rounded p-4 h-100 shadow-sm d-flex flex-column justify-content-between">
-              <div>
-                <div class="text-warning mb-2">
-                  <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                </div>
-                <p class="text-secondary small fst-italic mb-3">
-                  “Every time I travel, this small reminder keeps Krishna in my thoughts. Truly a keychain with a sacred purpose.”
-                </p>
-              </div>
-              <div class="fw-bold small text-navy">— Ananya Sharma, Bangalore</div>
-            </div>
-          </div>
-
+        <div class="row g-4 hn-reveal-stagger" id="hn-home-reviews-grid">
+          <!-- Dynamic Approved Devotee Reviews from DB -->
         </div>
 
       </div>
@@ -441,31 +375,160 @@
 
   </main>
 
-  <!-- Global Footer -->
+  <!-- Global Footer Component -->
   <div id="hn-footer-placeholder"></div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/assets/js/data.js"></script>
-  <script src="/assets/js/components.js?v=21"></script>
+  <script src="/assets/js/components.js"></script>
   <script>
+    const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+
+    // Render Featured Products from Database
+    function renderFeaturedSection() {
+      const grid = document.getElementById('hn-featured-grid');
+      if (!grid) return;
+
+      const prods = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
+      if (prods.length === 0) {
+        grid.innerHTML = `
+          <div class="col-12 text-center py-5 text-muted">
+            <div class="spinner-border text-gold mb-2" role="status"></div>
+            <p class="small mb-0">Connecting to sacred database...</p>
+          </div>
+        `;
+        return;
+      }
+
+      const featured = prods.filter(p => p.featured).slice(0, 6);
+      const displayList = featured.length > 0 ? featured : prods.slice(0, 6);
+      grid.innerHTML = displayList.map(p => renderProductCard(p)).join('');
+      initScrollAnimations();
+    }
+
+    // Dynamic Promo Item Binding
+    function updatePromoSection() {
+      const prods = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
+      if (prods.length === 0) return;
+
+      const promoProd = prods.find(p => p.slug && p.slug.includes('mantra')) || prods[0];
+      if (!promoProd) return;
+
+      const titleEl = document.querySelector('.hn-promo-title');
+      if (titleEl) titleEl.innerText = promoProd.title || promoProd.name;
+
+      const priceEl = document.querySelector('.hn-promo-price');
+      if (priceEl) priceEl.innerText = formatPrice(promoProd.price);
+
+      const imgEl = document.querySelector('.hn-promo-img');
+      if (imgEl && promoProd.image) imgEl.src = promoProd.image;
+
+      const btn = document.querySelector('.hn-promo-content button');
+      if (btn) btn.setAttribute('onclick', `handleAddToCart('${promoProd.id}')`);
+    }
+
+    // Dynamic Combo Sets Binding
+    function renderCombosSection() {
+      const container = document.getElementById('hn-home-combos-grid');
+      if (!container) return;
+
+      const prods = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
+      if (prods.length === 0) return;
+
+      const combos = prods.filter(p => (p.category && (p.category.includes('Combo') || p.category.includes('Gift'))));
+      const displayCombos = combos.length > 0 ? combos.slice(0, 2) : prods.slice(0, 2);
+
+      container.innerHTML = displayCombos.map(p => `
+        <div class="col-md-6 col-lg-5">
+          <div class="hn-gift-card">
+            <div class="hn-gift-img-box">
+              <img src="${p.image}" alt="${p.title || p.name}">
+            </div>
+            <h4 class="hn-gift-title">${p.title || p.name}</h4>
+            <div class="hn-gift-price-row">
+              <span class="hn-gift-price">${formatPrice(p.price)}</span>
+              ${p.old_price ? `<span class="hn-gift-old-price">${formatPrice(p.old_price)}</span>` : ''}
+              ${p.old_price ? `<span class="hn-gift-badge">Save ${formatPrice(p.old_price - p.price)}</span>` : ''}
+            </div>
+            <button class="btn hn-btn-gold mt-auto" onclick="handleAddToCart('${p.id}')">Add to Cart</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Dynamic Approved Reviews from Supabase
+    async function loadHomeReviews() {
+      const container = document.getElementById('hn-home-reviews-grid');
+      const sectionWrapper = document.getElementById('hn-reviews-home-wrapper');
+      if (!container) return;
+
+      let approvedReviews = [];
+
+      // 1. Try Supabase direct query
+      try {
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+          const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          const { data, error } = await sb
+            .from('reviews')
+            .select('*')
+            .eq('status', 'approved')
+            .order('created_at', { ascending: false })
+            .limit(6);
+
+          if (!error && Array.isArray(data) && data.length > 0) {
+            approvedReviews = data;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Try API fallback
+      if (approvedReviews.length === 0) {
+        try {
+          const res = await fetch('/api/reviews?limit=6').then(r => r.json());
+          if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+            approvedReviews = res.data.filter(r => r.status === 'approved');
+          }
+        } catch (_) {}
+      }
+
+      if (approvedReviews.length > 0) {
+        if (sectionWrapper) sectionWrapper.style.display = 'block';
+        container.innerHTML = approvedReviews.map(r => `
+          <div class="col-md-4">
+            <div class="bg-white border rounded p-4 h-100 shadow-sm d-flex flex-column justify-content-between">
+              <div>
+                <div class="text-warning mb-2">
+                  ${'<i class="bi bi-star-fill"></i>'.repeat(Math.min(5, r.rating || 5))}
+                </div>
+                <p class="text-secondary small fst-italic mb-3">
+                  “${r.comment || r.title || 'Divine sacred item, blessed experience.'}”
+                </p>
+              </div>
+              <div class="fw-bold small text-navy">— ${r.user_name || 'Devotee Customer'}</div>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        if (sectionWrapper) sectionWrapper.style.display = 'none';
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       renderHeader('home');
       renderFooter();
+      renderFeaturedSection();
+      updatePromoSection();
+      renderCombosSection();
+      loadHomeReviews();
 
-      // Render 6 Featured Product Cards
-      const grid = document.getElementById('hn-featured-grid');
-      const renderFeatured = () => {
-        if (grid && HARINAMA_DATA && HARINAMA_DATA.products) {
-          const featured = HARINAMA_DATA.products.filter(p => p.featured).slice(0, 6);
-          const displayList = featured.length > 0 ? featured : HARINAMA_DATA.products.slice(0, 6);
-          grid.innerHTML = displayList.map(p => renderProductCard(p)).join('');
-          initScrollAnimations();
-        }
-      };
-
-      renderFeatured();
-      window.addEventListener('hn:catalog-loaded', renderFeatured);
+      window.addEventListener('hn:catalog-loaded', () => {
+        renderFeaturedSection();
+        updatePromoSection();
+        renderCombosSection();
+      });
     });
   </script>
 </body>

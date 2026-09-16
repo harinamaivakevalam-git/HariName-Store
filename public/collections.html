@@ -85,84 +85,11 @@
       </div>
 
       <!-- Collections Grid -->
-      <div class="row g-4 justify-content-center">
-        
-        <!-- Collection 1: Devotional Keychains -->
-        <div class="col-md-6 col-lg-3">
-          <div class="hn-collection-card">
-            <div class="hn-collection-img-wrap">
-              <img src="https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80" alt="Devotional Keychains" class="hn-collection-img">
-              <span class="hn-collection-badge">8 Products</span>
-            </div>
-            <div class="p-4 d-flex flex-column flex-grow-1">
-              <h4 class="fw-bold mb-2 text-navy" style="font-family: var(--hn-font-serif);">Devotional Keychains</h4>
-              <p class="text-secondary small mb-4 flex-grow-1">
-                Handcrafted brass, acrylic, and wood keychains featuring the Maha-Mantra, Krishna Flute, Peacock Feather, and holy dham symbols.
-              </p>
-              <a href="/shop.html?category=devotional-keychains" class="btn hn-btn-gold w-100">
-                Explore Collection <i class="bi bi-arrow-right ms-1"></i>
-              </a>
-            </div>
-          </div>
+      <div class="row g-4 justify-content-center" id="hn-collections-grid">
+        <div class="col-12 text-center py-5">
+          <div class="spinner-border text-warning" role="status"></div>
+          <div class="text-muted small mt-2">Loading spiritual collections from database...</div>
         </div>
-
-        <!-- Collection 2: Sacred Books & Shastras -->
-        <div class="col-md-6 col-lg-3">
-          <div class="hn-collection-card">
-            <div class="hn-collection-img-wrap">
-              <img src="https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80" alt="Sacred Books & Shastras" class="hn-collection-img">
-              <span class="hn-collection-badge">3 Products</span>
-            </div>
-            <div class="p-4 d-flex flex-column flex-grow-1">
-              <h4 class="fw-bold mb-2 text-navy" style="font-family: var(--hn-font-serif);">Sacred Books &amp; Shastras</h4>
-              <p class="text-secondary small mb-4 flex-grow-1">
-                Authentic scriptures including Bhagavad Gita As It Is, Sri Isopanisad, and spiritual wisdom literature for eternal peace and knowledge.
-              </p>
-              <a href="/shop.html?category=sacred-books" class="btn hn-btn-gold w-100">
-                Explore Collection <i class="bi bi-arrow-right ms-1"></i>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Collection 3: Japa & Chanting -->
-        <div class="col-md-6 col-lg-3">
-          <div class="hn-collection-card">
-            <div class="hn-collection-img-wrap">
-              <img src="https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=600&q=80" alt="Japa & Chanting" class="hn-collection-img">
-              <span class="hn-collection-badge">3 Products</span>
-            </div>
-            <div class="p-4 d-flex flex-column flex-grow-1">
-              <h4 class="fw-bold mb-2 text-navy" style="font-family: var(--hn-font-serif);">Japa &amp; Chanting</h4>
-              <p class="text-secondary small mb-4 flex-grow-1">
-                Sacred Neem &amp; Tulasi Japa malas, embroidered bead bags, and chanting accessories blessed in Vrindavan Dham.
-              </p>
-              <a href="/shop.html?category=japa-chanting" class="btn hn-btn-gold w-100">
-                Explore Collection <i class="bi bi-arrow-right ms-1"></i>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Collection 4: Gift Sets & Bundles -->
-        <div class="col-md-6 col-lg-3">
-          <div class="hn-collection-card">
-            <div class="hn-collection-img-wrap">
-              <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80" alt="Gift Sets & Bundles" class="hn-collection-img">
-              <span class="hn-collection-badge">2 Bundles</span>
-            </div>
-            <div class="p-4 d-flex flex-column flex-grow-1">
-              <h4 class="fw-bold mb-2 text-navy" style="font-family: var(--hn-font-serif);">Gift Sets &amp; Bundles</h4>
-              <p class="text-secondary small mb-4 flex-grow-1">
-                Deluxe packaged devotional sets ideal for gifting temple friends, family festivals, spiritual occasions, and auspicious gatherings.
-              </p>
-              <a href="/shop.html?category=gift-sets" class="btn hn-btn-gold w-100">
-                Explore Collection <i class="bi bi-arrow-right ms-1"></i>
-              </a>
-            </div>
-          </div>
-        </div>
-
       </div>
 
       <!-- Devotional Bottom Banner -->
@@ -171,7 +98,7 @@
         <p class="text-secondary small mb-4 max-w-600 mx-auto">
           Handcrafted with sacred care in Vrindavan Dham to help you remember Krishna throughout your day.
         </p>
-        <a href="/shop.html" class="btn hn-btn-gold px-4 py-2">View All Products</a>
+        <a href="/shop.html" class="btn btn-gold px-4 py-2">View All Products</a>
       </div>
 
     </div>
@@ -183,11 +110,58 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
-  <script src="/assets/js/components.js?v=15"></script>
+  <script src="/assets/js/components.js?v=22"></script>
   <script>
+    function renderCollections() {
+      const grid = document.getElementById('hn-collections-grid');
+      if (!grid) return;
+
+      const cats = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.categories)) 
+        ? HARINAMA_DATA.categories.filter(c => c.slug !== 'all-products' && c.id !== 'cat-all')
+        : [];
+
+      if (cats.length === 0) {
+        grid.innerHTML = `
+          <div class="col-12 text-center py-5 text-muted">
+            <i class="bi bi-box-seam fs-1 text-gold d-block mb-2"></i>
+            <h5>Devotional Collections updating</h5>
+            <p class="small">Explore all items in our live store catalog.</p>
+            <a href="/shop.html" class="btn btn-gold btn-sm px-4">Browse All Products</a>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = cats.map(c => {
+        const catImg = c.image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
+        const countText = `${c.count || 0} Products`;
+        return `
+          <div class="col-md-6 col-lg-3">
+            <div class="hn-collection-card">
+              <div class="hn-collection-img-wrap">
+                <img src="${catImg}" alt="${c.name}" class="hn-collection-img">
+                <span class="hn-collection-badge">${countText}</span>
+              </div>
+              <div class="p-4 d-flex flex-column flex-grow-1">
+                <h4 class="fw-bold mb-2 text-navy" style="font-family: var(--hn-font-serif);">${c.name}</h4>
+                <p class="text-secondary small mb-4 flex-grow-1">
+                  ${c.desc || `Handcrafted devotional items and sacred treasures in ${c.name}.`}
+                </p>
+                <a href="/shop.html?category=${encodeURIComponent(c.slug || c.id)}" class="btn btn-gold w-100">
+                  Explore Collection <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       renderHeader('collections');
       renderFooter();
+      renderCollections();
+      window.addEventListener('hn:catalog-loaded', renderCollections);
     });
   </script>
 </body>

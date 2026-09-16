@@ -64,11 +64,9 @@
               <!-- Collections Filter -->
               <div class="mb-4">
                 <div class="hn-filter-title">Collections & Categories</div>
-                <a href="#" class="hn-filter-link active" onclick="filterByCollection('all', this); return false;">All Products</a>
-                <a href="#" class="hn-filter-link" onclick="filterByCollection('devotional-keychains', this); return false;">Devotional Keychains</a>
-                <a href="#" class="hn-filter-link" onclick="filterByCollection('sacred-books', this); return false;">Sacred Books & Shastras</a>
-                <a href="#" class="hn-filter-link" onclick="filterByCollection('japa-chanting', this); return false;">Japa & Chanting</a>
-                <a href="#" class="hn-filter-link" onclick="filterByCollection('gift-sets', this); return false;">Gift Sets & Bundles</a>
+                <div id="hn-shop-categories-list">
+                  <a href="#" class="hn-filter-link active" onclick="filterByCollection('all', this); return false;">All Products</a>
+                </div>
               </div>
 
               <!-- Price Filter -->
@@ -208,7 +206,27 @@
       applyFilters();
     }
 
+    function renderShopCategories() {
+      const catListEl = document.getElementById('hn-shop-categories-list');
+      if (!catListEl) return;
+
+      const cats = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.categories)) ? HARINAMA_DATA.categories : [];
+      let markup = `<a href="#" class="hn-filter-link ${activeCollection === 'all' ? 'active' : ''}" onclick="filterByCollection('all', this); return false;">All Products</a>`;
+
+      cats.forEach(c => {
+        if (c.slug !== 'all-products' && c.id !== 'cat-all') {
+          const key = c.slug || c.id;
+          const isActive = activeCollection === key || activeCollection === c.name || activeCollection === c.id;
+          const countBadge = c.count !== undefined ? ` (${c.count})` : '';
+          markup += `<a href="#" class="hn-filter-link ${isActive ? 'active' : ''}" onclick="filterByCollection('${key}', this); return false;">${c.name}${countBadge}</a>`;
+        }
+      });
+
+      catListEl.innerHTML = markup;
+    }
+
     function applyFilters() {
+      renderShopCategories();
       let filtered = [...HARINAMA_DATA.products];
 
       // Search query filter
@@ -233,7 +251,11 @@
 
       // Collection filter
       if (activeCollection !== 'all') {
-        filtered = filtered.filter(p => p.category_slug === activeCollection);
+        filtered = filtered.filter(p => 
+          p.category_slug === activeCollection || 
+          (p.category && p.category.toLowerCase() === activeCollection.toLowerCase()) ||
+          p.category_id === activeCollection
+        );
       }
 
       // Price filters
@@ -282,17 +304,14 @@
       const catParam = urlParams.get('category');
       if (catParam) {
         activeCollection = catParam;
-        document.querySelectorAll('.hn-filter-link').forEach(a => {
-          if (a.getAttribute('onclick') && a.getAttribute('onclick').includes(catParam)) {
-            a.classList.add('active');
-          } else {
-            a.classList.remove('active');
-          }
-        });
       }
 
+      renderShopCategories();
       applyFilters();
-      window.addEventListener('hn:catalog-loaded', () => applyFilters());
+      window.addEventListener('hn:catalog-loaded', () => {
+        renderShopCategories();
+        applyFilters();
+      });
       window.addEventListener('hn_wishlist_updated', () => applyFilters());
     });
   </script>

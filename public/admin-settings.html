@@ -55,21 +55,50 @@
         </a>
 
         <div class="d-flex align-items-center gap-2 border-start ps-3">
-          <div class="rounded-circle bg-navy text-white d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px; background-color: var(--hn-navy); font-size: 0.85rem;">
+          <div class="hn-admin-user-avatar rounded-circle bg-navy text-white d-flex align-items-center justify-content-center fw-bold overflow-hidden" style="width: 36px; height: 36px; min-width: 36px; background-color: var(--hn-navy); font-size: 0.85rem;">
             AD
           </div>
-          <div class="d-none d-md-block text-start">
-            <div class="small fw-bold text-navy lh-1">Store Admin</div>
-            <div class="text-muted" style="font-size: 0.72rem;">admin@harinama.com</div>
+          <div class="d-none d-md-block text-start" style="max-width: 180px;">
+            <div class="hn-admin-user-name small fw-bold text-navy lh-1 text-truncate">Store Admin</div>
+            <div class="hn-admin-user-email text-muted text-truncate" style="font-size: 0.72rem;">admin@harinama.com</div>
           </div>
-          <a href="/login.html" class="btn btn-sm btn-outline-danger ms-2" title="Sign Out">
+          <button type="button" class="btn btn-sm btn-outline-danger ms-2" title="Sign Out" onclick="logoutUser(event)">
             <i class="bi bi-box-arrow-right"></i>
-          </a>
+          </button>
         </div>
       </div>
 
     </div>
   </header>
+  <script>
+    (function(){
+      try {
+        var raw = localStorage.getItem('hn_user_profile') || localStorage.getItem('hn_user') || localStorage.getItem('user');
+        if (!raw) return;
+        var u = JSON.parse(raw);
+        if (!u) return;
+        var rawName = u.name || u.full_name || u.displayName;
+        var name = (rawName && rawName.trim() && !['store admin', 'admin', 'user', 'null', 'undefined'].includes(rawName.trim().toLowerCase()))
+          ? rawName.trim()
+          : (u.email ? u.email.split('@')[0].charAt(0).toUpperCase() + u.email.split('@')[0].slice(1) : 'Admin');
+        var email = u.email || '';
+        var avatar = u.avatar_url || u.avatar || u.picture;
+        var nameEl = document.querySelector('.hn-admin-user-name');
+        if (nameEl) nameEl.textContent = name;
+        var emailEl = document.querySelector('.hn-admin-user-email');
+        if (emailEl) emailEl.textContent = email;
+        var avatarEl = document.querySelector('.hn-admin-user-avatar');
+        if (avatarEl) {
+          if (avatar) {
+            avatarEl.innerHTML = '<img src="' + avatar + '" alt="' + name + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+          } else {
+            var parts = name.split(/\s+/);
+            avatarEl.textContent = (parts.length >= 2 ? (parts[0][0] + parts[parts.length-1][0]) : name.slice(0,2)).toUpperCase();
+          }
+        }
+      } catch(e) {}
+    })();
+  </script>
 
   <div class="container-fluid px-3 px-md-4 py-4" style="max-width: 1400px;">
     

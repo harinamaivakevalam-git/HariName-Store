@@ -122,14 +122,103 @@
     } catch (_) {}
   };
 
+  const updateAdminTopbarUser = () => {
+    try {
+      const user = getLoggedInUser();
+      if (!user) return;
+
+      const rawName = user.name || user.full_name || user.displayName;
+      let name = 'Admin';
+      if (rawName && rawName.trim() && !['store admin', 'admin', 'user', 'null', 'undefined'].includes(rawName.trim().toLowerCase())) {
+        name = rawName.trim();
+      } else if (user.email) {
+        const prefix = user.email.split('@')[0];
+        name = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+      }
+
+      const email = user.email || '';
+      const avatarUrl = user.avatar_url || user.avatar || user.picture;
+
+      let initials = 'AD';
+      if (name) {
+        const parts = name.trim().split(/\s+/);
+        if (parts.length >= 2) {
+          initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        } else if (parts[0].length >= 2) {
+          initials = parts[0].substring(0, 2).toUpperCase();
+        } else {
+          initials = parts[0][0].toUpperCase();
+        }
+      }
+
+      document.querySelectorAll('.hn-admin-user-name').forEach(el => {
+        el.textContent = name;
+        el.setAttribute('title', name);
+      });
+
+      document.querySelectorAll('.hn-admin-user-email').forEach(el => {
+        el.textContent = email;
+        el.setAttribute('title', email);
+      });
+
+      document.querySelectorAll('.hn-admin-user-avatar').forEach(el => {
+        if (avatarUrl) {
+          el.innerHTML = `<img src="${avatarUrl}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+        } else {
+          el.textContent = initials;
+        }
+      });
+
+      document.querySelectorAll('.hn-admin-topbar, header').forEach(header => {
+        const block = header.querySelector('.border-start');
+        if (block) {
+          const avatarBox = block.querySelector('.rounded-circle');
+          const textBlock = block.querySelector('.d-none.d-md-block');
+          if (avatarBox && !avatarBox.classList.contains('hn-admin-user-avatar')) {
+            if (avatarUrl) {
+              avatarBox.innerHTML = `<img src="${avatarUrl}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            } else {
+              avatarBox.textContent = initials;
+            }
+          }
+          if (textBlock) {
+            const nameEl = textBlock.querySelector('.small.fw-bold');
+            const emailEl = textBlock.querySelector('.text-muted');
+            if (nameEl && !nameEl.classList.contains('hn-admin-user-name')) {
+              nameEl.textContent = name;
+              nameEl.setAttribute('title', name);
+            }
+            if (emailEl && !emailEl.classList.contains('hn-admin-user-email')) {
+              emailEl.textContent = email;
+              emailEl.setAttribute('title', email);
+            }
+          }
+          const logoutBtn = block.querySelector('a[href*="login"], button');
+          if (logoutBtn && !logoutBtn.getAttribute('onclick')) {
+            logoutBtn.setAttribute('href', '#');
+            logoutBtn.onclick = (e) => {
+              e.preventDefault();
+              logoutUser(e, false);
+            };
+          }
+        }
+      });
+    } catch (e) {
+      console.warn('[components] updateAdminTopbarUser note:', e);
+    }
+  };
+  window.updateAdminTopbarUser = updateAdminTopbarUser;
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       enforceProtectedPageAccess();
       checkAuthQueryPrompt();
+      updateAdminTopbarUser();
     });
   } else {
     enforceProtectedPageAccess();
     checkAuthQueryPrompt();
+    updateAdminTopbarUser();
   }
 
   const getLoggedInUser = () => {

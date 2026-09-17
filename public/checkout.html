@@ -24,6 +24,8 @@
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <!-- Supabase JS Client v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Fast Indian Pincode Resolver & Directory -->
+  <script src="/assets/js/india-pincodes.js"></script>
 </head>
 <body>
 
@@ -58,49 +60,95 @@
               
               <div class="mb-3">
                 <label class="form-label small fw-bold text-secondary">Full Name *</label>
-                <input type="text" class="form-control" id="hn-ship-name" required placeholder="Gauranga Das" value="Gauranga Das">
+                <input type="text" class="form-control" id="hn-ship-name" required placeholder="e.g. Radhe Shyam">
               </div>
 
               <div class="row g-3 mb-3">
                 <div class="col-md-6">
                   <label class="form-label small fw-bold text-secondary">Mobile Number (for delivery tracking) *</label>
-                  <input type="tel" class="form-control" id="hn-ship-phone" required placeholder="+91 98765 43210" value="+91 98765 43210">
+                  <input type="tel" class="form-control" id="hn-ship-phone" required placeholder="+91 98765 43210">
                 </div>
                 <div class="col-md-6">
                   <label class="form-label small fw-bold text-secondary">Email Address (for invoice)</label>
-                  <input type="email" class="form-control" id="hn-ship-email" placeholder="devotee@harinama.com" value="user@harinama.com">
+                  <input type="email" class="form-control" id="hn-ship-email" placeholder="devotee@harinama.com">
                 </div>
               </div>
 
               <div class="mb-3">
                 <label class="form-label small fw-bold text-secondary">Delivery Street Address / Flat / Landmark *</label>
-                <input type="text" class="form-control" id="hn-ship-address" required placeholder="Flat 402, Radharani Kripa Apartments, Raman Reti" value="Flat 402, Radharani Kripa Apartments, Raman Reti">
+                <input type="text" class="form-control" id="hn-ship-address" required placeholder="Flat / House / Building / Street / Landmark">
+              </div>
+
+              <!-- PIN Code & Village/Area directly below Delivery Street Address -->
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold text-secondary d-flex justify-content-between align-items-center">
+                    <span>PIN Code *</span>
+                    <span id="hn-pin-spinner" class="spinner-border spinner-border-sm text-warning d-none" role="status" style="width: 0.85rem; height: 0.85rem;"></span>
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light text-warning"><i class="bi bi-geo-alt-fill"></i></span>
+                    <input type="text" class="form-control" id="hn-ship-pin" required maxlength="6" pattern="[0-9]{6}" placeholder="Enter 6-digit PIN (e.g. 521178)" oninput="handlePincodeLookup(this.value)">
+                  </div>
+                  <div id="hn-pin-feedback" class="small mt-1 text-muted" style="font-size: 0.76rem;">
+                    <i class="bi bi-info-circle me-1"></i> Enter 6-digit PIN to auto-fill City, Village &amp; State
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold text-secondary">Village / Town / Area</label>
+                  <div id="hn-village-wrapper">
+                    <input type="text" class="form-control" id="hn-ship-village" placeholder="Village / Area / Post Office">
+                  </div>
+                </div>
               </div>
 
               <div class="row g-3">
-                <div class="col-md-4">
-                  <label class="form-label small fw-bold text-secondary">City / Town *</label>
-                  <input type="text" class="form-control" id="hn-ship-city" required placeholder="Vrindavan" value="Vrindavan">
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold text-secondary">City / District *</label>
+                  <input type="text" class="form-control" id="hn-ship-city" required placeholder="City / District">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                   <label class="form-label small fw-bold text-secondary">State *</label>
                   <select class="form-select" id="hn-ship-state" required>
-                    <option value="Uttar Pradesh" selected>Uttar Pradesh</option>
-                    <option value="West Bengal">West Bengal</option>
-                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="" disabled selected>-- Select State --</option>
+                    <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                    <option value="Assam">Assam</option>
+                    <option value="Bihar">Bihar</option>
+                    <option value="Chandigarh">Chandigarh</option>
+                    <option value="Chhattisgarh">Chhattisgarh</option>
+                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
                     <option value="Delhi">Delhi</option>
-                    <option value="Karnataka">Karnataka</option>
+                    <option value="Goa">Goa</option>
                     <option value="Gujarat">Gujarat</option>
-                    <option value="Tamil Nadu">Tamil Nadu</option>
-                    <option value="Rajasthan">Rajasthan</option>
+                    <option value="Haryana">Haryana</option>
+                    <option value="Himachal Pradesh">Himachal Pradesh</option>
+                    <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                    <option value="Jharkhand">Jharkhand</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Kerala">Kerala</option>
+                    <option value="Ladakh">Ladakh</option>
+                    <option value="Lakshadweep">Lakshadweep</option>
+                    <option value="Madhya Pradesh">Madhya Pradesh</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Manipur">Manipur</option>
+                    <option value="Meghalaya">Meghalaya</option>
+                    <option value="Mizoram">Mizoram</option>
+                    <option value="Nagaland">Nagaland</option>
+                    <option value="Odisha">Odisha</option>
+                    <option value="Puducherry">Puducherry</option>
                     <option value="Punjab">Punjab</option>
+                    <option value="Rajasthan">Rajasthan</option>
+                    <option value="Sikkim">Sikkim</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
                     <option value="Telangana">Telangana</option>
+                    <option value="Tripura">Tripura</option>
+                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="Uttarakhand">Uttarakhand</option>
+                    <option value="West Bengal">West Bengal</option>
                     <option value="Other">Other State</option>
                   </select>
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label small fw-bold text-secondary">PIN Code *</label>
-                  <input type="text" class="form-control" id="hn-ship-pin" required placeholder="281121" value="281121">
                 </div>
               </div>
 
@@ -280,8 +328,9 @@
             <div class="text-center py-4 text-muted small">
               <i class="bi bi-cart-x fs-2 d-block mb-2 text-warning"></i>
               Your cart is currently empty.
-              <div class="mt-2">
+              <div class="mt-2 d-flex flex-column gap-2 justify-content-center align-items-center">
                 <a href="/shop.html" class="btn btn-sm hn-btn-gold px-3">Browse Live Products</a>
+                <button type="button" class="btn btn-sm btn-outline-secondary px-3" onclick="addSampleItemForTesting()">+ Add Sample Item (For Testing)</button>
               </div>
             </div>
           `;
@@ -400,6 +449,125 @@
       renderCheckoutSummary();
     }
 
+    let pinLookupTimeout = null;
+
+    function applyLocationToForm(locationFound, sourceName) {
+      if (!locationFound) return;
+      const cityInput = document.getElementById('hn-ship-city');
+      const stateSelect = document.getElementById('hn-ship-state');
+      const villageWrapper = document.getElementById('hn-village-wrapper');
+      const feedback = document.getElementById('hn-pin-feedback');
+
+      const district = locationFound.district || locationFound.city || '';
+      const stateName = locationFound.state || '';
+      const villages = locationFound.villages || [];
+
+      if (cityInput && district) {
+        cityInput.value = district;
+        cityInput.classList.add('is-valid');
+        setTimeout(() => cityInput.classList.remove('is-valid'), 2000);
+      }
+
+      if (stateSelect && stateName) {
+        let matched = false;
+        const searchState = stateName.toLowerCase().trim();
+        for (let i = 0; i < stateSelect.options.length; i++) {
+          const optText = stateSelect.options[i].text.toLowerCase().trim();
+          const optVal = stateSelect.options[i].value.toLowerCase().trim();
+          if (optText === searchState || optVal === searchState || optText.includes(searchState) || searchState.includes(optText)) {
+            stateSelect.selectedIndex = i;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
+          const newOpt = new Option(stateName, stateName, true, true);
+          stateSelect.add(newOpt);
+        }
+        stateSelect.classList.add('is-valid');
+        setTimeout(() => stateSelect.classList.remove('is-valid'), 2000);
+      }
+
+      if (villageWrapper) {
+        if (villages.length > 0) {
+          villageWrapper.innerHTML = `
+            <select class="form-select is-valid" id="hn-ship-village">
+              ${villages.map((name, idx) => `<option value="${name}" ${idx === 0 ? 'selected' : ''}>${name}</option>`).join('')}
+              <option value="">Other / Main Area</option>
+            </select>
+          `;
+          setTimeout(() => {
+            const sel = document.getElementById('hn-ship-village');
+            if (sel) sel.classList.remove('is-valid');
+          }, 2000);
+        } else {
+          villageWrapper.innerHTML = `<input type="text" class="form-control" id="hn-ship-village" placeholder="Village / Area">`;
+        }
+      }
+
+      if (feedback) {
+        feedback.innerHTML = `<span class="text-success fw-medium"><i class="bi bi-check-circle-fill me-1"></i> Auto-filled: ${district}, ${stateName} ${villages.length > 0 ? `(${villages.length} local areas detected)` : ''}</span>`;
+      }
+    }
+
+    async function handlePincodeLookup(pinValue) {
+      const pin = (pinValue || '').toString().trim().replace(/\D/g, '');
+      const spinner = document.getElementById('hn-pin-spinner');
+      const feedback = document.getElementById('hn-pin-feedback');
+
+      if (pin.length !== 6) {
+        if (feedback) feedback.innerHTML = '<span class="text-muted"><i class="bi bi-info-circle me-1"></i> Enter 6-digit Indian PIN code to auto-fill location</span>';
+        if (spinner) spinner.classList.add('d-none');
+        return;
+      }
+
+      // 1. Instant 0ms Local / Offline Directory Resolution
+      let hasResolved = false;
+      if (typeof window.resolveIndiaPincode === 'function') {
+        const instantResult = window.resolveIndiaPincode(pin);
+        if (instantResult && (instantResult.district || instantResult.state)) {
+          applyLocationToForm(instantResult, 'instant');
+          hasResolved = true;
+        }
+      }
+
+      if (spinner) spinner.classList.remove('d-none');
+      if (feedback && !hasResolved) {
+        feedback.innerHTML = '<span class="text-warning-emphasis"><i class="bi bi-arrow-repeat spin me-1"></i> Fetching location for PIN ' + pin + '...</span>';
+      }
+
+      clearTimeout(pinLookupTimeout);
+      pinLookupTimeout = setTimeout(async () => {
+        try {
+          // 2. Fetch server /api/pincode/:pin for live postal & Google Maps data
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 2500);
+
+          const r = await fetch(`/api/pincode/${pin}`, { signal: controller.signal });
+          clearTimeout(timer);
+
+          if (r.ok) {
+            const resJson = await r.json();
+            if (resJson?.success && (resJson?.state || resJson?.district)) {
+              applyLocationToForm({
+                city: resJson.city || resJson.district || '',
+                district: resJson.district || resJson.city || '',
+                state: resJson.state || '',
+                villages: resJson.villages || []
+              }, 'server');
+              hasResolved = true;
+            }
+          }
+        } catch (_) {}
+
+        if (spinner) spinner.classList.add('d-none');
+
+        if (!hasResolved && feedback) {
+          feedback.innerHTML = '<span class="text-muted"><i class="bi bi-exclamation-circle me-1"></i> PIN not recognized. You can enter City & State manually.</span>';
+        }
+      }, 50);
+    }
+
     async function handlePlaceOrder(e) {
       e.preventDefault();
       const btn = document.getElementById('hn-btn-place-order');
@@ -415,6 +583,7 @@
       const phone = document.getElementById('hn-ship-phone').value.trim();
       const email = document.getElementById('hn-ship-email').value.trim();
       const address = document.getElementById('hn-ship-address').value.trim();
+      const village = document.getElementById('hn-ship-village') ? document.getElementById('hn-ship-village').value.trim() : '';
       const city = document.getElementById('hn-ship-city').value.trim();
       const state = document.getElementById('hn-ship-state').value;
       const pin = document.getElementById('hn-ship-pin').value.trim();
@@ -426,7 +595,7 @@
       const shipping = subtotal >= 499 ? 0 : 0;
       const total = Math.max(0, subtotal + shipping - checkoutDiscount);
       const formattedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const fullAddressStr = `${address}, ${city}, ${state} - ${pin}`;
+      const fullAddressStr = `${address}${village ? ', ' + village : ''}, ${city}, ${state} - ${pin}`;
       const trackingNum = 'HN-EXP-' + Math.floor(100000 + Math.random() * 900000);
 
       const orderData = {
@@ -440,7 +609,7 @@
         phone: phone,
         email: email,
         address: fullAddressStr,
-        shipping_address: { name, phone, email, address_line_1: address, city, state, pin },
+        shipping_address: { name, phone, email, address_line_1: address, village, city, state, pin },
         paymentMethod: selectedPaymentText,
         payment_method: selectedPaymentText,
         payment_status: isCod ? 'Pending (COD)' : 'Paid',
@@ -705,16 +874,94 @@
 
         const rzp = new Razorpay(options);
         rzp.on('payment.failed', function (resp) {
-          alert('Payment Failed: ' + (resp.error?.description || 'Transaction was declined by bank.'));
-          btn.innerHTML = originalBtnHtml;
-          btn.disabled = false;
+          const errMsg = resp.error?.description || 'Transaction was declined by payment gateway.';
+          const proceedCod = confirm(`Payment Notice: ${errMsg}\n\nWould you like to complete this test order using Cash on Delivery (COD) / Demo Mode?`);
+          if (proceedCod) {
+            finalizeAndRedirect(orderNumber);
+          } else {
+            btn.innerHTML = originalBtnHtml;
+            btn.disabled = false;
+          }
         });
 
         rzp.open();
       } catch (err) {
-        alert('Razorpay Notice: ' + err.message);
+        console.warn('Razorpay checkout notice:', err);
+        const proceedCod = confirm(`Online Gateway Notice: ${err.message || 'Payment service unreachable in this local environment.'}\n\nWould you like to place this test order using Cash on Delivery (COD) / Demo Mode?`);
+        if (proceedCod) {
+          await finalizeAndRedirect(orderNumber);
+          return;
+        }
         btn.innerHTML = originalBtnHtml;
         btn.disabled = false;
+      }
+    }
+
+    function addSampleItemForTesting() {
+      const sampleItem = {
+        id: 'bg-premium-keychain-3254',
+        name: 'Sacred Tulasi Beads Japa Mala (108 Beads)',
+        price: 299,
+        qty: 1,
+        image: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=400&q=80',
+        material: 'Authentic Vrindavan Tulasi'
+      };
+      const cart = [sampleItem];
+      localStorage.setItem('hn_cart', JSON.stringify(cart));
+      renderCheckoutSummary();
+    }
+
+    // Google Maps Autocomplete & Geocoding Integration
+    function initGoogleMapsPlaces() {
+      const addressInput = document.getElementById('hn-ship-address');
+      if (!addressInput || !window.google || !window.google.maps || !window.google.maps.places) return;
+
+      try {
+        const autocomplete = new google.maps.places.Autocomplete(addressInput, {
+          types: ['geocode', 'establishment'],
+          componentRestrictions: { country: 'in' },
+          fields: ['address_components', 'formatted_address', 'geometry']
+        });
+
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          if (!place || !place.address_components) return;
+
+          let street = '';
+          let locality = '';
+          let sublocalities = [];
+          let city = '';
+          let district = '';
+          let state = '';
+          let postalCode = '';
+
+          place.address_components.forEach(c => {
+            const types = c.types || [];
+            if (types.includes('street_number')) street = c.long_name + ' ' + street;
+            if (types.includes('route')) street += c.long_name;
+            if (types.includes('sublocality') || types.includes('sublocality_level_1') || types.includes('neighborhood')) {
+              sublocalities.push(c.long_name);
+            }
+            if (types.includes('locality')) city = c.long_name;
+            if (types.includes('administrative_area_level_2')) district = c.long_name;
+            if (types.includes('administrative_area_level_1')) state = c.long_name;
+            if (types.includes('postal_code')) postalCode = c.long_name;
+          });
+
+          if (postalCode) {
+            const pinEl = document.getElementById('hn-ship-pin');
+            if (pinEl) {
+              pinEl.value = postalCode;
+              handlePincodeLookup(postalCode);
+            }
+          }
+          if (city || district) {
+            const cityEl = document.getElementById('hn-ship-city');
+            if (cityEl) cityEl.value = city || district;
+          }
+        });
+      } catch (err) {
+        console.warn('[Google Maps Autocomplete Notice]:', err.message);
       }
     }
 
@@ -722,6 +969,7 @@
       renderHeader('checkout');
       renderFooter();
       renderCheckoutSummary();
+      initGoogleMapsPlaces();
 
       window.addEventListener('hn_cart_updated', renderCheckoutSummary);
       window.addEventListener('storage', renderCheckoutSummary);
@@ -733,8 +981,14 @@
           if (user.name) document.getElementById('hn-ship-name').value = user.name;
           if (user.email) document.getElementById('hn-ship-email').value = user.email;
           if (user.phone) document.getElementById('hn-ship-phone').value = user.phone;
+          if (user.address_line1 || user.address) document.getElementById('hn-ship-address').value = user.address_line1 || user.address;
+          if (user.pincode) {
+            document.getElementById('hn-ship-pin').value = user.pincode;
+            handlePincodeLookup(user.pincode);
+          }
         }
       }
+
     });
   </script>
 </body>

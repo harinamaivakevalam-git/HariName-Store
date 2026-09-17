@@ -21,6 +21,8 @@
   <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
   <link rel="shortcut icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/assets/images/krishna-logo.jpg">
+  <!-- Fast Indian Pincode Resolver & Directory -->
+  <script src="/assets/js/india-pincodes.js"></script>
 
   <style>
     .hn-profile-hero {
@@ -435,21 +437,20 @@
                 </div>
 
                 <div class="row g-3 mb-4">
-                  <div class="col-md-6 col-lg-3">
-                    <label class="form-label small fw-bold text-secondary">City</label>
+                  <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary d-flex justify-content-between">
+                      <span>PIN Code</span>
+                      <span id="profile-pin-spinner" class="spinner-border spinner-border-sm text-warning d-none" style="width: 0.8rem; height: 0.8rem;"></span>
+                    </label>
+                    <input type="text" class="form-control hn-profile-input" id="profile-pincode" maxlength="6" pattern="[0-9]{6}" placeholder="e.g. 281001" oninput="lookupProfilePincode(this.value)">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">City / District</label>
                     <input type="text" class="form-control hn-profile-input" id="profile-city" placeholder="e.g. Mathura">
                   </div>
-                  <div class="col-md-6 col-lg-3">
+                  <div class="col-md-4">
                     <label class="form-label small fw-bold text-secondary">State</label>
                     <input type="text" class="form-control hn-profile-input" id="profile-state" placeholder="e.g. Uttar Pradesh">
-                  </div>
-                  <div class="col-md-6 col-lg-3">
-                    <label class="form-label small fw-bold text-secondary">PIN Code</label>
-                    <input type="text" class="form-control hn-profile-input" id="profile-pincode" placeholder="e.g. 281001">
-                  </div>
-                  <div class="col-md-6 col-lg-3">
-                    <label class="form-label small fw-bold text-secondary">Country</label>
-                    <input type="text" class="form-control hn-profile-input" id="profile-country" value="India" placeholder="India">
                   </div>
                 </div>
 
@@ -537,16 +538,19 @@
 
                   <div class="row g-3 mb-3">
                     <div class="col-md-4">
-                      <label class="form-label small fw-bold text-secondary">City <span class="text-danger">*</span></label>
+                      <label class="form-label small fw-bold text-secondary d-flex justify-content-between">
+                        <span>PIN Code <span class="text-danger">*</span></span>
+                        <span id="addr-pin-spinner" class="spinner-border spinner-border-sm text-warning d-none" style="width: 0.8rem; height: 0.8rem;"></span>
+                      </label>
+                      <input type="text" class="form-control hn-profile-input" id="addr-form-pincode" required maxlength="6" pattern="[0-9]{6}" placeholder="e.g. 281001" oninput="lookupSavedAddrPincode(this.value)">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label small fw-bold text-secondary">City / District <span class="text-danger">*</span></label>
                       <input type="text" class="form-control hn-profile-input" id="addr-form-city" required placeholder="e.g. Mathura">
                     </div>
                     <div class="col-md-4">
                       <label class="form-label small fw-bold text-secondary">State <span class="text-danger">*</span></label>
                       <input type="text" class="form-control hn-profile-input" id="addr-form-state" required placeholder="e.g. Uttar Pradesh">
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label small fw-bold text-secondary">PIN Code <span class="text-danger">*</span></label>
-                      <input type="text" class="form-control hn-profile-input" id="addr-form-pincode" required placeholder="e.g. 281001">
                     </div>
                   </div>
 
@@ -637,6 +641,79 @@
         console.warn('Supabase init warning:', err);
       }
     }
+
+    async function queryPincodeLocation(pin) {
+      try {
+        const r = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+        if (r.ok) {
+          const p = await r.json();
+          if (p?.[0]?.Status === 'Success' && p?.[0]?.PostOffice?.[0]) {
+            return { city: p[0].PostOffice[0].District || p[0].PostOffice[0].Division || p[0].PostOffice[0].Name, state: p[0].PostOffice[0].State };
+          }
+        }
+      } catch (_) {}
+      try {
+        const r = await fetch(`/api/pincode/${pin}`);
+        if (r.ok) {
+          const res = await r.json();
+          if (res?.success && res?.state) return { city: res.district || res.city, state: res.state };
+        }
+      } catch (_) {}
+      try {
+        const r = await fetch(`https://api.zippopotam.us/in/${pin}`);
+        if (r.ok) {
+          const z = await r.json();
+          if (z?.places?.[0]) return { city: z.places[0]['place name'], state: z.places[0].state };
+        }
+      } catch (_) {}
+      return null;
+    }
+
+    let profilePinTimeout = null;
+    async function lookupProfilePincode(val) {
+      const pin = (val || '').toString().trim().replace(/\D/g, '');
+      const spinner = document.getElementById('profile-pin-spinner');
+      const cityEl = document.getElementById('profile-city');
+      const stateEl = document.getElementById('profile-state');
+      if (pin.length !== 6) {
+        if (spinner) spinner.classList.add('d-none');
+        return;
+      }
+      if (spinner) spinner.classList.remove('d-none');
+      clearTimeout(profilePinTimeout);
+      profilePinTimeout = setTimeout(async () => {
+        const loc = await queryPincodeLocation(pin);
+        if (spinner) spinner.classList.add('d-none');
+        if (loc) {
+          if (cityEl && loc.city) cityEl.value = loc.city;
+          if (stateEl && loc.state) stateEl.value = loc.state;
+        }
+      }, 150);
+    }
+    window.lookupProfilePincode = lookupProfilePincode;
+
+    let savedAddrPinTimeout = null;
+    async function lookupSavedAddrPincode(val) {
+      const pin = (val || '').toString().trim().replace(/\D/g, '');
+      const spinner = document.getElementById('addr-pin-spinner');
+      const cityEl = document.getElementById('addr-form-city');
+      const stateEl = document.getElementById('addr-form-state');
+      if (pin.length !== 6) {
+        if (spinner) spinner.classList.add('d-none');
+        return;
+      }
+      if (spinner) spinner.classList.remove('d-none');
+      clearTimeout(savedAddrPinTimeout);
+      savedAddrPinTimeout = setTimeout(async () => {
+        const loc = await queryPincodeLocation(pin);
+        if (spinner) spinner.classList.add('d-none');
+        if (loc) {
+          if (cityEl && loc.city) cityEl.value = loc.city;
+          if (stateEl && loc.state) stateEl.value = loc.state;
+        }
+      }, 150);
+    }
+    window.lookupSavedAddrPincode = lookupSavedAddrPincode;
 
     // Switch between Profile Tabs
     function switchProfileTab(tab) {
@@ -798,6 +875,67 @@
       }
     }
     window.handleProfileUpdate = handleProfileUpdate;
+
+    // Fast Pincode Auto-Fill for Profile & Address Form
+    async function lookupProfilePincode(val) {
+      const pin = (val || '').toString().trim().replace(/\D/g, '');
+      const cityEl = document.getElementById('profile-city');
+      const stateEl = document.getElementById('profile-state');
+      const spinner = document.getElementById('profile-pin-spinner');
+      if (pin.length !== 6) return;
+
+      if (typeof window.resolveIndiaPincode === 'function') {
+        const res = window.resolveIndiaPincode(pin);
+        if (res) {
+          if (cityEl && res.district) cityEl.value = res.district;
+          if (stateEl && res.state) stateEl.value = res.state;
+        }
+      }
+
+      if (spinner) spinner.classList.remove('d-none');
+      try {
+        const r = await fetch(`/api/pincode/${pin}`);
+        if (r.ok) {
+          const data = await r.json();
+          if (data?.success) {
+            if (cityEl && (data.district || data.city)) cityEl.value = data.district || data.city;
+            if (stateEl && data.state) stateEl.value = data.state;
+          }
+        }
+      } catch (_) {}
+      if (spinner) spinner.classList.add('d-none');
+    }
+    window.lookupProfilePincode = lookupProfilePincode;
+
+    async function lookupSavedAddrPincode(val) {
+      const pin = (val || '').toString().trim().replace(/\D/g, '');
+      const cityEl = document.getElementById('addr-form-city');
+      const stateEl = document.getElementById('addr-form-state');
+      const spinner = document.getElementById('addr-pin-spinner');
+      if (pin.length !== 6) return;
+
+      if (typeof window.resolveIndiaPincode === 'function') {
+        const res = window.resolveIndiaPincode(pin);
+        if (res) {
+          if (cityEl && res.district) cityEl.value = res.district;
+          if (stateEl && res.state) stateEl.value = res.state;
+        }
+      }
+
+      if (spinner) spinner.classList.remove('d-none');
+      try {
+        const r = await fetch(`/api/pincode/${pin}`);
+        if (r.ok) {
+          const data = await r.json();
+          if (data?.success) {
+            if (cityEl && (data.district || data.city)) cityEl.value = data.district || data.city;
+            if (stateEl && data.state) stateEl.value = data.state;
+          }
+        }
+      } catch (_) {}
+      if (spinner) spinner.classList.add('d-none');
+    }
+    window.lookupSavedAddrPincode = lookupSavedAddrPincode;
 
     // =========================================================================
     // SAVED ADDRESSES MANAGEMENT (UP TO 5 ADDRESSES)

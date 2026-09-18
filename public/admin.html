@@ -197,47 +197,8 @@
               </thead>
               <tbody id="admin-recent-orders-tbody">
                 <tr>
-                  <td class="fw-bold text-navy text-nowrap">#HN-2026-98124</td>
-                  <td class="text-nowrap">Gauranga Das</td>
-                  <td>Maha-Mantra Keychain (×2)</td>
-                  <td class="fw-bold text-nowrap">₹298</td>
-                  <td><span class="hn-status-badge hn-status-delivered">Delivered</span></td>
-                  <td class="text-end text-nowrap">
-                    <a href="/admin-orders.html" class="btn btn-sm btn-outline-dark me-1"><i class="bi bi-eye"></i> View</a>
-                    <a href="/admin-orders.html" class="btn btn-sm btn-gold"><i class="bi bi-pencil-square"></i> Edit</a>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="fw-bold text-navy text-nowrap">#HN-2026-88219</td>
-                  <td class="text-nowrap">Radharani Devi Dasi</td>
-                  <td>3-Keychain Gift Set</td>
-                  <td class="fw-bold text-nowrap">₹299</td>
-                  <td><span class="hn-status-badge hn-status-dispatched">Dispatched</span></td>
-                  <td class="text-end text-nowrap">
-                    <a href="/admin-orders.html" class="btn btn-sm btn-outline-dark me-1"><i class="bi bi-eye"></i> View</a>
-                    <a href="/admin-orders.html" class="btn btn-sm btn-gold"><i class="bi bi-pencil-square"></i> Edit</a>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="fw-bold text-navy text-nowrap">#HN-2026-77312</td>
-                  <td class="text-nowrap">Krishna Chaitanya Das</td>
-                  <td>Peacock Feather + Flute</td>
-                  <td class="fw-bold text-nowrap">₹228</td>
-                  <td><span class="hn-status-badge hn-status-packed">Packed</span></td>
-                  <td class="text-end text-nowrap">
-                    <a href="/admin-orders.html" class="btn btn-sm btn-outline-dark me-1"><i class="bi bi-eye"></i> View</a>
-                    <a href="/admin-orders.html" class="btn btn-sm btn-gold"><i class="bi bi-pencil-square"></i> Edit</a>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="fw-bold text-navy text-nowrap">#HN-2026-66415</td>
-                  <td class="text-nowrap">Ananya Sharma</td>
-                  <td>Bhagavad Gita Deluxe Edition</td>
-                  <td class="fw-bold text-nowrap">₹349</td>
-                  <td><span class="hn-status-badge hn-status-confirmed">Confirmed</span></td>
-                  <td class="text-end text-nowrap">
-                    <a href="/admin-orders.html" class="btn btn-sm btn-outline-dark me-1"><i class="bi bi-eye"></i> View</a>
-                    <a href="/admin-orders.html" class="btn btn-sm btn-gold"><i class="bi bi-pencil-square"></i> Edit</a>
+                  <td colspan="6" class="text-center py-4 text-muted">
+                    <span class="spinner-border spinner-border-sm me-2 text-gold"></span>Loading live orders...
                   </td>
                 </tr>
               </tbody>
@@ -376,6 +337,33 @@
     }
 
     async function loadAdminDashboardOrders() {
+      // Clear legacy dummy orders from localStorage
+      try {
+        const dummyOrderIds = ['HN-2026-98124', 'HN-2026-88219', 'HN-2026-77312', 'HN-2026-66415', 'HN-2026-55102', 'HN-2026-44298'];
+        const storedAdmin = localStorage.getItem('harinama_admin_orders');
+        if (storedAdmin) {
+          const parsed = JSON.parse(storedAdmin);
+          if (Array.isArray(parsed)) {
+            const cleaned = parsed.filter(o => o && !dummyOrderIds.includes(o.id) && !dummyOrderIds.includes(o.order_number));
+            if (cleaned.length !== parsed.length) {
+              if (cleaned.length > 0) localStorage.setItem('harinama_admin_orders', JSON.stringify(cleaned));
+              else localStorage.removeItem('harinama_admin_orders');
+            }
+          }
+        }
+        const storedCustomer = localStorage.getItem('hn_orders');
+        if (storedCustomer) {
+          const parsedCust = JSON.parse(storedCustomer);
+          if (Array.isArray(parsedCust)) {
+            const cleanedCust = parsedCust.filter(o => o && !dummyOrderIds.includes(o.id) && !dummyOrderIds.includes(o.order_number));
+            if (cleanedCust.length !== parsedCust.length) {
+              if (cleanedCust.length > 0) localStorage.setItem('hn_orders', JSON.stringify(cleanedCust));
+              else localStorage.removeItem('hn_orders');
+            }
+          }
+        }
+      } catch (e) {}
+
       const mergedMap = new Map();
 
       // 1. Initial cached browser storage (admin + customer placed orders)
@@ -405,32 +393,33 @@
         }
       } catch (e) {}
 
-      // Baseline fallback orders if storage was empty
-      if (mergedMap.size === 0) {
-        [
-          { id: 'HN-2026-98124', customer: 'Gauranga Das', itemsSummary: 'Maha-Mantra Keychain (×2)', total: 298, status: 'Delivered', created_at: '2026-09-12T07:30:00Z' },
-          { id: 'HN-2026-88219', customer: 'Radharani Devi Dasi', itemsSummary: '3-Keychain Gift Set (×1)', total: 299, status: 'Dispatched', created_at: '2026-09-11T16:15:00Z' },
-          { id: 'HN-2026-77312', customer: 'Krishna Chaitanya Das', itemsSummary: 'Peacock Feather + Flute (×2)', total: 228, status: 'Packed', created_at: '2026-09-11T14:40:00Z' },
-          { id: 'HN-2026-66415', customer: 'Ananya Sharma', itemsSummary: 'Bhagavad Gita Deluxe Edition (×1)', total: 349, status: 'Confirmed', created_at: '2026-09-10T11:20:00Z' }
-        ].forEach(b => mergedMap.set(b.id, b));
-      }
-
       function renderDashboard(ordersList) {
         const tbody = document.getElementById('admin-recent-orders-tbody');
         if (tbody) {
-          tbody.innerHTML = ordersList.slice(0, 6).map(o => `
-            <tr>
-              <td class="fw-bold text-navy text-nowrap">#${o.id}</td>
-              <td class="text-nowrap">${o.customer}</td>
-              <td class="text-truncate" style="max-width: 260px;" title="${o.itemsSummary}">${o.itemsSummary}</td>
-              <td class="fw-bold text-nowrap">₹${o.total}</td>
-              <td>${getStatusBadge(o.status)}</td>
-              <td class="text-end text-nowrap">
-                <a href="/admin-orders.html" class="btn btn-sm btn-outline-dark me-1"><i class="bi bi-eye"></i> View</a>
-                <a href="/admin-orders.html" class="btn btn-sm btn-gold"><i class="bi bi-pencil-square"></i> Edit</a>
-              </td>
-            </tr>
-          `).join('');
+          if (ordersList.length === 0) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="6" class="text-center py-4 text-muted">
+                  <i class="bi bi-box-seam fs-3 d-block mb-1 text-secondary"></i>
+                  No orders found in database.
+                </td>
+              </tr>
+            `;
+          } else {
+            tbody.innerHTML = ordersList.slice(0, 6).map(o => `
+              <tr>
+                <td class="fw-bold text-navy text-nowrap">#${o.id}</td>
+                <td class="text-nowrap">${o.customer}</td>
+                <td class="text-truncate" style="max-width: 260px;" title="${o.itemsSummary}">${o.itemsSummary}</td>
+                <td class="fw-bold text-nowrap">₹${o.total}</td>
+                <td>${getStatusBadge(o.status)}</td>
+                <td class="text-end text-nowrap">
+                  <a href="/admin-orders.html" class="btn btn-sm btn-outline-dark me-1"><i class="bi bi-eye"></i> View</a>
+                  <a href="/admin-orders.html" class="btn btn-sm btn-gold"><i class="bi bi-pencil-square"></i> Edit</a>
+                </td>
+              </tr>
+            `).join('');
+          }
         }
 
         // Update KPI metrics

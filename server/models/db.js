@@ -134,20 +134,35 @@ class DatabaseStore {
     console.log('[DatabaseStore] Database store initialized cleanly.');
   }
 
+  reload() {
+    try {
+      if (fs.existsSync(DATA_FILE)) {
+        const raw = fs.readFileSync(DATA_FILE, 'utf8');
+        this.data = JSON.parse(raw);
+      }
+    } catch (err) {
+      console.warn('[DatabaseStore] Error reloading data.json:', err.message);
+    }
+  }
+
   // Generic helpers
   findAll(collection) {
+    this.reload();
     return [...(this.data[collection] || [])];
   }
 
   findById(collection, id) {
+    this.reload();
     return (this.data[collection] || []).find(item => item.id === id) || null;
   }
 
   findOne(collection, predicate) {
+    this.reload();
     return (this.data[collection] || []).find(predicate) || null;
   }
 
   filter(collection, predicate) {
+    this.reload();
     return (this.data[collection] || []).filter(predicate);
   }
 

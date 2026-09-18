@@ -328,89 +328,7 @@
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
-    let localOrders = [
-      {
-        id: "HN-2026-98124",
-        date: "2026-09-12 07:30 AM",
-        customer: "Gauranga Das",
-        phone: "+91 98765 11223",
-        email: "gauranga.das@iskcon.org",
-        address: "Sri Sri Krishna Balaram Mandir, Raman Reti, Vrindavan, UP - 281121",
-        items: [
-          { name: "Maha-Mantra Keychain", qty: 2, price: 149 }
-        ],
-        subtotal: 298,
-        shipping: 0,
-        total: 298,
-        payment_method: "UPI (Google Pay / PhonePe)",
-        payment_status: "Paid",
-        status: "Delivered",
-        courier: "India Post Speed Post",
-        tracking_number: "IN20269812401",
-        notes: "Temple prasadam card included."
-      },
-      {
-        id: "HN-2026-88219",
-        date: "2026-09-11 04:15 PM",
-        customer: "Radharani Devi Dasi",
-        phone: "+91 98234 55667",
-        email: "radha.dasi@gmail.com",
-        address: "Bhakti Vedanta Swami Marg, Juhu, Mumbai, MH - 400049",
-        items: [
-          { name: "3-Keychain Gift Set", qty: 1, price: 299 }
-        ],
-        subtotal: 299,
-        shipping: 40,
-        total: 339,
-        payment_method: "Credit / Debit Card (Visa/Mastercard)",
-        payment_status: "Paid",
-        status: "Dispatched",
-        courier: "BlueDart Express",
-        tracking_number: "BD882190034",
-        notes: "Gift wrap requested."
-      },
-      {
-        id: "HN-2026-77312",
-        date: "2026-09-11 02:40 PM",
-        customer: "Krishna Chaitanya Das",
-        phone: "+91 97112 33445",
-        email: "kchaitanya@devotee.in",
-        address: "Hare Krishna Hill, Rajajinagar, Bengaluru, KA - 560010",
-        items: [
-          { name: "Peacock Feather Keychain", qty: 1, price: 99 },
-          { name: "Krishna Flute Keychain", qty: 1, price: 129 }
-        ],
-        subtotal: 228,
-        shipping: 40,
-        total: 268,
-        payment_method: "UPI (Google Pay / PhonePe)",
-        payment_status: "Paid",
-        status: "Packed",
-        courier: "Delhivery Logistics",
-        tracking_number: "DL773129841",
-        notes: "Ready for evening courier pickup."
-      },
-      {
-        id: "HN-2026-66415",
-        date: "2026-09-10 11:20 AM",
-        customer: "Ananya Sharma",
-        phone: "+91 99887 76655",
-        email: "ananya.sharma@yahoo.com",
-        address: "Flat 402, Vrindavan Enclave, East of Kailash, New Delhi - 110065",
-        items: [
-          { name: "Bhagavad Gita As It Is Deluxe", qty: 1, price: 349 }
-        ],
-        subtotal: 349,
-        shipping: 0,
-        total: 349,
-        payment_method: "Net Banking",
-        payment_status: "Paid",
-        status: "Confirmed",
-        courier: "India Post Speed Post",
-        tracking_number: "",
-        notes: ""
-      }
-    ];
+    let localOrders = [];
 
     let currentSelectedOrderId = null;
 
@@ -522,42 +440,34 @@
     }
 
     async function loadOrdersFromAllSources() {
-      // 1. Initial quick load from browser storage (admin + customer orders)
-      const mergedMap = new Map();
-
-      // Add baseline orders first
-      localOrders.forEach(o => {
-        const norm = normalizeOrder(o);
-        if (norm) mergedMap.set(norm.id, norm);
-      });
-
-      // Load stored admin orders
+      // Clear legacy dummy orders from localStorage
       try {
+        const dummyOrderIds = ['HN-2026-98124', 'HN-2026-88219', 'HN-2026-77312', 'HN-2026-66415', 'HN-2026-55102', 'HN-2026-44298'];
         const storedAdmin = localStorage.getItem('harinama_admin_orders');
         if (storedAdmin) {
           const parsed = JSON.parse(storedAdmin);
           if (Array.isArray(parsed)) {
-            parsed.forEach(o => {
-              const norm = normalizeOrder(o);
-              if (norm) mergedMap.set(norm.id, norm);
-            });
+            const cleaned = parsed.filter(o => o && !dummyOrderIds.includes(o.id) && !dummyOrderIds.includes(o.order_number));
+            if (cleaned.length !== parsed.length) {
+              if (cleaned.length > 0) localStorage.setItem('harinama_admin_orders', JSON.stringify(cleaned));
+              else localStorage.removeItem('harinama_admin_orders');
+            }
           }
         }
-      } catch (e) {}
-
-      // Load devotee customer orders placed from checkout
-      try {
         const storedCustomer = localStorage.getItem('hn_orders');
         if (storedCustomer) {
           const parsedCust = JSON.parse(storedCustomer);
           if (Array.isArray(parsedCust)) {
-            parsedCust.forEach(o => {
-              const norm = normalizeOrder(o);
-              if (norm) mergedMap.set(norm.id, norm);
-            });
+            const cleanedCust = parsedCust.filter(o => o && !dummyOrderIds.includes(o.id) && !dummyOrderIds.includes(o.order_number));
+            if (cleanedCust.length !== parsedCust.length) {
+              if (cleanedCust.length > 0) localStorage.setItem('hn_orders', JSON.stringify(cleanedCust));
+              else localStorage.removeItem('hn_orders');
+            }
           }
         }
       } catch (e) {}
+
+      const mergedMap = new Map();
 
       // Render fast initial cached view
       localOrders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));

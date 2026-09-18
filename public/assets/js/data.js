@@ -38,6 +38,44 @@ function computeCategoryCounts(productsList = [], dbCategories = null) {
   });
 }
 
+// Universal Immediate Purge for legacy dummy test data (orders, mock products, mock categories)
+(function purgeLegacyDummyStorage() {
+  try {
+    const dummyIds = ['HN-2026-98124', 'HN-2026-88219', 'HN-2026-77312', 'HN-2026-66415', 'HN-2026-55102', 'HN-2026-44298'];
+    ['harinama_admin_orders', 'hn_orders', 'hn_admin_orders', 'hn_recent_orders'].forEach(key => {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            const valid = parsed.filter(o => o && !dummyIds.includes(o.id) && !dummyIds.includes(o.order_number));
+            if (valid.length > 0) localStorage.setItem(key, JSON.stringify(valid));
+            else localStorage.removeItem(key);
+          }
+        } catch (_) {
+          localStorage.removeItem(key);
+        }
+      }
+    });
+
+    // Clean mock products and categories from storage
+    const prodKey = 'hn_live_products';
+    const storedProds = localStorage.getItem(prodKey);
+    if (storedProds) {
+      try {
+        const parsedP = JSON.parse(storedProds);
+        if (Array.isArray(parsedP)) {
+          const validP = parsedP.filter(p => p && p.id && !p.id.startsWith('prod-'));
+          if (validP.length > 0) localStorage.setItem(prodKey, JSON.stringify(validP));
+          else localStorage.removeItem(prodKey);
+        }
+      } catch (_) {
+        localStorage.removeItem(prodKey);
+      }
+    }
+  } catch (_) {}
+})();
+
 // Get initial cached products if admin modified them
 function getInitialProducts() {
   try {
@@ -45,7 +83,7 @@ function getInitialProducts() {
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
-        return parsed;
+        return parsed.filter(p => p && p.id && !p.id.startsWith('prod-'));
       }
     }
   } catch (e) {}

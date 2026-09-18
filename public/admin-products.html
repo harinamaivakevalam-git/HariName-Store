@@ -502,8 +502,14 @@
 
     function getAuthHeaders(includeContentType = true) {
       const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token') || 'admin-portal-session';
+      let userEmail = 'harinamaivakevalam@gmail.com';
+      try {
+        const u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}');
+        if (u && u.email) userEmail = u.email;
+      } catch (_) {}
+
       const headers = {
-        'x-admin-email': 'harinamaivakevalam@gmail.com',
+        'x-admin-email': userEmail,
         'Authorization': 'Bearer ' + token
       };
       if (includeContentType) {

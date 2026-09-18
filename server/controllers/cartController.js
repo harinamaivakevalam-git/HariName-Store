@@ -1,4 +1,35 @@
+const { supabase, isSupabaseConfigured } = require('../config/supabase');
 const db = require('../models/db');
+
+// Helper to resolve product from Supabase or local store
+const resolveProduct = async (productId) => {
+  if (!productId) return null;
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId);
+      let q = supabase.from('products').select('*, product_images(*)');
+      if (isUuid) q = q.or(`id.eq.${productId},slug.eq.${productId}`);
+      else q = q.eq('slug', productId);
+      const { data, error } = await q.maybeSingle();
+      if (!error && data) {
+        const images = (data.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+        const primaryImage = images.find(img => img.is_primary)?.image_url || images[0]?.image_url || '';
+        return {
+          id: data.id,
+          name: data.name,
+          slug: data.slug,
+          price: parseFloat(data.price),
+          compare_price: data.compare_price ? parseFloat(data.compare_price) : null,
+          stock: data.stock !== undefined ? data.stock : 10,
+          status: data.status || 'active',
+          primary_image: primaryImage,
+          image: primaryImage
+        };
+      }
+    } catch (_) {}
+  }
+  return db.findById('products', productId) || db.findOne('products', p => p.slug === productId);
+};
 
 // Helper to get or create cart
 const getOrCreateCart = (userId, sessionId) => {
@@ -19,19 +50,18 @@ const getOrCreateCart = (userId, sessionId) => {
 };
 
 // Helper to format and hydrate cart response
-const formatCartResponse = (cart) => {
+const formatCartResponse = async (cart) => {
   const items = db.filter('cart_items', ci => ci.cart_id === cart.id);
 
   let subtotal = 0;
   let totalItems = 0;
 
-  const formattedItems = items.map(item => {
-    const product = db.findById('products', item.product_id);
+  const formattedItems = (await Promise.all(items.map(async (item) => {
+    const product = await resolveProduct(item.product_id);
     if (!product) return null;
 
     const variant = item.variant_id ? db.findById('product_variants', item.variant_id) : null;
-    const images = db.filter('product_images', img => img.product_id === product.id);
-    const primaryImage = images.find(img => img.is_primary)?.image_url || images[0]?.image_url || '';
+    const primaryImage = product.primary_image || product.image || '';
 
     const unitPrice = variant ? parseFloat(variant.price) : parseFloat(product.price);
     const itemTotal = unitPrice * item.quantity;
@@ -54,7 +84,7 @@ const formatCartResponse = (cart) => {
       stock: availableStock,
       is_available: availableStock >= item.quantity
     };
-  }).filter(Boolean);
+  }))).filter(Boolean);
 
   return {
     cart_id: cart.id,
@@ -68,15 +98,16 @@ const formatCartResponse = (cart) => {
 };
 
 // Get Cart
-exports.getCart = (req, res, next) => {
+exports.getCart = async (req, res, next) => {
   try {
     const userId = req.user ? req.user.id : null;
     const sessionId = req.headers['x-session-id'] || req.query.sessionId;
 
     const cart = getOrCreateCart(userId, sessionId);
+    const data = await formatCartResponse(cart);
     res.json({
       success: true,
-      data: formatCartResponse(cart)
+      data
     });
   } catch (err) {
     next(err);
@@ -84,7 +115,7 @@ exports.getCart = (req, res, next) => {
 };
 
 // Add to Cart
-exports.addToCart = (req, res, next) => {
+exports.addToCart = async (req, res, next) => {
   try {
     const userId = req.user ? req.user.id : null;
     const sessionId = req.headers['x-session-id'] || req.body.sessionId;
@@ -94,7 +125,7 @@ exports.addToCart = (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Product ID is required.' });
     }
 
-    const product = db.findById('products', product_id);
+    const product = await resolveProduct(product_id);
     if (!product || product.status !== 'active') {
       return res.status(404).json({ success: false, message: 'Product not found or unavailable.' });
     }
@@ -115,7 +146,7 @@ exports.addToCart = (req, res, next) => {
     const cart = getOrCreateCart(userId, sessionId);
     const existingItem = db.findOne('cart_items', ci => 
       ci.cart_id === cart.id && 
-      ci.product_id === product_id && 
+      (ci.product_id === product.id || ci.product_id === product_id) && 
       (variant_id ? ci.variant_id === variant_id : !ci.variant_id)
     );
 
@@ -139,16 +170,17 @@ exports.addToCart = (req, res, next) => {
       }
       db.insert('cart_items', {
         cart_id: cart.id,
-        product_id,
+        product_id: product.id,
         variant_id: variant_id || null,
         quantity: qtyToAdd
       });
     }
 
+    const data = await formatCartResponse(cart);
     res.json({
       success: true,
       message: `Added "${product.name}" to your cart! 🛍️`,
-      data: formatCartResponse(cart)
+      data
     });
   } catch (err) {
     next(err);
@@ -156,7 +188,7 @@ exports.addToCart = (req, res, next) => {
 };
 
 // Update Quantity
-exports.updateQuantity = (req, res, next) => {
+exports.updateQuantity = async (req, res, next) => {
   try {
     const { itemId } = req.params;
     const { quantity } = req.body;
@@ -171,14 +203,15 @@ exports.updateQuantity = (req, res, next) => {
 
     if (qty <= 0) {
       db.delete('cart_items', itemId);
+      const data = await formatCartResponse(cart);
       return res.json({
         success: true,
         message: 'Item removed from cart.',
-        data: formatCartResponse(cart)
+        data
       });
     }
 
-    const product = db.findById('products', item.product_id);
+    const product = await resolveProduct(item.product_id);
     let availableStock = product ? product.stock : 0;
     if (item.variant_id) {
       const variant = db.findById('product_variants', item.variant_id);
@@ -193,11 +226,12 @@ exports.updateQuantity = (req, res, next) => {
     }
 
     db.update('cart_items', itemId, { quantity: qty });
+    const data = await formatCartResponse(cart);
 
     res.json({
       success: true,
       message: 'Cart updated.',
-      data: formatCartResponse(cart)
+      data
     });
   } catch (err) {
     next(err);
@@ -205,7 +239,7 @@ exports.updateQuantity = (req, res, next) => {
 };
 
 // Remove Item from Cart
-exports.removeItem = (req, res, next) => {
+exports.removeItem = async (req, res, next) => {
   try {
     const { itemId } = req.params;
     const item = db.findById('cart_items', itemId);
@@ -215,11 +249,12 @@ exports.removeItem = (req, res, next) => {
 
     const cart = db.findById('carts', item.cart_id);
     db.delete('cart_items', itemId);
+    const data = await formatCartResponse(cart);
 
     res.json({
       success: true,
       message: 'Item removed from cart.',
-      data: formatCartResponse(cart)
+      data
     });
   } catch (err) {
     next(err);
@@ -227,7 +262,7 @@ exports.removeItem = (req, res, next) => {
 };
 
 // Merge Guest Cart into User Cart on Login
-exports.mergeCart = (req, res, next) => {
+exports.mergeCart = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { sessionId } = req.body;
@@ -239,7 +274,8 @@ exports.mergeCart = (req, res, next) => {
     const guestCart = db.findOne('carts', c => c.session_id === sessionId);
     if (!guestCart) {
       const userCart = getOrCreateCart(userId, null);
-      return res.json({ success: true, data: formatCartResponse(userCart) });
+      const data = await formatCartResponse(userCart);
+      return res.json({ success: true, data });
     }
 
     const userCart = getOrCreateCart(userId, null);
@@ -266,11 +302,33 @@ exports.mergeCart = (req, res, next) => {
     });
 
     db.delete('carts', guestCart.id);
+    const data = await formatCartResponse(userCart);
 
     res.json({
       success: true,
       message: 'Cart merged successfully.',
-      data: formatCartResponse(userCart)
+      data
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Clear Cart
+exports.clearCart = async (req, res, next) => {
+  try {
+    const userId = req.user ? req.user.id : null;
+    const sessionId = req.headers['x-session-id'] || req.query.sessionId;
+
+    const cart = getOrCreateCart(userId, sessionId);
+    const items = db.filter('cart_items', ci => ci.cart_id === cart.id);
+    items.forEach(item => db.delete('cart_items', item.id));
+
+    const data = await formatCartResponse(cart);
+    res.json({
+      success: true,
+      message: 'Cart cleared.',
+      data
     });
   } catch (err) {
     next(err);

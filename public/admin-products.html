@@ -308,27 +308,43 @@
       const filterCatSelect = document.getElementById('category-filter');
       if (!catSelect) return;
 
-      const sb = initSupabase();
-      if (!sb) return;
-
+      // 1. Primary: Fast Backend API (uses server-side DNS resilient connection)
       try {
-        const { data: cats, error } = await sb
-          .from('categories')
-          .select('id, name, slug')
-          .eq('status', 'active')
-          .order('name', { ascending: true });
-
-        if (!error && Array.isArray(cats) && cats.length > 0) {
-          databaseCategories = cats;
-          catSelect.innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-
-          if (filterCatSelect) {
-            filterCatSelect.innerHTML = `<option value="all">All Categories</option>` + cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        const res = await fetch('/api/categories');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            databaseCategories = json.data;
+            catSelect.innerHTML = databaseCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            if (filterCatSelect) {
+              filterCatSelect.innerHTML = `<option value="all">All Categories</option>` + databaseCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            }
+            return;
           }
         }
       } catch (err) {
-        console.warn('[AdminProducts] Categories load notice:', err);
+        console.warn('[AdminProducts] Backend API categories notice:', err);
       }
+
+      // 2. Direct Supabase fallback
+      try {
+        const sb = initSupabase();
+        if (sb) {
+          const { data: cats, error } = await sb
+            .from('categories')
+            .select('id, name, slug')
+            .eq('status', 'active')
+            .order('name', { ascending: true });
+
+          if (!error && Array.isArray(cats) && cats.length > 0) {
+            databaseCategories = cats;
+            catSelect.innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            if (filterCatSelect) {
+              filterCatSelect.innerHTML = `<option value="all">All Categories</option>` + cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            }
+          }
+        }
+      } catch (err) {}
     }
 
     async function loadProductsFromDatabase() {
@@ -344,87 +360,107 @@
         }
       } catch (e) {}
 
-      const tbody = document.getElementById('products-table-body');
-      if (tbody && databaseProducts.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="9" class="text-center py-5 text-muted">
-              <div class="spinner-border text-warning mb-2" role="status"></div>
-              <div class="small fw-semibold">Loading live products from database...</div>
-            </td>
-          </tr>
-        `;
-      }
-
       let remoteProducts = [];
       let remoteLoaded = false;
 
-      // 1. Fetch live from Supabase Database
+      // 1. Primary: Fetch fast from Express Backend API (bypasses browser ISP DNS blocks)
       try {
-        const sb = initSupabase();
-        if (sb) {
-          const { data, error } = await sb
-            .from('products')
-            .select('*, product_images(*), categories(id, name, slug)')
-            .order('created_at', { ascending: false });
-
-          if (!error && Array.isArray(data)) {
+        const res = await fetch('/api/products?limit=100', {
+          headers: getAuthHeaders()
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            remoteProducts = json.data.map(p => ({
+              id: p.id,
+              sku: p.sku,
+              name: p.name || p.title,
+              title: p.title || p.name,
+              slug: p.slug,
+              category: p.category_name || p.category || 'Devotional Items',
+              category_id: p.category_id || null,
+              category_slug: p.category_slug || '',
+              material: p.material || 'Standard',
+              price: parseFloat(p.price) || 0,
+              old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+              compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
+              stock: p.stock !== undefined ? p.stock : 25,
+              rating: parseFloat(p.rating) || 5.0,
+              reviews_count: p.reviews_count || 0,
+              image: p.primary_image || p.image || '',
+              primary_image: p.primary_image || p.image || '',
+              images: Array.isArray(p.images) ? p.images : (p.primary_image ? [p.primary_image] : []),
+              gallery: Array.isArray(p.gallery) ? p.gallery : (p.primary_image ? [p.primary_image] : []),
+              description: p.description || ''
+            }));
             remoteLoaded = true;
-            remoteProducts = data.map(p => {
-              const imgList = (p.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(i => i.image_url);
-              const img = imgList[0] || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80';
-              return {
-                id: p.id,
-                sku: p.sku,
-                name: p.name,
-                title: p.title || p.name,
-                slug: p.slug,
-                category: p.categories?.name || 'Devotional Items',
-                category_id: p.category_id || p.categories?.id || null,
-                category_slug: p.categories?.slug || '',
-                material: p.material || (p.specifications && p.specifications.material) || 'Standard',
-                price: parseFloat(p.price) || 0,
-                old_price: p.compare_price ? parseFloat(p.compare_price) : null,
-                compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
-                stock: p.stock !== undefined ? p.stock : 25,
-                rating: parseFloat(p.rating) || 5.0,
-                reviews_count: p.reviews_count || 0,
-                image: img,
-                primary_image: img,
-                images: imgList.length > 0 ? imgList : [img],
-                gallery: imgList.length > 0 ? imgList : [img],
-                description: p.description || ''
-              };
-            });
-          } else if (error) {
-            console.warn('[AdminProducts] Supabase direct query notice:', error);
           }
         }
-      } catch (sbErr) {
-        console.warn('[AdminProducts] Supabase direct query exception:', sbErr);
+      } catch (err) {
+        console.warn('[AdminProducts] Backend API products notice:', err);
       }
 
-      // 2. Fallback to Express API if available
+      // 2. Direct Supabase Fallback
       if (!remoteLoaded) {
         try {
-          const res = await fetch('/api/products?limit=100', {
-            headers: getAuthHeaders()
-          });
-          if (res.ok) {
-            const json = await res.json();
-            if (json.success && Array.isArray(json.data)) {
-              remoteProducts = json.data;
+          const sb = initSupabase();
+          if (sb) {
+            const { data, error } = await sb
+              .from('products')
+              .select('*, product_images(*), categories(id, name, slug)')
+              .order('created_at', { ascending: false });
+
+            if (!error && Array.isArray(data)) {
               remoteLoaded = true;
+              remoteProducts = data.map(p => {
+                const imgList = (p.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(i => i.image_url);
+                const img = imgList[0] || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80';
+                return {
+                  id: p.id,
+                  sku: p.sku,
+                  name: p.name,
+                  title: p.title || p.name,
+                  slug: p.slug,
+                  category: p.categories?.name || 'Devotional Items',
+                  category_id: p.category_id || p.categories?.id || null,
+                  category_slug: p.categories?.slug || '',
+                  material: p.material || (p.specifications && p.specifications.material) || 'Standard',
+                  price: parseFloat(p.price) || 0,
+                  old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+                  compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
+                  stock: p.stock !== undefined ? p.stock : 25,
+                  rating: parseFloat(p.rating) || 5.0,
+                  reviews_count: p.reviews_count || 0,
+                  image: img,
+                  primary_image: img,
+                  images: imgList.length > 0 ? imgList : [img],
+                  gallery: imgList.length > 0 ? imgList : [img],
+                  description: p.description || ''
+                };
+              });
             }
           }
-        } catch (err) {}
+        } catch (sbErr) {}
       }
 
       // Sync state and render
-      if (remoteLoaded) {
+      if (remoteLoaded && remoteProducts.length > 0) {
         databaseProducts = remoteProducts;
         renderProductsTable(databaseProducts);
         localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
+      } else if (databaseProducts.length === 0) {
+        const tbody = document.getElementById('products-table-body');
+        if (tbody) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="9" class="text-center py-5 text-muted">
+                <i class="bi bi-box-seam text-secondary fs-3 d-block mb-2"></i>
+                <div class="fw-semibold">No products found in database.</div>
+                <div class="small">Click "Add New Product" to create your first product.</div>
+              </td>
+            </tr>
+          `;
+        }
       }
 
       if (typeof HARINAMA_DATA !== 'undefined') {

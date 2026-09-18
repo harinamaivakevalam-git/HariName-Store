@@ -840,17 +840,20 @@
         }
       } catch (_) { }
 
-      // 1. Live Fetch Unconditionally (Supabase or API)
+      // 1. Live Fetch Unconditionally (Express API primary, then Supabase fallback)
       let freshConfig = null;
 
       try {
-        if (window.supabase && typeof window.supabase.createClient === 'function') {
-          const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          const { data, error } = await sb.from('homepage_sections').select('*').eq('is_active', true);
-          if (!error && Array.isArray(data) && data.length > 0) {
+        const res = await fetch('/api/homepage');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
             freshConfig = {};
-            data.forEach(s => {
-              freshConfig[s.id] = typeof s.content === 'object' ? s.content : JSON.parse(s.content || '{}');
+            const list = Array.isArray(json.data) ? json.data : Object.values(json.data);
+            list.forEach(s => {
+              if (s && s.id) {
+                freshConfig[s.id] = typeof s.content === 'object' ? s.content : JSON.parse(s.content || '{}');
+              }
             });
           }
         }
@@ -858,13 +861,13 @@
 
       if (!freshConfig) {
         try {
-          const res = await fetch('/api/homepage');
-          if (res.ok) {
-            const json = await res.json();
-            if (json.success && json.data) {
+          if (window.supabase && typeof window.supabase.createClient === 'function') {
+            const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            const { data, error } = await sb.from('homepage_sections').select('*').eq('is_active', true);
+            if (!error && Array.isArray(data) && data.length > 0) {
               freshConfig = {};
-              Object.keys(json.data).forEach(k => {
-                freshConfig[k] = json.data[k].content || json.data[k];
+              data.forEach(s => {
+                freshConfig[s.id] = typeof s.content === 'object' ? s.content : JSON.parse(s.content || '{}');
               });
             }
           }

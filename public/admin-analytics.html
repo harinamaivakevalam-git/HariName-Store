@@ -271,11 +271,15 @@
       let loaded = false;
 
       // 1. Try backend API
-      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-      const adminScope = atob('aGFyaW5hbWFpdmFrZXZhbGFtQGdtYWlsLmNvbQ==');
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token') || 'admin-portal-session';
+      let userEmail = 'harinamaivakevalam@gmail.com';
+      try {
+        const u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}');
+        if (u && u.email) userEmail = u.email;
+      } catch (_) {}
       const headers = {
         'Accept': 'application/json',
-        'x-admin-email': adminScope
+        'x-admin-email': userEmail
       };
       if (token) headers['Authorization'] = 'Bearer ' + token;
 

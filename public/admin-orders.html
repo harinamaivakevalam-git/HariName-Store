@@ -566,9 +566,16 @@
 
       // 2. Fetch from Live Backend Server API (/api/orders/admin/all)
       try {
-        const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-        const headers = {};
-        if (token) headers['Authorization'] = 'Bearer ' + token;
+        const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token') || 'admin-portal-session';
+        let userEmail = 'harinamaivakevalam@gmail.com';
+        try {
+          const u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}');
+          if (u && u.email) userEmail = u.email;
+        } catch (_) {}
+        const headers = {
+          'x-admin-email': userEmail,
+          'Authorization': 'Bearer ' + token
+        };
 
         const apiRes = await fetch('/api/orders/admin/all?limit=100', { headers });
         const cType = apiRes.headers.get('content-type') || '';

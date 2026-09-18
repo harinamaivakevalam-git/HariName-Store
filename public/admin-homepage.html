@@ -926,7 +926,7 @@ Rama Rama Hare Hare</textarea>
     }
 
     async function uploadMediaFile(file) {
-      // 1. Fast Backend API upload directly to Cloud Storage / Disk
+      // 1. Fast Backend API upload directly to Local & Cloud Storage
       try {
         const formData = new FormData();
         formData.append('media', file);
@@ -950,22 +950,7 @@ Rama Rama Hare Hare</textarea>
         console.warn('[AdminHomepage] API upload attempt error:', e);
       }
 
-      // 2. Direct Supabase Storage attempt
-      try {
-        const sb = initSupabase();
-        if (sb && sb.storage) {
-          const fileExt = file.name.split('.').pop() || 'jpg';
-          const fileName = `homepage/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-
-          const { data, error } = await sb.storage.from('product-images').upload(fileName, file, { upsert: true });
-          if (!error && data) {
-            const { data: pubData } = sb.storage.from('product-images').getPublicUrl(fileName);
-            if (pubData && pubData.publicUrl) return pubData.publicUrl;
-          }
-        }
-      } catch (err) {}
-
-      // 3. Instant Fallback: Base64 data URL
+      // 2. Fallback: Base64 data URL
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = e => resolve(e.target.result);
@@ -1473,7 +1458,7 @@ Rama Rama Hare Hare</textarea>
 
       let saved = false;
 
-      // 2. Fast concurrent Cloud Sync (API + Supabase)
+      // 2. Fast Cloud Sync (Express API with Cloudflare Anycast backend)
       try {
         const res = await fetch('/api/homepage', {
           method: 'PUT',
@@ -1487,23 +1472,6 @@ Rama Rama Hare Hare</textarea>
       } catch (err) {
         console.warn('[AdminHomepage] API save notice:', err);
       }
-
-      // Direct Supabase fallback / mirror
-      try {
-        const sb = initSupabase();
-        if (sb) {
-          const rows = Object.values(payload).map(s => ({
-            id: s.id,
-            title: s.title,
-            subtitle: s.subtitle,
-            content: s.content,
-            is_active: true,
-            updated_at: new Date().toISOString()
-          }));
-          await sb.from('homepage_sections').upsert(rows);
-          saved = true;
-        }
-      } catch (_) {}
 
       saveBtns.forEach(btn => {
         btn.disabled = false;

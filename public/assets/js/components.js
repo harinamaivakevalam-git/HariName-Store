@@ -65,14 +65,18 @@
   const SUPABASE_AUTH_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
   const SUPABASE_AUTH_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
 
-  const _getAuthScope = () => atob('aGFyaW5hbWFpdmFrZXZhbGFtQGdtYWlsLmNvbQ==');
-  const _getAdminRoute = () => atob('L2FkbWluLmh0bWw=');
+  const ADMIN_EMAILS = [
+    'harinamaivakevalam@gmail.com',
+    'katturojuanilkumar@gmail.com',
+    'admin@harinama.com'
+  ];
 
   const isAdminUser = (usr) => {
     try {
       const user = usr || getLoggedInUser();
       if (!user || !user.email) return false;
-      return user.role === 'admin' || String(user.email).toLowerCase().trim() === _getAuthScope();
+      const email = String(user.email).toLowerCase().trim();
+      return user.role === 'admin' || ADMIN_EMAILS.includes(email);
     } catch (_) {
       return false;
     }

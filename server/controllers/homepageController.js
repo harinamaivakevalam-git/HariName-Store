@@ -203,15 +203,45 @@ exports.getHomepageConfig = async (req, res, next) => {
       sections = db.findAll('homepage_sections') || DEFAULT_HOMEPAGE_SECTIONS;
     }
 
+function normalizeMediaUrl(url) {
+  if (typeof url !== 'string') return url;
+  if (url.includes('.supabase.co/storage/v1/object/public/')) {
+    return url.replace(/^https?:\/\/[^\/]+\/storage\/v1\/object\/public\//, '/storage/v1/object/public/');
+  }
+  return url;
+}
+
+function normalizeSectionContent(content) {
+  if (!content || typeof content !== 'object') return content;
+  const result = Array.isArray(content) ? [...content] : { ...content };
+  for (const k of Object.keys(result)) {
+    if (typeof result[k] === 'string') {
+      result[k] = normalizeMediaUrl(result[k]);
+    } else if (Array.isArray(result[k])) {
+      result[k] = result[k].map(item => {
+        if (typeof item === 'string') return normalizeMediaUrl(item);
+        if (item && typeof item === 'object' && item.url) {
+          return { ...item, url: normalizeMediaUrl(item.url) };
+        }
+        return item;
+      });
+    } else if (result[k] && typeof result[k] === 'object') {
+      result[k] = normalizeSectionContent(result[k]);
+    }
+  }
+  return result;
+}
+
     // Convert array of sections to structured object map
     const sectionMap = {};
     sections.forEach(s => {
+      const rawContent = typeof s.content === 'object' ? s.content : (s.content ? JSON.parse(s.content) : {});
       sectionMap[s.id] = {
         id: s.id,
         title: s.title,
         subtitle: s.subtitle,
         is_active: s.is_active !== undefined ? s.is_active : true,
-        content: typeof s.content === 'object' ? s.content : (s.content ? JSON.parse(s.content) : {}),
+        content: normalizeSectionContent(rawContent),
         updated_at: s.updated_at
       };
     });
@@ -252,18 +282,12 @@ async function processMediaValue(val) {
     if (isSupabaseConfigured && supabaseAdmin) {
       try {
         const cloudFileName = `uploads/${filename}`;
-        const { data, error } = await supabaseAdmin.storage
+        supabaseAdmin.storage
           .from('product-images')
           .upload(cloudFileName, buffer, {
             contentType: mimeType,
             upsert: true
-          });
-        if (!error && data) {
-          const { data: pubData } = supabaseAdmin.storage
-            .from('product-images')
-            .getPublicUrl(cloudFileName);
-          if (pubData && pubData.publicUrl) return pubData.publicUrl;
-        }
+          }).catch(e => console.warn('[Homepage] Background cloud upload notice:', e.message));
       } catch (_) {}
     }
     return `/uploads/${filename}`;

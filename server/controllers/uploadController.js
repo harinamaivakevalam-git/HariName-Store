@@ -64,23 +64,24 @@ async function uploadToCloudStorage(file) {
 
 exports.uploadImage = async (req, res, next) => {
   try {
-    if (!req.file) {
+    const file = req.file || (req.files && req.files.length > 0 ? req.files[0] : null);
+    if (!file) {
       return res.status(400).json({
         success: false,
         message: 'No file uploaded.'
       });
     }
 
-    const fileUrl = await uploadToCloudStorage(req.file);
+    const fileUrl = await uploadToCloudStorage(file);
 
     res.status(201).json({
       success: true,
       message: 'Media uploaded successfully.',
       data: {
-        filename: req.file.filename,
+        filename: file.filename,
         url: fileUrl,
-        size: req.file.size,
-        mimetype: req.file.mimetype
+        size: file.size,
+        mimetype: file.mimetype
       },
       url: fileUrl
     });
@@ -91,23 +92,24 @@ exports.uploadImage = async (req, res, next) => {
 
 exports.uploadMedia = async (req, res, next) => {
   try {
-    if (!req.file) {
+    const file = req.file || (req.files && req.files.length > 0 ? req.files[0] : null);
+    if (!file) {
       return res.status(400).json({
         success: false,
         message: 'No media file uploaded.'
       });
     }
 
-    const fileUrl = await uploadToCloudStorage(req.file);
+    const fileUrl = await uploadToCloudStorage(file);
 
     res.status(201).json({
       success: true,
       message: 'Media file uploaded successfully.',
       data: {
-        filename: req.file.filename,
+        filename: file.filename,
         url: fileUrl,
-        size: req.file.size,
-        mimetype: req.file.mimetype
+        size: file.size,
+        mimetype: file.mimetype
       },
       url: fileUrl
     });
@@ -118,7 +120,8 @@ exports.uploadMedia = async (req, res, next) => {
 
 exports.uploadImages = async (req, res, next) => {
   try {
-    if (!req.files || req.files.length === 0) {
+    const files = req.files && req.files.length > 0 ? req.files : (req.file ? [req.file] : []);
+    if (!files || files.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'No image files uploaded.'
@@ -126,7 +129,7 @@ exports.uploadImages = async (req, res, next) => {
     }
 
     const uploadedFiles = [];
-    for (const file of req.files) {
+    for (const file of files) {
       const fileUrl = await uploadToCloudStorage(file);
       uploadedFiles.push({
         filename: file.filename,

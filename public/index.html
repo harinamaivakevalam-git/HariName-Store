@@ -574,9 +574,9 @@
         // Hero Background Image
         const heroSectionEl = document.getElementById('hn-hero-main-section');
         if (heroSectionEl) {
-          const bgImg = hero.image_url || hero.background_image || hero.banner_url;
-          if (bgImg && bgImg.trim() && !isVideoMediaUrl(bgImg)) {
-            heroSectionEl.style.backgroundImage = `url('${bgImg.trim()}')`;
+          const bgImg = (hero.image_url || hero.background_image || hero.banner_url || '/assets/images/desktop_hero_banner.jpg').trim();
+          if (bgImg && !isVideoMediaUrl(bgImg)) {
+            heroSectionEl.style.backgroundImage = `url('${bgImg}')`;
           }
         }
 

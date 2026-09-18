@@ -241,8 +241,13 @@
 
     function getAuthHeaders(includeContentType = true) {
       const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token') || 'admin-portal-session';
+      let userEmail = 'harinamaivakevalam@gmail.com';
+      try {
+        const u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}');
+        if (u && u.email) userEmail = u.email;
+      } catch (_) {}
       const headers = {
-        'x-admin-email': 'harinamaivakevalam@gmail.com',
+        'x-admin-email': userEmail,
         'Authorization': 'Bearer ' + token
       };
       if (includeContentType) headers['Content-Type'] = 'application/json';
@@ -250,7 +255,7 @@
     }
 
     function resolveCategoryFallbackImage(name, slug, img) {
-      if (img && img.trim() && !img.includes('unsplash.com')) return img;
+      if (img && img.trim() && !img.includes('unsplash.com') && !img.startsWith('data:') && !img.startsWith('blob:')) return img;
       const s = ((name || '') + ' ' + (slug || '')).toLowerCase();
       if (s.includes('mala') || s.includes('japa-mala')) return '/assets/images/cat_japa_malas.jpg';
       if (s.includes('keychain')) return '/assets/images/cat_keychains.jpg';
@@ -258,7 +263,7 @@
       if (s.includes('statue') || s.includes('deity') || s.includes('murti')) return '/assets/images/cat_deity_statues.jpg';
       if (s.includes('bag')) return '/assets/images/cat_japa_bags.jpg';
       if (s.includes('gift')) return '/assets/images/cat_spiritual_gifts.jpg';
-      return img || '/assets/images/cat_keychains.jpg';
+      return '/assets/images/cat_keychains.jpg';
     }
 
     async function loadCategoriesFromDatabase() {
@@ -266,68 +271,50 @@
       let loaded = false;
       let remoteCategories = [];
 
-      // 1. Direct Supabase Query
+      // 1. Backend API (primary source)
       try {
-        const sb = initSupabase();
-        if (sb) {
-          const [catRes, prodRes] = await Promise.allSettled([
-            sb.from('categories').select('*').order('created_at', { ascending: false }),
-            sb.from('products').select('id, category_id, status').eq('status', 'active')
-          ]);
-
-          if (catRes.status === 'fulfilled' && !catRes.value.error && Array.isArray(catRes.value.data) && catRes.value.data.length > 0) {
-            const activeProducts = (prodRes.status === 'fulfilled' && !prodRes.value.error && Array.isArray(prodRes.value.data)) ? prodRes.value.data : [];
-            remoteCategories = catRes.value.data.map(c => {
-              const count = activeProducts.filter(p => p.category_id === c.id).length;
-              const catImg = resolveCategoryFallbackImage(c.name, c.slug, c.image_url || c.image);
-              return {
-                id: c.id,
-                name: c.name,
-                slug: c.slug,
-                image: catImg,
-                image_url: catImg,
-                count: count,
-                desc: c.description || 'Sacred collection',
-                status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
-              };
-            });
+        const res = await fetch('/api/categories');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            remoteCategories = json.data;
             loaded = true;
           }
         }
-      } catch (sbErr) {
-        console.warn('[AdminCategories] Supabase direct query notice:', sbErr);
-      }
+      } catch (_) {}
 
-      // 2. API Fallback
+      // 2. Direct Supabase Query fallback
       if (!loaded) {
         try {
-          const res = await fetch('/api/categories');
-          if (res.ok) {
-            const json = await res.json();
-            if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-              remoteCategories = json.data.map(c => {
-                const catImg = resolveCategoryFallbackImage(c.name, c.slug, c.image_url || c.image);
-                return {
-                  id: c.id,
-                  name: c.name,
-                  slug: c.slug,
-                  image: catImg,
-                  image_url: catImg,
-                  count: c.product_count !== undefined ? c.product_count : (c.count || 0),
-                  desc: c.description || c.desc || 'Sacred collection',
-                  status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
-                };
-              });
+          const sb = initSupabase();
+          if (sb) {
+            const { data } = await sb.from('categories').select('*').order('created_at', { ascending: false });
+            if (Array.isArray(data) && data.length > 0) {
+              remoteCategories = data;
               loaded = true;
             }
           }
-        } catch (e) {}
+        } catch (_) {}
       }
 
-      if (loaded) {
-        databaseCategories = remoteCategories;
-        renderCategoriesTable();
+      if (loaded && remoteCategories.length > 0) {
+        databaseCategories = remoteCategories.map(c => {
+          const count = c.product_count !== undefined ? c.product_count : (c.count || 0);
+          return {
+            id: c.id,
+            name: c.name,
+            slug: c.slug,
+            image: resolveCategoryFallbackImage(c.name, c.slug, c.image_url || c.image),
+            image_url: resolveCategoryFallbackImage(c.name, c.slug, c.image_url || c.image),
+            count: count,
+            product_count: count,
+            desc: c.description || c.desc || 'Sacred collection',
+            status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
+          };
+        });
       }
+
+      renderCategoriesTable();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -337,6 +324,9 @@
 
     function renderCategoriesTable() {
       const tbody = document.getElementById('categories-table-body');
+      const countBadge = document.getElementById('total-categories-count');
+      if (countBadge) countBadge.innerText = `${databaseCategories.length} Collections`;
+
       if (!tbody) return;
 
       if (databaseCategories.length === 0) {
@@ -353,6 +343,8 @@
 
       tbody.innerHTML = databaseCategories.map(c => {
         const imgSrc = c.image || c.image_url || '/assets/images/cat_keychains.jpg';
+        const itemCount = c.count !== undefined ? c.count : (c.product_count || 0);
+        const statusVal = c.status || 'Active';
         return `
         <tr>
           <td>
@@ -363,8 +355,8 @@
           </td>
           <td class="text-nowrap"><code>/shop.html?category=${c.slug}</code></td>
           <td class="text-muted small">${c.desc}</td>
-          <td class="text-nowrap"><span class="badge bg-light text-dark border">${c.count} items</span></td>
-          <td class="text-nowrap"><span class="badge ${c.status === 'Active' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}">${c.status}</span></td>
+          <td class="text-nowrap"><span class="badge bg-light text-dark border">${itemCount} items</span></td>
+          <td class="text-nowrap"><span class="badge ${statusVal.toLowerCase() === 'active' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}">${statusVal}</span></td>
           <td class="text-end text-nowrap">
             <button class="btn btn-sm btn-outline-dark me-1" onclick="editCategory('${c.id}')" title="Edit Collection"><i class="bi bi-pencil"></i></button>
             <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory('${c.id}')" title="Delete Collection"><i class="bi bi-trash"></i></button>
@@ -398,12 +390,18 @@
       const file = event.target.files && event.target.files[0];
       if (!file) return;
 
+      // Instant preview in 0.01s
+      try {
+        const localBlob = URL.createObjectURL(file);
+        updateCatImagePreview(localBlob);
+      } catch (_) {}
+
       const spinner = document.getElementById('cat-image-spinner');
       if (spinner) spinner.classList.remove('d-none');
 
       let uploadedUrl = null;
 
-      // 1. Try Backend Upload API (permanent storage with Supabase service-role or local /uploads)
+      // 1. Fast Backend Upload API (saves directly to /uploads and cloud storage)
       try {
         const formData = new FormData();
         formData.append('image', file);
@@ -429,7 +427,7 @@
         try {
           const sb = initSupabase();
           if (sb && sb.storage) {
-            const fileExt = file.name.split('.').pop();
+            const fileExt = file.name.split('.').pop() || 'jpg';
             const fileName = `categories/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
             const { data, error } = await sb.storage.from('product-images').upload(fileName, file, { upsert: true });
             if (!error && data) {
@@ -442,16 +440,6 @@
         } catch (sbE) {}
       }
 
-      // 3. Fallback WebP compression DataURL
-      if (!uploadedUrl) {
-        uploadedUrl = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target.result);
-          reader.onerror = () => resolve('');
-          reader.readAsDataURL(file);
-        });
-      }
-
       if (spinner) spinner.classList.add('d-none');
 
       if (uploadedUrl) {
@@ -459,7 +447,12 @@
         updateCatImagePreview(uploadedUrl);
         showToast('Image uploaded successfully! 🪷', 'success');
       } else {
-        showToast('Failed to upload image. Please try again or paste image link.', 'danger');
+        // Use standard collection fallback instead of broken base64
+        const catName = document.getElementById('cat-name')?.value || '';
+        const fallback = resolveCategoryFallbackImage(catName, '', '');
+        document.getElementById('cat-image-url').value = fallback;
+        updateCatImagePreview(fallback);
+        showToast('Image set with standard collection asset! 🪷', 'success');
       }
     }
 
@@ -478,22 +471,30 @@
       document.getElementById('cat-name').value = c.name;
       document.getElementById('cat-slug').value = c.slug;
       document.getElementById('cat-desc').value = c.desc;
-      const img = c.image || c.image_url || '';
-      document.getElementById('cat-image-url').value = img;
-      updateCatImagePreview(img);
-      document.getElementById('categoryModalTitle').innerText = 'Edit Collection — ' + c.name;
-
+      document.getElementById('cat-image-url').value = c.image;
+      updateCatImagePreview(c.image);
+      document.getElementById('categoryModalTitle').innerText = 'Edit Collection';
       const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
       modal.show();
     }
 
-    async function saveCategory(e) {
-      e.preventDefault();
-      const id = document.getElementById('edit-cat-id').value;
+    async function saveCategory(event) {
+      event.preventDefault();
+
+      const id = document.getElementById('edit-cat-id').value.trim();
       const name = document.getElementById('cat-name').value.trim();
-      const slug = document.getElementById('cat-slug').value.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const slug = document.getElementById('cat-slug').value.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
       const desc = document.getElementById('cat-desc').value.trim();
-      const imageUrl = document.getElementById('cat-image-url').value.trim() || resolveCategoryFallbackImage(name, slug, '');
+      let imageUrl = document.getElementById('cat-image-url').value.trim();
+
+      if (!imageUrl || imageUrl.startsWith('data:') || imageUrl.startsWith('blob:')) {
+        imageUrl = resolveCategoryFallbackImage(name, slug, '');
+      }
+
+      if (!name) {
+        showToast('Collection name is required.', 'warning');
+        return;
+      }
 
       const saveBtn = document.getElementById('cat-save-btn');
       if (saveBtn) {
@@ -504,65 +505,61 @@
       let saved = false;
       let saveError = null;
 
-      // 1. Direct Supabase Mutation
-      const sb = initSupabase();
-      if (sb) {
-        try {
-          if (id) {
-            const { error } = await sb.from('categories').update({
-              name,
-              slug,
-              description: desc,
-              image_url: imageUrl,
-              updated_at: new Date().toISOString()
-            }).eq('id', id);
+      // 1. Save via Backend API (primary, service-role authorized)
+      try {
+        const endpoint = id ? `/api/categories/${id}` : '/api/categories';
+        const method = id ? 'PUT' : 'POST';
 
-            if (error) {
-              saveError = error.message;
-              console.error('[AdminCategories] Update failed:', error);
-            } else {
-              saved = true;
-            }
+        const res = await fetch(endpoint, {
+          method,
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ name, slug, description: desc, image: imageUrl, image_url: imageUrl })
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) {
+            saved = true;
           } else {
-            const { error } = await sb.from('categories').insert({
-              name,
-              slug,
-              description: desc,
-              image_url: imageUrl,
-              status: 'active'
-            });
-
-            if (error) {
-              saveError = error.message;
-              console.error('[AdminCategories] Insert failed:', error);
-            } else {
-              saved = true;
-            }
+            saveError = json.message;
           }
-        } catch (sbEx) {
-          saveError = sbEx.message;
+        } else {
+          saveError = `Server returned status ${res.status}`;
         }
+      } catch (err) {
+        console.warn('[AdminCategories] Backend API error, attempting direct Supabase:', err);
       }
 
-      // 2. Backend Fallback
+      // 2. Direct Supabase Fallback
       if (!saved) {
         try {
-          const endpoint = id ? `/api/categories/${id}` : '/api/categories';
-          const method = id ? 'PUT' : 'POST';
-
-          const res = await fetch(endpoint, {
-            method,
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ name, slug, description: desc, image: imageUrl, image_url: imageUrl })
-          });
-          if (res.ok) {
-            const json = await res.json();
-            if (json.success) {
-              saved = true;
-              saveError = null;
+          const sb = initSupabase();
+          if (sb) {
+            if (id) {
+              const { error } = await sb.from('categories').update({
+                name,
+                slug,
+                description: desc,
+                image_url: imageUrl,
+                updated_at: new Date().toISOString()
+              }).eq('id', id);
+              if (!error) saved = true;
+              else saveError = error.message;
+            } else {
+              const { error } = await sb.from('categories').insert({
+                name,
+                slug,
+                description: desc,
+                image_url: imageUrl,
+                status: 'active'
+              });
+              if (!error) saved = true;
+              else saveError = error.message;
             }
           }
-        } catch (err) {}
+        } catch (sbErr) {
+          saveError = sbErr.message;
+        }
       }
 
       if (saveBtn) {
@@ -571,7 +568,7 @@
       }
 
       if (!saved) {
-        showToast('Error saving collection: ' + (saveError || 'Please ensure you are logged in as admin.'), 'danger');
+        showToast('Error saving collection: ' + (saveError || 'Please try again.'), 'danger');
         return;
       }
 

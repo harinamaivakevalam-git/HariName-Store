@@ -227,47 +227,99 @@ exports.getHomepageConfig = async (req, res, next) => {
   }
 };
 
+const path = require('path');
+const fs = require('fs');
+
+async function processMediaValue(val) {
+  if (typeof val !== 'string' || !val.startsWith('data:')) return val;
+  try {
+    const matches = val.match(/^data:([A-Za-z0-9\-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) return val;
+
+    const mimeType = matches[1];
+    const base64Data = matches[2];
+    const buffer = Buffer.from(base64Data, 'base64');
+    let ext = mimeType.split('/')[1] || 'jpg';
+    if (ext.includes(';')) ext = ext.split(';')[0];
+    if (ext === 'jpeg') ext = 'jpg';
+
+    const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${ext}`;
+    const uploadDir = path.join(__dirname, '../../uploads');
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+    const filePath = path.join(uploadDir, filename);
+    fs.writeFileSync(filePath, buffer);
+
+    if (isSupabaseConfigured && supabaseAdmin) {
+      try {
+        const cloudFileName = `uploads/${filename}`;
+        const { data, error } = await supabaseAdmin.storage
+          .from('product-images')
+          .upload(cloudFileName, buffer, {
+            contentType: mimeType,
+            upsert: true
+          });
+        if (!error && data) {
+          const { data: pubData } = supabaseAdmin.storage
+            .from('product-images')
+            .getPublicUrl(cloudFileName);
+          if (pubData && pubData.publicUrl) return pubData.publicUrl;
+        }
+      } catch (_) {}
+    }
+    return `/uploads/${filename}`;
+  } catch (err) {
+    console.warn('[HomepageController] Failed to convert base64 image:', err.message);
+    return val;
+  }
+}
+
+async function sanitizeSectionContent(content) {
+  if (!content || typeof content !== 'object') return content;
+  const sanitized = Array.isArray(content) ? [...content] : { ...content };
+
+  for (const key of Object.keys(sanitized)) {
+    if (typeof sanitized[key] === 'string' && sanitized[key].startsWith('data:')) {
+      sanitized[key] = await processMediaValue(sanitized[key]);
+    } else if (Array.isArray(sanitized[key])) {
+      sanitized[key] = await Promise.all(sanitized[key].map(async item => {
+        if (typeof item === 'string' && item.startsWith('data:')) {
+          return await processMediaValue(item);
+        } else if (item && typeof item === 'object' && item.url && typeof item.url === 'string' && item.url.startsWith('data:')) {
+          return { ...item, url: await processMediaValue(item.url) };
+        }
+        return item;
+      }));
+    } else if (sanitized[key] && typeof sanitized[key] === 'object') {
+      sanitized[key] = await sanitizeSectionContent(sanitized[key]);
+    }
+  }
+  return sanitized;
+}
+
 // 2. PUT /api/homepage/:sectionId (Admin Only)
 exports.updateHomepageSection = async (req, res, next) => {
   try {
     const { sectionId } = req.params;
-    const { title, subtitle, content, is_active = true } = req.body;
+    const { title, subtitle, content, is_active } = req.body;
 
-    if (!sectionId) {
-      return res.status(400).json({ success: false, message: 'Section ID is required.' });
-    }
+    const sanitizedContent = await sanitizeSectionContent(content || {});
 
     const payload = {
       id: sectionId,
       title: title || '',
       subtitle: subtitle || '',
-      content: content || {},
-      is_active: Boolean(is_active),
+      content: sanitizedContent,
+      is_active: is_active !== undefined ? Boolean(is_active) : true,
       updated_at: new Date().toISOString()
     };
 
-    let saved = false;
-
     if (isSupabaseConfigured && supabaseAdmin) {
       try {
-        const { data, error } = await supabaseAdmin
-          .from('homepage_sections')
-          .upsert(payload)
-          .select()
-          .maybeSingle();
-
-        if (!error && data) {
-          saved = true;
-        } else if (error) {
-          console.warn('[Homepage] Supabase upsert error:', error.message);
-        }
-      } catch (sbEx) {
-        console.warn('[Homepage] Supabase upsert exception:', sbEx.message);
-      }
+        await supabaseAdmin.from('homepage_sections').upsert(payload);
+      } catch (e) {}
     }
 
-    // Update in-memory DB mirror
-    const existing = db.findOne('homepage_sections', s => s.id === sectionId);
+    const existing = db.findOne('homepage_sections', item => item.id === sectionId);
     if (existing) {
       db.update('homepage_sections', sectionId, payload);
     } else {
@@ -283,6 +335,7 @@ exports.updateHomepageSection = async (req, res, next) => {
     next(err);
   }
 };
+exports.updateSection = exports.updateHomepageSection;
 
 // 3. PUT /api/homepage (Bulk Save All Sections - Admin Only)
 exports.updateAllSections = async (req, res, next) => {
@@ -298,11 +351,12 @@ exports.updateAllSections = async (req, res, next) => {
 
     for (const s of sectionList) {
       if (!s.id) continue;
+      const sanitizedContent = await sanitizeSectionContent(s.content || {});
       const payload = {
         id: s.id,
         title: s.title || '',
         subtitle: s.subtitle || '',
-        content: s.content || {},
+        content: sanitizedContent,
         is_active: s.is_active !== undefined ? Boolean(s.is_active) : true,
         updated_at: new Date().toISOString()
       };

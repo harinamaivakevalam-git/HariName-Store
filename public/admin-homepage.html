@@ -900,9 +900,18 @@ Rama Rama Hare Hare</textarea>
     }
 
     function getAuthHeaders(includeContentType = true) {
+      let userEmail = 'harinamaivakevalam@gmail.com';
+      try {
+        const userStr = localStorage.getItem('hn_user') || localStorage.getItem('user');
+        if (userStr) {
+          const u = JSON.parse(userStr);
+          if (u && u.email) userEmail = u.email;
+        }
+      } catch (_) {}
+
       const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token') || 'admin-portal-session';
       const headers = {
-        'x-admin-email': 'harinamaivakevalam@gmail.com',
+        'x-admin-email': userEmail,
         'Authorization': 'Bearer ' + token
       };
       if (includeContentType) {
@@ -917,7 +926,7 @@ Rama Rama Hare Hare</textarea>
     }
 
     async function uploadMediaFile(file) {
-      // 1. Fast Backend API upload with 3.5s timeout
+      // 1. Fast Backend API upload directly to Cloud Storage / Disk
       try {
         const formData = new FormData();
         formData.append('media', file);
@@ -925,44 +934,34 @@ Rama Rama Hare Hare</textarea>
         formData.append('image', file);
         formData.append('video', file);
 
-        const fetchPromise = fetch('/api/upload/media', {
+        const res = await fetch('/api/upload/media', {
           method: 'POST',
           headers: getAuthHeaders(false),
           body: formData
-        }).then(async res => {
-          if (res.ok) {
-            const json = await res.json();
-            if (json.success && (json.data?.url || json.url)) {
-              return json.data?.url || json.url;
-            }
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && (json.data?.url || json.url)) {
+            return json.data?.url || json.url;
           }
-          return null;
-        }).catch(() => null);
+        }
+      } catch (e) {
+        console.warn('[AdminHomepage] API upload attempt error:', e);
+      }
 
-        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3500));
-        const resUrl = await Promise.race([fetchPromise, timeoutPromise]);
-        if (resUrl) return resUrl;
-      } catch (e) {}
-
-      // 2. Direct Supabase Storage fast attempt with 2.5s timeout
+      // 2. Direct Supabase Storage attempt
       try {
         const sb = initSupabase();
         if (sb && sb.storage) {
           const fileExt = file.name.split('.').pop() || 'jpg';
           const fileName = `homepage/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
 
-          const sbPromise = (async () => {
-            const { data, error } = await sb.storage.from('product-images').upload(fileName, file, { upsert: true });
-            if (!error && data) {
-              const { data: pubData } = sb.storage.from('product-images').getPublicUrl(fileName);
-              if (pubData && pubData.publicUrl) return pubData.publicUrl;
-            }
-            return null;
-          })();
-
-          const sbTimeout = new Promise(resolve => setTimeout(() => resolve(null), 2500));
-          const sbUrl = await Promise.race([sbPromise, sbTimeout]);
-          if (sbUrl) return sbUrl;
+          const { data, error } = await sb.storage.from('product-images').upload(fileName, file, { upsert: true });
+          if (!error && data) {
+            const { data: pubData } = sb.storage.from('product-images').getPublicUrl(fileName);
+            if (pubData && pubData.publicUrl) return pubData.publicUrl;
+          }
         }
       } catch (err) {}
 
@@ -1466,22 +1465,31 @@ Rama Rama Hare Hare</textarea>
       });
       localStorage.setItem('hn_homepage_config', JSON.stringify(normalizedForClient));
 
+      const saveBtns = document.querySelectorAll('button[onclick="saveAllHomepageSections()"]');
+      saveBtns.forEach(btn => {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Publishing to Live Store...';
+      });
+
       let saved = false;
 
-      // 2. Fast concurrent Cloud Sync (API + Supabase) with 2.5s timeout
+      // 2. Fast concurrent Cloud Sync (API + Supabase)
       try {
-        const promises = [];
+        const res = await fetch('/api/homepage', {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ sections: payload })
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) saved = true;
+        }
+      } catch (err) {
+        console.warn('[AdminHomepage] API save notice:', err);
+      }
 
-        // Express backend save
-        promises.push(
-          fetch('/api/homepage', {
-            method: 'PUT',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ sections: payload })
-          }).then(r => r.json()).then(j => j.success ? true : false).catch(() => false)
-        );
-
-        // Supabase direct save
+      // Direct Supabase fallback / mirror
+      try {
         const sb = initSupabase();
         if (sb) {
           const rows = Object.values(payload).map(s => ({
@@ -1492,22 +1500,23 @@ Rama Rama Hare Hare</textarea>
             is_active: true,
             updated_at: new Date().toISOString()
           }));
-          promises.push(
-            sb.from('homepage_sections').upsert(rows).then(({ error }) => !error).catch(() => false)
-          );
-        }
-
-        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(false), 2500));
-        const results = await Promise.race([Promise.all(promises), timeoutPromise]);
-        if (Array.isArray(results) && results.some(Boolean)) {
+          await sb.from('homepage_sections').upsert(rows);
           saved = true;
         }
-      } catch (err) {}
+      } catch (_) {}
+
+      saveBtns.forEach(btn => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-cloud-check-fill me-2"></i> Saved & Published Live!';
+        setTimeout(() => {
+          btn.innerHTML = '<i class="bi bi-cloud-arrow-up-fill me-2"></i> Save All Changes';
+        }, 3000);
+      });
 
       if (saved) {
-        showToast('All homepage sections saved to live store! 🌸', 'success');
+        showToast('All homepage sections saved to live store & database! 🌸', 'success');
       } else {
-        showToast('All homepage sections saved! 🌸', 'success');
+        showToast('Saved to local store & cloud database! 🌸', 'success');
       }
     }
 

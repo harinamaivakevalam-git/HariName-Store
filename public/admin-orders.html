@@ -335,6 +335,57 @@
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
 
+    function getApiUrl(path) {
+      if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        if (window.location.port === '5000') return path;
+        return `http://${window.location.hostname}:5000${path}`;
+      }
+      return path;
+    }
+
+    function getAuthHeaders() {
+      const storedToken = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+      const token = (storedToken && storedToken.length > 20) ? storedToken : 'admin-portal-session';
+      let userEmail = 'harinamaivakevalam@gmail.com';
+      try {
+        const u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}');
+        if (u && u.email) {
+          const e = String(u.email).toLowerCase().trim();
+          if (['katturojuanilkumar@gmail.com', 'harinamaivakevalam@gmail.com', 'admin@harinama.com'].includes(e)) {
+            userEmail = e;
+          }
+        }
+      } catch (_) {}
+      return {
+        'Content-Type': 'application/json',
+        'x-admin-email': userEmail,
+        'Authorization': 'Bearer ' + token
+      };
+    }
+
+    async function fetchJsonSafe(endpoint, options = {}) {
+      const url = getApiUrl(endpoint);
+      const headers = { ...getAuthHeaders(), ...(options.headers || {}) };
+      const res = await fetch(url, { ...options, headers });
+      const cType = res.headers.get('content-type') || '';
+
+      if (cType.includes('application/json')) {
+        const json = await res.json();
+        return { ok: res.ok, status: res.status, data: json };
+      }
+
+      const text = await res.text();
+      return {
+        ok: false,
+        status: res.status,
+        data: {
+          success: false,
+          message: text ? text.replace(/<[^>]*>?/gm, '').trim().slice(0, 200) : `Server responded with HTTP ${res.status}`
+        }
+      };
+    }
+
     function initSupabase() {
       if (!window.supabaseClient && window.supabase && typeof window.supabase.createClient === 'function') {
         try {
@@ -435,7 +486,16 @@
         status: statusNorm,
         courier: o.courier || 'India Post Speed Post',
         tracking_number: o.tracking_number || '',
-        notes: o.notes || ''
+        notes: o.notes || '',
+        // Shiprocket fulfillment fields
+        shiprocket_order_id: o.shiprocket_order_id || null,
+        shiprocket_shipment_id: o.shiprocket_shipment_id || null,
+        shipping_status: o.shipping_status || 'NOT_CREATED',
+        awb_code: o.awb_code || o.tracking_number || null,
+        courier_name: o.courier_name || o.courier || null,
+        pickup_status: o.pickup_status || null,
+        pickup_scheduled_date: o.pickup_scheduled_date || null,
+        shipping_label_url: o.shipping_label_url || null
       };
     }
 
@@ -501,43 +561,14 @@
       updateMetricCounters();
       renderOrdersTable(localOrders);
 
-      function getApiUrl(path) {
-        if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
-        if (window.location.port && window.location.port !== '5000' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-          return `http://${window.location.hostname}:5000${path}`;
-        }
-        return path;
-      }
-
       // 2. Fetch from Live Backend Server API (/api/orders/admin/all)
       try {
-        const storedToken = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-        const token = (storedToken && storedToken.length > 20) ? storedToken : 'admin-portal-session';
-        let userEmail = 'harinamaivakevalam@gmail.com';
-        try {
-          const u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}');
-          if (u && u.email) {
-            const e = String(u.email).toLowerCase().trim();
-            if (['katturojuanilkumar@gmail.com', 'harinamaivakevalam@gmail.com', 'admin@harinama.com'].includes(e)) {
-              userEmail = e;
-            }
-          }
-        } catch (_) {}
-        const headers = {
-          'x-admin-email': userEmail,
-          'Authorization': 'Bearer ' + token
-        };
-
-        const apiRes = await fetch(getApiUrl('/api/orders/admin/all?limit=100'), { headers });
-        const cType = apiRes.headers.get('content-type') || '';
-        if (apiRes.ok && cType.includes('application/json')) {
-          const json = await apiRes.json();
-          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-            json.data.forEach(apiOrder => {
-              const norm = normalizeOrder(apiOrder);
-              if (norm) mergedMap.set(norm.id, norm);
-            });
-          }
+        const apiRes = await fetchJsonSafe('/api/orders/admin/all?limit=100');
+        if (apiRes.ok && apiRes.data?.success && Array.isArray(apiRes.data?.data) && apiRes.data.data.length > 0) {
+          apiRes.data.data.forEach(apiOrder => {
+            const norm = normalizeOrder(apiOrder);
+            if (norm) mergedMap.set(norm.id, norm);
+          });
         }
       } catch (apiErr) {
         console.warn('[AdminOrders] Backend API sync note:', apiErr.message);
@@ -871,13 +902,8 @@
 
       // Sync with Live Backend API
       try {
-        const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = 'Bearer ' + token;
-
-        await fetch(`/api/orders/admin/${encodeURIComponent(id)}/status`, {
+        await fetchJsonSafe(`/api/orders/admin/${encodeURIComponent(id)}/status`, {
           method: 'PUT',
-          headers,
           body: JSON.stringify({
             order_status: updatedFields.status.toLowerCase(),
             payment_status: updatedFields.payment_status.toLowerCase(),
@@ -921,13 +947,8 @@
 
         // Sync with API
         try {
-          const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-          const headers = { 'Content-Type': 'application/json' };
-          if (token) headers['Authorization'] = 'Bearer ' + token;
-
-          await fetch(`/api/orders/admin/${encodeURIComponent(currentSelectedOrderId)}/status`, {
+          await fetchJsonSafe(`/api/orders/admin/${encodeURIComponent(currentSelectedOrderId)}/status`, {
             method: 'PUT',
-            headers,
             body: JSON.stringify({ order_status: newStatus.toLowerCase() })
           });
         } catch(e) {}
@@ -972,30 +993,22 @@
     // SHIPROCKET FULFILLMENT ACTIONS
     // =========================================================================
     async function adminCreateShiprocketOrder(orderId) {
-      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = 'Bearer ' + token;
-
       showToast(`Contacting Shiprocket to create shipment for ${orderId}...`);
       try {
-        const res = await fetch('/api/shiprocket/create-order', {
+        const res = await fetchJsonSafe('/api/shiprocket/create-order', {
           method: 'POST',
-          headers,
           body: JSON.stringify({ order_id: orderId })
         });
 
-        const data = await res.json();
-        if (data.success) {
-          showToast(`Shiprocket shipment created! Shipment ID: ${data.data?.shiprocket_shipment_id || ''}`);
-          // Refresh orders list
-          if (typeof fetchLiveOrders === 'function') fetchLiveOrders();
-          // Update open modal
+        if (res.data && res.data.success) {
+          showToast(`Shiprocket shipment created! Shipment ID: ${res.data.data?.shiprocket_shipment_id || ''}`);
+          await loadOrdersFromAllSources();
           const modalEl = document.getElementById('orderModal');
           const modal = bootstrap.Modal.getInstance(modalEl);
           if (modal) modal.hide();
           setTimeout(() => viewOrderDetails(orderId), 300);
         } else {
-          alert(`Shiprocket error: ${data.message}`);
+          alert(`Shiprocket error: ${res.data?.message || 'Failed to create shipment on Shiprocket'}`);
         }
       } catch (err) {
         alert(`Failed to create Shiprocket shipment: ${err.message}`);
@@ -1003,28 +1016,22 @@
     }
 
     async function adminAssignShiprocketAwb(orderId, shipmentId) {
-      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = 'Bearer ' + token;
-
       showToast(`Assigning courier and AWB for ${orderId}...`);
       try {
-        const res = await fetch('/api/shiprocket/assign-awb', {
+        const res = await fetchJsonSafe('/api/shiprocket/assign-awb', {
           method: 'POST',
-          headers,
           body: JSON.stringify({ order_id: orderId, shipment_id: shipmentId })
         });
 
-        const data = await res.json();
-        if (data.success) {
-          showToast(`AWB ${data.data?.awb_code} assigned with ${data.data?.courier_name || 'Courier'}!`);
-          if (typeof fetchLiveOrders === 'function') fetchLiveOrders();
+        if (res.data && res.data.success) {
+          showToast(`AWB ${res.data.data?.awb_code} assigned with ${res.data.data?.courier_name || 'Courier'}!`);
+          await loadOrdersFromAllSources();
           const modalEl = document.getElementById('orderModal');
           const modal = bootstrap.Modal.getInstance(modalEl);
           if (modal) modal.hide();
           setTimeout(() => viewOrderDetails(orderId), 300);
         } else {
-          alert(`AWB assignment error: ${data.message}`);
+          alert(`AWB assignment error: ${res.data?.message || 'Unable to assign AWB'}`);
         }
       } catch (err) {
         alert(`Failed to assign AWB: ${err.message}`);
@@ -1032,28 +1039,22 @@
     }
 
     async function adminRequestShiprocketPickup(orderId, shipmentId) {
-      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = 'Bearer ' + token;
-
       showToast(`Requesting courier pickup for shipment ${shipmentId}...`);
       try {
-        const res = await fetch('/api/shiprocket/pickup', {
+        const res = await fetchJsonSafe('/api/shiprocket/pickup', {
           method: 'POST',
-          headers,
           body: JSON.stringify({ order_id: orderId, shipment_id: shipmentId })
         });
 
-        const data = await res.json();
-        if (data.success) {
+        if (res.data && res.data.success) {
           showToast(`Pickup scheduled successfully!`);
-          if (typeof fetchLiveOrders === 'function') fetchLiveOrders();
+          await loadOrdersFromAllSources();
           const modalEl = document.getElementById('orderModal');
           const modal = bootstrap.Modal.getInstance(modalEl);
           if (modal) modal.hide();
           setTimeout(() => viewOrderDetails(orderId), 300);
         } else {
-          alert(`Pickup request error: ${data.message}`);
+          alert(`Pickup request error: ${res.data?.message || 'Unable to schedule pickup'}`);
         }
       } catch (err) {
         alert(`Failed to request pickup: ${err.message}`);
@@ -1061,29 +1062,23 @@
     }
 
     async function adminGenerateShiprocketLabel(orderId, shipmentId) {
-      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = 'Bearer ' + token;
-
       showToast(`Generating printable shipping label...`);
       try {
-        const res = await fetch('/api/shiprocket/label', {
+        const res = await fetchJsonSafe('/api/shiprocket/label', {
           method: 'POST',
-          headers,
           body: JSON.stringify({ order_id: orderId, shipment_id: shipmentId })
         });
 
-        const data = await res.json();
-        if (data.success && data.label_url) {
+        if (res.data && res.data.success && res.data.label_url) {
           showToast(`Shipping label generated!`);
-          window.open(data.label_url, '_blank');
-          if (typeof fetchLiveOrders === 'function') fetchLiveOrders();
+          window.open(res.data.label_url, '_blank');
+          await loadOrdersFromAllSources();
           const modalEl = document.getElementById('orderModal');
           const modal = bootstrap.Modal.getInstance(modalEl);
           if (modal) modal.hide();
           setTimeout(() => viewOrderDetails(orderId), 300);
         } else {
-          alert(`Label generation notice: ${data.message || 'Label not yet available from courier partner'}`);
+          alert(`Label generation notice: ${res.data?.message || 'Label not yet available from courier partner'}`);
         }
       } catch (err) {
         alert(`Failed to generate label: ${err.message}`);
@@ -1093,28 +1088,22 @@
     async function adminCancelShiprocket(orderId, srOrderId) {
       if (!confirm(`Are you sure you want to cancel the Shiprocket shipment for ${orderId}?`)) return;
 
-      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = 'Bearer ' + token;
-
       showToast(`Cancelling Shiprocket shipment...`);
       try {
-        const res = await fetch('/api/shiprocket/cancel', {
+        const res = await fetchJsonSafe('/api/shiprocket/cancel', {
           method: 'POST',
-          headers,
           body: JSON.stringify({ order_id: orderId, shiprocket_order_id: srOrderId })
         });
 
-        const data = await res.json();
-        if (data.success) {
+        if (res.data && res.data.success) {
           showToast(`Shipment cancelled successfully.`);
-          if (typeof fetchLiveOrders === 'function') fetchLiveOrders();
+          await loadOrdersFromAllSources();
           const modalEl = document.getElementById('orderModal');
           const modal = bootstrap.Modal.getInstance(modalEl);
           if (modal) modal.hide();
           setTimeout(() => viewOrderDetails(orderId), 300);
         } else {
-          alert(`Cancellation error: ${data.message}`);
+          alert(`Cancellation error: ${res.data?.message || 'Unable to cancel shipment'}`);
         }
       } catch (err) {
         alert(`Failed to cancel shipment: ${err.message}`);

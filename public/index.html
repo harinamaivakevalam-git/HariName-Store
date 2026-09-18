@@ -330,14 +330,21 @@
       const container = document.getElementById('hn-cat-circles-container') || document.querySelector('.hn-cat-circles-scroll');
       if (!container) return;
 
-      let cats = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.categories))
+      let cats = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.categories) && HARINAMA_DATA.categories.length > 0)
         ? HARINAMA_DATA.categories.filter(c => c.slug !== 'all-products' && c.id !== 'cat-all')
         : [];
 
       if (!cats || cats.length === 0) {
-        const section = container.closest('.hn-categories-circles-section');
-        if (section) section.style.display = 'none';
-        return;
+        cats = (typeof HARINAMA_BASE_AUTHENTIC_COLLECTIONS !== 'undefined' && Array.isArray(HARINAMA_BASE_AUTHENTIC_COLLECTIONS))
+          ? HARINAMA_BASE_AUTHENTIC_COLLECTIONS
+          : [
+            { id: '1', name: 'Japa Malas', slug: 'japa-malas', image: '/assets/images/cat_japa_malas.jpg' },
+            { id: '2', name: 'Keychains', slug: 'keychains', image: '/assets/images/cat_keychains.jpg' },
+            { id: '3', name: 'Books', slug: 'books', image: '/assets/images/cat_books.jpg' },
+            { id: '4', name: 'Deity Statues', slug: 'deity-statues', image: '/assets/images/cat_deity_statues.jpg' },
+            { id: '5', name: 'Japa Bags', slug: 'japa-bags', image: '/assets/images/cat_japa_bags.jpg' },
+            { id: '6', name: 'Spiritual Gifts', slug: 'spiritual-gifts', image: '/assets/images/cat_spiritual_gifts.jpg' }
+          ];
       }
 
       const section = container.closest('.hn-categories-circles-section');
@@ -362,25 +369,9 @@
       const grid = document.getElementById('hn-featured-grid');
       if (!grid) return;
 
-      const prods = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
-      if (prods.length === 0) {
-        if (!HARINAMA_DATA.isLoaded) {
-          grid.innerHTML = `
-            <div class="col-12 text-center py-5 text-muted">
-              <div class="spinner-border text-gold mb-2" role="status"></div>
-              <p class="small mb-0">Connecting to sacred database...</p>
-            </div>
-          `;
-        } else {
-          grid.innerHTML = `
-            <div class="col-12 text-center py-5 text-muted">
-              <i class="bi bi-flower1 fs-1 text-gold d-block mb-3"></i>
-              <h5 class="fw-bold text-navy">Sacred Catalog Updating</h5>
-              <p class="small text-secondary mb-0">Our holy offerings are currently being updated in our live database. Please check back shortly!</p>
-            </div>
-          `;
-        }
-        return;
+      let prods = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products) && HARINAMA_DATA.products.length > 0) ? HARINAMA_DATA.products : [];
+      if (!prods || prods.length === 0) {
+        prods = (typeof HARINAMA_AUTHENTIC_PRODUCTS !== 'undefined' && Array.isArray(HARINAMA_AUTHENTIC_PRODUCTS)) ? HARINAMA_AUTHENTIC_PRODUCTS : [];
       }
 
       // Daily Dynamic Showcase: Rotate product showcase everyday based on current calendar date
@@ -407,8 +398,11 @@
 
       if (window.__hn_homepage_custom_promo) return;
 
-      const prods = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
-      if (prods.length === 0) {
+      let prods = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products) && HARINAMA_DATA.products.length > 0) ? HARINAMA_DATA.products : [];
+      if (!prods || prods.length === 0) {
+        prods = (typeof HARINAMA_AUTHENTIC_PRODUCTS !== 'undefined' && Array.isArray(HARINAMA_AUTHENTIC_PRODUCTS)) ? HARINAMA_AUTHENTIC_PRODUCTS : [];
+      }
+      if (!prods || prods.length === 0) {
         wrapper.style.display = 'none';
         return;
       }
@@ -585,7 +579,14 @@
           const rawBgImg = (hero.image_url || hero.background_image || hero.banner_url || '/assets/images/desktop_hero_banner.jpg').trim();
           const bgImg = safeImgUrl(rawBgImg);
           if (bgImg && !isVideoMediaUrl(bgImg)) {
-            heroSectionEl.style.backgroundImage = `url('${bgImg}')`;
+            const preloader = new Image();
+            preloader.onload = () => {
+              heroSectionEl.style.backgroundImage = `url('${bgImg}')`;
+            };
+            preloader.onerror = () => {
+              heroSectionEl.style.backgroundImage = `url('/assets/images/desktop_hero_banner.jpg')`;
+            };
+            preloader.src = bgImg;
           }
         }
 
@@ -885,21 +886,35 @@
       }
     });
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      renderHeader('home');
-      renderFooter();
-      await renderDynamicHomepageSections();
-      renderCategoryCircles();
-      renderFeaturedSection();
-      updatePromoSection();
-      loadHomeReviews();
-
-      window.addEventListener('hn:catalog-loaded', async () => {
-        renderCategoryCircles();
-        renderFeaturedSection();
-        updatePromoSection();
+    const initHomePage = async () => {
+      try {
+        if (typeof renderHeader === 'function') renderHeader('home');
+        if (typeof renderFooter === 'function') renderFooter();
         await renderDynamicHomepageSections();
-      });
+        if (typeof renderCategoryCircles === 'function') renderCategoryCircles();
+        if (typeof renderFeaturedSection === 'function') renderFeaturedSection();
+        if (typeof updatePromoSection === 'function') updatePromoSection();
+        if (typeof loadHomeReviews === 'function') loadHomeReviews();
+      } catch (err) {
+        console.error('[home] Initialization error:', err);
+      }
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initHomePage);
+    } else {
+      initHomePage();
+    }
+
+    window.addEventListener('hn:catalog-loaded', async () => {
+      try {
+        if (typeof renderCategoryCircles === 'function') renderCategoryCircles();
+        if (typeof renderFeaturedSection === 'function') renderFeaturedSection();
+        if (typeof updatePromoSection === 'function') updatePromoSection();
+        await renderDynamicHomepageSections();
+      } catch (e) {
+        console.warn('[home] Catalog refresh notice:', e);
+      }
     });
   </script>
 </body>

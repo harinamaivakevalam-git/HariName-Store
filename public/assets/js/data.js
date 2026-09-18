@@ -190,7 +190,7 @@ function getInitialProducts() {
     const saved = localStorage.getItem('hn_live_products');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed;
       }
     }

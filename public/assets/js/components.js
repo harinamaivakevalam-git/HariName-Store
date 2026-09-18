@@ -1294,16 +1294,7 @@
       <div class="container">
         <div class="d-flex align-items-center justify-content-between hn-header-inner">
           
-          <!-- Mobile Menu Toggle Button (Left on Mobile) -->
-          <button class="hn-hamburger-btn d-lg-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hnMobileNav" aria-expanded="false" aria-label="Toggle navigation" id="hnMobileNavToggle">
-            <span class="hn-hamburger-lines">
-              <span class="hn-hamburger-line line-1"></span>
-              <span class="hn-hamburger-line line-2"></span>
-              <span class="hn-hamburger-line line-3"></span>
-            </span>
-          </button>
-
-          <!-- Logo (Center on Mobile, Left on Desktop) -->
+          <!-- Logo (Left on Desktop & Mobile) -->
           <a href="/index.html" class="hn-brand">
             <div class="hn-brand-logo-wrap">
               <img src="/assets/images/krishna-logo.jpg" alt="Harinama Store Logo - Sri Krishna" class="hn-brand-img">
@@ -1323,8 +1314,8 @@
             <a href="/contact.html" class="hn-nav-link ${active === 'contact' ? 'active' : ''}">Contact</a>
           </nav>
 
-          <!-- Right Action Icons: Search -> Favorites -> Cart -> Sign In / Profile (LAST) -->
-          <div class="d-flex align-items-center gap-2 gap-md-3 hn-header-actions">
+          <!-- Right Action Icons: Search -> Favorites -> Cart -> Sign In / Profile -> Menu Toggle (Mobile) -->
+          <div class="d-flex align-items-center gap-1 gap-sm-2 gap-md-3 hn-header-actions">
             <a href="/shop.html" class="hn-icon-btn" title="Search Products">
               <i class="bi bi-search"></i>
             </a>
@@ -1339,10 +1330,19 @@
               <span class="hn-badge-pill ${loggedIn && cartCount > 0 ? '' : 'd-none'}" id="hn-cart-badge">${cartCount}</span>
             </a>
 
-            <!-- User Auth Trigger / Profile (Desktop / Mobile) -->
+            <!-- User Auth Trigger / Profile (Desktop) -->
             <div class="d-none d-md-block">
               ${userActionMarkup}
             </div>
+
+            <!-- Mobile Menu Toggle Button (Right on Mobile) -->
+            <button class="hn-hamburger-btn d-lg-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hnMobileNav" aria-expanded="false" aria-label="Toggle navigation" id="hnMobileNavToggle">
+              <span class="hn-hamburger-lines">
+                <span class="hn-hamburger-line line-1"></span>
+                <span class="hn-hamburger-line line-2"></span>
+                <span class="hn-hamburger-line line-3"></span>
+              </span>
+            </button>
           </div>
 
         </div>
@@ -1425,33 +1425,49 @@
 
   // Floating Header Scroll Controller
   const initHeaderScrollEffect = () => {
+    let isTicking = false;
+
     const onScroll = () => {
-      const header = document.querySelector('.hn-header');
-      if (!header) return;
+      if (!isTicking) {
+        window.requestAnimationFrame(() => {
+          const header = document.querySelector('.hn-header');
+          if (!header) {
+            isTicking = false;
+            return;
+          }
 
-      const isScrolled = window.scrollY > 30;
-      if (isScrolled) {
-        header.classList.add('scrolled');
-      } else {
-        header.classList.remove('scrolled');
-      }
+          const isScrolled = window.scrollY > 25;
+          if (isScrolled) {
+            header.classList.add('scrolled');
+          } else {
+            header.classList.remove('scrolled');
+          }
 
-      // Hide floating navbar once user scrolls down to the footer
-      const footer = document.querySelector('.hn-footer') ||
-                     document.querySelector('.hn-footer-signoff') ||
-                     document.getElementById('hn-footer-placeholder') ||
-                     document.querySelector('footer');
+          // Hide floating navbar only on large screens when approaching footer
+          if (window.innerWidth >= 992) {
+            const footer = document.querySelector('.hn-footer') ||
+                           document.querySelector('.hn-footer-signoff') ||
+                           document.getElementById('hn-footer-placeholder') ||
+                           document.querySelector('footer');
 
-      if (footer && isScrolled) {
-        const footerRect = footer.getBoundingClientRect();
-        const headerHeight = header.offsetHeight || 60;
-        if (footerRect.top <= (headerHeight + 20)) {
-          header.classList.add('footer-reached');
-        } else {
-          header.classList.remove('footer-reached');
-        }
-      } else {
-        header.classList.remove('footer-reached');
+            if (footer && isScrolled) {
+              const footerRect = footer.getBoundingClientRect();
+              const headerHeight = header.offsetHeight || 60;
+              if (footerRect.top <= (headerHeight + 20)) {
+                header.classList.add('footer-reached');
+              } else {
+                header.classList.remove('footer-reached');
+              }
+            } else {
+              header.classList.remove('footer-reached');
+            }
+          } else {
+            header.classList.remove('footer-reached');
+          }
+
+          isTicking = false;
+        });
+        isTicking = true;
       }
     };
 

@@ -114,99 +114,106 @@ a:hover {
   border-bottom: 1px solid var(--hn-border-subtle);
   border-radius: 0px;
   box-shadow: 0 0 0 transparent;
-  padding: 12px 0;
+  padding: 10px 0;
   z-index: 1050;
-  will-change: width, max-width, top, padding, border-radius, background-color, box-shadow, border-color;
-  transition: 
-    top 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    width 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    padding 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    border-radius 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    backdrop-filter 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    -webkit-backdrop-filter 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.35s ease,
-    transform 0.35s ease,
-    visibility 0.35s ease;
   box-sizing: border-box;
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
-/* Floating Pill Navbar on Scroll (Silky Smooth In-Place Morphing) */
-.hn-header.scrolled {
-  top: 12px;
-  width: min(1280px, calc(100% - 32px));
-  max-width: 1280px;
-  background-color: rgba(255, 255, 255, 0.94);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  backdrop-filter: blur(20px) saturate(180%);
-  border-color: rgba(220, 205, 185, 0.8);
-  border-radius: 9999px;
-  box-shadow: 
-    0 14px 34px -4px rgba(28, 20, 10, 0.12),
-    0 4px 12px -2px rgba(28, 20, 10, 0.06),
-    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
-  padding: 6px 18px;
-}
+/* Floating Pill Navbar on Scroll (Desktop Only: min-width: 992px) */
+@media (min-width: 992px) {
+  .hn-header {
+    padding: 12px 0;
+    will-change: width, max-width, top, padding, border-radius, background-color, box-shadow, border-color;
+    transition: 
+      top 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+      width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+      max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+      padding 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+      border-radius 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+      background-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+      backdrop-filter 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+      -webkit-backdrop-filter 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.35s ease,
+      transform 0.35s ease,
+      visibility 0.35s ease;
+  }
 
-/* Smoothly hide navbar when scrolled down to the footer */
-.hn-header.footer-reached {
-  opacity: 0 !important;
-  visibility: hidden !important;
-  transform: translateY(-24px) !important;
-  pointer-events: none !important;
-}
+  .hn-header.scrolled {
+    top: 12px;
+    width: min(1280px, calc(100% - 32px));
+    max-width: 1280px;
+    background-color: rgba(255, 255, 255, 0.95);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border-color: rgba(220, 205, 185, 0.85);
+    border-radius: 9999px;
+    box-shadow: 
+      0 14px 34px -4px rgba(28, 20, 10, 0.12),
+      0 4px 12px -2px rgba(28, 20, 10, 0.06),
+      0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+    padding: 6px 18px;
+  }
 
-.hn-header .container {
-  transition: padding 0.35s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
+  /* Smoothly hide navbar when scrolled down to the footer */
+  .hn-header.footer-reached {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transform: translateY(-24px) !important;
+    pointer-events: none !important;
+  }
 
-.hn-header.scrolled .container {
-  padding-left: 6px;
-  padding-right: 6px;
-  max-width: 100%;
-}
+  .hn-header .container {
+    transition: padding 0.35s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
 
-.hn-header .hn-brand-logo-wrap,
-.hn-header .hn-brand-title,
-.hn-header .hn-brand-tagline,
-.hn-header .hn-nav-link,
-.hn-header .hn-icon-btn,
-.hn-header .hn-header-account-btn {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
+  .hn-header.scrolled .container {
+    padding-left: 6px;
+    padding-right: 6px;
+    max-width: 100%;
+  }
 
-.hn-header.scrolled .hn-brand-logo-wrap {
-  width: 34px;
-  height: 34px;
-}
+  .hn-header .hn-brand-logo-wrap,
+  .hn-header .hn-brand-title,
+  .hn-header .hn-brand-tagline,
+  .hn-header .hn-nav-link,
+  .hn-header .hn-icon-btn,
+  .hn-header .hn-header-account-btn {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
 
-.hn-header.scrolled .hn-brand-title {
-  font-size: 1.15rem;
-}
+  .hn-header.scrolled .hn-brand-logo-wrap {
+    width: 34px;
+    height: 34px;
+  }
 
-.hn-header.scrolled .hn-brand-tagline {
-  display: block !important;
-  font-size: 0.54rem;
-  opacity: 0.95;
-}
+  .hn-header.scrolled .hn-brand-title {
+    font-size: 1.15rem;
+  }
 
-.hn-header.scrolled .hn-nav-link {
-  padding: 6px 14px;
-  font-size: 0.90rem;
-}
+  .hn-header.scrolled .hn-brand-tagline {
+    display: block !important;
+    font-size: 0.54rem;
+    opacity: 0.95;
+  }
 
-.hn-header.scrolled .hn-icon-btn {
-  width: 36px;
-  height: 36px;
-  font-size: 1.05rem;
-}
+  .hn-header.scrolled .hn-nav-link {
+    padding: 6px 14px;
+    font-size: 0.90rem;
+  }
 
-.hn-header.scrolled .hn-header-account-btn {
-  padding: 4px 12px 4px 8px;
-  border-radius: 9999px;
+  .hn-header.scrolled .hn-icon-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1.05rem;
+  }
+
+  .hn-header.scrolled .hn-header-account-btn {
+    padding: 4px 12px 4px 8px;
+    border-radius: 9999px;
+  }
 }
 
 .hn-brand {
@@ -4146,60 +4153,196 @@ img, video, iframe, object {
 /* ==========================================================================
    MOBILE SPECIFIC RULES (@media max-width: 991px)
    ========================================================================== */
-@media (max-width: 991px) {
-  /* Header Mobile Bar Alignment */
+@media (max-width: 991.98px) {
+  /* Floating Curved Pill Navbar on Mobile (Exact Match to Reference Screenshot) */
   .hn-header {
-    padding: 8px 0;
-  }
-
-  .hn-header.scrolled {
-    top: 8px;
+    position: sticky;
+    top: 10px;
+    left: 0;
+    right: 0;
     width: calc(100% - 20px);
-    padding: 5px 12px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
     border-radius: 9999px;
+    background-color: rgba(255, 255, 255, 0.96);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1.5px solid rgba(220, 205, 185, 0.85);
+    padding: 6px 14px;
+    box-shadow: 
+      0 12px 30px -4px rgba(28, 20, 10, 0.12),
+      0 4px 10px -2px rgba(28, 20, 10, 0.05),
+      0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+    z-index: 1050;
+    box-sizing: border-box;
+    overflow: visible !important;
+    will-change: transform, box-shadow;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    transition: box-shadow 0.25s ease, transform 0.25s ease, top 0.25s ease;
   }
 
-  .hn-header.scrolled .hn-mobile-drawer {
-    border-radius: 20px;
-    margin-top: 10px;
-    border: 1px solid rgba(220, 205, 185, 0.8);
-    box-shadow: 0 14px 35px rgba(11, 37, 69, 0.14);
-    background: #FFFFFF;
+  /* Scrolled State: Deeper soft shadow, perfectly smooth with zero layout shake */
+  .hn-header.scrolled {
+    top: 10px !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: calc(100% - 20px) !important;
+    max-width: 600px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    border-radius: 9999px !important;
+    background-color: rgba(255, 255, 255, 0.98) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    padding: 6px 14px !important;
+    border: 1.5px solid rgba(220, 205, 185, 0.9) !important;
+    box-shadow: 
+      0 16px 36px -4px rgba(28, 20, 10, 0.16),
+      0 6px 14px -2px rgba(28, 20, 10, 0.08),
+      0 0 0 1px rgba(255, 255, 255, 0.9) inset !important;
+  }
+
+  .hn-header .container,
+  .hn-header.scrolled .container {
+    position: relative !important;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+    max-width: 100% !important;
+    overflow: visible !important;
   }
 
   .hn-header-inner {
-    display: grid !important;
-    grid-template-columns: 40px 1fr auto;
-    align-items: center;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
     gap: 8px;
     width: 100%;
+    position: relative;
+    z-index: 2;
   }
 
   .hn-brand {
-    justify-content: center;
-    margin: 0 auto;
-    text-align: center;
+    justify-content: flex-start;
+    margin: 0;
+    text-align: left;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .hn-brand-logo-wrap,
+  .hn-header.scrolled .hn-brand-logo-wrap {
+    width: 36px !important;
+    height: 36px !important;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1.5px solid var(--hn-gold);
   }
 
   .hn-brand-text {
-    align-items: center;
+    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
   }
 
-  .hn-brand-title {
-    font-size: 1.18rem;
-    line-height: 1.1;
-  }
-
-  .hn-brand-tagline {
-    font-size: 0.54rem;
-    letter-spacing: 0.08em;
-    color: #8A640D;
-    display: block !important;
+  .hn-brand-title,
+  .hn-header.scrolled .hn-brand-title {
+    font-size: 1.15rem !important;
+    line-height: 1.1 !important;
     white-space: nowrap;
   }
 
+  .hn-brand-tagline,
+  .hn-header.scrolled .hn-brand-tagline {
+    font-size: 0.52rem !important;
+    letter-spacing: 0.06em !important;
+    color: #8A640D !important;
+    display: block !important;
+    white-space: nowrap !important;
+  }
+
   .hn-header-actions {
+    display: flex !important;
+    flex-wrap: nowrap !important;
     justify-content: flex-end;
+    align-items: center;
+    gap: 6px !important;
+    flex-shrink: 0;
+  }
+
+  .hn-header.scrolled .hn-icon-btn,
+  .hn-header .hn-icon-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+  }
+
+  .hn-hamburger-btn {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+  }
+
+  .hn-header-account-btn {
+    height: 34px;
+    padding: 0 10px 0 6px;
+    gap: 6px;
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 440px) {
+    .hn-header {
+      padding: 5px 10px;
+      width: calc(100% - 12px);
+      top: 6px;
+    }
+    .hn-header.scrolled {
+      padding: 5px 10px !important;
+      width: calc(100% - 12px) !important;
+      top: 6px !important;
+    }
+    .hn-brand-title {
+      font-size: 1.05rem !important;
+    }
+    .hn-brand-tagline {
+      font-size: 0.48rem !important;
+      letter-spacing: 0.03em !important;
+    }
+    .hn-header-actions {
+      gap: 5px !important;
+    }
+    .hn-icon-btn {
+      width: 32px;
+      height: 32px;
+      font-size: 0.95rem;
+    }
+  }
+
+  /* Seamless Floating Mobile Navigation Dropdown Card */
+  #hnMobileNav {
+    position: absolute !important;
+    top: calc(100% + 10px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    z-index: 1060 !important;
+  }
+
+  .hn-mobile-drawer,
+  .hn-header.scrolled .hn-mobile-drawer {
+    background: #FFFFFF !important;
+    border-radius: 22px !important;
+    margin-top: 0 !important;
+    border: 1.5px solid rgba(220, 205, 185, 0.85) !important;
+    box-shadow: 0 20px 48px rgba(11, 37, 69, 0.18) !important;
+    padding: 16px !important;
   }
 
   /* Mobile Hero Section (Exact Match to Reference Screenshot) */

@@ -334,70 +334,13 @@
     </div>
   </main>
 
-  <!-- Google Sign-In Account Selector Modal -->
-  <div class="modal fade" id="hnGoogleAuthModal" tabindex="-1" aria-labelledby="hnGoogleAuthModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
-      <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden" style="background: #FFFFFF;">
-        <div class="modal-header border-0 pb-0 pt-4 px-4 justify-content-center flex-column position-relative">
-          <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
-          <div class="d-flex align-items-center gap-2 mb-2">
-            <svg width="24" height="24" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.35 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.97 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
-            <span class="fw-bold fs-6 text-dark">Sign in with Google</span>
-          </div>
-          <p class="text-muted small mb-0">Choose an account to continue to <strong>HariNama Store</strong></p>
-        </div>
-        <div class="modal-body p-4">
-          <!-- Quick Accounts List -->
-          <div class="list-group list-group-flush border rounded-3 mb-3">
-            <button type="button" class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3 border-bottom" onclick="handleGoogleSignIn('katturojuanilkumar@gmail.com', 'Anil Kumar')">
-              <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px; font-size: 1.1rem;">
-                A
-              </div>
-              <div class="flex-grow-1 text-start">
-                <div class="fw-semibold text-dark" style="font-size: 0.95rem;">Anil Kumar</div>
-                <div class="text-muted small">katturojuanilkumar@gmail.com</div>
-              </div>
-              <i class="bi bi-chevron-right text-muted"></i>
-            </button>
-
-            <button type="button" class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3" onclick="handleGoogleSignIn('harinamaivakevalam@gmail.com', 'HariNama Admin')">
-              <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px; font-size: 1.1rem;">
-                H
-              </div>
-              <div class="flex-grow-1 text-start">
-                <div class="fw-semibold text-dark" style="font-size: 0.95rem;">HariNama Store</div>
-                <div class="text-muted small">harinamaivakevalam@gmail.com</div>
-              </div>
-              <i class="bi bi-chevron-right text-muted"></i>
-            </button>
-          </div>
-
-          <!-- Use another account option -->
-          <div class="border rounded-3 p-3 bg-light">
-            <label class="form-label small fw-semibold text-secondary mb-1">Use another Google Account</label>
-            <div class="input-group">
-              <span class="input-group-text bg-white"><i class="bi bi-google text-danger"></i></span>
-              <input type="email" id="customGoogleEmailReg" class="form-control" placeholder="Enter your google email" style="font-size: 0.88rem;">
-              <button class="btn btn-dark btn-sm px-3" type="button" onclick="const e = document.getElementById('customGoogleEmailReg').value.trim(); if(e) handleGoogleSignIn(e); else alert('Please enter an email');">
-                Continue
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer border-0 pt-0 pb-3 justify-content-center">
-          <span class="text-muted" style="font-size: 0.75rem;">To continue, Google will share your name, email address, and profile picture with HariNama.</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Global Footer -->
   <div id="hn-footer-placeholder"></div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
-  <script src="/assets/js/components.js?v=21"></script>
+  <script src="/assets/js/components.js?v=25"></script>
   <script>
     // Supabase Client Setup
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
@@ -406,26 +349,22 @@
     let sbClient = null;
     if (window.supabase && typeof window.supabase.createClient === 'function') {
       try {
-        sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            storage: window.localStorage
+          }
+        });
         window.supabaseClient = sbClient;
       } catch (err) {
         console.warn('Supabase init warning:', err);
       }
     }
 
-    window.togglePasswordVisibility = function(fieldId, btn) {
-      const input = document.getElementById(fieldId);
-      if (!input) return;
-      const isPwd = input.type === 'password';
-      input.type = isPwd ? 'text' : 'password';
-      const icon = btn.querySelector('i');
-      if (icon) {
-        icon.className = isPwd ? 'bi bi-eye-slash' : 'bi bi-eye';
-      }
-    };
-
-    // Google Sign-In Prompt & Handler
-    window.handleGoogleSignIn = async function(customEmail, customName) {
+    // Google Sign-In Direct OAuth Trigger
+    window.handleGoogleSignIn = async function() {
       const googleBtn = document.getElementById('btn-google');
       const alertBox = document.getElementById('regAlert');
       const origText = googleBtn ? googleBtn.innerHTML : '';
@@ -434,72 +373,119 @@
         alertBox.style.display = 'none';
       }
 
-      // If called with parameters
-      if (customEmail) {
-        return window.submitGoogleAuth({
-          email: customEmail,
-          name: customName || customEmail.split('@')[0],
-          avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(customName || customEmail)}&backgroundColor=d97706,b45309,f59e0b`
-        });
-      }
-
-      // Open Google Account Selection Modal
-      const googleModalEl = document.getElementById('hnGoogleAuthModal');
-      if (googleModalEl) {
-        const modal = new bootstrap.Modal(googleModalEl);
-        modal.show();
-        return;
-      }
-
-      window.submitGoogleAuth({
-        email: 'devotee.google@gmail.com',
-        name: 'Google Devotee',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'
-      });
-    };
-
-    window.submitGoogleAuth = async function({ email, name, avatar, credential }) {
-      const googleBtn = document.getElementById('btn-google');
-      const alertBox = document.getElementById('regAlert');
-      const origText = googleBtn ? googleBtn.innerHTML : '';
-
       if (googleBtn) {
         googleBtn.disabled = true;
-        googleBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Signing in with Google...';
+        googleBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Connecting to Google...';
       }
+
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.');
+
+      try {
+        if (sbClient && sbClient.auth) {
+          const redirectUrl = isLocal
+            ? `${window.location.origin}/register.html`
+            : `${window.location.origin}${window.location.pathname}${window.location.search}`;
+
+          const { data, error } = await sbClient.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: redirectUrl,
+              queryParams: {
+                access_type: 'offline',
+                prompt: 'consent'
+              }
+            }
+          });
+
+          if (!error && data && data.url) {
+            window.location.href = data.url;
+            return;
+          }
+
+          if (error) {
+            console.warn('[Google Auth] Supabase OAuth notice:', error.message);
+            if (!isLocal) throw error;
+          }
+        }
+
+        if (isLocal) {
+          const emailInput = prompt('Google Sign-In (Local Development Mode):\nEnter your Google email address to continue:', 'katturojuanilkumar@gmail.com');
+          if (emailInput && emailInput.trim()) {
+            const cleanEmail = emailInput.trim().toLowerCase();
+            const cleanName = cleanEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            await processRegisterSession({
+              user: {
+                id: 'google-local-' + Date.now(),
+                email: cleanEmail,
+                user_metadata: {
+                  full_name: cleanName,
+                  name: cleanName,
+                  avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanName)}&backgroundColor=d97706,b45309,f59e0b`
+                }
+              },
+              access_token: 'local_gtoken_' + Date.now()
+            });
+            return;
+          } else {
+            if (googleBtn) {
+              googleBtn.disabled = false;
+              googleBtn.innerHTML = origText;
+            }
+            return;
+          }
+        }
+
+        throw new Error('Google Sign-In service is currently unavailable. Please check your connection.');
+      } catch (err) {
+        console.error('Google auth error:', err);
+        if (alertBox) {
+          alertBox.className = 'hn-alert-box alert alert-danger';
+          alertBox.innerText = err.message || 'Google sign-in failed. Please try again.';
+          alertBox.style.display = 'block';
+        }
+        if (googleBtn) {
+          googleBtn.disabled = false;
+          googleBtn.innerHTML = origText;
+        }
+      }
+    };
+
+    async function processRegisterSession(session) {
+      if (!session || !session.user) return;
+      const sbUser = session.user;
 
       try {
         const res = await fetch('/api/auth/google', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, name, avatar, credential })
+          body: JSON.stringify({
+            email: sbUser.email,
+            name: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || sbUser.email.split('@')[0],
+            avatar: sbUser.user_metadata?.avatar_url || sbUser.user_metadata?.picture || '',
+            googleId: sbUser.id
+          })
         }).then(r => r.json());
 
-        if (!res.success || !res.token) {
-          throw new Error(res.message || 'Google sign-in failed.');
-        }
+        const finalToken = (res && res.token) ? res.token : session.access_token;
+        const finalUser = (res && res.user) ? res.user : {
+          id: sbUser.id,
+          email: sbUser.email,
+          name: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || sbUser.email.split('@')[0],
+          avatar: sbUser.user_metadata?.avatar_url || '',
+          role: 'customer'
+        };
 
-        // Save tokens and user session
-        localStorage.setItem('hn_auth_token', res.token);
-        localStorage.setItem('token', res.token);
-        localStorage.setItem('hn_user_profile', JSON.stringify(res.user));
-        localStorage.setItem('hn_user', JSON.stringify(res.user));
-        localStorage.setItem('user', JSON.stringify(res.user));
+        localStorage.setItem('hn_auth_token', finalToken);
+        localStorage.setItem('token', finalToken);
+        localStorage.setItem('hn_user_profile', JSON.stringify(finalUser));
+        localStorage.setItem('hn_user', JSON.stringify(finalUser));
+        localStorage.setItem('user', JSON.stringify(finalUser));
 
-        const googleModalEl = document.getElementById('hnGoogleAuthModal');
-        if (googleModalEl) {
-          const bsModal = bootstrap.Modal.getInstance(googleModalEl);
-          if (bsModal) bsModal.hide();
-        }
-
+        const alertBox = document.getElementById('regAlert');
         if (alertBox) {
           alertBox.className = 'hn-alert-box alert alert-success';
-          alertBox.innerText = `Welcome, ${res.user.name || 'Devotee'}! 🌸 Signed in with Google. Redirecting...`;
+          alertBox.innerText = `Welcome, ${finalUser.name}! 🌸 Signed in with Google. Redirecting...`;
           alertBox.style.display = 'block';
-        }
-
-        if (typeof showToast === 'function') {
-          showToast(`Welcome, ${res.user.name}! 🌸`, 'success');
         }
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -511,25 +497,13 @@
           } else {
             window.location.href = '/index.html';
           }
-        }, 400);
+        }, 350);
 
       } catch (err) {
-        console.error('Google auth error:', err);
-        if (alertBox) {
-          alertBox.className = 'hn-alert-box alert alert-danger';
-          alertBox.innerText = err.message || 'Google sign-in failed. Please try again.';
-          alertBox.style.display = 'block';
-        }
-        if (typeof showToast === 'function') {
-          showToast(err.message || 'Google sign-in failed', 'danger');
-        }
-      } finally {
-        if (googleBtn) {
-          googleBtn.disabled = false;
-          googleBtn.innerHTML = origText;
-        }
+        console.error('Google register session error:', err);
+        window.location.href = '/index.html';
       }
-    };
+    }
 
 
     window.handleRegisterSubmit = async function(e) {
@@ -661,6 +635,21 @@
     document.addEventListener('DOMContentLoaded', () => {
       renderHeader('account');
       renderFooter();
+
+      // Check if redirected with active Supabase OAuth session
+      if (sbClient && sbClient.auth) {
+        sbClient.auth.onAuthStateChange(async (event, session) => {
+          if (session && session.user) {
+            await processRegisterSession(session);
+          }
+        });
+
+        sbClient.auth.getSession().then(({ data: { session } }) => {
+          if (session && session.user) {
+            processRegisterSession(session);
+          }
+        }).catch(e => console.warn('Supabase session check:', e));
+      }
 
       // Pre-fill email from query parameter or stored profile
       const urlParams = new URLSearchParams(window.location.search);

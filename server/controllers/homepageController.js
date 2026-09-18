@@ -13,7 +13,7 @@ const DEFAULT_HOMEPAGE_SECTIONS = [
       title_accent: 'Krishna',
       title_suffix: 'Wherever You Go',
       description: 'Exquisite handcrafted devotional products, sacred shastras, and spiritual keepsakes designed to keep divine remembrance in your heart and everyday life.',
-      cta_text: 'Shop Collection',
+      cta_text: 'Shop Now',
       cta_link: '/shop.html',
       quote_verse: '“In every step, remember Krishna.”',
       quote_subtitle: 'Inspired by the timeless wisdom of Vrindavan',

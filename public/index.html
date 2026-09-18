@@ -1,21 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Harinama Store — Wherever You Go | Devotional Products & Gifts</title>
-  <meta name="description" content="Beautiful devotional products designed to keep Krishna in your heart and everyday life. Authentic Vrindavan inspired items, gift sets, and spiritual reminders.">
-  
+  <meta name="description"
+    content="Beautiful devotional products designed to keep Krishna in your heart and everyday life. Authentic Vrindavan inspired items, gift sets, and spiritual reminders.">
+
   <!-- Google Fonts: Poppins Master Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,600&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,600&display=swap"
+    rel="stylesheet">
+
   <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
+
   <!-- Harinama Store Master Stylesheet -->
   <link rel="stylesheet" href="/assets/css/style.css?v=12">
   <!-- Brand Favicon -->
@@ -23,6 +27,7 @@
   <link rel="shortcut icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/assets/images/krishna-logo.jpg">
 </head>
+
 <body>
 
   <!-- Top Announcement Bar & Header -->
@@ -30,88 +35,87 @@
 
   <main>
     <!-- ====================================================================
-         1. HERO SECTION (Redesigned & Elevated)
+         1. HERO SECTION (Desktop & Mobile Synchronized)
          ==================================================================== -->
     <section class="hn-hero-section">
       <div class="container">
-        
+
         <div class="row align-items-center g-4 g-lg-5">
-          
+
           <!-- Left Column: Compelling Typography & Call to Actions -->
           <div class="col-lg-6 hero-content-col">
-            
+
+            <!-- Devotional Eyebrow -->
+            <div class="hn-hero-eyebrow">
+              A DEVOTIONAL LIFESTYLE STORE
+            </div>
 
             <!-- Majestic Hero Title -->
             <h1 class="hn-hero-title">
-              Carry <span class="hn-title-accent">Krishna</span><br>
-              Wherever You Go
+              <span class="hn-title-carry">Carry Krishna</span><br>
+              <span class="hn-title-wherever">Wherever You Go</span>
             </h1>
 
             <!-- Descriptive Text -->
             <p class="hn-hero-desc">
-              Exquisite handcrafted devotional products, sacred shastras, and spiritual keepsakes designed to keep divine remembrance in your heart and everyday life.
+              Beautiful devotional products to keep Krishna in your heart and everyday life.
             </p>
 
-            <!-- Action Buttons -->
-            <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
-              <a href="/shop.html" class="btn hn-btn-gold">
-                <i class="bi bi-bag-heart"></i>
-                <span>Shop Collection</span>
+            <!-- Action Button -->
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-4 hn-hero-btn-wrap">
+              <a href="/shop.html" class="btn hn-btn-gold hn-hero-cta-btn">
+                <span>Shop Now</span>
                 <i class="bi bi-arrow-right ms-1"></i>
               </a>
             </div>
 
-            <!-- Sacred Quote Box -->
-            <div class="hn-hero-quote-card">
-              <div class="hn-quote-icon">
-                <i class="bi bi-quote"></i>
+            <!-- 3 Devotional Feature Badges (Pure & Meaningful, For a Higher Purpose, Worldwide Shipping) -->
+            <div class="hn-hero-features-row mb-4">
+              <div class="hn-feature-pill">
+                <span class="hn-feature-pill-icon">🪷</span>
+                <div class="hn-feature-pill-text">
+                  <span>Pure &amp;</span>
+                  <span>Meaningful</span>
+                </div>
               </div>
-              <div class="hn-quote-content">
-                <p class="hn-quote-verse mb-0">“In every step, remember Krishna.”</p>
-                <span class="hn-quote-sub">Inspired by the timeless wisdom of Vrindavan</span>
+              <div class="hn-feature-pill">
+                <span class="hn-feature-pill-icon">🤍</span>
+                <div class="hn-feature-pill-text">
+                  <span>For a</span>
+                  <span>Higher Purpose</span>
+                </div>
               </div>
+              <!-- <div class="hn-feature-pill">
+                <span class="hn-feature-pill-icon">🌐</span>
+                <div class="hn-feature-pill-text">
+                  <span>Worldwide</span>
+                  <span>Shipping</span>
+                </div>
+              </div> -->
             </div>
 
-            <!-- Devotee Social Proof Strip -->
-            <div class="hn-hero-trust mt-4">
-              <div class="hn-trust-avatars">
-                <span class="hn-avatar-icon">🪷</span>
-                <span class="hn-avatar-icon">✨</span>
-                <span class="hn-avatar-icon">🙏</span>
-              </div>
-              <div class="hn-trust-details">
-                <div class="d-flex align-items-center gap-1 text-warning small">
-                  <i class="bi bi-star-fill"></i>
-                  <i class="bi bi-star-fill"></i>
-                  <i class="bi bi-star-fill"></i>
-                  <i class="bi bi-star-fill"></i>
-                  <i class="bi bi-star-fill"></i>
-                  <span class="fw-bold text-dark ms-1">4.9 / 5.0</span>
-                </div>
-                <span class="hn-trust-caption">Blessed by 1,200+ devotees across India</span>
-              </div>
-            </div>
 
           </div>
 
           <!-- Right Column: Hero Showcase Image -->
           <div class="col-lg-6">
             <div class="hn-hero-image-wrap">
-              <img src="/assets/images/krishna_hero_keychain.jpg" alt="Harinama Store Devotional Peacock Feather & Krishna Flute Keychain" class="hn-hero-img">
-              
-              <!-- Floating Glass Badges -->
-              <div class="hn-floating-badge top-badge">
+              <img src="/assets/images/mobile_hero_bg.jpg"
+                alt="Harinama Store Devotional Peacock Feather & Krishna Flute Keychain" class="hn-hero-img">
+
+              <!-- Floating Glass Badges (Desktop) -->
+              <div class="hn-floating-badge top-badge d-none d-md-flex">
                 <span class="badge-icon-wrap"><i class="bi bi-shield-check"></i></span>
                 <div>
                   <div class="badge-title">Blessed in Vrindavan</div>
-                  <div class="badge-sub">Authentic & Sacred</div>
+                  <div class="badge-sub">Authentic &amp; Sacred</div>
                 </div>
               </div>
 
-              <div class="hn-floating-badge bottom-badge">
+              <div class="hn-floating-badge bottom-badge d-none d-md-flex">
                 <span class="badge-icon-wrap gold-icon"><i class="bi bi-gem"></i></span>
                 <div>
-                  <div class="badge-title">Solid Cast Brass & Enamel</div>
+                  <div class="badge-title">Solid Cast Brass &amp; Enamel</div>
                   <div class="badge-sub">Lifelong Divine Craft</div>
                 </div>
               </div>
@@ -121,60 +125,119 @@
 
         </div>
 
-        <!-- 3 Benefit Strips (Under Hero - Desktop Only) -->
-        <div class="hn-hero-benefits d-none d-md-block">
-          <div class="row g-3">
-            
-            <div class="col-md-4 hn-benefit-col">
-              <div class="hn-benefit-icon"><i class="bi bi-flower1"></i></div>
-              <div class="hn-benefit-title">REMEMBER</div>
-              <p class="hn-benefit-desc">Keep Krishna close throughout your daily journey.</p>
-            </div>
+      </div>
+    </section>
 
-            <div class="col-md-4 hn-benefit-col">
-              <div class="hn-benefit-icon"><i class="bi bi-music-note-beamed"></i></div>
-              <div class="hn-benefit-title">CHANT</div>
-              <p class="hn-benefit-desc">Let the Maha-mantra be your sacred anchor in every moment.</p>
-            </div>
+    <!-- ====================================================================
+         2. CIRCULAR COLLECTIONS STRIP (Japa Malas, Keychains, Books, Statues, Japa Bags, Spiritual Gifts)
+         ==================================================================== -->
+    <section class="hn-categories-circles-section py-4">
+      <div class="container">
+        <div class="hn-cat-circles-scroll">
 
-            <div class="col-md-4 hn-benefit-col">
-              <div class="hn-benefit-icon"><i class="bi bi-gift"></i></div>
-              <div class="hn-benefit-title">SHARE</div>
-              <p class="hn-benefit-desc">Gift a divine reminder to those you love and cherish.</p>
+          <a href="/shop.html?collection=japa-malas" class="hn-cat-circle-item" title="Japa Malas Collection">
+            <div class="hn-cat-circle-img-wrap">
+              <img src="/assets/images/cat_japa_malas.jpg" alt="Japa Malas">
             </div>
+            <span class="hn-cat-circle-label">Japa Malas</span>
+          </a>
 
+          <a href="/shop.html?collection=keychains" class="hn-cat-circle-item" title="Keychains Collection">
+            <div class="hn-cat-circle-img-wrap">
+              <img src="/assets/images/cat_keychains.jpg" alt="Keychains">
+            </div>
+            <span class="hn-cat-circle-label">Keychains</span>
+          </a>
+
+          <a href="/shop.html?collection=books" class="hn-cat-circle-item" title="Books Collection">
+            <div class="hn-cat-circle-img-wrap">
+              <img src="/assets/images/cat_books.jpg" alt="Books">
+            </div>
+            <span class="hn-cat-circle-label">Books</span>
+          </a>
+
+          <a href="/shop.html?collection=deity-statues" class="hn-cat-circle-item" title="Deity Statues Collection">
+            <div class="hn-cat-circle-img-wrap">
+              <img src="/assets/images/cat_deity_statues.jpg" alt="Deity Statues">
+            </div>
+            <span class="hn-cat-circle-label">Deity Statues</span>
+          </a>
+
+          <a href="/shop.html?collection=japa-bags" class="hn-cat-circle-item" title="Japa Bags Collection">
+            <div class="hn-cat-circle-img-wrap">
+              <img src="/assets/images/cat_japa_bags.jpg" alt="Japa Bags">
+            </div>
+            <span class="hn-cat-circle-label">Japa Bags</span>
+          </a>
+
+          <a href="/shop.html?collection=spiritual-gifts" class="hn-cat-circle-item" title="Spiritual Gifts Collection">
+            <div class="hn-cat-circle-img-wrap">
+              <img src="/assets/images/cat_spiritual_gifts.jpg" alt="Spiritual Gifts">
+            </div>
+            <span class="hn-cat-circle-label">Spiritual Gifts</span>
+          </a>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         3. DAILY BHAKTI BANNER ("Bring Bhakti into Daily Life")
+         ==================================================================== -->
+    <section class="hn-bhakti-banner-section py-2 py-md-3">
+      <div class="container">
+        <div class="hn-bhakti-banner-card">
+          <div class="hn-bhakti-banner-content">
+            <h3 class="hn-bhakti-banner-title">Bring Bhakti<br>into Daily Life</h3>
+            <p class="hn-bhakti-banner-sub">Simple items. Eternal connection.</p>
+            <a href="/shop.html" class="btn hn-btn-gold hn-bhakti-btn">
+              <span>Explore Collection</span>
+              <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+          </div>
+          <div class="hn-bhakti-banner-img-wrap">
+            <img src="/assets/images/bhakti_mug_banner.jpg"
+              alt="Good Things Happen When You Chant Hare Krishna Mug & Bhagavad Gita" class="hn-bhakti-banner-img">
           </div>
         </div>
-
       </div>
     </section>
 
     <!-- ====================================================================
-         2. FEATURED COLLECTION SECTION
+         4. FEATURED PRODUCTS SECTION (With Header & View All Link)
          ==================================================================== -->
-    <section class="py-5">
+    <section class="py-4 py-md-5">
       <div class="container">
-        
-        <div class="hn-section-header hn-reveal">
-          <h2 class="hn-section-title">Featured Collection</h2>
-          <div class="hn-section-subtitle">Choose Your Reminder</div>
+
+        <div class="hn-featured-header-wrap mb-3 mb-md-4 hn-reveal">
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <span class="hn-lotus-header-icon">🪷</span>
+              <h2 class="hn-section-title mb-0">Featured Products</h2>
+            </div>
+            <a href="/shop.html" class="hn-view-all-link">
+              <span>View All</span>
+              <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+          </div>
+          <div class="hn-section-subtitle mt-1">Handpicked with love for your devotional journey</div>
         </div>
 
-        <div class="row g-3 hn-reveal-stagger" id="hn-featured-grid">
-          <!-- Injected via JavaScript from HARINAMA_DATA: 6 Cards -->
+        <div class="row g-2 g-md-3 hn-reveal-stagger" id="hn-featured-grid">
+          <!-- Injected via JavaScript from HARINAMA_DATA: Cards -->
         </div>
 
       </div>
     </section>
 
     <!-- ====================================================================
-         3. PROMOTIONAL MAHA-MANTRA SECTION (Dynamic Database Item)
+         5. PROMOTIONAL MAHA-MANTRA SECTION (Desktop Only)
          ==================================================================== -->
-    <section class="py-4" id="hn-promo-section-wrapper" style="display: none;">
+    <section class="py-4 d-none d-lg-block" id="hn-promo-section-wrapper" style="display: none;">
       <div class="container">
         <div class="hn-promo-banner hn-reveal">
           <div class="row g-0 align-items-stretch">
-            
+
             <!-- Left: Macro Keychain Image -->
             <div class="col-md-4">
               <div class="hn-promo-img-wrap">
@@ -213,58 +276,14 @@
       </div>
     </section>
 
-    <!-- ====================================================================
-         4. WHY HARINAMA STORE SECTION
-         ==================================================================== -->
-    <section class="hn-why-section my-5">
-      <div class="container">
-        
-        <div class="hn-section-header hn-reveal">
-          <h2 class="hn-section-title">Why Carry Krishna?</h2>
-          <div class="hn-section-subtitle">A small reminder can change the direction of your day.</div>
-        </div>
 
-        <div class="row g-4 justify-content-center hn-reveal-stagger">
-          
-          <div class="col-md-4">
-            <div class="hn-why-card">
-              <div class="hn-why-circle"><i class="bi bi-flower2"></i></div>
-              <div class="hn-why-title">SPIRITUAL AWARENESS</div>
-              <div class="hn-why-text">A moment of peace in a busy life.</div>
-            </div>
-          </div>
-
-          <div class="col-md-4">
-            <div class="hn-why-card">
-              <div class="hn-why-circle"><i class="bi bi-brightness-high"></i></div>
-              <div class="hn-why-title">POSITIVE VIBES</div>
-              <div class="hn-why-text">Stay connected to what truly matters.</div>
-            </div>
-          </div>
-
-          <div class="col-md-4">
-            <div class="hn-why-card">
-              <div class="hn-why-circle"><i class="bi bi-heart"></i></div>
-              <div class="hn-why-title">SPREAD JOY</div>
-              <div class="hn-why-text">A simple way to inspire others.</div>
-            </div>
-          </div>
-
-        </div>
-
-        <div class="hn-why-quote-wrap">
-          <div class="hn-why-quote">“Carry a reminder of eternal happiness.”</div>
-        </div>
-
-      </div>
-    </section>
 
     <!-- ====================================================================
-         5. TAKE KRISHNA WITH YOU (Lifestyle Grid)
+         7. TAKE KRISHNA WITH YOU (Lifestyle Grid - Desktop Only)
          ==================================================================== -->
-    <section class="py-5">
+    <section class="py-5 d-none d-lg-block">
       <div class="container">
-        
+
         <div class="hn-section-header hn-reveal">
           <h2 class="hn-section-title">Take Krishna With You</h2>
           <div class="hn-section-subtitle">From your morning commute to your next journey.</div>
@@ -272,19 +291,24 @@
 
         <div class="hn-lifestyle-grid hn-reveal-stagger">
           <div class="hn-lifestyle-item">
-            <img src="https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=400&q=80" alt="Devotional Keychain on Bag">
+            <img src="https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=400&q=80"
+              alt="Devotional Keychain on Bag">
           </div>
           <div class="hn-lifestyle-item">
-            <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80" alt="Holding Krishna Keychain">
+            <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80"
+              alt="Holding Krishna Keychain">
           </div>
           <div class="hn-lifestyle-item">
-            <img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=400&q=80" alt="Peacock Feather Keychain on Denim">
+            <img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=400&q=80"
+              alt="Peacock Feather Keychain on Denim">
           </div>
           <div class="hn-lifestyle-item">
-            <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=400&q=80" alt="Backpack with Keychain">
+            <img src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=400&q=80"
+              alt="Backpack with Keychain">
           </div>
           <div class="hn-lifestyle-item">
-            <img src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=400&q=80" alt="Car Keys with Hare Krishna Keychain">
+            <img src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=400&q=80"
+              alt="Car Keys with Hare Krishna Keychain">
           </div>
         </div>
 
@@ -292,11 +316,12 @@
     </section>
 
     <!-- ====================================================================
-         6. GIFT SECTION (Give a Reminder, Not Just a Gift)
+         8. GIFT SECTION (Desktop Only)
          ==================================================================== -->
-    <section class="py-5" id="hn-combos-section-wrapper" style="background-color: var(--hn-cream); display: none;">
+    <section class="py-5 d-none d-lg-block" id="hn-combos-section-wrapper"
+      style="background-color: var(--hn-cream); display: none;">
       <div class="container">
-        
+
         <div class="hn-section-header hn-reveal">
           <h2 class="hn-section-title">Sacred Devotional Gift Sets &amp; Combos</h2>
           <div class="hn-section-subtitle">Specially curated blessed offerings from our live catalog.</div>
@@ -310,57 +335,11 @@
     </section>
 
     <!-- ====================================================================
-         7. SERVICE / TRUST BAR
+         9. DEVOTEE REVIEWS (Desktop Only)
          ==================================================================== -->
-    <div class="hn-service-bar hn-reveal">
+    <section class="hn-reviews-section hn-reveal d-none d-lg-block my-5" id="hn-reviews-home-wrapper">
       <div class="container">
-        <div class="row g-3 text-center">
-          
-          <div class="col-6 col-md-3">
-            <div class="hn-service-item">
-              <i class="bi bi-shield-check"></i>
-              <span>Secure Payments</span>
-            </div>
-          </div>
 
-          <div class="col-6 col-md-3">
-            <div class="hn-service-item">
-              <i class="bi bi-arrow-repeat"></i>
-              <span>Easy Returns</span>
-            </div>
-          </div>
-
-          <div class="col-6 col-md-3">
-            <div class="hn-service-item">
-              <i class="bi bi-truck"></i>
-              <span>All India Delivery</span>
-            </div>
-          </div>
-
-          <div class="col-6 col-md-3">
-            <div class="hn-service-item">
-              <i class="bi bi-arrow-counterclockwise"></i>
-              <span>Authentic Vedic Craft</span>
-            </div>
-          </div>
-
-          <div class="col-6 col-md-3">
-            <div class="hn-service-item">
-              <i class="bi bi-chat-heart"></i>
-              <span>Devotee Support</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- ====================================================================
-         8. DEVOTEE REVIEWS
-         ==================================================================== -->
-    <section class="hn-reviews-section hn-reveal" id="hn-reviews-home-wrapper">
-      <div class="container">
-        
         <div class="hn-section-header">
           <h2 class="hn-section-title">Loved by Devotees Across India</h2>
           <div class="hn-section-subtitle">Real feedback from sincere practitioners and pilgrims.</div>
@@ -372,6 +351,7 @@
 
       </div>
     </section>
+
 
   </main>
 
@@ -416,7 +396,7 @@
       // Daily Dynamic Showcase: Rotate product showcase everyday based on current calendar date
       const today = new Date();
       const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
-      
+
       // Calculate dynamic daily offset
       const offset = prods.length > 0 ? (dayOfYear % prods.length) : 0;
       const dailyRotated = [...prods.slice(offset), ...prods.slice(0, offset)];
@@ -535,7 +515,7 @@
             approvedReviews = data;
           }
         }
-      } catch (e) {}
+      } catch (e) { }
 
       // 2. Try API fallback
       if (approvedReviews.length === 0) {
@@ -544,7 +524,7 @@
           if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
             approvedReviews = res.data.filter(r => r.status === 'approved');
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       if (approvedReviews.length > 0) {
@@ -573,8 +553,8 @@
       if (!url || typeof url !== 'string') return false;
       const clean = url.trim().toLowerCase();
       return clean.endsWith('.mp4') || clean.endsWith('.webm') || clean.endsWith('.ogg') || clean.endsWith('.mov') ||
-             clean.includes('.mp4?') || clean.includes('.webm?') || clean.includes('.mov?') ||
-             clean.includes('youtube.com') || clean.includes('youtu.be');
+        clean.includes('.mp4?') || clean.includes('.webm?') || clean.includes('.mov?') ||
+        clean.includes('youtube.com') || clean.includes('youtu.be');
     }
 
     function extractSectionContent(section) {
@@ -606,7 +586,8 @@
 
         const ctaBtn = document.querySelector('.hn-hero-section .hn-btn-gold');
         if (ctaBtn) {
-          if (hero.cta_text && ctaBtn.querySelector('span')) ctaBtn.querySelector('span').innerText = hero.cta_text;
+          const btnText = (hero.cta_text && hero.cta_text !== 'Shop Collection') ? hero.cta_text : 'Shop Now';
+          if (ctaBtn.querySelector('span')) ctaBtn.querySelector('span').innerText = btnText;
           if (hero.cta_link) ctaBtn.href = hero.cta_link;
         }
 
@@ -657,7 +638,7 @@
               video.setAttribute('autoplay', '');
               video.setAttribute('loop', '');
               mediaWrap.prepend(video);
-              video.play().catch(() => {});
+              video.play().catch(() => { });
             }
           } else {
             const finalHeroImg = (!isVideoMediaUrl(heroImageSrc) && heroImageSrc) ? heroImageSrc : '/assets/images/krishna_hero_keychain.jpg';
@@ -756,7 +737,7 @@
               video.setAttribute('autoplay', '');
               video.setAttribute('loop', '');
               promoImgWrap.appendChild(video);
-              video.play().catch(() => {});
+              video.play().catch(() => { });
             }
           } else {
             const finalImg = (!isVideoMediaUrl(imageSrc) && imageSrc) ? imageSrc : '/assets/images/krishna-logo.jpg';
@@ -836,7 +817,7 @@
         if (cached) {
           applyDynamicConfig(JSON.parse(cached));
         }
-      } catch (_) {}
+      } catch (_) { }
 
       // 1. Live Fetch Unconditionally (Supabase or API)
       let freshConfig = null;
@@ -852,7 +833,7 @@
             });
           }
         }
-      } catch (_) {}
+      } catch (_) { }
 
       if (!freshConfig) {
         try {
@@ -866,14 +847,14 @@
               });
             }
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       if (freshConfig) {
         applyDynamicConfig(freshConfig);
         try {
           localStorage.setItem('hn_homepage_config', JSON.stringify(freshConfig));
-        } catch (_) {}
+        } catch (_) { }
       }
     }
 
@@ -882,7 +863,7 @@
       if (e.key === 'hn_homepage_config' && e.newValue) {
         try {
           applyDynamicConfig(JSON.parse(e.newValue));
-        } catch (_) {}
+        } catch (_) { }
       }
     });
 
@@ -904,4 +885,5 @@
     });
   </script>
 </body>
+
 </html>

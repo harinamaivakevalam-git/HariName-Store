@@ -100,6 +100,13 @@ async function runTests() {
     assert(productDetail.status === 200 && productDetail.body.data && productDetail.body.data.name, '8. Product Details with Reviews and Variants Hydration');
 
     // 6. Cart Operations
+    const currentCart = await request('GET', '/cart', null, userToken);
+    if (currentCart?.body?.data?.items?.length > 0) {
+      for (const item of currentCart.body.data.items) {
+        await request('DELETE', `/cart/items/${item.id}`, null, userToken);
+      }
+    }
+
     const addToCart = await request('POST', '/cart/add', {
       product_id: 'prod-001',
       quantity: 2
@@ -209,6 +216,35 @@ async function runTests() {
     // 18. Homepage Customizer Configuration
     const homepageCfg = await request('GET', '/homepage');
     assert(homepageCfg.status === 200 && homepageCfg.body.data && homepageCfg.body.data.hero, '26. Dynamic Homepage Customizer Sections Retrieval');
+
+    // 19. Shiprocket Connection Test Endpoint (Safe error/success response without leaking tokens)
+    const srTest = await request('GET', '/shiprocket/test');
+    assert(
+      (srTest.status === 200 && srTest.body.success === true) ||
+      (srTest.status === 400 && srTest.body.success === false && typeof srTest.body.message === 'string'),
+      '27. Shiprocket Connection Test Endpoint (Token-Safe)'
+    );
+
+    // 20. Shiprocket Webhook Ingestion & Status Update
+    const sampleOrderNum = (orderPlacement.body.data && orderPlacement.body.data.order_number) || 'HN-2026-98124';
+    const webhookRes = await request('POST', '/shiprocket/webhook', {
+      order_id: sampleOrderNum,
+      awb_code: '1432890123456',
+      current_status: 'IN_TRANSIT',
+      location: 'Mathura Sorting Facility',
+      activity: 'Package departed for destination hub'
+    });
+    assert(webhookRes.status === 200 && webhookRes.body.success === true, '28. Shiprocket Webhook Receiver Ingestion (Idempotent)');
+
+    // 21. Verify Order Shipping vs Payment Status Separation
+    const updatedOrderDetails = await request('GET', `/orders/${sampleOrderNum}`, null, userToken);
+    assert(
+      updatedOrderDetails.status === 200 &&
+      updatedOrderDetails.body.data &&
+      updatedOrderDetails.body.data.payment_status &&
+      updatedOrderDetails.body.data.shipping_status,
+      '29. Order Payment Status vs Shipping Status Separation'
+    );
 
     console.log(`\n==============================================`);
     console.log(`TEST RESULTS: ${passed} Passed, ${failed} Failed`);

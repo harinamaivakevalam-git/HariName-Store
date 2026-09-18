@@ -1274,23 +1274,47 @@
   `;
 
     container.innerHTML = `
+    <!-- Top Announcement Bar -->
+    <div class="hn-topbar">
+      <div class="container d-flex align-items-center justify-content-center">
+        <div class="hn-topbar-content d-flex align-items-center justify-content-center gap-2">
+          <span class="hn-topbar-leaf">🌿</span>
+          <span class="hn-topbar-item">Hare Krishna</span>
+          <span class="hn-topbar-divider">|</span>
+          <span class="hn-topbar-item">Spread Love</span>
+          <span class="hn-topbar-divider">|</span>
+          <span class="hn-topbar-item">Be Remembered</span>
+          <span class="hn-topbar-leaf">🌿</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Main Navigation Header -->
     <header class="hn-header">
       <div class="container">
-        <div class="d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center justify-content-between hn-header-inner">
           
-          <!-- Logo -->
+          <!-- Mobile Menu Toggle Button (Left on Mobile) -->
+          <button class="hn-hamburger-btn d-lg-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hnMobileNav" aria-expanded="false" aria-label="Toggle navigation" id="hnMobileNavToggle">
+            <span class="hn-hamburger-lines">
+              <span class="hn-hamburger-line line-1"></span>
+              <span class="hn-hamburger-line line-2"></span>
+              <span class="hn-hamburger-line line-3"></span>
+            </span>
+          </button>
+
+          <!-- Logo (Center on Mobile, Left on Desktop) -->
           <a href="/index.html" class="hn-brand">
             <div class="hn-brand-logo-wrap">
               <img src="/assets/images/krishna-logo.jpg" alt="Harinama Store Logo - Sri Krishna" class="hn-brand-img">
             </div>
             <div class="hn-brand-text">
-              <span class="hn-brand-title">Harinama Store</span>
-              <span class="hn-brand-tagline d-none d-lg-block">Remember Krishna. Share Krishna.</span>
+              <span class="hn-brand-title">Harinama<span class="hn-brand-accent">Store</span></span>
+              <span class="hn-brand-tagline">— Harinama Eva Kevalam —</span>
             </div>
           </a>
 
-          <!-- Centered Navigation -->
+          <!-- Centered Navigation (Desktop Only) -->
           <nav class="d-none d-lg-flex align-items-center gap-2">
             <a href="/index.html" class="hn-nav-link ${active === 'home' ? 'active' : ''}">Home</a>
             <a href="/shop.html" class="hn-nav-link ${active === 'shop' ? 'active' : ''}">Shop</a>
@@ -1300,32 +1324,25 @@
           </nav>
 
           <!-- Right Action Icons: Search -> Favorites -> Cart -> Sign In / Profile (LAST) -->
-          <div class="d-flex align-items-center gap-2 gap-md-3">
-            <a href="/shop.html" class="hn-icon-btn d-none d-md-inline-flex" title="Search Products">
+          <div class="d-flex align-items-center gap-2 gap-md-3 hn-header-actions">
+            <a href="/shop.html" class="hn-icon-btn" title="Search Products">
               <i class="bi bi-search"></i>
             </a>
 
-            <a href="/wishlist.html" class="hn-icon-btn" title="Favorites & Wishlist" onclick="return handleHeaderWishlistClick(event)">
+            <a href="/wishlist.html" class="hn-icon-btn d-none d-md-inline-flex" title="Favorites & Wishlist" onclick="return handleHeaderWishlistClick(event)">
               <i class="bi bi-heart"></i>
               <span class="hn-badge-pill ${loggedIn && wishlistCount > 0 ? '' : 'd-none'}" id="hn-wishlist-badge">${wishlistCount}</span>
             </a>
 
             <a href="/cart.html" class="hn-icon-btn" title="Shopping Cart" onclick="return handleHeaderCartClick(event)">
-              <i class="bi bi-bag"></i>
+              <i class="bi bi-cart3"></i>
               <span class="hn-badge-pill ${loggedIn && cartCount > 0 ? '' : 'd-none'}" id="hn-cart-badge">${cartCount}</span>
             </a>
 
-            <!-- User Auth Trigger / Profile (LAST in order) -->
-            ${userActionMarkup}
-
-            <!-- Modern Animated Mobile Menu Toggle Button -->
-            <button class="hn-hamburger-btn d-lg-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hnMobileNav" aria-expanded="false" aria-label="Toggle navigation" id="hnMobileNavToggle">
-              <span class="hn-hamburger-lines">
-                <span class="hn-hamburger-line line-1"></span>
-                <span class="hn-hamburger-line line-2"></span>
-                <span class="hn-hamburger-line line-3"></span>
-              </span>
-            </button>
+            <!-- User Auth Trigger / Profile (Desktop / Mobile) -->
+            <div class="d-none d-md-block">
+              ${userActionMarkup}
+            </div>
           </div>
 
         </div>
@@ -1401,7 +1418,35 @@
 
     // Ensure badge visibility is strictly updated (hidden without login or when count is 0)
     setTimeout(updateHeaderBadges, 0);
+
+    // Initialize Sticky / Floating Pill Header on scroll
+    initHeaderScrollEffect();
   };
+
+  // Floating Header Scroll Controller
+  const initHeaderScrollEffect = () => {
+    const onScroll = () => {
+      const header = document.querySelector('.hn-header');
+      if (!header) return;
+      if (window.scrollY > 30) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+    };
+
+    window.removeEventListener('scroll', onScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  };
+
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initHeaderScrollEffect);
+    } else {
+      initHeaderScrollEffect();
+    }
+  }
 
   // Global Footer Component
   const renderFooter = () => {
@@ -1409,8 +1454,61 @@
     if (!container) return;
 
     container.innerHTML = `
-    <footer class="hn-footer">
+    <!-- Service / Trust Bar (On top of footer) -->
+    <div class="hn-service-bar">
       <div class="container">
+        <div class="row g-2 g-md-3 text-center align-items-center">
+          
+          <div class="col-6 col-md-3">
+            <div class="hn-service-item">
+              <i class="bi bi-shield-check"></i>
+              <span>Secure Payments</span>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <div class="hn-service-item">
+              <i class="bi bi-arrow-repeat"></i>
+              <span>Easy Returns</span>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <div class="hn-service-item">
+              <i class="bi bi-truck"></i>
+              <span>All India Delivery</span>
+            </div>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <div class="hn-service-item">
+              <i class="bi bi-arrow-counterclockwise"></i>
+              <span>Authentic Vedic Craft</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Devotional Footer Artwork Signoff Strip -->
+    <div class="hn-footer-signoff">
+      <div class="hn-footer-signoff-bg" style="background-image: url('/assets/images/footer_lotus_bg.jpg');"></div>
+      <div class="container position-relative">
+        <div class="hn-footer-signoff-content text-center py-4">
+          <div class="hn-signoff-verse">Hare Krishna <span class="hn-signoff-heart">♡</span></div>
+          <div class="hn-signoff-divider">
+            <span class="hn-divider-line"></span>
+            <span class="hn-divider-icon">🪷</span>
+            <span class="hn-divider-line"></span>
+          </div>
+          <div class="hn-signoff-sub">A KINDER WORLD THROUGH DEVOTION</div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="hn-footer">
+      <div class="container d-none d-lg-block">
         <div class="row g-4">
           
           <!-- Col 1: Brand Info -->
@@ -1467,7 +1565,9 @@
           </div>
 
         </div>
+      </div>
 
+      <div class="container">
         <div class="hn-footer-bottom">
           <div>© ${new Date().getFullYear()} Harinama Store. All rights reserved. &nbsp;|&nbsp; Hare Krishna!</div>
         </div>

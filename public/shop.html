@@ -251,12 +251,25 @@
       }
 
       // Collection filter
-      if (activeCollection !== 'all') {
-        filtered = filtered.filter(p => 
-          p.category_slug === activeCollection || 
-          (p.category && p.category.toLowerCase() === activeCollection.toLowerCase()) ||
-          p.category_id === activeCollection
-        );
+      if (activeCollection && activeCollection !== 'all') {
+        const colLower = activeCollection.toLowerCase().trim();
+        filtered = filtered.filter(p => {
+          if (!p) return false;
+          if (p.category_id === activeCollection) return true;
+          if (p.category_slug && p.category_slug.toLowerCase() === colLower) return true;
+          if (p.category && p.category.toLowerCase() === colLower) return true;
+          // Keyword matching for collections
+          const catStr = (p.category || '').toLowerCase();
+          const nameStr = (p.name || p.title || '').toLowerCase();
+          const slugStr = (p.slug || '').toLowerCase();
+          if (colLower.includes('keychain') && (catStr.includes('keychain') || nameStr.includes('keychain') || slugStr.includes('keychain'))) return true;
+          if ((colLower.includes('mala') || colLower.includes('japa')) && (catStr.includes('mala') || catStr.includes('japa') || nameStr.includes('mala') || nameStr.includes('japa'))) return true;
+          if ((colLower.includes('book') || colLower.includes('gita')) && (catStr.includes('book') || catStr.includes('gita') || nameStr.includes('book') || nameStr.includes('gita'))) return true;
+          if ((colLower.includes('statue') || colLower.includes('deity')) && (catStr.includes('statue') || catStr.includes('deity') || nameStr.includes('statue') || nameStr.includes('deity'))) return true;
+          if (colLower.includes('bag') && (catStr.includes('bag') || nameStr.includes('bag') || slugStr.includes('bag'))) return true;
+          if (colLower.includes('gift') && (catStr.includes('gift') || nameStr.includes('gift') || slugStr.includes('gift') || nameStr.includes('peacock'))) return true;
+          return false;
+        });
       }
 
       // Price filters
@@ -294,7 +307,7 @@
       renderHeader('shop');
       renderFooter();
 
-      // Check URL parameters for search or category
+      // Check URL parameters for search or category/collection
       const urlParams = new URLSearchParams(window.location.search);
       const searchParam = urlParams.get('search') || urlParams.get('q');
       const searchInput = document.getElementById('hn-shop-search');
@@ -302,7 +315,7 @@
         searchInput.value = searchParam;
       }
 
-      const catParam = urlParams.get('category');
+      const catParam = urlParams.get('category') || urlParams.get('collection');
       if (catParam) {
         activeCollection = catParam;
       }

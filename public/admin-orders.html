@@ -712,9 +712,21 @@
       if (!o) return;
       currentSelectedOrderId = id;
 
+      const hasSrOrder = Boolean(o.shiprocket_order_id && o.shiprocket_order_id !== '');
+      const hasSrShipment = Boolean(o.shiprocket_shipment_id && o.shiprocket_shipment_id !== '');
+      const hasAwb = Boolean(o.awb_code && o.awb_code !== '' && !o.awb_code.includes('HN-EXP'));
+      const isPickupRequested = o.pickup_status === 'PICKUP_REQUESTED' || o.pickup_status === 'PICKED_UP';
+      const hasLabel = Boolean(o.shipping_label_url && o.shipping_label_url !== '');
+
+      const shipStatusBadge = o.shipping_status === 'DELIVERED' 
+        ? '<span class="badge bg-success">DELIVERED</span>'
+        : (o.shipping_status === 'CANCELLED' ? '<span class="badge bg-danger">CANCELLED</span>' : `<span class="badge bg-primary">${o.shipping_status || 'NOT_CREATED'}</span>`);
+
       document.getElementById('orderModalTitle').innerText = 'Order Details — ' + o.id;
       document.getElementById('orderModalBody').innerHTML = `
         <div class="row g-4">
+          
+          <!-- Left Column: Customer & Payment -->
           <div class="col-md-6 border-end">
             <h6 class="fw-bold text-navy mb-2"><i class="bi bi-person me-2"></i>Devotee Information</h6>
             <p class="mb-1"><strong>Name:</strong> ${o.customer}</p>
@@ -724,12 +736,11 @@
 
             <h6 class="fw-bold text-navy mb-2"><i class="bi bi-credit-card me-2"></i>Payment Details</h6>
             <p class="mb-1"><strong>Method:</strong> ${o.payment_method}</p>
-            <p class="mb-1"><strong>Status:</strong> <span class="badge bg-success-subtle text-success">${o.payment_status}</span></p>
-            ${o.courier ? `<p class="mb-1"><strong>Courier:</strong> ${o.courier}</p>` : ''}
-            ${o.tracking_number ? `<p class="mb-1"><strong>Tracking / AWB:</strong> <code>${o.tracking_number}</code></p>` : ''}
+            <p class="mb-1"><strong>Payment Status:</strong> <span class="badge bg-success-subtle text-success">${o.payment_status}</span></p>
             ${o.notes ? `<p class="mb-1 text-muted small"><strong>Notes:</strong> ${o.notes}</p>` : ''}
           </div>
 
+          <!-- Right Column: Ordered Items & Quick Status -->
           <div class="col-md-6">
             <h6 class="fw-bold text-navy mb-2"><i class="bi bi-cart me-2"></i>Ordered Items</h6>
             <div class="border rounded p-3 mb-3 bg-white">
@@ -750,7 +761,7 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-bold text-navy">Quick Update Status</label>
+              <label class="form-label fw-bold text-navy">Quick Update Internal Status</label>
               <select id="modal-order-status" class="form-select">
                 <option value="Confirmed" ${o.status === 'Confirmed' ? 'selected' : ''}>Confirmed (Order Placed)</option>
                 <option value="Packed" ${o.status === 'Packed' ? 'selected' : ''}>Packed (Ready for Courier)</option>
@@ -760,6 +771,75 @@
               </select>
             </div>
           </div>
+
+          <!-- Full Width: Shiprocket Logistics & Fulfillment Control Panel -->
+          <div class="col-12 pt-3 border-top">
+            <div class="p-3 rounded border" style="background-color: #FAF8F5; border-color: var(--hn-gold-border) !important;">
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                <h6 class="fw-bold text-navy mb-0">
+                  <i class="bi bi-truck me-2 text-gold"></i>Shiprocket Logistics &amp; Fulfillment
+                </h6>
+                <div>
+                  <span class="small fw-semibold text-muted me-1">Shipping Status:</span>
+                  ${shipStatusBadge}
+                </div>
+              </div>
+
+              <div class="row g-3 small mb-3">
+                <div class="col-sm-6 col-md-3">
+                  <span class="text-muted d-block">Shiprocket Order ID:</span>
+                  <span class="fw-bold text-navy">${o.shiprocket_order_id || '<span class="text-muted fw-normal">Not Created</span>'}</span>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                  <span class="text-muted d-block">Shipment ID:</span>
+                  <span class="fw-bold text-navy">${o.shiprocket_shipment_id || '<span class="text-muted fw-normal">Not Created</span>'}</span>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                  <span class="text-muted d-block">Courier Partner:</span>
+                  <span class="fw-bold text-navy">${o.courier_name || o.courier || '—'}</span>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                  <span class="text-muted d-block">AWB Number:</span>
+                  <span class="fw-bold font-monospace">${o.awb_code || o.tracking_number || '<span class="text-muted fw-normal font-sans-serif">Pending</span>'}</span>
+                </div>
+              </div>
+
+              <!-- Action Buttons Row -->
+              <div class="d-flex flex-wrap gap-2 pt-2 border-top">
+                <button type="button" class="btn btn-sm btn-primary" onclick="adminCreateShiprocketOrder('${o.id}')" ${hasSrOrder ? 'disabled title="Shipment already created"' : ''}>
+                  <i class="bi bi-box-seam me-1"></i> Create Shipment
+                </button>
+
+                <button type="button" class="btn btn-sm btn-outline-dark" onclick="adminAssignShiprocketAwb('${o.id}', '${o.shiprocket_shipment_id}')" ${!hasSrShipment || hasAwb ? 'disabled title="Requires Shipment without AWB"' : ''}>
+                  <i class="bi bi-person-badge me-1"></i> Assign Courier / AWB
+                </button>
+
+                <button type="button" class="btn btn-sm btn-outline-success" onclick="adminRequestShiprocketPickup('${o.id}', '${o.shiprocket_shipment_id}')" ${!hasAwb || isPickupRequested ? 'disabled title="Requires AWB and not yet picked up"' : ''}>
+                  <i class="bi bi-calendar-check me-1"></i> Request Pickup
+                </button>
+
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="adminGenerateShiprocketLabel('${o.id}', '${o.shiprocket_shipment_id}')" ${!hasSrShipment ? 'disabled' : ''}>
+                  <i class="bi bi-printer me-1"></i> Generate Label
+                </button>
+
+                ${hasLabel ? `<a href="${o.shipping_label_url}" target="_blank" class="btn btn-sm btn-success"><i class="bi bi-download me-1"></i> Download Label PDF</a>` : ''}
+
+                ${hasAwb ? `
+                  <a href="/order-tracking.html?order=${encodeURIComponent(o.id)}" target="_blank" class="btn btn-sm btn-gold">
+                    <i class="bi bi-compass me-1"></i> Live Tracking
+                  </a>
+                ` : ''}
+
+                ${hasSrOrder ? `
+                  <button type="button" class="btn btn-sm btn-outline-danger ms-auto" onclick="adminCancelShiprocket('${o.id}', '${o.shiprocket_order_id}')">
+                    <i class="bi bi-x-circle me-1"></i> Cancel Shipment
+                  </button>
+                ` : ''}
+              </div>
+
+            </div>
+          </div>
+
         </div>
       `;
 
@@ -928,6 +1008,159 @@
       link.click();
       document.body.removeChild(link);
       showToast("Orders exported successfully!");
+    }
+
+    // =========================================================================
+    // SHIPROCKET FULFILLMENT ACTIONS
+    // =========================================================================
+    async function adminCreateShiprocketOrder(orderId) {
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+
+      showToast(`Contacting Shiprocket to create shipment for ${orderId}...`);
+      try {
+        const res = await fetch('/api/shiprocket/create-order', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ order_id: orderId })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Shiprocket shipment created! Shipment ID: ${data.data?.shiprocket_shipment_id || ''}`);
+          // Refresh orders list
+          if (typeof fetchLiveOrders === 'function') fetchLiveOrders();
+          // Update open modal
+          const modalEl = document.getElementById('orderModal');
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          if (modal) modal.hide();
+          setTimeout(() => viewOrderDetails(orderId), 300);
+        } else {
+          alert(`Shiprocket error: ${data.message}`);
+        }
+      } catch (err) {
+        alert(`Failed to create Shiprocket shipment: ${err.message}`);
+      }
+    }
+
+    async function adminAssignShiprocketAwb(orderId, shipmentId) {
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+
+      showToast(`Assigning courier and AWB for ${orderId}...`);
+      try {
+        const res = await fetch('/api/shiprocket/assign-awb', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ order_id: orderId, shipment_id: shipmentId })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showToast(`AWB ${data.data?.awb_code} assigned with ${data.data?.courier_name || 'Courier'}!`);
+          if (typeof fetchLiveOrders === 'function') fetchLiveOrders();
+          const modalEl = document.getElementById('orderModal');
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          if (modal) modal.hide();
+          setTimeout(() => viewOrderDetails(orderId), 300);
+        } else {
+          alert(`AWB assignment error: ${data.message}`);
+        }
+      } catch (err) {
+        alert(`Failed to assign AWB: ${err.message}`);
+      }
+    }
+
+    async function adminRequestShiprocketPickup(orderId, shipmentId) {
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+
+      showToast(`Requesting courier pickup for shipment ${shipmentId}...`);
+      try {
+        const res = await fetch('/api/shiprocket/pickup', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ order_id: orderId, shipment_id: shipmentId })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Pickup scheduled successfully!`);
+          if (typeof fetchLiveOrders === 'function') fetchLiveOrders();
+          const modalEl = document.getElementById('orderModal');
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          if (modal) modal.hide();
+          setTimeout(() => viewOrderDetails(orderId), 300);
+        } else {
+          alert(`Pickup request error: ${data.message}`);
+        }
+      } catch (err) {
+        alert(`Failed to request pickup: ${err.message}`);
+      }
+    }
+
+    async function adminGenerateShiprocketLabel(orderId, shipmentId) {
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+
+      showToast(`Generating printable shipping label...`);
+      try {
+        const res = await fetch('/api/shiprocket/label', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ order_id: orderId, shipment_id: shipmentId })
+        });
+
+        const data = await res.json();
+        if (data.success && data.label_url) {
+          showToast(`Shipping label generated!`);
+          window.open(data.label_url, '_blank');
+          if (typeof fetchLiveOrders === 'function') fetchLiveOrders();
+          const modalEl = document.getElementById('orderModal');
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          if (modal) modal.hide();
+          setTimeout(() => viewOrderDetails(orderId), 300);
+        } else {
+          alert(`Label generation notice: ${data.message || 'Label not yet available from courier partner'}`);
+        }
+      } catch (err) {
+        alert(`Failed to generate label: ${err.message}`);
+      }
+    }
+
+    async function adminCancelShiprocket(orderId, srOrderId) {
+      if (!confirm(`Are you sure you want to cancel the Shiprocket shipment for ${orderId}?`)) return;
+
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+
+      showToast(`Cancelling Shiprocket shipment...`);
+      try {
+        const res = await fetch('/api/shiprocket/cancel', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ order_id: orderId, shiprocket_order_id: srOrderId })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Shipment cancelled successfully.`);
+          if (typeof fetchLiveOrders === 'function') fetchLiveOrders();
+          const modalEl = document.getElementById('orderModal');
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          if (modal) modal.hide();
+          setTimeout(() => viewOrderDetails(orderId), 300);
+        } else {
+          alert(`Cancellation error: ${data.message}`);
+        }
+      } catch (err) {
+        alert(`Failed to cancel shipment: ${err.message}`);
+      }
     }
   </script>
 </body>

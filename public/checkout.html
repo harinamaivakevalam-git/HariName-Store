@@ -26,6 +26,49 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Fast Indian Pincode Resolver & Directory -->
   <script src="/assets/js/india-pincodes.js"></script>
+
+  <style>
+    .hn-checkout-addr-card {
+      border: 1.5px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      background: #FFFFFF;
+      position: relative;
+      height: 100%;
+    }
+    .hn-checkout-addr-card:hover {
+      border-color: #F59E0B;
+      background: #FFFDF8;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.12);
+    }
+    .hn-checkout-addr-card.is-selected {
+      border-color: #D97706 !important;
+      background: #FFFBEB !important;
+      box-shadow: 0 0 0 1.5px #D97706, 0 4px 16px rgba(217, 119, 6, 0.18);
+    }
+    .hn-checkout-addr-card.is-new-btn {
+      border: 1.5px dashed #CBD5E1;
+      background: #F8FAFC;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      min-height: 120px;
+    }
+    .hn-checkout-addr-card.is-new-btn:hover {
+      border-color: #F59E0B;
+      background: #FFFDF8;
+      border-style: solid;
+    }
+    .hn-checkout-addr-card.is-new-btn.is-selected {
+      border: 1.5px solid #D97706;
+      background: #FFFBEB;
+    }
+  </style>
 </head>
 <body>
 
@@ -35,14 +78,19 @@
   <main class="py-5">
     <div class="container">
       
-      <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
         <div>
           <h1 class="hn-section-title text-start mb-0" style="font-size: 2rem;">Secure Checkout</h1>
           <div class="text-secondary small">Complete your order with blessed devotion and secure delivery.</div>
         </div>
-        <a href="/cart.html" class="text-secondary small fw-semibold text-decoration-underline">
-          <i class="bi bi-arrow-left me-1"></i> Return to Cart
-        </a>
+        <div class="d-flex align-items-center gap-3">
+          <a href="/account.html?tab=addresses" class="btn btn-sm btn-outline-warning text-dark fw-semibold d-inline-flex align-items-center gap-1 shadow-sm px-3 py-2 rounded-3" style="border-color: #F59E0B; background: #FFFDF8;">
+            <i class="bi bi-geo-alt-fill text-warning"></i> Saved Addresses
+          </a>
+          <a href="/cart.html" class="text-secondary small fw-semibold text-decoration-underline">
+            <i class="bi bi-arrow-left me-1"></i> Return to Cart
+          </a>
+        </div>
       </div>
 
       <form id="hn-checkout-form" onsubmit="handlePlaceOrder(event)">
@@ -53,9 +101,19 @@
             
             <!-- Shipping Details Box -->
             <div class="bg-white border rounded p-4 shadow-sm mb-4">
-              <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
-                <div class="rounded-circle bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; font-size: 0.9rem;">1</div>
-                <h4 class="fw-bold mb-0" style="font-family: var(--hn-font-serif); color: var(--hn-navy);">Shipping Information</h4>
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="rounded-circle bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; font-size: 0.9rem;">1</div>
+                  <h4 class="fw-bold mb-0" style="font-family: var(--hn-font-serif); color: var(--hn-navy);">Shipping Information</h4>
+                </div>
+                <a href="/account.html?tab=addresses" class="small text-decoration-none text-muted d-flex align-items-center gap-1 hover-gold">
+                  <i class="bi bi-gear-fill text-warning"></i> Manage in Account
+                </a>
+              </div>
+
+              <!-- Saved Addresses Quick Selection Carousel/Grid Container -->
+              <div id="hn-checkout-saved-addresses-wrapper" class="mb-4">
+                <!-- Dynamically populated by renderCheckoutSavedAddresses() -->
               </div>
               
               <div class="mb-3">
@@ -102,7 +160,7 @@
                 </div>
               </div>
 
-              <div class="row g-3">
+              <div class="row g-3 mb-3">
                 <div class="col-md-6">
                   <label class="form-label small fw-bold text-secondary">City / District *</label>
                   <input type="text" class="form-control" id="hn-ship-city" required placeholder="City / District">
@@ -149,6 +207,15 @@
                     <option value="West Bengal">West Bengal</option>
                     <option value="Other">Other State</option>
                   </select>
+                </div>
+              </div>
+
+              <div class="pt-2 border-top">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="hn-ship-save-address" checked>
+                  <label class="form-check-label small text-secondary" for="hn-ship-save-address">
+                    Save this address to my account for future orders
+                  </label>
                 </div>
               </div>
 
@@ -757,6 +824,46 @@
           console.warn('[Supabase] Database sync note:', sbE);
         }
 
+        // Save address to account if checkbox checked
+        if (document.getElementById('hn-ship-save-address')?.checked) {
+          try {
+            let userAddresses = getCheckoutSavedAddresses();
+            const exists = userAddresses.some(a => 
+              (a.address_line_1 === address || a.address === address) && 
+              (a.postal_code === pin || a.pincode === pin)
+            );
+            if (!exists) {
+              const newAddrObj = {
+                id: 'addr_' + Date.now(),
+                name: name || 'Devotee',
+                phone: phone || '',
+                address_line_1: address,
+                address_line1: address,
+                address: fullAddressStr,
+                city: city,
+                state: state,
+                postal_code: pin,
+                pincode: pin,
+                country: 'India',
+                address_type: 'Home',
+                is_default: userAddresses.length === 0
+              };
+              userAddresses.unshift(newAddrObj);
+              if (userAddresses.length > 5) userAddresses = userAddresses.slice(0, 5);
+              localStorage.setItem('hn_user_addresses', JSON.stringify(userAddresses));
+
+              const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+              if (token) {
+                fetch('/api/addresses', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                  body: JSON.stringify(newAddrObj)
+                }).catch(() => {});
+              }
+            }
+          } catch (_) {}
+        }
+
         // Clear cart & session
         localStorage.removeItem('hn_cart');
         localStorage.removeItem('cres_cart');
@@ -911,6 +1018,203 @@
       renderCheckoutSummary();
     }
 
+    // =========================================================================
+    // SAVED ADDRESSES SELECTOR & MANAGER FOR CHECKOUT
+    // =========================================================================
+    let selectedAddressId = null;
+
+    function getCheckoutSavedAddresses() {
+      try {
+        const stored = localStorage.getItem('hn_user_addresses');
+        if (stored) return JSON.parse(stored);
+      } catch (_) {}
+      return [];
+    }
+
+    async function refreshSavedAddressesFromApi() {
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await fetch('/api/addresses', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const json = await res.json();
+          if (json && json.success && Array.isArray(json.data) && json.data.length > 0) {
+            localStorage.setItem('hn_user_addresses', JSON.stringify(json.data));
+            renderCheckoutSavedAddresses();
+          }
+        } catch (_) {}
+      }
+    }
+
+    function renderCheckoutSavedAddresses() {
+      const container = document.getElementById('hn-checkout-saved-addresses-wrapper');
+      if (!container) return;
+
+      let addresses = getCheckoutSavedAddresses();
+      const user = (typeof getLoggedInUser === 'function') ? getLoggedInUser() : null;
+
+      // If no saved addresses in list but user profile has an address, add as default candidate
+      if (addresses.length === 0 && user && (user.address_line1 || user.address)) {
+        addresses.push({
+          id: 'addr_profile_default',
+          name: user.name || 'Devotee',
+          phone: user.phone || '',
+          address_line_1: user.address_line1 || user.address || '',
+          address_line_2: user.address_line2 || '',
+          city: user.city || '',
+          state: user.state || '',
+          postal_code: user.pincode || '',
+          pincode: user.pincode || '',
+          address_type: 'Home',
+          is_default: true
+        });
+        try { localStorage.setItem('hn_user_addresses', JSON.stringify(addresses)); } catch (_) {}
+      }
+
+      if (addresses.length === 0) {
+        container.innerHTML = `
+          <div class="p-3 bg-light rounded-3 border d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="small text-secondary">
+              <i class="bi bi-geo-alt-fill text-warning me-1"></i>
+              Fill delivery address below or create saved addresses in your account.
+            </div>
+            <a href="/account.html?tab=addresses" class="btn btn-sm btn-outline-warning text-dark fw-bold px-3 py-1" style="font-size: 0.78rem; border-color: #F59E0B;">
+              <i class="bi bi-plus-circle me-1"></i> Manage Addresses
+            </a>
+          </div>
+        `;
+        return;
+      }
+
+      // If none selected yet, default to first or default address
+      if (!selectedAddressId) {
+        const defaultAddr = addresses.find(a => a.is_default) || addresses[0];
+        if (defaultAddr) {
+          selectedAddressId = defaultAddr.id;
+        }
+      }
+
+      const isNewSelected = selectedAddressId === 'new';
+
+      container.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <label class="form-label small fw-bold text-navy mb-0">
+            <i class="bi bi-journal-bookmark-fill text-warning me-1"></i> Deliver to Saved Address (${addresses.length} Available)
+          </label>
+          <a href="/account.html?tab=addresses" class="small text-decoration-underline text-secondary" style="font-size: 0.75rem;">
+            + Manage all (${addresses.length}/5)
+          </a>
+        </div>
+        
+        <div class="row g-2">
+          ${addresses.map(addr => {
+            const isSel = selectedAddressId === addr.id;
+            const line1 = addr.address_line_1 || addr.address_line1 || addr.address || '';
+            const line2 = addr.address_line_2 || addr.address_line2 || '';
+            const pin = addr.postal_code || addr.pincode || '';
+            return `
+              <div class="col-md-6">
+                <div class="hn-checkout-addr-card ${isSel ? 'is-selected' : ''}" onclick="selectCheckoutAddress('${addr.id}')">
+                  <div class="d-flex justify-content-between align-items-start mb-1">
+                    <span class="badge ${addr.address_type === 'Work' ? 'bg-info-subtle text-info border border-info-subtle' : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'}" style="font-size: 0.7rem;">
+                      <i class="bi bi-tag-fill me-1"></i>${addr.address_type || 'Home'}
+                    </span>
+                    ${addr.is_default ? '<span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;">Default</span>' : ''}
+                  </div>
+                  <div class="fw-bold text-dark small text-truncate mb-1">${addr.name || 'Devotee'}</div>
+                  <div class="text-muted small mb-1" style="font-size: 0.75rem;"><i class="bi bi-telephone me-1"></i>${addr.phone || 'No phone'}</div>
+                  <div class="text-secondary small text-truncate" style="font-size: 0.76rem;" title="${line1} ${line2}">
+                    ${line1} ${line2 ? ', ' + line2 : ''}
+                  </div>
+                  <div class="text-dark fw-medium small" style="font-size: 0.76rem;">
+                    ${addr.city || ''}${addr.city && addr.state ? ', ' : ''}${addr.state || ''} ${pin ? '- ' + pin : ''}
+                  </div>
+                  <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between">
+                    <span class="small fw-semibold ${isSel ? 'text-success' : 'text-muted'}" style="font-size: 0.74rem;">
+                      <i class="bi ${isSel ? 'bi-check-circle-fill text-success' : 'bi-circle'} me-1"></i> ${isSel ? 'Delivering Here' : 'Select Address'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+
+          <div class="col-md-6">
+            <div class="hn-checkout-addr-card is-new-btn ${isNewSelected ? 'is-selected' : ''}" onclick="selectNewAddressMode()">
+              <i class="bi bi-plus-circle-dotted fs-3 ${isNewSelected ? 'text-warning' : 'text-secondary'} mb-1"></i>
+              <span class="fw-bold small text-navy">Enter / Create New Address</span>
+              <span class="text-muted small" style="font-size: 0.72rem;">Type new street address & auto-fetch PIN</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function selectCheckoutAddress(addrId) {
+      selectedAddressId = addrId;
+      const addresses = getCheckoutSavedAddresses();
+      const addr = addresses.find(a => a.id === addrId);
+      renderCheckoutSavedAddresses();
+
+      if (addr) {
+        if (addr.name) document.getElementById('hn-ship-name').value = addr.name;
+        if (addr.phone) document.getElementById('hn-ship-phone').value = addr.phone;
+        const line1 = addr.address_line_1 || addr.address_line1 || addr.address || '';
+        const line2 = addr.address_line_2 || addr.address_line2 || '';
+        document.getElementById('hn-ship-address').value = [line1, line2].filter(Boolean).join(', ');
+
+        const pin = addr.postal_code || addr.pincode || '';
+        if (pin) {
+          document.getElementById('hn-ship-pin').value = pin;
+          handlePincodeLookup(pin);
+        }
+        if (addr.city) document.getElementById('hn-ship-city').value = addr.city;
+        if (addr.state) {
+          const stateSelect = document.getElementById('hn-ship-state');
+          if (stateSelect) {
+            let matched = false;
+            for (let i = 0; i < stateSelect.options.length; i++) {
+              if (stateSelect.options[i].value.toLowerCase() === addr.state.toLowerCase() || stateSelect.options[i].text.toLowerCase() === addr.state.toLowerCase()) {
+                stateSelect.selectedIndex = i;
+                matched = true;
+                break;
+              }
+            }
+            if (!matched && addr.state) {
+              stateSelect.add(new Option(addr.state, addr.state, true, true));
+            }
+          }
+        }
+      }
+    }
+
+    function selectNewAddressMode() {
+      selectedAddressId = 'new';
+      renderCheckoutSavedAddresses();
+
+      const user = (typeof getLoggedInUser === 'function') ? getLoggedInUser() : null;
+      document.getElementById('hn-ship-address').value = '';
+      document.getElementById('hn-ship-pin').value = '';
+      document.getElementById('hn-ship-city').value = '';
+      document.getElementById('hn-ship-state').selectedIndex = 0;
+      const villageWrapper = document.getElementById('hn-village-wrapper');
+      if (villageWrapper) {
+        villageWrapper.innerHTML = `<input type="text" class="form-control" id="hn-ship-village" placeholder="Village / Area / Post Office">`;
+      }
+      const feedback = document.getElementById('hn-pin-feedback');
+      if (feedback) {
+        feedback.innerHTML = '<span class="text-muted"><i class="bi bi-info-circle me-1"></i> Enter 6-digit PIN to auto-fill City, Village &amp; State</span>';
+      }
+
+      if (user) {
+        if (!document.getElementById('hn-ship-name').value && user.name) document.getElementById('hn-ship-name').value = user.name;
+        if (!document.getElementById('hn-ship-phone').value && user.phone) document.getElementById('hn-ship-phone').value = user.phone;
+        if (!document.getElementById('hn-ship-email').value && user.email) document.getElementById('hn-ship-email').value = user.email;
+      }
+      document.getElementById('hn-ship-address').focus();
+    }
+
     // Google Maps Autocomplete & Geocoding Integration
     function initGoogleMapsPlaces() {
       const addressInput = document.getElementById('hn-ship-address');
@@ -969,10 +1273,15 @@
       renderHeader('checkout');
       renderFooter();
       renderCheckoutSummary();
+      renderCheckoutSavedAddresses();
+      refreshSavedAddressesFromApi();
       initGoogleMapsPlaces();
 
       window.addEventListener('hn_cart_updated', renderCheckoutSummary);
-      window.addEventListener('storage', renderCheckoutSummary);
+      window.addEventListener('storage', () => {
+        renderCheckoutSummary();
+        renderCheckoutSavedAddresses();
+      });
 
       // Prefill customer details if user is logged in
       if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
@@ -981,10 +1290,18 @@
           if (user.name) document.getElementById('hn-ship-name').value = user.name;
           if (user.email) document.getElementById('hn-ship-email').value = user.email;
           if (user.phone) document.getElementById('hn-ship-phone').value = user.phone;
-          if (user.address_line1 || user.address) document.getElementById('hn-ship-address').value = user.address_line1 || user.address;
-          if (user.pincode) {
-            document.getElementById('hn-ship-pin').value = user.pincode;
-            handlePincodeLookup(user.pincode);
+          
+          // If a saved address exists, select the default one
+          const saved = getCheckoutSavedAddresses();
+          if (saved.length > 0) {
+            const def = saved.find(a => a.is_default) || saved[0];
+            selectCheckoutAddress(def.id);
+          } else if (user.address_line1 || user.address) {
+            document.getElementById('hn-ship-address').value = user.address_line1 || user.address;
+            if (user.pincode) {
+              document.getElementById('hn-ship-pin').value = user.pincode;
+              handlePincodeLookup(user.pincode);
+            }
           }
         }
       }

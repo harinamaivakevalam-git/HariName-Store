@@ -18,6 +18,7 @@ const adminRoutes = require('./adminRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const homepageRoutes = require('./homepageRoutes');
 const pincodeRoutes = require('./pincodeRoutes');
+const shiprocketRoutes = require('./shiprocketRoutes');
 
 // API Health Check
 router.get('/health', (req, res) => {
@@ -47,5 +48,6 @@ router.use('/admin', adminRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/homepage', homepageRoutes);
 router.use('/pincode', pincodeRoutes);
+router.use('/shiprocket', shiprocketRoutes);
 
 module.exports = router;

@@ -3,18 +3,81 @@
  * Pre-seeded with authentic store catalog and synced in real-time with Supabase PostgreSQL & Admin Portal.
  */
 
-const HARINAMA_AUTHENTIC_PRODUCTS = [];
+const HARINAMA_AUTHENTIC_PRODUCTS = [
+  {
+    id: 'prod-001',
+    sku: 'HN-FLUTE-001',
+    name: 'Krishna Flute Keychain',
+    title: 'Krishna Flute Keychain',
+    slug: 'krishna-flute-keychain',
+    category: 'Devotional Keychains',
+    category_slug: 'devotional-keychains',
+    material: 'Brass & Enamel',
+    price: 499,
+    compare_price: 699,
+    old_price: 699,
+    stock: 50,
+    rating: 5.0,
+    reviews_count: 38,
+    image: '/assets/images/cat_keychains.jpg',
+    primary_image: '/assets/images/cat_keychains.jpg',
+    description: 'Exquisite solid cast brass Krishna flute keychain with sacred peacock feather charm and Hare Krishna engraved gold pendant.',
+    featured: true
+  },
+  {
+    id: 'prod-002',
+    sku: 'HN-MALA-002',
+    name: 'Tulsi Japa Mala',
+    title: 'Tulsi Japa Mala',
+    slug: 'tulsi-japa-mala',
+    category: 'Japa & Chanting',
+    category_slug: 'japa-chanting',
+    material: 'Authentic Tulsi Wood',
+    price: 699,
+    compare_price: 899,
+    old_price: 899,
+    stock: 45,
+    rating: 5.0,
+    reviews_count: 52,
+    image: '/assets/images/cat_japa_malas.jpg',
+    primary_image: '/assets/images/cat_japa_malas.jpg',
+    description: 'Sacred 108 beads Vrindavan Tulsi Japa Mala with hand-carved guru bead and cotton tassel for divine chanting.',
+    featured: true
+  },
+  {
+    id: 'prod-003',
+    sku: 'HN-GITA-003',
+    name: 'Bhagavad Gita (Deluxe)',
+    title: 'Bhagavad Gita (Deluxe)',
+    slug: 'bhagavad-gita-deluxe',
+    category: 'Sacred Books & Shastras',
+    category_slug: 'sacred-books',
+    material: 'Hardcover Gold Embossed',
+    price: 399,
+    compare_price: 550,
+    old_price: 550,
+    stock: 60,
+    rating: 5.0,
+    reviews_count: 94,
+    image: '/assets/images/cat_books.jpg',
+    primary_image: '/assets/images/cat_books.jpg',
+    description: 'Complete deluxe edition of Bhagavad Gita As It Is with original Sanskrit text, Roman transliteration, and elaborate purports.',
+    featured: true
+  }
+];
 
 // Dynamic Category Counts based on Database Categories & Products
 function computeCategoryCounts(productsList, dbCategories = null) {
   let catList = dbCategories;
-  if (!catList || !Array.isArray(catList) || catList.length === 0) {
+  if (!catList || catList.length === 0) {
     catList = [
-      { id: 'cat-all', name: 'All Products', slug: 'all-products', desc: 'Browse all divine items.', image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80' },
-      { id: 'c0000001-0000-0000-0000-000000000001', name: 'Devotional Keychains', slug: 'devotional-keychains', desc: 'Carry Krishna with you everywhere.', image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80' },
-      { id: 'c0000001-0000-0000-0000-000000000002', name: 'Sacred Books & Shastras', slug: 'sacred-books', desc: 'Transcendental literature and timeless wisdom.', image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80' },
-      { id: 'c0000001-0000-0000-0000-000000000003', name: 'Japa & Chanting', slug: 'japa-chanting', desc: 'Authentic malas, japa bags, and chanting accessories.', image: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=600&q=80' },
-      { id: 'c0000001-0000-0000-0000-000000000004', name: 'Gift Sets & Bundles', slug: 'gift-sets', desc: 'Thoughtfully curated gift sets with sacred significance.', image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80' }
+      { id: 'cat-all', name: 'All Products', slug: 'all-products', desc: 'Browse all divine items.', image: '/assets/images/cat_keychains.jpg' },
+      { id: 'c0000001-0000-0000-0000-000000000001', name: 'Japa Malas', slug: 'japa-malas', desc: 'Sacred 108 Tulsi and Neem beads for attentive chanting.', image: '/assets/images/cat_japa_malas.jpg' },
+      { id: 'c0000001-0000-0000-0000-000000000002', name: 'Keychains', slug: 'keychains', desc: 'Devotional brass Krishna flute and peacock feather keychains.', image: '/assets/images/cat_keychains.jpg' },
+      { id: 'c0000001-0000-0000-0000-000000000003', name: 'Books', slug: 'books', desc: 'Deluxe Bhagavad Gita and timeless Vedic wisdom literature.', image: '/assets/images/cat_books.jpg' },
+      { id: 'c0000001-0000-0000-0000-000000000004', name: 'Deity Statues', slug: 'deity-statues', desc: 'Handcrafted brass Krishna & Radha with sacred Surabhi cow murtis.', image: '/assets/images/cat_deity_statues.jpg' },
+      { id: 'c0000001-0000-0000-0000-000000000005', name: 'Japa Bags', slug: 'japa-bags', desc: 'Organic cotton Hare Krishna chanting bead bags.', image: '/assets/images/cat_japa_bags.jpg' },
+      { id: 'c0000001-0000-0000-0000-000000000006', name: 'Spiritual Gifts', slug: 'spiritual-gifts', desc: 'Sacred peacock feathers and blessed keepsakes.', image: '/assets/images/cat_spiritual_gifts.jpg' }
     ];
   } else {
     // Ensure "All Products" is at the start

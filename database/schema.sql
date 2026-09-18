@@ -235,14 +235,41 @@ CREATE TABLE IF NOT EXISTS orders (
     tracking_number VARCHAR(100),
     tracking_url VARCHAR(500),
     notes TEXT,
+    shiprocket_order_id VARCHAR(100),
+    shiprocket_shipment_id VARCHAR(100),
+    awb_code VARCHAR(100),
+    courier_name VARCHAR(100),
+    shipping_status VARCHAR(50) DEFAULT 'NOT_CREATED',
+    shipping_status_code VARCHAR(50),
+    shipping_label_url VARCHAR(1000),
+    shipping_manifest_url VARCHAR(1000),
+    pickup_status VARCHAR(50) DEFAULT 'NOT_REQUESTED',
+    pickup_scheduled_date VARCHAR(50),
+    tracking_history JSONB DEFAULT '[]'::jsonb,
+    shipping_updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Migration support for existing orders table
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shiprocket_order_id VARCHAR(100);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shiprocket_shipment_id VARCHAR(100);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS awb_code VARCHAR(100);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_name VARCHAR(100);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_status VARCHAR(50) DEFAULT 'NOT_CREATED';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_status_code VARCHAR(50);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_label_url VARCHAR(1000);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_manifest_url VARCHAR(1000);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_status VARCHAR(50) DEFAULT 'NOT_REQUESTED';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_scheduled_date VARCHAR(50);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_history JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
 
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_order_number ON orders(order_number);
 CREATE INDEX IF NOT EXISTS idx_orders_order_status ON orders(order_status);
 CREATE INDEX IF NOT EXISTS idx_orders_payment_status ON orders(payment_status);
+CREATE INDEX IF NOT EXISTS idx_orders_awb_code ON orders(awb_code);
 CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);
 
 CREATE TABLE IF NOT EXISTS order_items (

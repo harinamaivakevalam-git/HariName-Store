@@ -1,6 +1,7 @@
 const db = require('../models/db');
 const { v4: uuidv4 } = require('uuid');
 const { supabaseAdmin, isSupabaseConfigured } = require('../config/supabase');
+const shiprocketService = require('../services/shiprocketService');
 
 // Helper to generate professional order number: HN-YYYY-XXXXX
 const generateOrderNumber = () => {
@@ -151,9 +152,80 @@ exports.createOrder = async (req, res, next) => {
     const trackingNum = `HN-EXP-${Math.floor(100000 + Math.random() * 900000)}`;
     const trackingUrl = `/order-tracking.html?order=${orderNumber}`;
 
+    // 3. Optional Automatic Shiprocket Shipment Creation (Zero Interruption)
+    const srData = {
+      shiprocket_order_id: null,
+      shiprocket_shipment_id: null,
+      awb_code: null,
+      courier_name: 'India Post Speed Post',
+      shipping_status: 'NOT_CREATED',
+      shipping_status_code: null,
+      shipping_label_url: null,
+      shipping_manifest_url: null,
+      pickup_status: 'NOT_REQUESTED',
+      pickup_scheduled_date: null,
+      tracking_history: [
+        {
+          date: new Date().toISOString(),
+          status: 'ORDER_PLACED',
+          location: (process.env.SHIPROCKET_PICKUP_LOCATION || 'Primary'),
+          activity: 'Order placed & confirmed'
+        }
+      ]
+    };
+
+    if (shiprocketService.isConfigured()) {
+      try {
+        const srRes = await shiprocketService.createOrder({
+          order_number: orderNumber,
+          shipping_address,
+          billing_address,
+          payment_method,
+          subtotal,
+          discount: discountAmount,
+          shipping_fee: shippingFee,
+          items: orderItemsToCreate,
+          created_at: new Date().toISOString()
+        });
+
+        if (srRes && srRes.data) {
+          srData.shiprocket_order_id = String(srRes.data.order_id);
+          srData.shiprocket_shipment_id = String(srRes.data.shipment_id);
+          srData.shipping_status = 'ORDER_CREATED';
+          srData.shipping_status_code = String(srRes.data.status_code || '');
+          srData.tracking_history.push({
+            date: new Date().toISOString(),
+            status: 'ORDER_CREATED',
+            location: (process.env.SHIPROCKET_PICKUP_LOCATION || 'Primary'),
+            activity: 'Shipment created with Shiprocket'
+          });
+
+          // Attempt AWB assignment
+          try {
+            const awbRes = await shiprocketService.assignAwb(srRes.data.shipment_id);
+            if (awbRes && awbRes.data && awbRes.data.awb_code) {
+              srData.awb_code = awbRes.data.awb_code;
+              srData.courier_name = awbRes.data.courier_name || 'Shiprocket Courier';
+              srData.shipping_status = 'AWB_ASSIGNED';
+              srData.tracking_history.push({
+                date: new Date().toISOString(),
+                status: 'AWB_ASSIGNED',
+                location: (process.env.SHIPROCKET_PICKUP_LOCATION || 'Primary'),
+                activity: `AWB ${awbRes.data.awb_code} assigned with ${srData.courier_name}`
+              });
+            }
+          } catch (awbErr) {
+            console.warn('[Order Creation] Auto AWB assignment deferred:', awbErr.message);
+          }
+        }
+      } catch (srErr) {
+        console.warn('[Order Creation] Shiprocket auto-creation deferred:', srErr.message);
+      }
+    }
+
     let createdOrderRecord = null;
 
-    // 3. Supabase Database Insertion
+    // 4. Supabase Database Insertion
     if (isSupabaseConfigured && supabaseAdmin) {
       try {
         const orderPayload = {
@@ -172,9 +244,21 @@ exports.createOrder = async (req, res, next) => {
           order_status: 'confirmed',
           shipping_address,
           billing_address: billing_address || shipping_address,
-          tracking_number: trackingNum,
+          tracking_number: srData.awb_code || trackingNum,
           tracking_url: trackingUrl,
-          notes: notes || ''
+          notes: notes || '',
+          shiprocket_order_id: srData.shiprocket_order_id,
+          shiprocket_shipment_id: srData.shiprocket_shipment_id,
+          awb_code: srData.awb_code,
+          courier_name: srData.courier_name,
+          shipping_status: srData.shipping_status,
+          shipping_status_code: srData.shipping_status_code,
+          shipping_label_url: srData.shipping_label_url,
+          shipping_manifest_url: srData.shipping_manifest_url,
+          pickup_status: srData.pickup_status,
+          pickup_scheduled_date: srData.pickup_scheduled_date,
+          tracking_history: srData.tracking_history,
+          shipping_updated_at: new Date().toISOString()
         };
 
         const { data: dbOrder, error: orderErr } = await supabaseAdmin
@@ -250,9 +334,21 @@ exports.createOrder = async (req, res, next) => {
       order_status: 'confirmed',
       shipping_address,
       billing_address: billing_address || shipping_address,
-      tracking_number: trackingNum,
+      tracking_number: srData.awb_code || trackingNum,
       tracking_url: trackingUrl,
-      notes: notes || ''
+      notes: notes || '',
+      shiprocket_order_id: srData.shiprocket_order_id,
+      shiprocket_shipment_id: srData.shiprocket_shipment_id,
+      awb_code: srData.awb_code,
+      courier_name: srData.courier_name,
+      shipping_status: srData.shipping_status,
+      shipping_status_code: srData.shipping_status_code,
+      shipping_label_url: srData.shipping_label_url,
+      shipping_manifest_url: srData.shipping_manifest_url,
+      pickup_status: srData.pickup_status,
+      pickup_scheduled_date: srData.pickup_scheduled_date,
+      tracking_history: srData.tracking_history,
+      shipping_updated_at: new Date().toISOString()
     });
 
     orderItemsToCreate.forEach(oi => {
@@ -287,6 +383,10 @@ exports.createOrder = async (req, res, next) => {
         total: grandTotal,
         order_status: 'confirmed',
         payment_status: isOnlinePaid ? 'paid' : 'pending',
+        shipping_status: srData.shipping_status,
+        shiprocket_order_id: srData.shiprocket_order_id,
+        awb_code: srData.awb_code,
+        courier_name: srData.courier_name,
         tracking_url: trackingUrl,
         items: orderItemsToCreate
       }
@@ -340,23 +440,52 @@ exports.getUserOrders = async (req, res, next) => {
 };
 
 // Get Order Details by Order Number or ID
-exports.getOrderDetails = (req, res, next) => {
+exports.getOrderDetails = async (req, res, next) => {
   try {
     const { identifier } = req.params;
-    const order = db.findOne('orders', o => o.order_number === identifier || o.id === identifier);
+    let order = null;
+
+    if (isSupabaseConfigured && supabaseAdmin) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+        let q = supabaseAdmin.from('orders').select('*, order_items(*), payments(*)');
+        if (isUuid) q = q.eq('id', identifier);
+        else q = q.or(`order_number.eq.${identifier},awb_code.eq.${identifier}`);
+
+        const { data: dbOrder } = await q.maybeSingle();
+        if (dbOrder) {
+          order = {
+            ...dbOrder,
+            items: dbOrder.order_items || [],
+            payments: dbOrder.payments || []
+          };
+        }
+      } catch (sbErr) {
+        console.warn('[getOrderDetails] Supabase fetch warning:', sbErr.message);
+      }
+    }
+
+    if (!order) {
+      order = db.findOne('orders', o => o.order_number === identifier || o.id === identifier || o.awb_code === identifier);
+      if (order) {
+        order.items = db.filter('order_items', oi => oi.order_id === order.id);
+        order.payments = db.filter('payments', p => p.order_id === order.id);
+      }
+    }
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found.' });
     }
 
-    // Check authorization: must be order owner or admin
-    if (req.user && req.user.role !== 'admin' && order.user_id !== req.user.id) {
+    // Check authorization: must be order owner or admin if authenticated
+    if (req.user && req.user.role !== 'admin' && order.user_id && order.user_id !== req.user.id) {
       return res.status(403).json({ success: false, message: 'Unauthorized to view this order.' });
     }
 
-    const items = db.filter('order_items', oi => oi.order_id === order.id);
-    const payments = db.filter('payments', p => p.order_id === order.id);
-    const user = db.findById('users', order.user_id);
+    const items = order.items || [];
+    const payments = order.payments || [];
+    const user = order.user_id ? db.findById('users', order.user_id) : null;
+    const shipAddr = order.shipping_address || {};
 
     // Build timeline stages
     const statuses = ['pending', 'confirmed', 'processing', 'packed', 'shipped', 'out_for_delivery', 'delivered'];
@@ -366,17 +495,22 @@ exports.getOrderDetails = (req, res, next) => {
       label: st.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
       completed: currentIdx >= idx && order.order_status !== 'cancelled',
       active: order.order_status === st,
-      date: currentIdx >= idx ? order.updated_at : null
+      date: currentIdx >= idx ? (order.updated_at || order.created_at) : null
     }));
 
     res.json({
       success: true,
       data: {
         ...order,
-        customer: user ? { name: user.name, email: user.email, phone: user.phone } : null,
+        customer: {
+          name: shipAddr.name || (user ? user.name : 'Customer'),
+          email: shipAddr.email || (user ? user.email : '—'),
+          phone: shipAddr.phone || (user ? user.phone : '—')
+        },
         items,
         payments,
-        timeline
+        timeline,
+        tracking_history: order.tracking_history || []
       }
     });
   } catch (err) {
@@ -480,8 +614,18 @@ exports.adminGetOrders = async (req, res, next) => {
               payment_method: o.payment_method || 'UPI',
               payment_status: o.payment_status || 'Paid',
               status: (o.order_status ? o.order_status.charAt(0).toUpperCase() + o.order_status.slice(1) : 'Confirmed'),
-              courier: o.courier || 'India Post Speed Post',
-              tracking_number: o.tracking_number || '',
+              courier: o.courier_name || o.courier || 'India Post Speed Post',
+              courier_name: o.courier_name || o.courier || 'India Post Speed Post',
+              tracking_number: o.awb_code || o.tracking_number || '',
+              awb_code: o.awb_code || '',
+              shiprocket_order_id: o.shiprocket_order_id || '',
+              shiprocket_shipment_id: o.shiprocket_shipment_id || '',
+              shipping_status: o.shipping_status || 'NOT_CREATED',
+              shipping_status_code: o.shipping_status_code || '',
+              shipping_label_url: o.shipping_label_url || '',
+              shipping_manifest_url: o.shipping_manifest_url || '',
+              pickup_status: o.pickup_status || 'NOT_REQUESTED',
+              tracking_history: o.tracking_history || [],
               tracking_url: o.tracking_url || '',
               notes: o.notes || ''
             };
@@ -535,8 +679,18 @@ exports.adminGetOrders = async (req, res, next) => {
           payment_method: lo.payment_method || 'COD',
           payment_status: lo.payment_status || 'Pending',
           status: (lo.order_status ? lo.order_status.charAt(0).toUpperCase() + lo.order_status.slice(1) : 'Confirmed'),
-          courier: lo.courier || 'India Post Speed Post',
-          tracking_number: lo.tracking_number || '',
+          courier: lo.courier_name || lo.courier || 'India Post Speed Post',
+          courier_name: lo.courier_name || lo.courier || 'India Post Speed Post',
+          tracking_number: lo.awb_code || lo.tracking_number || '',
+          awb_code: lo.awb_code || '',
+          shiprocket_order_id: lo.shiprocket_order_id || '',
+          shiprocket_shipment_id: lo.shiprocket_shipment_id || '',
+          shipping_status: lo.shipping_status || 'NOT_CREATED',
+          shipping_status_code: lo.shipping_status_code || '',
+          shipping_label_url: lo.shipping_label_url || '',
+          shipping_manifest_url: lo.shipping_manifest_url || '',
+          pickup_status: lo.pickup_status || 'NOT_REQUESTED',
+          tracking_history: lo.tracking_history || [],
           tracking_url: lo.tracking_url || '',
           notes: lo.notes || ''
         });
@@ -559,7 +713,9 @@ exports.adminGetOrders = async (req, res, next) => {
         (o.id && o.id.toLowerCase().includes(q)) ||
         (o.customer && o.customer.toLowerCase().includes(q)) ||
         (o.phone && o.phone.includes(q)) ||
-        (o.email && o.email.toLowerCase().includes(q))
+        (o.email && o.email.toLowerCase().includes(q)) ||
+        (o.awb_code && o.awb_code.toLowerCase().includes(q)) ||
+        (o.shiprocket_order_id && o.shiprocket_order_id.toLowerCase().includes(q))
       );
     }
 
@@ -584,15 +740,42 @@ exports.adminGetOrders = async (req, res, next) => {
 exports.adminUpdateOrderStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { order_status, payment_status, tracking_number, tracking_url, notes, courier } = req.body;
+    const {
+      order_status,
+      payment_status,
+      shipping_status,
+      tracking_number,
+      awb_code,
+      tracking_url,
+      notes,
+      courier,
+      courier_name,
+      shiprocket_order_id,
+      shiprocket_shipment_id,
+      shipping_label_url,
+      pickup_status
+    } = req.body;
 
     const updates = {};
     if (order_status) updates.order_status = order_status.toLowerCase();
     if (payment_status) updates.payment_status = payment_status.toLowerCase();
+    if (shipping_status) updates.shipping_status = shipping_status.toUpperCase();
     if (tracking_number) updates.tracking_number = tracking_number;
+    if (awb_code) {
+      updates.awb_code = awb_code;
+      if (!updates.tracking_number) updates.tracking_number = awb_code;
+    }
     if (tracking_url) updates.tracking_url = tracking_url;
     if (notes) updates.notes = notes;
-    if (courier) updates.courier = courier;
+    if (courier || courier_name) {
+      updates.courier = courier || courier_name;
+      updates.courier_name = courier || courier_name;
+    }
+    if (shiprocket_order_id) updates.shiprocket_order_id = shiprocket_order_id;
+    if (shiprocket_shipment_id) updates.shiprocket_shipment_id = shiprocket_shipment_id;
+    if (shipping_label_url) updates.shipping_label_url = shipping_label_url;
+    if (pickup_status) updates.pickup_status = pickup_status;
+    updates.shipping_updated_at = new Date().toISOString();
     updates.updated_at = new Date().toISOString();
 
     // 1. Update in Supabase if configured

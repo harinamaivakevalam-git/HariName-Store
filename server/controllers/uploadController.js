@@ -26,27 +26,35 @@ async function ensureBucketExists() {
 async function uploadToCloudStorage(file) {
   if (isSupabaseConfigured && supabaseAdmin && file && file.path && fs.existsSync(file.path)) {
     try {
-      await ensureBucketExists();
-      const fileBuffer = fs.readFileSync(file.path);
-      const ext = path.extname(file.originalname || file.filename).toLowerCase();
-      const cleanFileName = `uploads/${Date.now()}-${Math.random().toString(36).substring(2, 9)}${ext}`;
+      const uploadPromise = (async () => {
+        await ensureBucketExists();
+        const fileBuffer = fs.readFileSync(file.path);
+        const ext = path.extname(file.originalname || file.filename).toLowerCase();
+        const cleanFileName = `uploads/${Date.now()}-${Math.random().toString(36).substring(2, 9)}${ext}`;
 
-      const { data, error } = await supabaseAdmin.storage
-        .from(BUCKET_NAME)
-        .upload(cleanFileName, fileBuffer, {
-          contentType: file.mimetype || 'image/jpeg',
-          upsert: true
-        });
-
-      if (!error && data) {
-        const { data: pubData } = supabaseAdmin.storage
+        const { data, error } = await supabaseAdmin.storage
           .from(BUCKET_NAME)
-          .getPublicUrl(cleanFileName);
+          .upload(cleanFileName, fileBuffer, {
+            contentType: file.mimetype || 'image/jpeg',
+            upsert: true
+          });
 
-        if (pubData && pubData.publicUrl) {
-          return pubData.publicUrl;
+        if (!error && data) {
+          const { data: pubData } = supabaseAdmin.storage
+            .from(BUCKET_NAME)
+            .getPublicUrl(cleanFileName);
+
+          if (pubData && pubData.publicUrl) {
+            return pubData.publicUrl;
+          }
         }
-      }
+        return null;
+      })();
+
+      // 2.5s maximum timeout for cloud upload to prevent freezing the UI
+      const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 2500));
+      const cloudUrl = await Promise.race([uploadPromise, timeoutPromise]);
+      if (cloudUrl) return cloudUrl;
     } catch (err) {
       console.warn('[UploadController] Cloud storage upload fallback notice:', err.message);
     }

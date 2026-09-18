@@ -77,6 +77,30 @@ class DatabaseStore {
         updated_at: new Date().toISOString()
       },
       {
+        id: 'a2222222-2222-4222-8222-222222222222',
+        name: 'Anil Kumar',
+        email: 'katturojuanilkumar@gmail.com',
+        password_hash: adminPassword,
+        phone: '+91 98765 43211',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=250&q=80',
+        role: 'admin',
+        status: 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 'a3333333-3333-4333-8333-333333333333',
+        name: 'HariNama Evakevalam',
+        email: 'harinamaivakevalam@gmail.com',
+        password_hash: adminPassword,
+        phone: '+91 98765 43212',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=250&q=80',
+        role: 'admin',
+        status: 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
         id: customerId,
         name: 'Gauranga Das',
         email: 'user@harinama.com',

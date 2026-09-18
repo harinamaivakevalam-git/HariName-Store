@@ -5,15 +5,18 @@ require('dotenv').config();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'harinama_default_secret_key';
 
+const ADMIN_EMAILS = [
+  'katturojuanilkumar@gmail.com',
+  'harinamaivakevalam@gmail.com',
+  'admin@harinama.com'
+];
+
 // Authenticate JWT / Supabase Token
 const authenticate = async (req, res, next) => {
   try {
     // Check for admin verified scope header from Admin Portal
     const adminEmailHeader = req.headers['x-admin-email'];
-    if (adminEmailHeader && (
-      adminEmailHeader.toLowerCase().trim() === 'harinamaivakevalam@gmail.com' ||
-      adminEmailHeader.toLowerCase().trim() === 'admin@harinama.com'
-    )) {
+    if (adminEmailHeader && ADMIN_EMAILS.includes(adminEmailHeader.toLowerCase().trim())) {
       req.user = {
         id: 'admin-authorized-session',
         name: 'Store Admin',
@@ -56,14 +59,11 @@ const authenticate = async (req, res, next) => {
             .eq('id', sbUser.id)
             .single();
 
-          const isAdminEmail = sbUser.email && (
-            sbUser.email.toLowerCase() === 'harinamaivakevalam@gmail.com' ||
-            sbUser.email.toLowerCase() === 'admin@harinama.com'
-          );
+          const isAdminEmail = sbUser.email && ADMIN_EMAILS.includes(sbUser.email.toLowerCase().trim());
 
           req.user = {
             id: sbUser.id,
-            name: profile?.name || sbUser.user_metadata?.name || 'Devotee Customer',
+            name: profile?.name || sbUser.user_metadata?.name || 'Store Admin',
             email: sbUser.email,
             role: isAdminEmail ? 'admin' : (profile?.role || sbUser.user_metadata?.role || 'customer'),
             phone: profile?.phone || sbUser.user_metadata?.phone || '',
@@ -128,14 +128,11 @@ const optionalAuth = async (req, res, next) => {
               .eq('id', sbUser.id)
               .single();
 
-            const isAdminEmail = sbUser.email && (
-              sbUser.email.toLowerCase() === 'harinamaivakevalam@gmail.com' ||
-              sbUser.email.toLowerCase() === 'admin@harinama.com'
-            );
+            const isAdminEmail = sbUser.email && ADMIN_EMAILS.includes(sbUser.email.toLowerCase().trim());
 
             req.user = {
               id: sbUser.id,
-              name: profile?.name || sbUser.user_metadata?.name || 'Devotee Customer',
+              name: profile?.name || sbUser.user_metadata?.name || 'Store Admin',
               email: sbUser.email,
               role: isAdminEmail ? 'admin' : (profile?.role || sbUser.user_metadata?.role || 'customer'),
               phone: profile?.phone || sbUser.user_metadata?.phone || '',

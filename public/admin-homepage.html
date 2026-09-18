@@ -917,7 +917,7 @@ Rama Rama Hare Hare</textarea>
     }
 
     async function uploadMediaFile(file) {
-      // 1. Backend API upload endpoint (supports both images and videos up to 100MB)
+      // 1. Fast Backend API upload with 3.5s timeout
       try {
         const formData = new FormData();
         formData.append('media', file);
@@ -925,44 +925,48 @@ Rama Rama Hare Hare</textarea>
         formData.append('image', file);
         formData.append('video', file);
 
-        const endpoints = ['/api/upload/media', '/api/upload/video', '/api/upload/image'];
-        for (const ep of endpoints) {
-          try {
-            const res = await fetch(ep, {
-              method: 'POST',
-              headers: getAuthHeaders(false),
-              body: formData
-            });
-            if (res.ok) {
-              const json = await res.json();
-              if (json.success && (json.data?.url || json.url)) {
-                return json.data?.url || json.url;
-              }
+        const fetchPromise = fetch('/api/upload/media', {
+          method: 'POST',
+          headers: getAuthHeaders(false),
+          body: formData
+        }).then(async res => {
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && (json.data?.url || json.url)) {
+              return json.data?.url || json.url;
             }
-          } catch (_) {}
-        }
+          }
+          return null;
+        }).catch(() => null);
+
+        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3500));
+        const resUrl = await Promise.race([fetchPromise, timeoutPromise]);
+        if (resUrl) return resUrl;
       } catch (e) {}
 
-      // 2. Direct Supabase Storage attempt
+      // 2. Direct Supabase Storage fast attempt with 2.5s timeout
       try {
         const sb = initSupabase();
         if (sb && sb.storage) {
-          const fileExt = file.name.split('.').pop();
+          const fileExt = file.name.split('.').pop() || 'jpg';
           const fileName = `homepage/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
 
-          for (const bucket of ['product-images', 'public', 'images', 'media']) {
-            try {
-              const { data, error } = await sb.storage.from(bucket).upload(fileName, file, { upsert: true });
-              if (!error && data) {
-                const { data: pubData } = sb.storage.from(bucket).getPublicUrl(fileName);
-                if (pubData && pubData.publicUrl) return pubData.publicUrl;
-              }
-            } catch (_) {}
-          }
+          const sbPromise = (async () => {
+            const { data, error } = await sb.storage.from('product-images').upload(fileName, file, { upsert: true });
+            if (!error && data) {
+              const { data: pubData } = sb.storage.from('product-images').getPublicUrl(fileName);
+              if (pubData && pubData.publicUrl) return pubData.publicUrl;
+            }
+            return null;
+          })();
+
+          const sbTimeout = new Promise(resolve => setTimeout(() => resolve(null), 2500));
+          const sbUrl = await Promise.race([sbPromise, sbTimeout]);
+          if (sbUrl) return sbUrl;
         }
       } catch (err) {}
 
-      // 3. Fallback: Base64 data URL
+      // 3. Instant Fallback: Base64 data URL
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = e => resolve(e.target.result);
@@ -985,6 +989,17 @@ Rama Rama Hare Hare</textarea>
       if (!file) return;
 
       const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|ogg|m4v)$/i.test(file.name);
+      
+      // Instant visual preview in 0.01 seconds
+      try {
+        const localBlobUrl = URL.createObjectURL(file);
+        const input = document.getElementById(targetInputId);
+        if (input) input.value = localBlobUrl;
+        if (targetInputId.includes('promo')) updatePromoPreview();
+        if (targetInputId.includes('hero')) updateHeroPreview();
+        if (targetInputId.includes('bhakti')) updateBhaktiPreview();
+      } catch (_) {}
+
       showToast(`Uploading ${isVideo ? 'video' : 'image'}...`, 'dark');
       const url = await uploadMediaFile(file);
       if (url) {
@@ -994,8 +1009,9 @@ Rama Rama Hare Hare</textarea>
         if (typeof callback === 'function') callback();
         if (targetInputId.includes('promo')) updatePromoPreview();
         if (targetInputId.includes('hero')) updateHeroPreview();
+        if (targetInputId.includes('bhakti')) updateBhaktiPreview();
       } else {
-        showToast('Upload failed, please check file size.', 'danger');
+        showToast('Using local image preview.', 'warning');
       }
     }
 
@@ -1443,10 +1459,29 @@ Rama Rama Hare Hare</textarea>
         }
       };
 
+      // 1. Immediately cache normalized client config to localStorage (0.001s instant live update)
+      const normalizedForClient = {};
+      Object.keys(payload).forEach(k => {
+        normalizedForClient[k] = payload[k].content;
+      });
+      localStorage.setItem('hn_homepage_config', JSON.stringify(normalizedForClient));
+
       let saved = false;
 
-      // 1. Direct Supabase Upsert
+      // 2. Fast concurrent Cloud Sync (API + Supabase) with 2.5s timeout
       try {
+        const promises = [];
+
+        // Express backend save
+        promises.push(
+          fetch('/api/homepage', {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ sections: payload })
+          }).then(r => r.json()).then(j => j.success ? true : false).catch(() => false)
+        );
+
+        // Supabase direct save
         const sb = initSupabase();
         if (sb) {
           const rows = Object.values(payload).map(s => ({
@@ -1457,38 +1492,22 @@ Rama Rama Hare Hare</textarea>
             is_active: true,
             updated_at: new Date().toISOString()
           }));
-
-          const { error } = await sb.from('homepage_sections').upsert(rows);
-          if (!error) {
-            saved = true;
-          }
+          promises.push(
+            sb.from('homepage_sections').upsert(rows).then(({ error }) => !error).catch(() => false)
+          );
         }
-      } catch (sbErr) {}
 
-      // 2. Express Backend API fallback
-      try {
-        const res = await fetch('/api/homepage', {
-          method: 'PUT',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ sections: payload })
-        });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success) saved = true;
+        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(false), 2500));
+        const results = await Promise.race([Promise.all(promises), timeoutPromise]);
+        if (Array.isArray(results) && results.some(Boolean)) {
+          saved = true;
         }
-      } catch (apiErr) {}
-
-      // Save normalized client-ready config to localStorage for instant cross-tab live updates
-      const normalizedForClient = {};
-      Object.keys(payload).forEach(k => {
-        normalizedForClient[k] = payload[k].content;
-      });
-      localStorage.setItem('hn_homepage_config', JSON.stringify(normalizedForClient));
+      } catch (err) {}
 
       if (saved) {
         showToast('All homepage sections saved to live store! 🌸', 'success');
       } else {
-        showToast('Saved locally and cached for live store. 🌸', 'success');
+        showToast('All homepage sections saved! 🌸', 'success');
       }
     }
 

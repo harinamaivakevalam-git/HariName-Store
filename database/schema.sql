@@ -377,3 +377,20 @@ CREATE POLICY "Users can manage own cart" ON carts FOR ALL USING (auth.uid() = u
 CREATE POLICY "Users can view own orders" ON orders FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can manage own notifications" ON notifications FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "Users can create and edit own reviews" ON reviews FOR ALL USING (auth.uid() = user_id);
+
+-- ----------------------------------------------------------------------------
+-- 16. HOMEPAGE CUSTOMIZER SECTIONS TABLE
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS homepage_sections (
+    id VARCHAR(100) PRIMARY KEY,
+    title VARCHAR(255),
+    subtitle TEXT,
+    content JSONB NOT NULL DEFAULT '{}'::jsonb,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE homepage_sections ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can view active homepage sections" ON homepage_sections FOR SELECT USING (is_active = true OR auth.role() = 'service_role');
+CREATE POLICY "Admins can manage homepage sections" ON homepage_sections FOR ALL USING (auth.role() = 'service_role');

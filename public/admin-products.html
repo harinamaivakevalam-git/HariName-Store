@@ -1140,20 +1140,39 @@
               if (rec) targetId = rec.id;
             }
             if (targetId) {
+              const SYSTEM_ARCHIVE_ID = '00000000-0000-0000-0000-000000000000';
+
               // Delete dependent records
               try { await sb.from('cart_items').delete().eq('product_id', targetId); } catch (_) {}
               try { await sb.from('wishlist_items').delete().eq('product_id', targetId); } catch (_) {}
               try { await sb.from('reviews').delete().eq('product_id', targetId); } catch (_) {}
               try { await sb.from('product_images').delete().eq('product_id', targetId); } catch (_) {}
               try { await sb.from('product_variants').delete().eq('product_id', targetId); } catch (_) {}
-              try { await sb.from('order_items').update({ product_id: null }).eq('product_id', targetId); } catch (_) {}
 
-              // Direct delete
+              // Preserve historical orders by pointing to system archive placeholder
+              try {
+                const { data: oRefs } = await sb.from('order_items').select('id').eq('product_id', targetId).limit(1);
+                if (oRefs && oRefs.length > 0) {
+                  await sb.from('products').upsert({
+                    id: SYSTEM_ARCHIVE_ID,
+                    name: 'Archived Product Placeholder',
+                    slug: 'system-archived-placeholder',
+                    sku: 'HN-ARCHIVED-000000',
+                    description: 'System placeholder for historical order preservation.',
+                    price: 0,
+                    stock: 0,
+                    status: 'archived'
+                  }, { onConflict: 'id' });
+                  await sb.from('order_items').update({ product_id: SYSTEM_ARCHIVE_ID }).eq('product_id', targetId);
+                }
+              } catch (_) {}
+
+              // Direct permanent delete
               const { error: delErr } = await sb.from('products').delete().eq('id', targetId);
               if (!delErr) {
                 deleted = true;
               } else {
-                // If historical order items prevent deletion, safely archive
+                // Fallback: archive
                 const { error: archErr } = await sb.from('products').update({
                   status: 'archived',
                   stock: 0,

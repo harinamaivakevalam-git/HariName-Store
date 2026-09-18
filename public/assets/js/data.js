@@ -334,6 +334,17 @@ HARINAMA_DATA.validateCoupon = async function(rawCode, subtotal = 0) {
     return { valid: false, message: 'Please enter a coupon code.' };
   }
 
+  // Check if coupon was deleted by store admin
+  try {
+    const deletedRaw = localStorage.getItem('hn_deleted_coupons');
+    if (deletedRaw) {
+      const deletedList = JSON.parse(deletedRaw);
+      if (Array.isArray(deletedList) && deletedList.includes(code)) {
+        return { valid: false, message: `Coupon "${code}" is invalid or has expired.` };
+      }
+    }
+  } catch (_) {}
+
   const orderSubtotal = parseFloat(subtotal) || 0;
 
   function getBackendUrl(path) {

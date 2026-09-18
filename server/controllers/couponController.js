@@ -93,7 +93,7 @@ exports.getCoupons = async (req, res, next) => {
     if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       const client = supabaseAdmin || supabase;
       const { data, error } = await client.from('coupons').select('*').order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) {
+      if (!error && Array.isArray(data)) {
         return res.json({ success: true, data });
       }
     }
@@ -120,51 +120,7 @@ exports.createCoupon = async (req, res, next) => {
     const cpnStatus = status ? status.toLowerCase().trim() : 'active';
     const expiryIso = expiry_date ? new Date(expiry_date).toISOString() : new Date(Date.now() + 365*24*3600*1000).toISOString();
 
-    if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
-      const client = supabaseAdmin || supabase;
-      const { data: newCoupon, error } = await client
-        .from('coupons')
-        .upsert({
-          code: cleanCode,
-          description: description || '',
-          discount_type,
-          discount_value: parseFloat(discount_value),
-          minimum_order: minimum_order ? parseFloat(minimum_order) : 0,
-          maximum_discount: maximum_discount ? parseFloat(maximum_discount) : null,
-          expiry_date: expiryIso,
-          usage_limit: limitVal,
-          times_used: usedCount,
-          status: cpnStatus
-        }, { onConflict: 'code' })
-        .select()
-        .single();
-
-      if (!error && newCoupon) {
-        // Also update local db
-        db.insert('coupons', newCoupon);
-        return res.status(201).json({ success: true, message: 'Coupon created in Supabase.', data: newCoupon });
-      } else if (error) {
-        console.error('[couponController] Supabase insert error:', error);
-      }
-    }
-
-    const existing = db.findOne('coupons', c => c.code.toUpperCase() === cleanCode);
-    if (existing) {
-      const updated = db.update('coupons', existing.id, {
-        description: description || '',
-        discount_type,
-        discount_value: parseFloat(discount_value),
-        minimum_order: minimum_order ? parseFloat(minimum_order) : 0,
-        maximum_discount: maximum_discount ? parseFloat(maximum_discount) : null,
-        expiry_date: expiryIso,
-        usage_limit: limitVal,
-        times_used: usedCount,
-        status: cpnStatus
-      });
-      return res.status(200).json({ success: true, message: 'Coupon updated.', data: updated });
-    }
-
-    const newCoupon = db.insert('coupons', {
+    const couponData = {
       code: cleanCode,
       description: description || '',
       discount_type,
@@ -175,8 +131,37 @@ exports.createCoupon = async (req, res, next) => {
       usage_limit: limitVal,
       times_used: usedCount,
       status: cpnStatus
-    });
+    };
 
+    if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
+      const client = supabaseAdmin || supabase;
+      const { data: newCoupon, error } = await client
+        .from('coupons')
+        .upsert(couponData, { onConflict: 'code' })
+        .select()
+        .single();
+
+      if (!error && newCoupon) {
+        // Also update local db
+        const existingLocal = db.findOne('coupons', c => c.code.toUpperCase() === cleanCode);
+        if (existingLocal) {
+          db.update('coupons', existingLocal.id, newCoupon);
+        } else {
+          db.insert('coupons', newCoupon);
+        }
+        return res.status(201).json({ success: true, message: 'Coupon created in Supabase.', data: newCoupon });
+      } else if (error) {
+        console.error('[couponController] Supabase insert error:', error);
+      }
+    }
+
+    const existing = db.findOne('coupons', c => c.code.toUpperCase() === cleanCode);
+    if (existing) {
+      const updated = db.update('coupons', existing.id, couponData);
+      return res.status(200).json({ success: true, message: 'Coupon updated.', data: updated });
+    }
+
+    const newCoupon = db.insert('coupons', couponData);
     res.status(201).json({ success: true, message: 'Coupon created.', data: newCoupon });
   } catch (err) {
     next(err);
@@ -202,13 +187,15 @@ exports.updateCoupon = async (req, res, next) => {
     if (payload.status) cleanPayload.status = payload.status.toLowerCase().trim();
     if (payload.expiry_date) cleanPayload.expiry_date = new Date(payload.expiry_date).toISOString();
 
+    const isUuid = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
     if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       const client = supabaseAdmin || supabase;
       let data = null;
       let error = null;
 
       // 1. Try updating by ID if it's a UUID
-      if (id && id.length > 20) {
+      if (isUuid) {
         const resById = await client
           .from('coupons')
           .update(cleanPayload)
@@ -240,6 +227,13 @@ exports.updateCoupon = async (req, res, next) => {
       }
 
       if (!error && data && data.length > 0) {
+        // Also update local db
+        const localRec = db.findOne('coupons', c => c.id === id || (cleanPayload.code && c.code.toUpperCase() === cleanPayload.code));
+        if (localRec) {
+          db.update('coupons', localRec.id, data[0]);
+        } else {
+          db.insert('coupons', data[0]);
+        }
         return res.json({ success: true, message: 'Coupon updated in Supabase.', data: data[0] });
       }
     }
@@ -260,20 +254,35 @@ exports.updateCoupon = async (req, res, next) => {
 exports.deleteCoupon = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const cleanId = String(id || '').trim();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
 
     if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       const client = supabaseAdmin || supabase;
-      if (id && id.length > 20) {
-        await client.from('coupons').delete().eq('id', id);
+      if (isUuid) {
+        await client.from('coupons').delete().eq('id', cleanId);
       }
       // Also delete by code if id might be a code or slug
-      await client.from('coupons').delete().eq('code', id.toUpperCase().trim());
-      return res.json({ success: true, message: 'Coupon deleted from Supabase.' });
+      await client.from('coupons').delete().eq('code', cleanId.toUpperCase());
+      
+      // Also sync deletion with local db
+      db.delete('coupons', cleanId);
+      const matched = db.findOne('coupons', c => c.code.toUpperCase() === cleanId.toUpperCase());
+      if (matched) db.delete('coupons', matched.id);
+
+      return res.json({ success: true, message: 'Coupon deleted from database.' });
     }
 
-    const deleted = db.delete('coupons', id);
-    if (!deleted) return res.status(404).json({ success: false, message: 'Coupon not found.' });
-    res.json({ success: true, message: 'Coupon deleted.' });
+    const deleted = db.delete('coupons', cleanId) || (function() {
+      const matched = db.findOne('coupons', c => c.code.toUpperCase() === cleanId.toUpperCase());
+      if (matched) {
+        db.delete('coupons', matched.id);
+        return true;
+      }
+      return false;
+    })();
+
+    res.json({ success: true, message: 'Coupon deleted successfully.' });
   } catch (err) {
     next(err);
   }

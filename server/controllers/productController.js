@@ -890,6 +890,8 @@ exports.deleteProduct = async (req, res, next) => {
       }
 
       if (targetId) {
+        const SYSTEM_ARCHIVE_ID = '00000000-0000-0000-0000-000000000000';
+
         // 1. Delete associated child records
         try { await client.from('cart_items').delete().eq('product_id', targetId); } catch (_) {}
         try { await client.from('wishlist_items').delete().eq('product_id', targetId); } catch (_) {}
@@ -897,10 +899,31 @@ exports.deleteProduct = async (req, res, next) => {
         try { await client.from('product_images').delete().eq('product_id', targetId); } catch (_) {}
         try { await client.from('product_variants').delete().eq('product_id', targetId); } catch (_) {}
 
-        // 2. Unlink from order_items if nullable
-        try { await client.from('order_items').update({ product_id: null }).eq('product_id', targetId); } catch (_) {}
+        // 2. Unlink or re-point order_items to System Archive ID so historical customer orders are preserved
+        try {
+          // Check if orders reference this product
+          const { data: orderRefs } = await client.from('order_items').select('id').eq('product_id', targetId).limit(1);
+          if (orderRefs && orderRefs.length > 0) {
+            // Ensure system archive placeholder exists
+            await client.from('products').upsert({
+              id: SYSTEM_ARCHIVE_ID,
+              name: 'Archived Product Placeholder',
+              slug: 'system-archived-placeholder',
+              sku: 'HN-ARCHIVED-000000',
+              description: 'System placeholder for historical order preservation.',
+              price: 0,
+              stock: 0,
+              status: 'archived'
+            }, { onConflict: 'id' });
 
-        // 3. Attempt direct permanent delete
+            // Re-point order items to archive placeholder
+            await client.from('order_items').update({ product_id: SYSTEM_ARCHIVE_ID }).eq('product_id', targetId);
+          }
+        } catch (linkErr) {
+          console.warn('[productController] Order item preservation notice:', linkErr);
+        }
+
+        // 3. Perform hard delete of product
         const { error: delError } = await client.from('products').delete().eq('id', targetId);
 
         if (!delError) {
@@ -909,8 +932,8 @@ exports.deleteProduct = async (req, res, next) => {
           return res.json({ success: true, message: 'Product deleted permanently from database.' });
         }
 
-        // 4. If foreign key constraint (orders exist), archive product so it disappears from store and admin
-        console.warn(`[productController] Hard delete hit constraint (${delError.message}), safely archiving product...`);
+        // 4. Fallback archive if deletion was blocked
+        console.warn(`[productController] Hard delete notice (${delError.message}), archiving product...`);
         const { error: archError } = await client
           .from('products')
           .update({
@@ -927,7 +950,7 @@ exports.deleteProduct = async (req, res, next) => {
           db.delete('products', id);
           return res.json({
             success: true,
-            message: 'Product successfully removed from catalog (archived to preserve customer order history).'
+            message: 'Product removed from catalog.'
           });
         }
       }

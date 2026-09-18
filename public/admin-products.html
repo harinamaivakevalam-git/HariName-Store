@@ -6,8 +6,9 @@
       try {
         var raw = localStorage.getItem('hn_user_profile') || localStorage.getItem('hn_user') || localStorage.getItem('user');
         var u = raw ? JSON.parse(raw) : null;
-        var scope = atob('aGFyaW5hbWFpdmFrZXZhbGFtQGdtYWlsLmNvbQ==');
-        if (!u || !u.email || (u.role !== 'admin' && String(u.email).toLowerCase().trim() !== scope)) {
+        var allowedAdmins = ['katturojuanilkumar@gmail.com', 'harinamaivakevalam@gmail.com', 'admin@harinama.com'];
+        var userEmail = u && u.email ? String(u.email).toLowerCase().trim() : '';
+        if (!u || !userEmail || (u.role !== 'admin' && !allowedAdmins.includes(userEmail))) {
           window.location.replace('/login.html?redirect=' + encodeURIComponent(window.location.pathname));
         }
       } catch(e) {
@@ -322,25 +323,30 @@
       } catch (err) {
         console.warn('[AdminProducts] Backend API categories notice:', err);
       }
+
+      // 2. Direct Supabase Fallback
+      if (databaseCategories.length === 0) {
+        try {
+          const sb = initSupabase();
+          if (sb) {
+            const { data: catData } = await sb.from('categories').select('*').order('name');
+            if (catData && catData.length > 0) {
+              databaseCategories = catData;
+              catSelect.innerHTML = databaseCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+              if (filterCatSelect) {
+                filterCatSelect.innerHTML = `<option value="all">All Categories</option>` + databaseCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+              }
+            }
+          }
+        } catch (_) {}
+      }
     }
 
     async function loadProductsFromDatabase() {
-      // 0. Populate from local cache immediately for instant render
-      try {
-        const cached = localStorage.getItem('hn_live_products');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            databaseProducts = parsed;
-            renderProductsTable(databaseProducts);
-          }
-        }
-      } catch (e) {}
-
       let remoteProducts = [];
       let remoteLoaded = false;
 
-      // 1. Primary: Fetch fast from Express Backend API (bypasses browser ISP DNS blocks)
+      // 1. Primary: Fetch from Express Backend API
       try {
         const res = await fetch(getApiUrl('/api/products?limit=100'), {
           headers: getAuthHeaders()
@@ -350,21 +356,21 @@
           if (json.success && Array.isArray(json.data)) {
             remoteProducts = json.data.map(p => ({
               id: p.id,
-              sku: p.sku,
+              sku: p.sku || `HN-${p.id.slice(0, 6)}`,
               name: p.name || p.title,
               title: p.title || p.name,
               slug: p.slug,
-              category: p.category_name || p.category || 'Devotional Items',
+              category: p.category_name || p.category || 'General',
               category_id: p.category_id || null,
               category_slug: p.category_slug || '',
-              material: p.material || 'Standard',
+              material: p.material || (p.specifications && p.specifications.material) || 'Standard',
               price: parseFloat(p.price) || 0,
               old_price: p.compare_price ? parseFloat(p.compare_price) : null,
               compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
               stock: p.stock !== undefined ? p.stock : 25,
               rating: parseFloat(p.rating) || 5.0,
               reviews_count: p.reviews_count || 0,
-              image: p.primary_image || p.image || '',
+              image: p.primary_image || p.image || (Array.isArray(p.images) && p.images[0]?.image_url) || (Array.isArray(p.gallery) && p.gallery[0]) || '',
               primary_image: p.primary_image || p.image || '',
               images: Array.isArray(p.images) ? p.images : (p.primary_image ? [p.primary_image] : []),
               gallery: Array.isArray(p.gallery) ? p.gallery : (p.primary_image ? [p.primary_image] : []),
@@ -377,12 +383,67 @@
         console.warn('[AdminProducts] Backend API products notice:', err);
       }
 
+      // 2. Direct Supabase Database Fallback
+      if (!remoteLoaded) {
+        try {
+          const sb = initSupabase();
+          if (sb) {
+            const { data: sbData, error: sbErr } = await sb
+              .from('products')
+              .select('*, product_images(*), categories(id, name, slug)')
+              .order('created_at', { ascending: false });
+
+            if (!sbErr && Array.isArray(sbData)) {
+              remoteProducts = sbData.map(p => {
+                const imgs = (p.product_images || []).map(img => img.image_url || img.url);
+                const primaryImg = imgs[0] || p.image_url || p.image || '';
+                return {
+                  id: p.id,
+                  sku: p.sku || `HN-${p.id.slice(0, 6)}`,
+                  name: p.name || p.title,
+                  title: p.title || p.name,
+                  slug: p.slug,
+                  category: p.categories?.name || p.category_name || p.category || 'General',
+                  category_id: p.category_id || null,
+                  category_slug: p.categories?.slug || '',
+                  material: (p.specifications && p.specifications.material) || p.material || 'Standard',
+                  price: parseFloat(p.price) || 0,
+                  old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+                  compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
+                  stock: p.stock !== undefined ? p.stock : 25,
+                  rating: parseFloat(p.rating) || 5.0,
+                  reviews_count: p.reviews_count || 0,
+                  image: primaryImg,
+                  primary_image: primaryImg,
+                  images: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
+                  gallery: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
+                  description: p.description || ''
+                };
+              });
+              remoteLoaded = true;
+            }
+          }
+        } catch (sbEx) {
+          console.warn('[AdminProducts] Supabase direct fetch notice:', sbEx);
+        }
+      }
+
       // Sync state and render
-      if (remoteLoaded && remoteProducts.length > 0) {
+      if (remoteLoaded) {
         databaseProducts = remoteProducts;
         renderProductsTable(databaseProducts);
         localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
-      } else if (databaseProducts.length === 0) {
+      } else {
+        const cached = localStorage.getItem('hn_live_products');
+        if (cached) {
+          try {
+            databaseProducts = JSON.parse(cached);
+            renderProductsTable(databaseProducts);
+          } catch (_) {}
+        }
+      }
+
+      if (databaseProducts.length === 0) {
         const tbody = document.getElementById('products-table-body');
         if (tbody) {
           tbody.innerHTML = `
@@ -499,12 +560,19 @@
     let isUploadingImage = [false, false, false, false, false];
 
     function getAuthHeaders(includeContentType = true) {
-      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token') || 'admin-portal-session';
-      let userEmail = 'harinamaivakevalam@gmail.com';
+      let userEmail = 'katturojuanilkumar@gmail.com';
       try {
         const u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}');
-        if (u && u.email) userEmail = u.email;
+        if (u && u.email) {
+          const e = String(u.email).toLowerCase().trim();
+          if (['katturojuanilkumar@gmail.com', 'harinamaivakevalam@gmail.com', 'admin@harinama.com'].includes(e)) {
+            userEmail = e;
+          }
+        }
       } catch (_) {}
+
+      const storedToken = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+      const token = (storedToken && storedToken.length > 20) ? storedToken : 'admin-portal-session';
 
       const headers = {
         'x-admin-email': userEmail,

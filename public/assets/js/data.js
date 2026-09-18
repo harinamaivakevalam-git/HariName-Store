@@ -189,7 +189,52 @@ HARINAMA_DATA.syncWithApi = async function() {
     }
   } catch (e) {}
 
-  // 2. Fallback to authentic baseline if API was offline
+  // 2. Direct Supabase Database Fallback if API was unreachable
+  if (!databaseLoaded && window.supabase && typeof window.supabase.createClient === 'function') {
+    try {
+      const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const { data: sbProds, error: pErr } = await sbClient
+        .from('products')
+        .select('*, product_images(*), categories(id, name, slug)')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+      if (!pErr && Array.isArray(sbProds) && sbProds.length > 0) {
+        fetchedProducts = sbProds.map(p => {
+          const imgs = (p.product_images || []).map(img => img.image_url || img.url);
+          const primaryImg = imgs[0] || p.image_url || p.image || '';
+          return {
+            id: p.id,
+            sku: p.sku || `HN-${p.id.slice(0, 6)}`,
+            name: p.name || p.title,
+            title: p.title || p.name,
+            slug: p.slug,
+            category: p.categories?.name || p.category_name || p.category || 'General',
+            category_id: p.category_id || null,
+            category_slug: p.categories?.slug || '',
+            material: (p.specifications && p.specifications.material) || p.material || 'Standard',
+            price: parseFloat(p.price) || 0,
+            old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+            compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
+            stock: p.stock !== undefined ? p.stock : 25,
+            rating: parseFloat(p.rating) || 5.0,
+            reviews_count: p.reviews_count || 0,
+            image: primaryImg,
+            primary_image: primaryImg,
+            images: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
+            gallery: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
+            description: p.description || ''
+          };
+        });
+        HARINAMA_DATA.products = fetchedProducts;
+        HARINAMA_DATA.categories = computeCategoryCounts(fetchedProducts, fetchedCategories);
+        HARINAMA_DATA.isLoaded = true;
+        databaseLoaded = true;
+      }
+    } catch (_) {}
+  }
+
+  // 3. Fallback to baseline if everything was offline
   if (!databaseLoaded) {
     if (!fetchedProducts || fetchedProducts.length === 0) {
       fetchedProducts = [...HARINAMA_AUTHENTIC_PRODUCTS];

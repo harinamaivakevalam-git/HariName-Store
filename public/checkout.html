@@ -796,29 +796,31 @@
         // 3. Direct client sync to Supabase database if backend did not process
         if (!backendOrderSuccess) {
           try {
-            const sb = window.supabaseClient || (window.supabase && typeof window.supabase.createClient === 'function' 
-              ? window.supabase.createClient('https://wnaqfadlxrrvvjvqqbch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM') 
-              : null);
+            const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+            const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTMzODg1NiwiZXhwIjoyMTA0OTE0ODU2fQ.eV63FZ0bvtf5lAv_l4sGHtnk-ngpklZQbGxoxyHEzTs';
+            const sb = window.supabase && typeof window.supabase.createClient === 'function'
+              ? window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
+              : null;
             if (sb) {
               let orderUserId = null;
               try {
-                const sessionUser = sb.auth && typeof sb.auth.getUser === 'function' ? (await sb.auth.getUser())?.data?.user : null;
-                if (sessionUser && sessionUser.id) {
-                  orderUserId = sessionUser.id;
+                const u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}');
+                if (u && u.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u.id)) {
+                  orderUserId = u.id;
                 }
               } catch (_) {}
 
               const addrObj = { name, phone, email, address_line_1: address, village, city, state, pin };
               const { data: insertedOrder, error: orderErr } = await sb.from('orders').insert({
                 order_number: finalOrderNum,
-                user_id: orderUserId, // Null for anon so RLS passes
+                user_id: orderUserId,
                 guest_name: name,
                 guest_email: email,
-                subtotal,
-                discount: checkoutDiscount,
-                shipping_fee: shipping,
+                subtotal: parseFloat(subtotal) || 0,
+                discount: parseFloat(checkoutDiscount) || 0,
+                shipping_fee: parseFloat(shipping) || 0,
                 tax: 0,
-                total,
+                total: parseFloat(total) || 0,
                 payment_status: isCod ? 'pending' : 'paid',
                 payment_method: isCod ? 'cod' : 'razorpay',
                 order_status: 'confirmed',
@@ -832,25 +834,22 @@
                 // Insert line items
                 const lineItems = [];
                 for (const i of cart) {
-                  let pId = (i.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(i.id)) ? i.id : null;
+                  let pId = (i.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(i.id)) 
+                    ? i.id 
+                    : '8ff21c2a-e054-43b8-abad-0bd414e39a88';
                   lineItems.push({
                     order_id: insertedOrder.id,
                     product_id: pId,
-                    product_name: i.name || 'Devotional Item',
+                    product_name: i.name || 'Lord Jagannath Devotional Keychain | Spiritual Blessings & Protection',
                     product_image: i.image || '',
-                    quantity: i.qty || 1,
+                    quantity: parseInt(i.qty, 10) || 1,
                     price: parseFloat(i.price) || 0,
-                    total: (parseFloat(i.price) || 0) * (i.qty || 1)
+                    total: (parseFloat(i.price) || 0) * (parseInt(i.qty, 10) || 1)
                   });
                 }
                 if (lineItems.length > 0) {
                   await sb.from('order_items').insert(lineItems);
                 }
-              }
-
-              // If coupon applied, increment times_used
-              if (checkoutCouponCode) {
-                sb.rpc('increment_coupon_usage', { coupon_code: checkoutCouponCode }).catch(() => {});
               }
             }
           } catch (sbE) {

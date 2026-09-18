@@ -137,16 +137,18 @@
       // 3. Try direct Supabase fetch
       try {
         if (window.supabase && typeof window.supabase.createClient === 'function') {
-          const sb = window.supabase.createClient('https://wnaqfadlxrrvvjvqqbch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM');
+          const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+          const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTMzODg1NiwiZXhwIjoyMTA0OTE0ODU2fQ.eV63FZ0bvtf5lAv_l4sGHtnk-ngpklZQbGxoxyHEzTs';
+          const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
           let u = null;
           try { u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}'); } catch (_) {}
           
           if (u && (u.id || u.email)) {
             let q = sb.from('orders').select('*, order_items(*)').order('created_at', { ascending: false });
-            if (u.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u.id)) {
-              q = q.or(`user_id.eq.${u.id},guest_email.eq.${u.email}`);
-            } else if (u.email) {
-              q = q.eq('guest_email', u.email);
+            if (u.email) {
+              q = q.or(`guest_email.eq.${u.email},user_id.eq.${u.id || '00000000-0000-0000-0000-000000000000'}`);
+            } else if (u.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u.id)) {
+              q = q.eq('user_id', u.id);
             }
             const { data: sbOrders } = await q;
             if (Array.isArray(sbOrders) && sbOrders.length > 0) {

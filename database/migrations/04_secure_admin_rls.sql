@@ -18,6 +18,7 @@ BEGIN
     -- Check 2: User email matches authorized admin emails
     IF LOWER(COALESCE(auth.jwt() ->> 'email', '')) IN (
         'harinamaivakevalam@gmail.com',
+        'katturojuanilkumar@gmail.com',
         'admin@harinama.com'
     ) THEN
         RETURN TRUE;
@@ -33,7 +34,7 @@ RETURNS TRIGGER AS $$
 DECLARE
     is_admin_user BOOLEAN;
 BEGIN
-    is_admin_user := (LOWER(COALESCE(NEW.email, '')) IN ('harinamaivakevalam@gmail.com', 'admin@harinama.com'));
+    is_admin_user := (LOWER(COALESCE(NEW.email, '')) IN ('harinamaivakevalam@gmail.com', 'katturojuanilkumar@gmail.com', 'admin@harinama.com'));
 
     INSERT INTO public.profiles (id, email, name, role, created_at, updated_at)
     VALUES (
@@ -219,4 +220,4 @@ CREATE POLICY "Admins and authorized users can delete product images storage" ON
 -- 15. Ensure existing admin users have the 'admin' role in public.profiles
 UPDATE public.profiles
 SET role = 'admin'
-WHERE LOWER(email) IN ('harinamaivakevalam@gmail.com', 'admin@harinama.com');
+WHERE LOWER(email) IN ('harinamaivakevalam@gmail.com', 'katturojuanilkumar@gmail.com', 'admin@harinama.com');

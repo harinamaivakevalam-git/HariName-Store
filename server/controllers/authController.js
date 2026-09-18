@@ -7,9 +7,16 @@ require('dotenv').config();
 const JWT_SECRET = process.env.JWT_SECRET || 'harinama_default_secret_key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
+const ADMIN_EMAILS = [
+  'harinamaivakevalam@gmail.com',
+  'katturojuanilkumar@gmail.com',
+  'admin@harinama.com'
+];
+
 const generateToken = (user) => {
+  const role = (user.email && ADMIN_EMAILS.includes(String(user.email).toLowerCase().trim())) ? 'admin' : (user.role || 'customer');
   return jwt.sign(
-    { id: user.id, email: user.email, role: user.role },
+    { id: user.id, email: user.email, role },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
   );
@@ -507,7 +514,9 @@ exports.googleAuth = async (req, res, next) => {
 
         if (existingProfiles && existingProfiles.length > 0) {
           const profile = existingProfiles[0];
-          const token = generateToken({ id: profile.id, email: cleanEmail, role: profile.role || 'customer' });
+          const isSysAdmin = ADMIN_EMAILS.includes(cleanEmail);
+          const assignedRole = isSysAdmin ? 'admin' : (profile.role || 'customer');
+          const token = generateToken({ id: profile.id, email: cleanEmail, role: assignedRole });
           return res.json({
             success: true,
             message: 'Signed in with Google successfully! 🌸',
@@ -518,7 +527,7 @@ exports.googleAuth = async (req, res, next) => {
               email: cleanEmail,
               phone: profile.phone || '',
               avatar: profile.avatar_url || finalAvatar,
-              role: profile.role || 'customer'
+              role: assignedRole
             }
           });
         }
@@ -529,21 +538,25 @@ exports.googleAuth = async (req, res, next) => {
 
 
     // 2. Local Database Find or Create
+    const isSysAdmin = ADMIN_EMAILS.includes(cleanEmail);
+    const assignedRole = isSysAdmin ? 'admin' : 'customer';
+
     let user = db.findOne('users', u => u.email.toLowerCase() === cleanEmail);
     if (!user) {
       user = db.insert('users', {
         name: finalName,
         email: cleanEmail,
         avatar: finalAvatar,
-        role: 'customer',
+        role: assignedRole,
         status: 'active',
         auth_provider: 'google',
         google_id: googleId || '',
         created_at: new Date().toISOString()
       });
     } else {
-      // Update avatar/name if not set
+      // Update avatar/name/role if admin
       const updates = {};
+      if (isSysAdmin && user.role !== 'admin') updates.role = 'admin';
       if (!user.avatar || user.avatar.includes('unsplash')) updates.avatar = finalAvatar;
       if (!user.name) updates.name = finalName;
       if (Object.keys(updates).length > 0) {
@@ -563,7 +576,7 @@ exports.googleAuth = async (req, res, next) => {
         email: user.email,
         phone: user.phone || '',
         avatar: user.avatar,
-        role: user.role || 'customer'
+        role: user.role || assignedRole
       }
     });
   } catch (err) {

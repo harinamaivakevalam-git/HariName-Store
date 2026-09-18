@@ -265,7 +265,7 @@
           });
           const userData = await res.json();
           if (userData && userData.id && userData.email) {
-            const isSysAdmin = userData.email && String(userData.email).toLowerCase().trim() === _getAuthScope();
+            const isSysAdmin = userData.email && (ADMIN_EMAILS.includes(String(userData.email).toLowerCase().trim()) || String(userData.email).toLowerCase().trim() === _getAuthScope());
             const user = {
               id: userData.id,
               email: userData.email,
@@ -291,7 +291,7 @@
             window.dispatchEvent(new CustomEvent('hn:auth-changed', { detail: { user } }));
             showToast(`Welcome back, ${user.name}! 🌸`);
 
-            // If currently on login, register, or auth page, auto-redirect to account
+            // If currently on login, register, or auth page, auto-redirect to account or admin
             const path = window.location.pathname.toLowerCase();
             if (path.includes('login') || path.includes('register') || path.includes('auth')) {
               setTimeout(() => { window.location.href = isSysAdmin ? _getAdminRoute() : '/account.html'; }, 300);
@@ -316,7 +316,7 @@
         if (sb && sb.auth) {
           const { data: { session } } = await sb.auth.getSession();
           if (session && session.user && !isUserLoggedIn()) {
-            const isSysAdmin = session.user.email && String(session.user.email).toLowerCase().trim() === _getAuthScope();
+            const isSysAdmin = session.user.email && (ADMIN_EMAILS.includes(String(session.user.email).toLowerCase().trim()) || String(session.user.email).toLowerCase().trim() === _getAuthScope());
             const user = {
               id: session.user.id,
               email: session.user.email,
@@ -337,7 +337,7 @@
 
           sb.auth.onAuthStateChange((event, session) => {
             if (session && session.user) {
-              const isSysAdmin = session.user.email && String(session.user.email).toLowerCase().trim() === _getAuthScope();
+              const isSysAdmin = session.user.email && (ADMIN_EMAILS.includes(String(session.user.email).toLowerCase().trim()) || String(session.user.email).toLowerCase().trim() === _getAuthScope());
               const user = {
                 id: session.user.id,
                 email: session.user.email,

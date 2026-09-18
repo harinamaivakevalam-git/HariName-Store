@@ -3916,8 +3916,8 @@ img, video, iframe, object {
 .hn-cat-circles-scroll {
   display: flex;
   align-items: flex-start;
-  justify-content: space-around;
-  gap: 28px;
+  justify-content: center;
+  gap: 32px;
   overflow-x: auto;
   padding: 4px 12px 10px;
   scrollbar-width: none;
@@ -4326,8 +4326,8 @@ img, video, iframe, object {
 
   .hn-cat-circles-scroll {
     display: flex;
-    justify-content: flex-start;
-    gap: 16px;
+    justify-content: center;
+    gap: 20px;
     padding: 4px 16px 10px;
     overflow-x: auto;
     scrollbar-width: none;

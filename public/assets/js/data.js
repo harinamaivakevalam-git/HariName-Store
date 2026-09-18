@@ -66,26 +66,30 @@ const HARINAMA_AUTHENTIC_PRODUCTS = [
   }
 ];
 
+const HARINAMA_BASE_AUTHENTIC_COLLECTIONS = [
+  { id: 'c0000001-0000-0000-0000-000000000001', name: 'Japa Malas', slug: 'japa-malas', desc: 'Authentic Vrindavan Tulasi & Neem meditation prayer beads.', image: '/assets/images/cat_japa_malas.jpg' },
+  { id: 'c0000001-0000-0000-0000-000000000002', name: 'Keychains', slug: 'keychains', desc: 'Handcrafted acrylic, enamel, and brass devotional keychains.', image: '/assets/images/cat_keychains.jpg' },
+  { id: 'c0000001-0000-0000-0000-000000000003', name: 'Books', slug: 'books', desc: 'Authentic Vedic scriptures, Bhagavad Gita, and sacred philosophy.', image: '/assets/images/cat_books.jpg' },
+  { id: 'c0000001-0000-0000-0000-000000000004', name: 'Deity Statues', slug: 'deity-statues', desc: 'Exquisite brass and marble finish sacred deity statues.', image: '/assets/images/cat_deity_statues.jpg' },
+  { id: 'c0000001-0000-0000-0000-000000000005', name: 'Japa Bags', slug: 'japa-bags', desc: 'Embroidered cotton and silk sacred bead bags for chanting.', image: '/assets/images/cat_japa_bags.jpg' },
+  { id: 'c0000001-0000-0000-0000-000000000006', name: 'Spiritual Gifts', slug: 'spiritual-gifts', desc: 'Curated spiritual gift hampers, keepsakes and divine gifts.', image: '/assets/images/cat_spiritual_gifts.jpg' }
+];
+
 // Dynamic Category Counts based on Database Categories & Products
 function computeCategoryCounts(productsList, dbCategories = null) {
-  let catList = dbCategories;
-  if (!catList || catList.length === 0) {
-    catList = [
-      { id: 'c0000001-0000-0000-0000-000000000001', name: 'Japa Malas', slug: 'japa-malas', desc: 'Authentic Vrindavan Tulasi & Neem meditation prayer beads.', image: '/assets/images/cat_japa_malas.jpg' },
-      { id: 'c0000001-0000-0000-0000-000000000002', name: 'Keychains', slug: 'keychains', desc: 'Handcrafted acrylic, enamel, and brass devotional keychains.', image: '/assets/images/cat_keychains.jpg' },
-      { id: 'c0000001-0000-0000-0000-000000000003', name: 'Books', slug: 'books', desc: 'Authentic Vedic scriptures, Bhagavad Gita, and sacred philosophy.', image: '/assets/images/cat_books.jpg' },
-      { id: 'c0000001-0000-0000-0000-000000000004', name: 'Deity Statues', slug: 'deity-statues', desc: 'Exquisite brass and marble finish sacred deity statues.', image: '/assets/images/cat_deity_statues.jpg' },
-      { id: 'c0000001-0000-0000-0000-000000000005', name: 'Japa Bags', slug: 'japa-bags', desc: 'Embroidered cotton and silk sacred bead bags for chanting.', image: '/assets/images/cat_japa_bags.jpg' },
-      { id: 'c0000001-0000-0000-0000-000000000006', name: 'Spiritual Gifts', slug: 'spiritual-gifts', desc: 'Curated spiritual gift hampers, keepsakes and divine gifts.', image: '/assets/images/cat_spiritual_gifts.jpg' }
-    ];
+  let catList = [];
+  if (Array.isArray(dbCategories) && dbCategories.length > 0) {
+    catList = [...dbCategories];
   } else {
-    // Ensure "All Products" is at the start
-    if (!catList.some(c => c.slug === 'all-products' || c.id === 'cat-all')) {
-      catList = [
-        { id: 'cat-all', name: 'All Products', slug: 'all-products', desc: 'Browse all divine items.', image: catList[0]?.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80' },
-        ...catList
-      ];
-    }
+    catList = [...HARINAMA_BASE_AUTHENTIC_COLLECTIONS];
+  }
+
+  // Ensure "All Products" is at the start
+  if (!catList.some(c => c.slug === 'all-products' || c.id === 'cat-all')) {
+    catList = [
+      { id: 'cat-all', name: 'All Products', slug: 'all-products', desc: 'Browse all divine items.', image: '/assets/images/cat_keychains.jpg' },
+      ...catList
+    ];
   }
 
   return catList.map(c => {

@@ -315,20 +315,28 @@
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
 
+    // 6 Authentic Store Collections
+    const HARINAMA_AUTHENTIC_COLLECTIONS = [
+      { id: 'c0000001-0000-0000-0000-000000000001', name: 'Japa Malas', slug: 'japa-malas', image: '/assets/images/cat_japa_malas.jpg' },
+      { id: 'c0000001-0000-0000-0000-000000000002', name: 'Keychains', slug: 'keychains', image: '/assets/images/cat_keychains.jpg' },
+      { id: 'c0000001-0000-0000-0000-000000000003', name: 'Books', slug: 'books', image: '/assets/images/cat_books.jpg' },
+      { id: 'c0000001-0000-0000-0000-000000000004', name: 'Deity Statues', slug: 'deity-statues', image: '/assets/images/cat_deity_statues.jpg' },
+      { id: 'c0000001-0000-0000-0000-000000000005', name: 'Japa Bags', slug: 'japa-bags', image: '/assets/images/cat_japa_bags.jpg' },
+      { id: 'c0000001-0000-0000-0000-000000000006', name: 'Spiritual Gifts', slug: 'spiritual-gifts', image: '/assets/images/cat_spiritual_gifts.jpg' }
+    ];
+
     // Render Real Collections dynamically from Database
     function renderCategoryCircles() {
       const container = document.getElementById('hn-cat-circles-container') || document.querySelector('.hn-cat-circles-scroll');
       if (!container) return;
 
-      const cats = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.categories))
+      let cats = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.categories))
         ? HARINAMA_DATA.categories.filter(c => c.slug !== 'all-products' && c.id !== 'cat-all')
         : [];
 
-      if (cats.length === 0) {
+      if (!cats || cats.length === 0) {
         const section = container.closest('.hn-categories-circles-section');
-        if (section && HARINAMA_DATA.isLoaded) {
-          section.style.display = 'none';
-        }
+        if (section) section.style.display = 'none';
         return;
       }
 

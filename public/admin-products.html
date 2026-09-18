@@ -392,6 +392,8 @@
             const { data: sbData, error: sbErr } = await sb
               .from('products')
               .select('*, product_images(*), categories(id, name, slug)')
+              .neq('status', 'archived')
+              .neq('status', 'deleted')
               .order('created_at', { ascending: false });
 
             if (!sbErr && Array.isArray(sbData)) {
@@ -1117,6 +1119,10 @@
         if (res.ok) {
           const json = await res.json();
           if (json.success) deleted = true;
+          else deleteError = json.message;
+        } else {
+          const json = await res.json().catch(() => ({}));
+          deleteError = json.message;
         }
       } catch (apiErr) {
         console.warn('[AdminProducts] Backend delete notice:', apiErr);
@@ -1134,10 +1140,34 @@
               if (rec) targetId = rec.id;
             }
             if (targetId) {
-              await sb.from('product_images').delete().eq('product_id', targetId);
+              // Delete dependent records
+              try { await sb.from('cart_items').delete().eq('product_id', targetId); } catch (_) {}
+              try { await sb.from('wishlist_items').delete().eq('product_id', targetId); } catch (_) {}
+              try { await sb.from('reviews').delete().eq('product_id', targetId); } catch (_) {}
+              try { await sb.from('product_images').delete().eq('product_id', targetId); } catch (_) {}
+              try { await sb.from('product_variants').delete().eq('product_id', targetId); } catch (_) {}
+              try { await sb.from('order_items').update({ product_id: null }).eq('product_id', targetId); } catch (_) {}
+
+              // Direct delete
               const { error: delErr } = await sb.from('products').delete().eq('id', targetId);
-              if (!delErr) deleted = true;
-              else deleteError = delErr.message;
+              if (!delErr) {
+                deleted = true;
+              } else {
+                // If historical order items prevent deletion, safely archive
+                const { error: archErr } = await sb.from('products').update({
+                  status: 'archived',
+                  stock: 0,
+                  featured: false,
+                  trending: false,
+                  slug: (id + '-archived-' + Date.now())
+                }).eq('id', targetId);
+
+                if (!archErr) {
+                  deleted = true;
+                } else {
+                  deleteError = delErr.message;
+                }
+              }
             }
           }
         } catch (e) {
@@ -1146,7 +1176,7 @@
       }
 
       if (deleted) {
-        showToast('Product removed from database.', 'info');
+        showToast('Product removed from store and database. 🌸', 'info');
         await loadProductsFromDatabase();
       } else {
         showToast('Failed to delete product: ' + (deleteError || 'Check admin authorization.'), 'danger');

@@ -126,7 +126,9 @@ exports.getProducts = async (req, res, next) => {
       try {
         let query = supabase
           .from('products')
-          .select('*, product_images(*), product_variants(*), categories(id, name, slug), brands(id, name, slug)', { count: 'exact' });
+          .select('*, product_images(*), product_variants(*), categories(id, name, slug), brands(id, name, slug)', { count: 'exact' })
+          .neq('status', 'archived')
+          .neq('status', 'deleted');
 
         // Non-admin users only see active products
         if (!req.user || req.user.role !== 'admin') {
@@ -880,15 +882,54 @@ exports.deleteProduct = async (req, res, next) => {
     if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       const client = supabaseAdmin || supabase;
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-      let query = client.from('products').delete();
-      if (isUuid) {
-        query = query.or(`id.eq.${id},slug.eq.${id}`);
-      } else {
-        query = query.eq('slug', id);
+      let targetId = isUuid ? id : null;
+
+      if (!targetId) {
+        const { data: rec } = await client.from('products').select('id, name, slug').eq('slug', id).maybeSingle();
+        if (rec) targetId = rec.id;
       }
-      const { error } = await query;
-      if (!error) {
-        return res.json({ success: true, message: 'Product deleted from Supabase.' });
+
+      if (targetId) {
+        // 1. Delete associated child records
+        try { await client.from('cart_items').delete().eq('product_id', targetId); } catch (_) {}
+        try { await client.from('wishlist_items').delete().eq('product_id', targetId); } catch (_) {}
+        try { await client.from('reviews').delete().eq('product_id', targetId); } catch (_) {}
+        try { await client.from('product_images').delete().eq('product_id', targetId); } catch (_) {}
+        try { await client.from('product_variants').delete().eq('product_id', targetId); } catch (_) {}
+
+        // 2. Unlink from order_items if nullable
+        try { await client.from('order_items').update({ product_id: null }).eq('product_id', targetId); } catch (_) {}
+
+        // 3. Attempt direct permanent delete
+        const { error: delError } = await client.from('products').delete().eq('id', targetId);
+
+        if (!delError) {
+          db.delete('products', targetId);
+          db.delete('products', id);
+          return res.json({ success: true, message: 'Product deleted permanently from database.' });
+        }
+
+        // 4. If foreign key constraint (orders exist), archive product so it disappears from store and admin
+        console.warn(`[productController] Hard delete hit constraint (${delError.message}), safely archiving product...`);
+        const { error: archError } = await client
+          .from('products')
+          .update({
+            status: 'archived',
+            stock: 0,
+            featured: false,
+            trending: false,
+            slug: `${id}-archived-${Date.now()}`
+          })
+          .eq('id', targetId);
+
+        if (!archError) {
+          db.delete('products', targetId);
+          db.delete('products', id);
+          return res.json({
+            success: true,
+            message: 'Product successfully removed from catalog (archived to preserve customer order history).'
+          });
+        }
       }
     }
 
@@ -905,7 +946,7 @@ exports.deleteProduct = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: 'Product and associated assets deleted successfully.'
+      message: 'Product deleted successfully.'
     });
   } catch (err) {
     next(err);

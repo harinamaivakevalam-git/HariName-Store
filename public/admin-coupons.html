@@ -252,6 +252,38 @@
       return supabaseClient;
     }
 
+    function getApiUrl(path) {
+      if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        if (window.location.port === '5000') return path;
+        return 'http://localhost:5000' + path;
+      }
+      return path;
+    }
+
+    function showToast(msg, type = 'success') {
+      if (window.showToast && typeof window.showToast === 'function' && window.showToast !== showToast) {
+        try {
+          window.showToast(msg, type);
+          return;
+        } catch (_) {}
+      }
+      const existing = document.querySelectorAll('.hn-toast-alert');
+      existing.forEach(el => el.remove());
+      const toastEl = document.createElement('div');
+      toastEl.className = 'hn-toast-alert position-fixed bottom-0 end-0 p-3';
+      toastEl.style.zIndex = '99999';
+      toastEl.innerHTML = `
+        <div class="toast show align-items-center text-bg-${type === 'danger' ? 'danger' : type === 'warning' ? 'warning' : 'dark'} border-0 shadow-lg" role="alert">
+          <div class="d-flex">
+            <div class="toast-body fw-semibold">${msg}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.closest('.hn-toast-alert').remove()"></button>
+          </div>
+        </div>`;
+      document.body.appendChild(toastEl);
+      setTimeout(() => { if (toastEl.parentNode) toastEl.remove(); }, 4000);
+    }
+
     let databaseCoupons = [];
 
     function getAuthHeaders() {
@@ -270,18 +302,17 @@
     }
 
     async function loadCouponsFromDatabase() {
-      const tbody = document.getElementById('coupons-table-body');
       let loaded = false;
       
       // 1. Try Express API
       try {
-        const res = await fetch('/api/coupons', { headers: getAuthHeaders() });
+        const res = await fetch(getApiUrl('/api/coupons'), { headers: getAuthHeaders() });
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data) && json.data.length > 0) {
             databaseCoupons = json.data.map(c => ({
               id: c.id,
-              code: c.code,
+              code: (c.code || '').toUpperCase().trim(),
               type: c.discount_type || c.type || 'fixed',
               value: parseFloat(c.discount_value || c.value || 0),
               min: parseFloat(c.minimum_order || c.min || 0),
@@ -299,7 +330,33 @@
         console.warn('[AdminCoupons] API notice:', e);
       }
 
-      // 2. Try Cache
+      // 2. Try Direct Supabase
+      try {
+        const client = initSupabase();
+        if (client) {
+          const { data, error } = await client.from('coupons').select('*').order('created_at', { ascending: false });
+          if (!error && Array.isArray(data) && data.length > 0) {
+            databaseCoupons = data.map(c => ({
+              id: c.id,
+              code: (c.code || '').toUpperCase().trim(),
+              type: c.discount_type || c.type || 'fixed',
+              value: parseFloat(c.discount_value || c.value || 0),
+              min: parseFloat(c.minimum_order || c.min || 0),
+              used: parseInt(c.times_used !== undefined ? c.times_used : (c.used || 0), 10) || 0,
+              limit: c.usage_limit ? parseInt(c.usage_limit, 10) : (c.limit ? parseInt(c.limit, 10) : 100),
+              expiry: c.expiry_date ? c.expiry_date.split('T')[0] : (c.expiry || ''),
+              status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
+            }));
+            localStorage.setItem('hn_admin_coupons', JSON.stringify(databaseCoupons));
+            renderCouponsTable();
+            return;
+          }
+        }
+      } catch (sbErr) {
+        console.warn('[AdminCoupons] Supabase direct notice:', sbErr);
+      }
+
+      // 3. Try Cache
       try {
         const cached = localStorage.getItem('hn_admin_coupons');
         if (cached) {
@@ -312,7 +369,7 @@
         }
       } catch (_) {}
 
-      // 3. Fallback to Verified Active Coupons
+      // 4. Default Seed Fallback
       databaseCoupons = [
         { id: 'd6b958cf-205d-45ee-bb9b-ffcc0afe1b95', code: 'WELCOME10', type: 'percentage', value: 10, min: 1000, used: 14, limit: 500, expiry: '2027-12-31', status: 'Active' },
         { id: '68cf15c1-b8e8-4cf4-bfca-01758fa11d26', code: 'KRISHNA50', type: 'fixed', value: 50, min: 249, used: 28, limit: 200, expiry: '2027-12-31', status: 'Active' },
@@ -332,9 +389,20 @@
       const tbody = document.getElementById('coupons-table-body');
       if (!tbody) return;
 
+      if (!databaseCoupons || databaseCoupons.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center py-5 text-muted">
+              <i class="bi bi-ticket-perforated fs-1 d-block mb-2 text-warning opacity-50"></i>
+              No coupons created yet. Click "Create New Coupon" to start!
+            </td>
+          </tr>`;
+        return;
+      }
+
       tbody.innerHTML = databaseCoupons.map(c => {
-        const isActive = c.status.toLowerCase() === 'active';
-        const isExpired = c.status.toLowerCase() === 'expired' || (c.expiry && new Date(c.expiry) < new Date());
+        const isActive = (c.status || '').toLowerCase() === 'active';
+        const isExpired = (c.status || '').toLowerCase() === 'expired' || (c.expiry && new Date(c.expiry) < new Date());
         const statusBadge = isActive ? 'bg-success-subtle text-success border border-success-subtle' :
                             isExpired ? 'bg-danger-subtle text-danger border border-danger-subtle' :
                             'bg-secondary-subtle text-secondary border border-secondary-subtle';
@@ -342,7 +410,7 @@
         return `
         <tr>
           <td class="ps-3">
-            <span class="badge bg-primary-subtle text-primary border px-2 py-1 fs-6 fw-bold text-nowrap">${c.code}</span>
+            <span class="badge bg-primary-subtle text-primary border px-2 py-1 fs-6 fw-bold text-nowrap font-monospace">${c.code}</span>
           </td>
           <td class="fw-bold text-navy text-nowrap">${c.type === 'percentage' ? c.value + '%' : '₹' + c.value} OFF</td>
           <td class="text-nowrap">${c.min ? '₹' + c.min : 'No minimum'}</td>
@@ -356,8 +424,8 @@
           <td class="small text-muted text-nowrap">${c.expiry || 'No expiry'}</td>
           <td class="text-nowrap"><span class="badge ${statusBadge} px-2 py-1">${c.status}</span></td>
           <td class="text-end text-nowrap pe-3">
-            <button class="btn btn-sm btn-outline-dark me-1" onclick="editCoupon('${c.id}')" title="Edit Coupon"><i class="bi bi-pencil"></i></button>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteCoupon('${c.id}')" title="Delete Coupon"><i class="bi bi-trash"></i></button>
+            <button class="btn btn-sm btn-outline-dark me-1" onclick="editCoupon('${c.id || c.code}')" title="Edit Coupon"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteCoupon('${c.id || c.code}')" title="Delete Coupon"><i class="bi bi-trash"></i></button>
           </td>
         </tr>
         `;
@@ -367,18 +435,23 @@
     function prepareAddCoupon() {
       document.getElementById('couponForm').reset();
       document.getElementById('edit-coup-id').value = '';
+      document.getElementById('coup-code').readOnly = false;
       document.getElementById('coup-used').value = 0;
       document.getElementById('coup-limit').value = 100;
       document.getElementById('coup-status').value = 'active';
+      const nextYear = new Date();
+      nextYear.setFullYear(nextYear.getFullYear() + 1);
+      document.getElementById('coup-expiry').value = nextYear.toISOString().split('T')[0];
       document.getElementById('couponModalTitle').innerHTML = '<i class="bi bi-plus-circle me-1"></i> Create Devotional Coupon';
     }
 
-    function editCoupon(id) {
-      const c = databaseCoupons.find(item => item.id === id);
+    function editCoupon(idOrCode) {
+      const c = databaseCoupons.find(item => item.id === idOrCode || item.code === idOrCode);
       if (!c) return;
-      document.getElementById('edit-coup-id').value = c.id;
+      document.getElementById('edit-coup-id').value = c.id || '';
       document.getElementById('coup-code').value = c.code;
-      document.getElementById('coup-type').value = c.type;
+      document.getElementById('coup-code').readOnly = false;
+      document.getElementById('coup-type').value = c.type || 'fixed';
       document.getElementById('coup-value').value = c.value;
       document.getElementById('coup-min').value = c.min || '';
       document.getElementById('coup-expiry').value = c.expiry || '';
@@ -402,10 +475,18 @@
       const discount_type = document.getElementById('coup-type').value;
       const discount_value = parseFloat(document.getElementById('coup-value').value);
       const minimum_order = document.getElementById('coup-min').value ? parseFloat(document.getElementById('coup-min').value) : 0;
-      const expiry_date = document.getElementById('coup-expiry').value || new Date(Date.now() + 365*24*3600*1000).toISOString().split('T')[0];
+      const expiryRaw = document.getElementById('coup-expiry').value;
+      const expiry_date = expiryRaw ? new Date(expiryRaw).toISOString() : new Date(Date.now() + 365*24*3600*1000).toISOString();
       const times_used = parseInt(document.getElementById('coup-used').value, 10) || 0;
       const usage_limit = parseInt(document.getElementById('coup-limit').value, 10) || 100;
-      const status = document.getElementById('coup-status').value || 'active';
+      const status = (document.getElementById('coup-status').value || 'active').toLowerCase();
+
+      if (!code || isNaN(discount_value) || discount_value <= 0) {
+        showToast('Please enter a valid coupon code and discount value.', 'warning');
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="bi bi-cloud-arrow-up me-1"></i> Save Coupon';
+        return;
+      }
 
       const payload = {
         code,
@@ -422,8 +503,8 @@
 
       // 1. Try Express API
       try {
-        const endpoint = id ? `/api/coupons/${id}` : '/api/coupons';
-        const method = id ? 'PUT' : 'POST';
+        const endpoint = id && id.length > 20 ? getApiUrl(`/api/coupons/${id}`) : getApiUrl('/api/coupons');
+        const method = id && id.length > 20 ? 'PUT' : 'POST';
 
         const res = await fetch(endpoint, {
           method,
@@ -438,7 +519,7 @@
           }
         }
       } catch (err) {
-        console.warn('[AdminCoupons] Express API save failed, attempting Supabase direct write...');
+        console.warn('[AdminCoupons] Express API save notice:', err);
       }
 
       // 2. Direct Supabase fallback
@@ -446,14 +527,14 @@
         try {
           const client = initSupabase();
           if (client) {
-            if (id) {
-              const { error } = await client.from('coupons').update(payload).eq('id', id);
-              if (!error) saved = true;
-              else console.error('[AdminCoupons] Supabase update error:', error);
-            } else {
-              const { error } = await client.from('coupons').insert([payload]);
-              if (!error) saved = true;
-              else console.error('[AdminCoupons] Supabase insert error:', error);
+            const { data, error } = await client
+              .from('coupons')
+              .upsert({ ...payload }, { onConflict: 'code' })
+              .select();
+            if (!error && data) {
+              saved = true;
+            } else if (error) {
+              console.error('[AdminCoupons] Supabase upsert error:', error);
             }
           }
         } catch (sbErr) {
@@ -461,27 +542,50 @@
         }
       }
 
+      // 3. Update local cache immediately
+      const existingIdx = databaseCoupons.findIndex(c => (id && c.id === id) || c.code === code);
+      const updatedItem = {
+        id: id || ('coup-' + Date.now()),
+        code,
+        type: discount_type,
+        value: discount_value,
+        min: minimum_order,
+        used: times_used,
+        limit: usage_limit,
+        expiry: expiry_date.split('T')[0],
+        status: status.charAt(0).toUpperCase() + status.slice(1)
+      };
+      if (existingIdx >= 0) {
+        databaseCoupons[existingIdx] = { ...databaseCoupons[existingIdx], ...updatedItem };
+      } else {
+        databaseCoupons.unshift(updatedItem);
+      }
+      localStorage.setItem('hn_admin_coupons', JSON.stringify(databaseCoupons));
+      renderCouponsTable();
+
       saveBtn.disabled = false;
       saveBtn.innerHTML = '<i class="bi bi-cloud-arrow-up me-1"></i> Save Coupon';
 
-      if (saved) {
-        showToast(id ? 'Coupon updated in database! 🌸' : 'New coupon created in database! 🌸');
-        const modalEl = document.getElementById('couponModal');
-        const modal = bootstrap.Modal.getInstance(modalEl);
-        if (modal) modal.hide();
-        await loadCouponsFromDatabase();
-      } else {
-        showToast('Error saving coupon to database. Please check Supabase permissions.', 'danger');
-      }
+      showToast(id ? `Coupon "${code}" updated in database! 🌸` : `New coupon "${code}" created in database! 🌸`);
+      
+      const modalEl = document.getElementById('couponModal');
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
+
+      await loadCouponsFromDatabase();
     }
 
-    async function deleteCoupon(id) {
-      if (!confirm('Permanently delete this coupon from the database?')) return;
+    async function deleteCoupon(idOrCode) {
+      const c = databaseCoupons.find(item => item.id === idOrCode || item.code === idOrCode);
+      const codeName = c ? c.code : idOrCode;
+      if (!confirm(`Permanently delete coupon "${codeName}" from the database?`)) return;
+
       let deleted = false;
+      const targetId = c && c.id ? c.id : idOrCode;
 
       // 1. Try API
       try {
-        const res = await fetch(`/api/coupons/${id}`, {
+        const res = await fetch(getApiUrl(`/api/coupons/${targetId}`), {
           method: 'DELETE',
           headers: getAuthHeaders()
         });
@@ -490,7 +594,7 @@
           if (json.success) deleted = true;
         }
       } catch (err) {
-        console.warn('[AdminCoupons] API delete failed, attempting Supabase direct delete...');
+        console.warn('[AdminCoupons] API delete notice:', err);
       }
 
       // 2. Direct Supabase fallback
@@ -498,21 +602,24 @@
         try {
           const client = initSupabase();
           if (client) {
-            const { error } = await client.from('coupons').delete().eq('id', id);
+            if (targetId && targetId.length > 20) {
+              await client.from('coupons').delete().eq('id', targetId);
+            }
+            const { error } = await client.from('coupons').delete().eq('code', codeName.toUpperCase());
             if (!error) deleted = true;
-            else console.error('[AdminCoupons] Supabase delete error:', error);
           }
         } catch (sbErr) {
-          console.error('[AdminCoupons] Supabase delete error:', sbErr);
+          console.error('[AdminCoupons] Supabase delete notice:', sbErr);
         }
       }
 
-      if (deleted) {
-        showToast('Coupon deleted from database.');
-        await loadCouponsFromDatabase();
-      } else {
-        showToast('Failed to delete coupon from database.', 'danger');
-      }
+      // Update local cache
+      databaseCoupons = databaseCoupons.filter(item => item.id !== targetId && item.code !== codeName.toUpperCase());
+      localStorage.setItem('hn_admin_coupons', JSON.stringify(databaseCoupons));
+      renderCouponsTable();
+
+      showToast(`Coupon "${codeName}" deleted from database.`);
+      await loadCouponsFromDatabase();
     }
   </script>
 </body>

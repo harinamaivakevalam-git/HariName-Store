@@ -13,13 +13,14 @@ exports.validateCoupon = async (req, res, next) => {
     const cleanCode = code.toUpperCase().trim();
     let coupon = null;
 
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       try {
-        const { data, error } = await supabase
+        const client = supabaseAdmin || supabase;
+        const { data, error } = await client
           .from('coupons')
           .select('*')
-          .eq('code', cleanCode)
-          .single();
+          .ilike('code', cleanCode)
+          .maybeSingle();
 
         if (!error && data) {
           coupon = data;
@@ -37,7 +38,7 @@ exports.validateCoupon = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Invalid coupon code.' });
     }
 
-    if (coupon.status !== 'active') {
+    if (coupon.status && coupon.status.toLowerCase() !== 'active') {
       return res.status(400).json({ success: false, message: 'This coupon is no longer active.' });
     }
 
@@ -49,7 +50,7 @@ exports.validateCoupon = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'This coupon has reached its maximum usage limit.' });
     }
 
-    const orderSubtotal = parseFloat(subtotal);
+    const orderSubtotal = parseFloat(subtotal) || 0;
     if (coupon.minimum_order && orderSubtotal < parseFloat(coupon.minimum_order)) {
       return res.status(400).json({
         success: false,
@@ -92,12 +93,12 @@ exports.getCoupons = async (req, res, next) => {
     if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       const client = supabaseAdmin || supabase;
       const { data, error } = await client.from('coupons').select('*').order('created_at', { ascending: false });
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         return res.json({ success: true, data });
       }
     }
 
-    const coupons = db.findAll('coupons').sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const coupons = db.findAll('coupons').sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
     res.json({ success: true, data: coupons });
   } catch (err) {
     next(err);
@@ -109,42 +110,58 @@ exports.createCoupon = async (req, res, next) => {
   try {
     const { code, description, discount_type, discount_value, minimum_order, maximum_discount, expiry_date, usage_limit, times_used, status } = req.body;
 
-    if (!code || !discount_type || discount_value === undefined || !expiry_date) {
-      return res.status(400).json({ success: false, message: 'Code, type, value, and expiry date are required.' });
+    if (!code || !discount_type || discount_value === undefined) {
+      return res.status(400).json({ success: false, message: 'Code, type, and value are required.' });
     }
 
     const cleanCode = code.toUpperCase().trim();
     const usedCount = parseInt(times_used, 10) || 0;
     const limitVal = usage_limit !== undefined && usage_limit !== '' && usage_limit !== null ? parseInt(usage_limit, 10) : 100;
     const cpnStatus = status ? status.toLowerCase().trim() : 'active';
+    const expiryIso = expiry_date ? new Date(expiry_date).toISOString() : new Date(Date.now() + 365*24*3600*1000).toISOString();
 
     if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       const client = supabaseAdmin || supabase;
       const { data: newCoupon, error } = await client
         .from('coupons')
-        .insert({
+        .upsert({
           code: cleanCode,
           description: description || '',
           discount_type,
           discount_value: parseFloat(discount_value),
           minimum_order: minimum_order ? parseFloat(minimum_order) : 0,
           maximum_discount: maximum_discount ? parseFloat(maximum_discount) : null,
-          expiry_date: new Date(expiry_date).toISOString(),
+          expiry_date: expiryIso,
           usage_limit: limitVal,
           times_used: usedCount,
           status: cpnStatus
-        })
+        }, { onConflict: 'code' })
         .select()
         .single();
 
       if (!error && newCoupon) {
+        // Also update local db
+        db.insert('coupons', newCoupon);
         return res.status(201).json({ success: true, message: 'Coupon created in Supabase.', data: newCoupon });
+      } else if (error) {
+        console.error('[couponController] Supabase insert error:', error);
       }
     }
 
     const existing = db.findOne('coupons', c => c.code.toUpperCase() === cleanCode);
     if (existing) {
-      return res.status(409).json({ success: false, message: 'A coupon with this code already exists.' });
+      const updated = db.update('coupons', existing.id, {
+        description: description || '',
+        discount_type,
+        discount_value: parseFloat(discount_value),
+        minimum_order: minimum_order ? parseFloat(minimum_order) : 0,
+        maximum_discount: maximum_discount ? parseFloat(maximum_discount) : null,
+        expiry_date: expiryIso,
+        usage_limit: limitVal,
+        times_used: usedCount,
+        status: cpnStatus
+      });
+      return res.status(200).json({ success: true, message: 'Coupon updated.', data: updated });
     }
 
     const newCoupon = db.insert('coupons', {
@@ -154,7 +171,7 @@ exports.createCoupon = async (req, res, next) => {
       discount_value: parseFloat(discount_value),
       minimum_order: minimum_order ? parseFloat(minimum_order) : 0,
       maximum_discount: maximum_discount ? parseFloat(maximum_discount) : null,
-      expiry_date: new Date(expiry_date).toISOString(),
+      expiry_date: expiryIso,
       usage_limit: limitVal,
       times_used: usedCount,
       status: cpnStatus
@@ -187,18 +204,51 @@ exports.updateCoupon = async (req, res, next) => {
 
     if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       const client = supabaseAdmin || supabase;
-      const { data, error } = await client
-        .from('coupons')
-        .update(cleanPayload)
-        .eq('id', id)
-        .select();
+      let data = null;
+      let error = null;
+
+      // 1. Try updating by ID if it's a UUID
+      if (id && id.length > 20) {
+        const resById = await client
+          .from('coupons')
+          .update(cleanPayload)
+          .eq('id', id)
+          .select();
+        data = resById.data;
+        error = resById.error;
+      }
+
+      // 2. If no matching ID, try updating by code
+      if ((!data || data.length === 0) && cleanPayload.code) {
+        const resByCode = await client
+          .from('coupons')
+          .update(cleanPayload)
+          .eq('code', cleanPayload.code)
+          .select();
+        data = resByCode.data;
+        error = resByCode.error;
+      }
+
+      // 3. If still not in Supabase, upsert by code
+      if ((!data || data.length === 0) && cleanPayload.code) {
+        const resUpsert = await client
+          .from('coupons')
+          .upsert({ ...cleanPayload }, { onConflict: 'code' })
+          .select();
+        data = resUpsert.data;
+        error = resUpsert.error;
+      }
 
       if (!error && data && data.length > 0) {
         return res.json({ success: true, message: 'Coupon updated in Supabase.', data: data[0] });
       }
     }
 
-    const updated = db.update('coupons', id, cleanPayload);
+    const updated = db.update('coupons', id, cleanPayload) || (cleanPayload.code ? db.findOne('coupons', c => c.code.toUpperCase() === cleanPayload.code) : null);
+    if (!updated && cleanPayload.code) {
+      const created = db.insert('coupons', { id, ...cleanPayload });
+      return res.json({ success: true, message: 'Coupon created.', data: created });
+    }
     if (!updated) return res.status(404).json({ success: false, message: 'Coupon not found.' });
     res.json({ success: true, message: 'Coupon updated.', data: updated });
   } catch (err) {
@@ -213,10 +263,12 @@ exports.deleteCoupon = async (req, res, next) => {
 
     if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       const client = supabaseAdmin || supabase;
-      const { error } = await client.from('coupons').delete().eq('id', id);
-      if (!error) {
-        return res.json({ success: true, message: 'Coupon deleted from Supabase.' });
+      if (id && id.length > 20) {
+        await client.from('coupons').delete().eq('id', id);
       }
+      // Also delete by code if id might be a code or slug
+      await client.from('coupons').delete().eq('code', id.toUpperCase().trim());
+      return res.json({ success: true, message: 'Coupon deleted from Supabase.' });
     }
 
     const deleted = db.delete('coupons', id);

@@ -268,9 +268,9 @@
     }
 
     function resolveCategoryFallbackImage(name, slug, img) {
-      if (img && img.trim() && !img.includes('unsplash.com') && !img.startsWith('data:') && !img.startsWith('blob:')) return img;
+      if (img && img.trim() && !img.startsWith('data:') && !img.startsWith('blob:')) return img;
       const s = ((name || '') + ' ' + (slug || '')).toLowerCase();
-      if (s.includes('mala') || s.includes('japa-mala')) return '/assets/images/cat_japa_malas.jpg';
+      if (s.includes('mala') || s.includes('japa')) return '/assets/images/cat_japa_malas.jpg';
       if (s.includes('keychain')) return '/assets/images/cat_keychains.jpg';
       if (s.includes('book') || s.includes('gita') || s.includes('shastra')) return '/assets/images/cat_books.jpg';
       if (s.includes('statue') || s.includes('deity') || s.includes('murti')) return '/assets/images/cat_deity_statues.jpg';
@@ -283,43 +283,55 @@
       let loaded = false;
       let remoteCategories = [];
 
-      // Clean stale cache with invalid mock IDs
-      try {
-        const cached = localStorage.getItem('hn_admin_categories');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed)) {
-            const cleaned = parsed.filter(c => c && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(c.id));
-            if (cleaned.length !== parsed.length) {
-              localStorage.removeItem('hn_admin_categories');
-            } else {
-              remoteCategories = cleaned;
-              loaded = true;
-            }
-          }
-        }
-      } catch (_) {}
-
       // 1. Backend API (primary source, Anycast resilient)
       try {
         const res = await fetch(getApiUrl('/api/categories'));
         if (res.ok) {
           const json = await res.json();
-          if (json.success && Array.isArray(json.data)) {
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
             remoteCategories = json.data;
             loaded = true;
           }
         }
       } catch (_) {}
 
+      // 2. Direct Supabase Fallback
+      if (!loaded) {
+        try {
+          const sb = initSupabase();
+          if (sb) {
+            const { data: sbCats, error: cErr } = await sb.from('categories').select('*').neq('status', 'archived').order('name');
+            if (!cErr && Array.isArray(sbCats) && sbCats.length > 0) {
+              remoteCategories = sbCats;
+              loaded = true;
+            }
+          }
+        } catch (_) {}
+      }
+
+      // 3. Local Cache Fallback
+      if (!loaded) {
+        try {
+          const cached = localStorage.getItem('hn_admin_categories');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              remoteCategories = parsed;
+              loaded = true;
+            }
+          }
+        } catch (_) {}
+      }
+
       databaseCategories = remoteCategories.map(c => {
         const count = c.product_count !== undefined ? c.product_count : (c.count || 0);
+        const resolvedImg = resolveCategoryFallbackImage(c.name, c.slug, c.image_url || c.image);
         return {
           id: c.id,
           name: c.name,
           slug: c.slug,
-          image: resolveCategoryFallbackImage(c.name, c.slug, c.image_url || c.image),
-          image_url: resolveCategoryFallbackImage(c.name, c.slug, c.image_url || c.image),
+          image: resolvedImg,
+          image_url: resolvedImg,
           count: count,
           product_count: count,
           desc: c.description || c.desc || 'Sacred collection',
@@ -329,8 +341,7 @@
 
       if (databaseCategories.length > 0) {
         localStorage.setItem('hn_admin_categories', JSON.stringify(databaseCategories));
-      } else {
-        localStorage.removeItem('hn_admin_categories');
+        localStorage.setItem('hn_live_categories', JSON.stringify(databaseCategories));
       }
       renderCategoriesTable();
     }

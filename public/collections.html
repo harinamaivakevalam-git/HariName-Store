@@ -117,9 +117,21 @@
       const grid = document.getElementById('hn-collections-grid');
       if (!grid) return;
 
-      const cats = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.categories)) 
+      let cats = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.categories)) 
         ? HARINAMA_DATA.categories.filter(c => c.slug !== 'all-products' && c.id !== 'cat-all')
         : [];
+
+      if (cats.length === 0) {
+        try {
+          const cached = localStorage.getItem('hn_admin_categories') || localStorage.getItem('hn_live_categories');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              cats = parsed.filter(c => c.slug !== 'all-products' && c.id !== 'cat-all');
+            }
+          }
+        } catch (_) {}
+      }
 
       if (cats.length === 0) {
         grid.innerHTML = `
@@ -134,21 +146,22 @@
       }
 
       grid.innerHTML = cats.map(c => {
-        const catImg = c.image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
-        const countText = `${c.count || 0} Products`;
+        const catImg = c.image || c.image_url || '/assets/images/cat_keychains.jpg';
+        const countText = `${c.count !== undefined ? c.count : (c.product_count || 0)} Products`;
+        const linkUrl = `/shop.html?category=${encodeURIComponent(c.slug || c.id)}`;
         return `
           <div class="col-md-6 col-lg-3">
             <div class="hn-collection-card">
               <div class="hn-collection-img-wrap">
-                <img src="${catImg}" alt="${c.name}" class="hn-collection-img">
+                <img src="${catImg}" alt="${c.name}" class="hn-collection-img" onerror="this.src='/assets/images/cat_keychains.jpg'">
                 <span class="hn-collection-badge">${countText}</span>
               </div>
               <div class="p-4 d-flex flex-column flex-grow-1">
                 <h4 class="fw-bold mb-2 text-navy" style="font-family: var(--hn-font-serif);">${c.name}</h4>
                 <p class="text-secondary small mb-4 flex-grow-1">
-                  ${c.desc || `Handcrafted devotional items and sacred treasures in ${c.name}.`}
+                  ${c.desc || c.description || `Handcrafted devotional items and sacred treasures in ${c.name}.`}
                 </p>
-                <a href="/shop.html?category=${encodeURIComponent(c.slug || c.id)}" class="btn btn-gold w-100">
+                <a href="${linkUrl}" class="btn btn-gold w-100">
                   Explore Collection <i class="bi bi-arrow-right ms-1"></i>
                 </a>
               </div>

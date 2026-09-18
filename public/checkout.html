@@ -784,8 +784,18 @@
             ? window.supabase.createClient('https://wnaqfadlxrrvvjvqqbch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM') 
             : null);
           if (sb) {
+            let orderUserId = null;
+            try {
+              const u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}');
+              if (u && u.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u.id)) {
+                orderUserId = u.id;
+              }
+            } catch (_) {}
+
+            const addrObj = { name, phone, email, address_line_1: address, village, city, state, pin };
             const { data: insertedOrder, error: orderErr } = await sb.from('orders').insert({
               order_number: finalOrderNum,
+              user_id: orderUserId,
               guest_name: name,
               guest_email: email,
               subtotal,
@@ -796,23 +806,38 @@
               payment_status: isCod ? 'pending' : 'paid',
               payment_method: isCod ? 'cod' : 'razorpay',
               order_status: 'confirmed',
-              shipping_address: { name, phone, email, address_line_1: address, city, state, pin },
+              shipping_address: addrObj,
+              billing_address: addrObj,
               tracking_number: trackingNum,
               tracking_url: `/order-tracking.html?order=${finalOrderNum}`
-            }).select().single();
+            }).select().maybeSingle();
 
             if (!orderErr && insertedOrder && insertedOrder.id) {
               // Insert line items
-              const lineItems = cart.map(i => ({
-                order_id: insertedOrder.id,
-                product_id: (i.id && i.id.length === 36) ? i.id : null,
-                product_name: i.name,
-                product_image: i.image,
-                quantity: i.qty || 1,
-                price: i.price,
-                total: (i.price || 0) * (i.qty || 1)
-              }));
-              await sb.from('order_items').insert(lineItems);
+              const lineItems = [];
+              for (const i of cart) {
+                let pId = (i.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(i.id)) ? i.id : null;
+                if (!pId) {
+                  try {
+                    const { data: matchedProd } = await sb.from('products').select('id').or(`slug.eq.${i.id},name.eq.${i.name}`).maybeSingle();
+                    if (matchedProd) pId = matchedProd.id;
+                  } catch (_) {}
+                }
+                if (pId) {
+                  lineItems.push({
+                    order_id: insertedOrder.id,
+                    product_id: pId,
+                    product_name: i.name || 'Devotional Item',
+                    product_image: i.image || '',
+                    quantity: i.qty || 1,
+                    price: parseFloat(i.price) || 0,
+                    total: (parseFloat(i.price) || 0) * (i.qty || 1)
+                  });
+                }
+              }
+              if (lineItems.length > 0) {
+                await sb.from('order_items').insert(lineItems);
+              }
             }
 
             // If coupon applied, increment times_used

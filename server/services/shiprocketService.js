@@ -467,6 +467,28 @@ class ShiprocketService {
       raw: result
     };
   }
+  /**
+   * 10. Get Configured Pickup Locations
+   * Endpoint: GET /settings/company/pickup
+   */
+  async getPickupLocations() {
+    console.log('[Shiprocket Service] Fetching company pickup addresses...');
+    const result = await this.request('/settings/company/pickup', {
+      method: 'GET'
+    });
+    return result;
+  }
+
+  /**
+   * 11. Get Orders List from Shiprocket
+   * Endpoint: GET /orders
+   */
+  async getOrders(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const endpoint = query ? `/orders?${query}` : '/orders';
+    const result = await this.request(endpoint, { method: 'GET' });
+    return result;
+  }
 }
 
 module.exports = new ShiprocketService();

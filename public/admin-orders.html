@@ -469,10 +469,45 @@
 
       const mergedMap = new Map();
 
+      // 1. Initial cached browser storage (admin + customer placed orders)
+      try {
+        const storedAdmin = localStorage.getItem('harinama_admin_orders');
+        if (storedAdmin) {
+          const parsed = JSON.parse(storedAdmin);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(o => {
+              const norm = normalizeOrder(o);
+              if (norm) mergedMap.set(norm.id, norm);
+            });
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const storedCustomer = localStorage.getItem('hn_orders');
+        if (storedCustomer) {
+          const parsedCust = JSON.parse(storedCustomer);
+          if (Array.isArray(parsedCust)) {
+            parsedCust.forEach(o => {
+              const norm = normalizeOrder(o);
+              if (norm) mergedMap.set(norm.id, norm);
+            });
+          }
+        }
+      } catch (e) {}
+
       // Render fast initial cached view
       localOrders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
       updateMetricCounters();
       renderOrdersTable(localOrders);
+
+      function getApiUrl(path) {
+        if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
+        if (window.location.port && window.location.port !== '5000' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+          return `http://${window.location.hostname}:5000${path}`;
+        }
+        return path;
+      }
 
       // 2. Fetch from Live Backend Server API (/api/orders/admin/all)
       try {
@@ -487,7 +522,7 @@
           'Authorization': 'Bearer ' + token
         };
 
-        const apiRes = await fetch('/api/orders/admin/all?limit=100', { headers });
+        const apiRes = await fetch(getApiUrl('/api/orders/admin/all?limit=100'), { headers });
         const cType = apiRes.headers.get('content-type') || '';
         if (apiRes.ok && cType.includes('application/json')) {
           const json = await apiRes.json();

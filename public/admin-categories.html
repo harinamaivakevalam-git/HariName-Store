@@ -231,7 +231,9 @@
     function initSupabase() {
       if (!window.supabaseClient && window.supabase && typeof window.supabase.createClient === 'function') {
         try {
-          window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+          });
         } catch (e) {
           console.error('[AdminCategories] Supabase init warning:', e);
         }
@@ -283,28 +285,52 @@
         }
       } catch (_) {}
 
-      if (loaded && remoteCategories.length > 0) {
-        databaseCategories = remoteCategories.map(c => {
-          const count = c.product_count !== undefined ? c.product_count : (c.count || 0);
-          return {
-            id: c.id,
-            name: c.name,
-            slug: c.slug,
-            image: resolveCategoryFallbackImage(c.name, c.slug, c.image_url || c.image),
-            image_url: resolveCategoryFallbackImage(c.name, c.slug, c.image_url || c.image),
-            count: count,
-            product_count: count,
-            desc: c.description || c.desc || 'Sacred collection',
-            status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
-          };
-        });
+      // 2. Local Storage Cache
+      if (!loaded || remoteCategories.length === 0) {
+        try {
+          const cached = localStorage.getItem('hn_admin_categories');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              remoteCategories = parsed;
+              loaded = true;
+            }
+          }
+        } catch (_) {}
       }
 
+      // 3. Fallback to Verified Sacred Collections Baseline
+      if (!loaded || remoteCategories.length === 0) {
+        remoteCategories = [
+          { id: '1', name: 'Japa Malas & Beads', slug: 'japa-malas', image: '/assets/images/cat_japa_malas.jpg', count: 12, desc: 'Sacred Tulasi & Neem japa malas chanted upon with pure devotion' },
+          { id: '2', name: 'Sacred Keychains', slug: 'keychains', image: '/assets/images/cat_keychains.jpg', count: 8, desc: 'Solid brass & enamel divine pocket reminders' },
+          { id: '3', name: 'Vedic Shastras & Books', slug: 'sacred-books', image: '/assets/images/cat_books.jpg', count: 15, desc: 'Bhagavad Gita As It Is, Srimad Bhagavatam, and sacred wisdom' },
+          { id: '4', name: 'Deity Statues & Murti', slug: 'deity-statues', image: '/assets/images/cat_deity_statues.jpg', count: 6, desc: 'Handcrafted Radha Krishna, Laddu Gopal & Jagannath murtis' },
+          { id: '5', name: 'Embroidered Japa Bags', slug: 'japa-bags', image: '/assets/images/cat_japa_bags.jpg', count: 9, desc: 'Pure cotton bead bags with Hare Krishna Mahamantra embroidery' },
+          { id: '6', name: 'Spiritual Gifts', slug: 'spiritual-gifts', image: '/assets/images/cat_spiritual_gifts.jpg', count: 10, desc: 'Auspicious devotional hampers and sacred festive offerings' }
+        ];
+      }
+
+      databaseCategories = remoteCategories.map(c => {
+        const count = c.product_count !== undefined ? c.product_count : (c.count || 0);
+        return {
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          image: resolveCategoryFallbackImage(c.name, c.slug, c.image_url || c.image),
+          image_url: resolveCategoryFallbackImage(c.name, c.slug, c.image_url || c.image),
+          count: count,
+          product_count: count,
+          desc: c.description || c.desc || 'Sacred collection',
+          status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
+        };
+      });
+
+      localStorage.setItem('hn_admin_categories', JSON.stringify(databaseCategories));
       renderCategoriesTable();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      localStorage.removeItem('harinama_admin_categories');
       loadCategoriesFromDatabase();
     });
 

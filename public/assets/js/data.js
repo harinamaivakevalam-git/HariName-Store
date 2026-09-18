@@ -238,8 +238,8 @@ HARINAMA_DATA.syncWithApi = async function() {
   // 1. Try Backend Express API
   try {
     const [prodRes, catRes] = await Promise.allSettled([
-      fetch('/api/products?limit=100').then(r => r.json()),
-      fetch('/api/categories').then(r => r.json())
+      fetch('/api/products?limit=100').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/categories').then(r => r.ok ? r.json() : null).catch(() => null)
     ]);
 
     const resolveCategoryImage = (c) => {

@@ -314,7 +314,9 @@
     if (window.supabase && typeof window.supabase.createClient === 'function') {
       try {
         if (!window.supabaseClient) {
-          window.supabaseClient = window.supabase.createClient(SUPABASE_AUTH_URL, SUPABASE_AUTH_ANON_KEY);
+          window.supabaseClient = window.supabase.createClient(SUPABASE_AUTH_URL, SUPABASE_AUTH_ANON_KEY, {
+            auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+          });
         }
         const sb = window.supabaseClient;
         if (sb && sb.auth) {

@@ -39,44 +39,50 @@ exports.createOrder = async (req, res, next) => {
 
     for (const item of items) {
       let product = null;
-      let availableStock = 100;
-      let unitPrice = 0;
+      let unitPrice = parseFloat(item.price) || 0;
 
       if (isSupabaseConfigured && supabaseAdmin) {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.product_id);
+        const isUuid = item.product_id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.product_id);
         let q = supabaseAdmin.from('products').select('*');
-        if (isUuid) q = q.eq('id', item.product_id);
-        else q = q.or(`slug.eq.${item.product_id},sku.eq.${item.product_id}`);
+        if (isUuid) {
+          q = q.eq('id', item.product_id);
+        } else if (item.product_id) {
+          q = q.or(`slug.eq.${item.product_id},sku.eq.${item.product_id}`);
+        } else if (item.product_name) {
+          q = q.ilike('name', `%${item.product_name}%`);
+        }
         const { data: dbProd } = await q.maybeSingle();
         if (dbProd) product = dbProd;
       }
 
-      if (!product) {
-        product = db.findById('products', item.product_id) || db.findOne('products', p => p.slug === item.product_id);
+      if (!product && item.product_id) {
+        product = db.findById('products', item.product_id) || db.findOne('products', p => p.slug === item.product_id || p.sku === item.product_id);
       }
 
-      if (!product || product.status === 'inactive' || product.status === 'archived') {
-        return res.status(400).json({
-          success: false,
-          message: `Product "${item.product_name || item.product_id}" is no longer available.`
-        });
+      if (product) {
+        if (product.status === 'inactive' || product.status === 'archived') {
+          return res.status(400).json({
+            success: false,
+            message: `Product "${item.product_name || product.name || item.product_id}" is currently inactive.`
+          });
+        }
+        unitPrice = parseFloat(product.price) || unitPrice;
       }
 
-      unitPrice = parseFloat(product.price);
-      availableStock = product.stock != null ? product.stock : 100;
-
-      const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
+      const qty = Math.max(1, parseInt(item.quantity || item.qty, 10) || 1);
       const itemTotal = unitPrice * qty;
       subtotal += itemTotal;
 
-      const primaryImage = product.image || product.primary_image || item.image || '';
+      const primaryImage = (product && (product.image || product.primary_image)) || item.product_image || item.image || '';
+      const prodName = (product && (product.name || product.title)) || item.product_name || item.name || 'Sacred Devotional Item';
+      const prodSku = (product && product.sku) || item.sku || `HN-SKU-${Date.now().toString().slice(-4)}`;
 
       orderItemsToCreate.push({
-        product_id: product.id,
+        product_id: (product && product.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(product.id)) ? product.id : null,
         variant_id: null,
-        product_name: product.name || product.title,
+        product_name: prodName,
         product_image: primaryImage,
-        sku: product.sku || 'HN-SKU',
+        sku: prodSku,
         variant_info: item.material ? { material: item.material } : null,
         quantity: qty,
         price: unitPrice,
@@ -87,22 +93,22 @@ exports.createOrder = async (req, res, next) => {
     // 2. Coupon Discount Calculation
     let discountAmount = 0;
     let appliedCoupon = null;
-
     let matchedCouponObj = null;
 
     if (coupon_code) {
+      const cleanCpnCode = coupon_code.toUpperCase().trim();
       if (isSupabaseConfigured && supabaseAdmin) {
         const { data: cpn } = await supabaseAdmin
           .from('coupons')
           .select('*')
-          .eq('code', coupon_code.toUpperCase().trim())
-          .eq('status', 'active')
+          .ilike('code', cleanCpnCode)
           .maybeSingle();
 
         const isExpired = cpn && cpn.expiry_date && new Date(cpn.expiry_date) < new Date();
         const isLimitReached = cpn && cpn.usage_limit && (cpn.times_used || 0) >= cpn.usage_limit;
+        const isActive = cpn && (!cpn.status || cpn.status.toLowerCase() === 'active');
 
-        if (cpn && !isExpired && !isLimitReached) {
+        if (cpn && isActive && !isExpired && !isLimitReached) {
           const minOrder = parseFloat(cpn.minimum_order || 0);
           if (subtotal >= minOrder) {
             if (cpn.discount_type === 'percentage') {
@@ -115,15 +121,18 @@ exports.createOrder = async (req, res, next) => {
             }
             discountAmount = Math.min(discountAmount, subtotal);
             appliedCoupon = cpn.code;
-            matchedCouponObj = { source: 'supabase', id: cpn.id, times_used: cpn.times_used || 0 };
+            matchedCouponObj = { source: 'supabase', id: cpn.id, code: cpn.code, times_used: cpn.times_used || 0 };
           }
         }
-      } else {
-        const coupon = db.findOne('coupons', c => c.code.toUpperCase() === coupon_code.toUpperCase().trim());
+      }
+
+      if (!matchedCouponObj) {
+        const coupon = db.findOne('coupons', c => c.code.toUpperCase() === cleanCpnCode);
         const isExpired = coupon && coupon.expiry_date && new Date(coupon.expiry_date) < new Date();
         const isLimitReached = coupon && coupon.usage_limit && (coupon.times_used || 0) >= coupon.usage_limit;
+        const isActive = coupon && (!coupon.status || coupon.status.toLowerCase() === 'active');
 
-        if (coupon && coupon.status === 'active' && !isExpired && !isLimitReached) {
+        if (coupon && isActive && !isExpired && !isLimitReached) {
           const minOrder = parseFloat(coupon.minimum_order || 0);
           if (subtotal >= minOrder) {
             if (coupon.discount_type === 'percentage') {
@@ -136,7 +145,7 @@ exports.createOrder = async (req, res, next) => {
             }
             discountAmount = Math.min(discountAmount, subtotal);
             appliedCoupon = coupon.code;
-            matchedCouponObj = { source: 'db', id: coupon.id, times_used: coupon.times_used || 0 };
+            matchedCouponObj = { source: 'db', id: coupon.id, code: coupon.code, times_used: coupon.times_used || 0 };
           }
         }
       }
@@ -315,6 +324,15 @@ exports.createOrder = async (req, res, next) => {
       } catch (sbErr) {
         console.warn('[Database] Supabase transaction failed:', sbErr.message);
       }
+    }
+
+    if (matchedCouponObj) {
+      try {
+        const localCpn = db.findOne('coupons', c => c.code.toUpperCase() === (appliedCoupon || '').toUpperCase());
+        if (localCpn) {
+          db.update('coupons', localCpn.id, { times_used: (localCpn.times_used || 0) + 1 });
+        }
+      } catch (_) {}
     }
 
     const actualTxnId = transaction_id || payment_details.razorpay_payment_id || `txn_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;

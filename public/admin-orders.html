@@ -511,11 +511,17 @@
 
       // 2. Fetch from Live Backend Server API (/api/orders/admin/all)
       try {
-        const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token') || 'admin-portal-session';
+        const storedToken = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+        const token = (storedToken && storedToken.length > 20) ? storedToken : 'admin-portal-session';
         let userEmail = 'harinamaivakevalam@gmail.com';
         try {
           const u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}');
-          if (u && u.email) userEmail = u.email;
+          if (u && u.email) {
+            const e = String(u.email).toLowerCase().trim();
+            if (['katturojuanilkumar@gmail.com', 'harinamaivakevalam@gmail.com', 'admin@harinama.com'].includes(e)) {
+              userEmail = e;
+            }
+          }
         } catch (_) {}
         const headers = {
           'x-admin-email': userEmail,

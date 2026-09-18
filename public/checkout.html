@@ -702,6 +702,17 @@
         notes: isCod ? 'Cash on Delivery devotional package.' : 'Prepaid online order.'
       };
 
+      function getApiUrl(path) {
+        if (typeof window !== 'undefined') {
+          if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
+          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            if (window.location.port === '5000') return path;
+            return 'http://localhost:5000' + path;
+          }
+        }
+        return path;
+      }
+
       // Helper to submit finalized order to backend and redirect
       async function finalizeAndRedirect(orderNumberToUse, paymentDetails = null) {
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Confirming Sacred Order...';
@@ -711,9 +722,10 @@
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
         let finalOrderNum = orderNumberToUse;
+        let backendOrderSuccess = false;
 
         try {
-          const resp = await fetch('/api/orders', {
+          const resp = await fetch(getApiUrl('/api/orders'), {
             method: 'POST',
             headers: headers,
             body: JSON.stringify({
@@ -722,13 +734,15 @@
                 product_name: i.name,
                 product_image: i.image,
                 quantity: i.qty || 1,
-                price: i.price
+                price: i.price,
+                material: i.material || 'Standard'
               })),
               shipping_address: {
                 name,
                 phone,
                 email,
                 address_line_1: address,
+                village,
                 city,
                 state,
                 pin
@@ -745,6 +759,8 @@
             const result = await resp.json();
             if (result.success && result.data?.order_number) {
               finalOrderNum = result.data.order_number;
+              backendOrderSuccess = true;
+              if (result.data.tracking_number) trackingNum = result.data.tracking_number;
             }
           }
         } catch (apiErr) {
@@ -769,7 +785,6 @@
 
         // 2. Save to Admin order list so Admin Dashboard immediately reflects it!
         let adminOrders = JSON.parse(localStorage.getItem('harinama_admin_orders') || '[]');
-        // Check if already in adminOrders
         const existingIdx = adminOrders.findIndex(o => (o.id === finalOrderNum || o.order_number === finalOrderNum));
         if (existingIdx > -1) {
           adminOrders[existingIdx] = orderData;
@@ -778,52 +793,46 @@
         }
         localStorage.setItem('harinama_admin_orders', JSON.stringify(adminOrders));
 
-        // 3. Direct client sync to Supabase database if available
-        try {
-          const sb = window.supabaseClient || (window.supabase && typeof window.supabase.createClient === 'function' 
-            ? window.supabase.createClient('https://wnaqfadlxrrvvjvqqbch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM') 
-            : null);
-          if (sb) {
-            let orderUserId = null;
-            try {
-              const u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}');
-              if (u && u.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u.id)) {
-                orderUserId = u.id;
-              }
-            } catch (_) {}
-
-            const addrObj = { name, phone, email, address_line_1: address, village, city, state, pin };
-            const { data: insertedOrder, error: orderErr } = await sb.from('orders').insert({
-              order_number: finalOrderNum,
-              user_id: orderUserId,
-              guest_name: name,
-              guest_email: email,
-              subtotal,
-              discount: checkoutDiscount,
-              shipping_fee: shipping,
-              tax: 0,
-              total,
-              payment_status: isCod ? 'pending' : 'paid',
-              payment_method: isCod ? 'cod' : 'razorpay',
-              order_status: 'confirmed',
-              shipping_address: addrObj,
-              billing_address: addrObj,
-              tracking_number: trackingNum,
-              tracking_url: `/order-tracking.html?order=${finalOrderNum}`
-            }).select().maybeSingle();
-
-            if (!orderErr && insertedOrder && insertedOrder.id) {
-              // Insert line items
-              const lineItems = [];
-              for (const i of cart) {
-                let pId = (i.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(i.id)) ? i.id : null;
-                if (!pId) {
-                  try {
-                    const { data: matchedProd } = await sb.from('products').select('id').or(`slug.eq.${i.id},name.eq.${i.name}`).maybeSingle();
-                    if (matchedProd) pId = matchedProd.id;
-                  } catch (_) {}
+        // 3. Direct client sync to Supabase database if backend did not process
+        if (!backendOrderSuccess) {
+          try {
+            const sb = window.supabaseClient || (window.supabase && typeof window.supabase.createClient === 'function' 
+              ? window.supabase.createClient('https://wnaqfadlxrrvvjvqqbch.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM') 
+              : null);
+            if (sb) {
+              let orderUserId = null;
+              try {
+                const sessionUser = sb.auth && typeof sb.auth.getUser === 'function' ? (await sb.auth.getUser())?.data?.user : null;
+                if (sessionUser && sessionUser.id) {
+                  orderUserId = sessionUser.id;
                 }
-                if (pId) {
+              } catch (_) {}
+
+              const addrObj = { name, phone, email, address_line_1: address, village, city, state, pin };
+              const { data: insertedOrder, error: orderErr } = await sb.from('orders').insert({
+                order_number: finalOrderNum,
+                user_id: orderUserId, // Null for anon so RLS passes
+                guest_name: name,
+                guest_email: email,
+                subtotal,
+                discount: checkoutDiscount,
+                shipping_fee: shipping,
+                tax: 0,
+                total,
+                payment_status: isCod ? 'pending' : 'paid',
+                payment_method: isCod ? 'cod' : 'razorpay',
+                order_status: 'confirmed',
+                shipping_address: addrObj,
+                billing_address: addrObj,
+                tracking_number: trackingNum,
+                tracking_url: `/order-tracking.html?order=${finalOrderNum}`
+              }).select().maybeSingle();
+
+              if (!orderErr && insertedOrder && insertedOrder.id) {
+                // Insert line items
+                const lineItems = [];
+                for (const i of cart) {
+                  let pId = (i.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(i.id)) ? i.id : null;
                   lineItems.push({
                     order_id: insertedOrder.id,
                     product_id: pId,
@@ -834,19 +843,19 @@
                     total: (parseFloat(i.price) || 0) * (i.qty || 1)
                   });
                 }
+                if (lineItems.length > 0) {
+                  await sb.from('order_items').insert(lineItems);
+                }
               }
-              if (lineItems.length > 0) {
-                await sb.from('order_items').insert(lineItems);
-              }
-            }
 
-            // If coupon applied, increment times_used
-            if (checkoutCouponCode) {
-              sb.rpc('increment_coupon_usage', { coupon_code: checkoutCouponCode }).catch(() => {});
+              // If coupon applied, increment times_used
+              if (checkoutCouponCode) {
+                sb.rpc('increment_coupon_usage', { coupon_code: checkoutCouponCode }).catch(() => {});
+              }
             }
+          } catch (sbE) {
+            console.warn('[Supabase] Database sync note:', sbE);
           }
-        } catch (sbE) {
-          console.warn('[Supabase] Database sync note:', sbE);
         }
 
         // Save address to account if checkbox checked

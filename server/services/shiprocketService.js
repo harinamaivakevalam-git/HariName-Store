@@ -1,7 +1,4 @@
-/**
- * Shiprocket Logistics & Order Fulfillment Service
- * Production-ready backend module for authenticating and communicating with Shiprocket API v2
- */
+require('dotenv').config();
 
 const SHIPROCKET_API_BASE = 'https://apiv2.shiprocket.in/v1/external';
 

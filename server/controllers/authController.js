@@ -459,3 +459,115 @@ exports.resetPassword = (req, res, next) => {
     next(err);
   }
 };
+
+// Google OAuth / Google Identity Services Sign-In
+exports.googleAuth = async (req, res, next) => {
+  try {
+    const { credential, email, name, avatar, googleId } = req.body;
+    let userEmail = email;
+    let userName = name;
+    let userAvatar = avatar;
+
+    // Decode Google ID Token if passed via Google Identity Services
+    if (credential) {
+      try {
+        const decoded = jwt.decode(credential);
+        if (decoded && decoded.email) {
+          userEmail = decoded.email;
+          userName = decoded.name || decoded.given_name || userName;
+          userAvatar = decoded.picture || userAvatar;
+        }
+      } catch (decErr) {
+        console.warn('[authController] Google token decode warning:', decErr.message);
+      }
+    }
+
+    if (!userEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid Google email is required for Google Sign-In.'
+      });
+    }
+
+    const cleanEmail = userEmail.toLowerCase().trim();
+    const finalName = (userName || cleanEmail.split('@')[0]).trim();
+    const finalAvatar = userAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80';
+
+    // 1. Check or create in Supabase if configured and reachable (Fast timeout)
+    if (isSupabaseConfigured && supabaseAdmin) {
+      try {
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Supabase timeout')), 1200));
+        const sbQuery = supabaseAdmin
+          .from('profiles')
+          .select('*')
+          .eq('email', cleanEmail)
+          .limit(1);
+
+        const { data: existingProfiles } = await Promise.race([sbQuery, timeoutPromise]);
+
+        if (existingProfiles && existingProfiles.length > 0) {
+          const profile = existingProfiles[0];
+          const token = generateToken({ id: profile.id, email: cleanEmail, role: profile.role || 'customer' });
+          return res.json({
+            success: true,
+            message: 'Signed in with Google successfully! 🌸',
+            token,
+            user: {
+              id: profile.id,
+              name: profile.name || finalName,
+              email: cleanEmail,
+              phone: profile.phone || '',
+              avatar: profile.avatar_url || finalAvatar,
+              role: profile.role || 'customer'
+            }
+          });
+        }
+      } catch (sbErr) {
+        // Fallback directly to high-speed local store without blocking
+      }
+    }
+
+
+    // 2. Local Database Find or Create
+    let user = db.findOne('users', u => u.email.toLowerCase() === cleanEmail);
+    if (!user) {
+      user = db.insert('users', {
+        name: finalName,
+        email: cleanEmail,
+        avatar: finalAvatar,
+        role: 'customer',
+        status: 'active',
+        auth_provider: 'google',
+        google_id: googleId || '',
+        created_at: new Date().toISOString()
+      });
+    } else {
+      // Update avatar/name if not set
+      const updates = {};
+      if (!user.avatar || user.avatar.includes('unsplash')) updates.avatar = finalAvatar;
+      if (!user.name) updates.name = finalName;
+      if (Object.keys(updates).length > 0) {
+        user = db.update('users', user.id, updates) || user;
+      }
+    }
+
+    const token = generateToken(user);
+
+    return res.json({
+      success: true,
+      message: 'Signed in with Google successfully! 🌸',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone || '',
+        avatar: user.avatar,
+        role: user.role || 'customer'
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+

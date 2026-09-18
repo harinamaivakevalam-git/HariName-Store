@@ -154,22 +154,34 @@ exports.updateCategory = async (req, res, next) => {
 
     if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       const client = supabaseAdmin || supabase;
-      const updates = { ...req.body, updated_at: new Date().toISOString() };
-      delete updates.id;
-      delete updates.products;
-      if (updates.image && !updates.image_url) {
-        updates.image_url = updates.image;
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      let targetId = null;
+
+      if (isUuid) {
+        targetId = id;
+      } else {
+        const { data: rec } = await client.from('categories').select('id').eq('slug', id).maybeSingle();
+        if (rec) targetId = rec.id;
       }
 
-      const { data, error } = await client
-        .from('categories')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
+      if (targetId) {
+        const updates = { ...req.body, updated_at: new Date().toISOString() };
+        delete updates.id;
+        delete updates.products;
+        if (updates.image && !updates.image_url) {
+          updates.image_url = updates.image;
+        }
 
-      if (!error && data) {
-        return res.json({ success: true, message: 'Category updated in Supabase.', data });
+        const { data, error } = await client
+          .from('categories')
+          .update(updates)
+          .eq('id', targetId)
+          .select()
+          .single();
+
+        if (!error && data) {
+          return res.json({ success: true, message: 'Category updated in Supabase.', data });
+        }
       }
     }
 
@@ -189,9 +201,21 @@ exports.deleteCategory = async (req, res, next) => {
 
     if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       const client = supabaseAdmin || supabase;
-      const { error } = await client.from('categories').delete().eq('id', id);
-      if (!error) {
-        return res.json({ success: true, message: 'Category deleted from Supabase.' });
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      let targetId = null;
+
+      if (isUuid) {
+        targetId = id;
+      } else {
+        const { data: rec } = await client.from('categories').select('id').eq('slug', id).maybeSingle();
+        if (rec) targetId = rec.id;
+      }
+
+      if (targetId) {
+        const { error } = await client.from('categories').delete().eq('id', targetId);
+        if (!error) {
+          return res.json({ success: true, message: 'Category deleted from Supabase.' });
+        }
       }
     }
 

@@ -409,6 +409,15 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       localStorage.removeItem('harinama_admin_products');
+      try {
+        const cached = localStorage.getItem('hn_live_products');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.some(p => p && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p.id))) {
+            localStorage.removeItem('hn_live_products');
+          }
+        }
+      } catch (_) {}
       renderImageSlots();
       await loadCategoriesIntoDropdown();
       await loadProductsFromDatabase();
@@ -796,10 +805,12 @@
         return;
       }
 
-      const id = document.getElementById('edit-prod-id').value;
+      const id = document.getElementById('edit-prod-id').value.trim();
       const name = document.getElementById('prod-name').value.trim();
       const catSelect = document.getElementById('prod-category');
-      const selectedCatId = catSelect && catSelect.value ? catSelect.value : null;
+      const rawCatId = catSelect && catSelect.value ? catSelect.value.trim() : null;
+      const isCatUuid = rawCatId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawCatId);
+      const selectedCatId = isCatUuid ? rawCatId : null;
       const selectedCatName = catSelect && catSelect.selectedIndex >= 0 ? catSelect.options[catSelect.selectedIndex].text : 'Devotional Items';
 
       const price = parseFloat(document.getElementById('prod-price').value) || 0;
@@ -834,150 +845,146 @@
       const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
       const productSlug = id ? (databaseProducts.find(p => p.id === id)?.slug || baseSlug) : `${baseSlug}-${Date.now().toString().slice(-4)}`;
       const generatedSku = `HN-PROD-${Date.now().toString().slice(-6)}`;
+      const isIdUuid = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
       let savedSuccessfully = false;
-      let targetProdId = null;
       let errorMessage = null;
 
-      const sb = initSupabase();
+      // 1. Primary: Save through Express Backend API (uses server-side service role & Anycast connection)
+      try {
+        const isUpdate = Boolean(id && isIdUuid);
+        const endpoint = isUpdate ? `/api/products/${id}` : '/api/products';
+        const method = isUpdate ? 'PUT' : 'POST';
 
-      // 1. Direct Supabase Mutation
-      if (sb) {
-        try {
-          if (id) {
-            // Update Existing Product
-            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-            let targetId = id;
-            if (!isUuid) {
+        const apiRes = await fetch(endpoint, {
+          method,
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            name,
+            title: name,
+            slug: productSlug,
+            category: selectedCatName,
+            category_id: selectedCatId,
+            category_name: selectedCatName,
+            material: material || 'Standard',
+            price,
+            compare_price: validComparePrice,
+            old_price: validComparePrice,
+            stock,
+            images: validImages,
+            gallery: validImages,
+            primary_image: primaryImage,
+            description,
+            sku: generatedSku
+          })
+        });
+
+        if (apiRes.ok) {
+          const json = await apiRes.json();
+          if (json.success) {
+            savedSuccessfully = true;
+            errorMessage = null;
+          } else {
+            errorMessage = json.message;
+          }
+        } else {
+          const errJson = await apiRes.json().catch(() => null);
+          errorMessage = errJson?.message || `Server error (${apiRes.status})`;
+        }
+      } catch (apiErr) {
+        console.warn('[AdminProducts] Backend API notice:', apiErr);
+      }
+
+      // 2. Direct Supabase Client Fallback (only if API failed)
+      if (!savedSuccessfully) {
+        const sb = initSupabase();
+        if (sb) {
+          try {
+            let targetId = isIdUuid ? id : null;
+            if (!targetId && id) {
               const { data: rec } = await sb.from('products').select('id').eq('slug', id).maybeSingle();
               if (rec) targetId = rec.id;
             }
 
-            const updatePayload = {
-              name,
-              description: description || name,
-              price,
-              compare_price: validComparePrice,
-              stock,
-              specifications: { material: material || 'Standard' },
-              updated_at: new Date().toISOString()
-            };
-            if (selectedCatId) updatePayload.category_id = selectedCatId;
+            if (targetId) {
+              // Update Existing Product
+              const updatePayload = {
+                name,
+                description: description || name,
+                price,
+                compare_price: validComparePrice,
+                stock,
+                specifications: { material: material || 'Standard' },
+                updated_at: new Date().toISOString()
+              };
+              if (selectedCatId) updatePayload.category_id = selectedCatId;
 
-            const { data: updatedProd, error: updateError } = await sb
-              .from('products')
-              .update(updatePayload)
-              .eq('id', targetId)
-              .select()
-              .maybeSingle();
+              const { data: updatedProd, error: updateError } = await sb
+                .from('products')
+                .update(updatePayload)
+                .eq('id', targetId)
+                .select()
+                .maybeSingle();
 
-            if (updateError) {
-              errorMessage = updateError.message;
-              console.error('[AdminProducts] Supabase update failed:', updateError);
-            } else if (updatedProd) {
-              savedSuccessfully = true;
-              targetProdId = updatedProd.id;
-            }
-          } else {
-            // Insert New Product
-            const insertPayload = {
-              name,
-              slug: productSlug,
-              description: description || name,
-              short_description: description ? description.slice(0, 160) : '',
-              price,
-              compare_price: validComparePrice,
-              sku: generatedSku,
-              stock,
-              status: 'active',
-              specifications: { material: material || 'Standard' },
-              rating: 5.0,
-              reviews_count: 0
-            };
-            if (selectedCatId) insertPayload.category_id = selectedCatId;
-
-            const { data: createdProd, error: insertError } = await sb
-              .from('products')
-              .insert(insertPayload)
-              .select()
-              .maybeSingle();
-
-            if (insertError) {
-              errorMessage = insertError.message;
-              console.error('[AdminProducts] Supabase insert failed:', insertError);
-            } else if (createdProd) {
-              savedSuccessfully = true;
-              targetProdId = createdProd.id;
-            }
-          }
-
-          // Sync images into product_images table if product saved
-          if (targetProdId && validImages.length > 0) {
-            try {
-              const { error: delImgErr } = await sb.from('product_images').delete().eq('product_id', targetProdId);
-              if (delImgErr) console.warn('[AdminProducts] delete existing images notice:', delImgErr);
-
-              const imgRows = validImages.map((imgUrl, idx) => ({
-                product_id: targetProdId,
-                image_url: imgUrl,
-                alt_text: name,
-                sort_order: idx + 1,
-                is_primary: idx === 0
-              }));
-              const { error: insImgErr } = await sb.from('product_images').insert(imgRows);
-              if (insImgErr) {
-                console.warn('[AdminProducts] product_images direct insert failed:', insImgErr);
-              } else {
-                console.log(`[AdminProducts] Successfully synced ${imgRows.length} images to product_images table.`);
+              if (updateError) {
+                errorMessage = updateError.message;
+                console.error('[AdminProducts] Supabase update failed:', updateError);
+              } else if (updatedProd) {
+                savedSuccessfully = true;
               }
-            } catch (imgErr) {
-              console.warn('[AdminProducts] product_images table exception:', imgErr);
+            } else {
+              // Insert New Product
+              const insertPayload = {
+                name,
+                slug: productSlug,
+                description: description || name,
+                short_description: description ? description.slice(0, 160) : '',
+                price,
+                compare_price: validComparePrice,
+                sku: generatedSku,
+                stock,
+                status: 'active',
+                specifications: { material: material || 'Standard' },
+                rating: 5.0,
+                reviews_count: 0
+              };
+              if (selectedCatId) insertPayload.category_id = selectedCatId;
+
+              const { data: createdProd, error: insertError } = await sb
+                .from('products')
+                .insert(insertPayload)
+                .select()
+                .maybeSingle();
+
+              if (insertError) {
+                errorMessage = insertError.message;
+                console.error('[AdminProducts] Supabase insert failed:', insertError);
+              } else if (createdProd) {
+                savedSuccessfully = true;
+                targetId = createdProd.id;
+              }
             }
-          }
-        } catch (sbEx) {
-          errorMessage = sbEx.message;
-          console.error('[AdminProducts] Supabase operation exception:', sbEx);
-        }
-      }
 
-      // 2. Fallback to Express Backend API if Supabase client errored
-      if (!savedSuccessfully) {
-        try {
-          const endpoint = id ? `/api/products/${id}` : '/api/products';
-          const method = id ? 'PUT' : 'POST';
-
-          const apiRes = await fetch(endpoint, {
-            method,
-            headers: getAuthHeaders(),
-            body: JSON.stringify({
-              name,
-              title: name,
-              slug: productSlug,
-              category: selectedCatName,
-              category_id: selectedCatId,
-              category_name: selectedCatName,
-              material: material || 'Standard',
-              price,
-              old_price: validComparePrice,
-              compare_price: validComparePrice,
-              stock,
-              images: validImages,
-              gallery: validImages,
-              primary_image: primaryImage,
-              description,
-              sku: generatedSku
-            })
-          });
-
-          if (apiRes.ok) {
-            const json = await apiRes.json();
-            if (json.success) {
-              savedSuccessfully = true;
-              errorMessage = null;
+            // Sync images into product_images table if product saved
+            if (targetId && validImages.length > 0) {
+              try {
+                await sb.from('product_images').delete().eq('product_id', targetId);
+                const imgRows = validImages.map((imgUrl, idx) => ({
+                  product_id: targetId,
+                  image_url: imgUrl,
+                  alt_text: name,
+                  sort_order: idx + 1,
+                  is_primary: idx === 0
+                }));
+                await sb.from('product_images').insert(imgRows);
+              } catch (imgErr) {
+                console.warn('[AdminProducts] product_images sync notice:', imgErr);
+              }
             }
+          } catch (sbEx) {
+            errorMessage = sbEx.message;
+            console.error('[AdminProducts] Supabase operation exception:', sbEx);
           }
-        } catch (apiErr) {
-          console.warn('[AdminProducts] Backend API fallback notice:', apiErr);
         }
       }
 
@@ -987,7 +994,7 @@
       }
 
       if (!savedSuccessfully) {
-        showToast('Database Error: ' + (errorMessage || 'Failed to save product. Please ensure you are logged in as admin.'), 'danger');
+        showToast('Database Error: ' + (errorMessage || 'Failed to save product. Please check console.'), 'danger');
         return;
       }
 
@@ -1009,52 +1016,49 @@
       let deleted = false;
       let deleteError = null;
 
-      // 1. Try Supabase direct delete
+      // 1. Primary: Delete via Backend API
       try {
-        const sb = initSupabase();
-        if (sb) {
-          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-          let targetId = id;
-          if (!isUuid) {
-            const { data: rec } = await sb.from('products').select('id').eq('slug', id).maybeSingle();
-            if (rec) targetId = rec.id;
-          }
-          if (targetId) {
-            await sb.from('product_images').delete().eq('product_id', targetId);
-            const { error: delErr } = await sb.from('products').delete().eq('id', targetId);
-            if (delErr) {
-              deleteError = delErr.message;
-              console.error('[AdminProducts] Supabase delete error:', delErr);
-            } else {
-              deleted = true;
-            }
-          }
+        const res = await fetch(`/api/products/${id}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) deleted = true;
         }
-      } catch (sbDelErr) {
-        deleteError = sbDelErr.message;
+      } catch (apiErr) {
+        console.warn('[AdminProducts] Backend delete notice:', apiErr);
       }
 
-      // 2. Try Backend delete fallback
+      // 2. Supabase direct fallback
       if (!deleted) {
         try {
-          const res = await fetch(`/api/products/${id}`, {
-            method: 'DELETE',
-            headers: getAuthHeaders()
-          });
-          if (res.ok) {
-            deleted = true;
-            deleteError = null;
+          const sb = initSupabase();
+          if (sb) {
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+            let targetId = isUuid ? id : null;
+            if (!targetId) {
+              const { data: rec } = await sb.from('products').select('id').eq('slug', id).maybeSingle();
+              if (rec) targetId = rec.id;
+            }
+            if (targetId) {
+              await sb.from('product_images').delete().eq('product_id', targetId);
+              const { error: delErr } = await sb.from('products').delete().eq('id', targetId);
+              if (!delErr) deleted = true;
+              else deleteError = delErr.message;
+            }
           }
-        } catch (err) {}
+        } catch (e) {
+          deleteError = e.message;
+        }
       }
 
-      if (!deleted) {
-        showToast('Error deleting product: ' + (deleteError || 'Permission denied or product not found.'), 'danger');
-        return;
+      if (deleted) {
+        showToast('Product removed from database.', 'info');
+        await loadProductsFromDatabase();
+      } else {
+        showToast('Failed to delete product: ' + (deleteError || 'Check admin authorization.'), 'danger');
       }
-
-      showToast('Product permanently deleted from database.', 'info');
-      await loadProductsFromDatabase();
     }
   </script>
 </body>

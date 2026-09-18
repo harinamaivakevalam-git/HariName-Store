@@ -3,158 +3,12 @@
  * Pre-seeded with authentic store catalog and synced in real-time with Supabase PostgreSQL & Admin Portal.
  */
 
-const HARINAMA_AUTHENTIC_PRODUCTS = [
-  {
-    id: 'prod-001',
-    sku: 'HN-FLUTE-001',
-    name: 'Krishna Flute Keychain',
-    title: 'Krishna Flute Keychain',
-    slug: 'krishna-flute-keychain',
-    category: 'Keychains',
-    category_slug: 'keychains',
-    material: 'Brass & Enamel',
-    price: 499,
-    compare_price: 699,
-    old_price: 699,
-    stock: 50,
-    rating: 5.0,
-    reviews_count: 38,
-    image: '/assets/images/cat_keychains.jpg',
-    primary_image: '/assets/images/cat_keychains.jpg',
-    images: ['/assets/images/cat_keychains.jpg'],
-    gallery: ['/assets/images/cat_keychains.jpg'],
-    description: 'Exquisite solid cast brass Krishna flute keychain with sacred peacock feather charm and Hare Krishna engraved gold pendant.',
-    featured: true,
-    trending: true
-  },
-  {
-    id: 'prod-002',
-    sku: 'HN-MALA-002',
-    name: 'Authentic Tulsi Japa Mala (108 Beads)',
-    title: 'Authentic Tulsi Japa Mala (108 Beads)',
-    slug: 'authentic-tulsi-japa-mala-108',
-    category: 'Tulsi Japa Mala',
-    category_slug: 'tulsi-japa-mala',
-    material: 'Authentic Tulsi Wood',
-    price: 699,
-    compare_price: 899,
-    old_price: 899,
-    stock: 45,
-    rating: 5.0,
-    reviews_count: 52,
-    image: '/assets/images/cat_japa_malas.jpg',
-    primary_image: '/assets/images/cat_japa_malas.jpg',
-    images: ['/assets/images/cat_japa_malas.jpg'],
-    gallery: ['/assets/images/cat_japa_malas.jpg'],
-    description: 'Sacred 108 beads Vrindavan Tulsi Japa Mala with hand-carved guru bead and cotton tassel for divine chanting.',
-    featured: true,
-    trending: true
-  },
-  {
-    id: 'prod-003',
-    sku: 'HN-GITA-003',
-    name: 'Bhagavad Gita As It Is (Deluxe Edition)',
-    title: 'Bhagavad Gita As It Is (Deluxe Edition)',
-    slug: 'bhagavad-gita-as-it-is-deluxe',
-    category: 'Spiritual Books',
-    category_slug: 'spiritual-books',
-    material: 'Hardcover Gold Embossed',
-    price: 399,
-    compare_price: 550,
-    old_price: 550,
-    stock: 60,
-    rating: 5.0,
-    reviews_count: 94,
-    image: '/assets/images/cat_books.jpg',
-    primary_image: '/assets/images/cat_books.jpg',
-    images: ['/assets/images/cat_books.jpg'],
-    gallery: ['/assets/images/cat_books.jpg'],
-    description: 'Complete deluxe edition of Bhagavad Gita As It Is with original Sanskrit text, Roman transliteration, and elaborate purports.',
-    featured: true,
-    trending: true
-  },
-  {
-    id: 'prod-004',
-    sku: 'HN-DEITY-004',
-    name: 'Radha Krishna Brass Deity Set (7 Inches)',
-    title: 'Radha Krishna Brass Deity Set (7 Inches)',
-    slug: 'radha-krishna-brass-deity-set',
-    category: 'Deity Statues',
-    category_slug: 'deity-statues',
-    material: 'Solid Polished Brass',
-    price: 4499,
-    compare_price: 5999,
-    old_price: 5999,
-    stock: 12,
-    rating: 4.9,
-    reviews_count: 34,
-    image: '/assets/images/cat_deity_statues.jpg',
-    primary_image: '/assets/images/cat_deity_statues.jpg',
-    images: ['/assets/images/cat_deity_statues.jpg'],
-    gallery: ['/assets/images/cat_deity_statues.jpg'],
-    description: 'Exquisite hand-sculpted Radha Krishna brass deity murti set with intricate facial features and peaceful divine smiles.',
-    featured: true,
-    trending: false
-  },
-  {
-    id: 'prod-005',
-    sku: 'HN-BAG-005',
-    name: 'Embroidered Silk Japa Bead Bag',
-    title: 'Embroidered Silk Japa Bead Bag',
-    slug: 'embroidered-silk-japa-bead-bag',
-    category: 'Japa Bags',
-    category_slug: 'japa-bags',
-    material: 'Raw Silk & Cotton',
-    price: 349,
-    compare_price: 499,
-    old_price: 499,
-    stock: 60,
-    rating: 4.8,
-    reviews_count: 29,
-    image: '/assets/images/cat_japa_bags.jpg',
-    primary_image: '/assets/images/cat_japa_bags.jpg',
-    images: ['/assets/images/cat_japa_bags.jpg'],
-    gallery: ['/assets/images/cat_japa_bags.jpg'],
-    description: 'Handcrafted embroidered cotton and silk sacred bead bag for comfortable daily japa chanting and bead protection.',
-    featured: false,
-    trending: true
-  },
-  {
-    id: 'prod-006',
-    sku: 'HN-GIFT-006',
-    name: 'Devotional Keepsake Spiritual Gift Box',
-    title: 'Devotional Keepsake Spiritual Gift Box',
-    slug: 'devotional-keepsake-spiritual-gift-box',
-    category: 'Spiritual Gifts',
-    category_slug: 'spiritual-gifts',
-    material: 'Curated Gift Hamper',
-    price: 1299,
-    compare_price: 1799,
-    old_price: 1799,
-    stock: 25,
-    rating: 5.0,
-    reviews_count: 47,
-    image: '/assets/images/cat_spiritual_gifts.jpg',
-    primary_image: '/assets/images/cat_spiritual_gifts.jpg',
-    images: ['/assets/images/cat_spiritual_gifts.jpg'],
-    gallery: ['/assets/images/cat_spiritual_gifts.jpg'],
-    description: 'A curated spiritual keepsake box featuring authentic Vrindavan Tulsi beads, sacred Krishna keychain, and devotional mantra card.',
-    featured: true,
-    trending: true
-  }
-];
+const HARINAMA_AUTHENTIC_PRODUCTS = [];
 
-const HARINAMA_BASE_AUTHENTIC_COLLECTIONS = [
-  { id: 'c0000001-0000-0000-0000-000000000001', name: 'Japa Malas', slug: 'japa-malas', desc: 'Authentic Vrindavan Tulasi & Neem meditation prayer beads.', image: '/assets/images/cat_japa_malas.jpg' },
-  { id: 'c0000001-0000-0000-0000-000000000002', name: 'Keychains', slug: 'keychains', desc: 'Handcrafted acrylic, enamel, and brass devotional keychains.', image: '/assets/images/cat_keychains.jpg' },
-  { id: 'c0000001-0000-0000-0000-000000000003', name: 'Books', slug: 'books', desc: 'Authentic Vedic scriptures, Bhagavad Gita, and sacred philosophy.', image: '/assets/images/cat_books.jpg' },
-  { id: 'c0000001-0000-0000-0000-000000000004', name: 'Deity Statues', slug: 'deity-statues', desc: 'Exquisite brass and marble finish sacred deity statues.', image: '/assets/images/cat_deity_statues.jpg' },
-  { id: 'c0000001-0000-0000-0000-000000000005', name: 'Japa Bags', slug: 'japa-bags', desc: 'Embroidered cotton and silk sacred bead bags for chanting.', image: '/assets/images/cat_japa_bags.jpg' },
-  { id: 'c0000001-0000-0000-0000-000000000006', name: 'Spiritual Gifts', slug: 'spiritual-gifts', desc: 'Curated spiritual gift hampers, keepsakes and divine gifts.', image: '/assets/images/cat_spiritual_gifts.jpg' }
-];
+const HARINAMA_BASE_AUTHENTIC_COLLECTIONS = [];
 
 // Dynamic Category Counts based on Database Categories & Products
-function computeCategoryCounts(productsList, dbCategories = null) {
+function computeCategoryCounts(productsList = [], dbCategories = null) {
   let catList = [];
   if (Array.isArray(dbCategories) && dbCategories.length > 0) {
     catList = [...dbCategories];
@@ -162,8 +16,8 @@ function computeCategoryCounts(productsList, dbCategories = null) {
     catList = [...HARINAMA_BASE_AUTHENTIC_COLLECTIONS];
   }
 
-  // Ensure "All Products" is at the start
-  if (!catList.some(c => c.slug === 'all-products' || c.id === 'cat-all')) {
+  // Ensure "All Products" is at the start if categories exist
+  if (catList.length > 0 && !catList.some(c => c.slug === 'all-products' || c.id === 'cat-all')) {
     catList = [
       { id: 'cat-all', name: 'All Products', slug: 'all-products', desc: 'Browse all divine items.', image: '/assets/images/cat_keychains.jpg' },
       ...catList
@@ -190,12 +44,12 @@ function getInitialProducts() {
     const saved = localStorage.getItem('hn_live_products');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         return parsed;
       }
     }
   } catch (e) {}
-  return [...HARINAMA_AUTHENTIC_PRODUCTS];
+  return [];
 }
 
 const initialProducts = getInitialProducts();

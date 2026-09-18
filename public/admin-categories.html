@@ -269,47 +269,37 @@
     }
 
     async function loadCategoriesFromDatabase() {
-      const tbody = document.getElementById('categories-table-body');
       let loaded = false;
       let remoteCategories = [];
+
+      // Clean stale cache with invalid mock IDs
+      try {
+        const cached = localStorage.getItem('hn_admin_categories');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) {
+            const cleaned = parsed.filter(c => c && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(c.id));
+            if (cleaned.length !== parsed.length) {
+              localStorage.removeItem('hn_admin_categories');
+            } else {
+              remoteCategories = cleaned;
+              loaded = true;
+            }
+          }
+        }
+      } catch (_) {}
 
       // 1. Backend API (primary source, Anycast resilient)
       try {
         const res = await fetch('/api/categories');
         if (res.ok) {
           const json = await res.json();
-          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          if (json.success && Array.isArray(json.data)) {
             remoteCategories = json.data;
             loaded = true;
           }
         }
       } catch (_) {}
-
-      // 2. Local Storage Cache
-      if (!loaded || remoteCategories.length === 0) {
-        try {
-          const cached = localStorage.getItem('hn_admin_categories');
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              remoteCategories = parsed;
-              loaded = true;
-            }
-          }
-        } catch (_) {}
-      }
-
-      // 3. Fallback to Verified Sacred Collections Baseline
-      if (!loaded || remoteCategories.length === 0) {
-        remoteCategories = [
-          { id: '1', name: 'Japa Malas & Beads', slug: 'japa-malas', image: '/assets/images/cat_japa_malas.jpg', count: 12, desc: 'Sacred Tulasi & Neem japa malas chanted upon with pure devotion' },
-          { id: '2', name: 'Sacred Keychains', slug: 'keychains', image: '/assets/images/cat_keychains.jpg', count: 8, desc: 'Solid brass & enamel divine pocket reminders' },
-          { id: '3', name: 'Vedic Shastras & Books', slug: 'sacred-books', image: '/assets/images/cat_books.jpg', count: 15, desc: 'Bhagavad Gita As It Is, Srimad Bhagavatam, and sacred wisdom' },
-          { id: '4', name: 'Deity Statues & Murti', slug: 'deity-statues', image: '/assets/images/cat_deity_statues.jpg', count: 6, desc: 'Handcrafted Radha Krishna, Laddu Gopal & Jagannath murtis' },
-          { id: '5', name: 'Embroidered Japa Bags', slug: 'japa-bags', image: '/assets/images/cat_japa_bags.jpg', count: 9, desc: 'Pure cotton bead bags with Hare Krishna Mahamantra embroidery' },
-          { id: '6', name: 'Spiritual Gifts', slug: 'spiritual-gifts', image: '/assets/images/cat_spiritual_gifts.jpg', count: 10, desc: 'Auspicious devotional hampers and sacred festive offerings' }
-        ];
-      }
 
       databaseCategories = remoteCategories.map(c => {
         const count = c.product_count !== undefined ? c.product_count : (c.count || 0);
@@ -326,7 +316,11 @@
         };
       });
 
-      localStorage.setItem('hn_admin_categories', JSON.stringify(databaseCategories));
+      if (databaseCategories.length > 0) {
+        localStorage.setItem('hn_admin_categories', JSON.stringify(databaseCategories));
+      } else {
+        localStorage.removeItem('hn_admin_categories');
+      }
       renderCategoriesTable();
     }
 
@@ -547,14 +541,21 @@
         try {
           const sb = initSupabase();
           if (sb) {
-            if (id) {
+            const isUuid = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+            let targetId = isUuid ? id : null;
+            if (!targetId && id) {
+              const { data: rec } = await sb.from('categories').select('id').eq('slug', slug).maybeSingle();
+              if (rec) targetId = rec.id;
+            }
+
+            if (targetId) {
               const { error } = await sb.from('categories').update({
                 name,
                 slug,
                 description: desc,
                 image_url: imageUrl,
                 updated_at: new Date().toISOString()
-              }).eq('id', id);
+              }).eq('id', targetId);
               if (!error) saved = true;
               else saveError = error.message;
             } else {
@@ -598,53 +599,61 @@
       let deleted = false;
       let deleteError = null;
 
-      // Check if products exist in category
-      const sb = initSupabase();
-      if (sb) {
-        try {
-          const { data: prods } = await sb.from('products').select('id').eq('category_id', id);
-          if (Array.isArray(prods) && prods.length > 0) {
-            showToast(`Cannot delete collection: ${prods.length} product(s) are currently assigned to it. Reassign or delete those products first.`, 'warning');
-            return;
-          }
-        } catch (chkErr) {}
+      // 1. Primary: Delete via Backend API
+      try {
+        const res = await fetch(`/api/categories/${id}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) deleted = true;
+          else deleteError = json.message;
+        }
+      } catch (apiErr) {
+        console.warn('[AdminCategories] Backend delete error:', apiErr);
+      }
 
-        try {
-          const { error } = await sb.from('categories').delete().eq('id', id);
-          if (error) {
-            deleteError = error.message;
-            console.error('[AdminCategories] Supabase delete error:', error);
-          } else {
-            deleted = true;
+      // 2. Direct Supabase Fallback
+      if (!deleted) {
+        const sb = initSupabase();
+        if (sb) {
+          const isUuid = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+          let targetId = isUuid ? id : null;
+          if (!targetId) {
+            const { data: rec } = await sb.from('categories').select('id').eq('slug', id).maybeSingle();
+            if (rec) targetId = rec.id;
           }
-        } catch (sbErr) {
-          deleteError = sbErr.message;
+
+          if (targetId) {
+            try {
+              const { data: prods } = await sb.from('products').select('id').eq('category_id', targetId);
+              if (Array.isArray(prods) && prods.length > 0) {
+                showToast(`Cannot delete collection: ${prods.length} product(s) are currently assigned to it. Reassign or delete those products first.`, 'warning');
+                return;
+              }
+            } catch (chkErr) {}
+
+            try {
+              const { error } = await sb.from('categories').delete().eq('id', targetId);
+              if (error) {
+                deleteError = error.message;
+              } else {
+                deleted = true;
+              }
+            } catch (sbErr) {
+              deleteError = sbErr.message;
+            }
+          }
         }
       }
 
-      if (!deleted) {
-        try {
-          const res = await fetch(`/api/categories/${id}`, {
-            method: 'DELETE',
-            headers: getAuthHeaders()
-          });
-          if (res.ok) {
-            const json = await res.json();
-            if (json.success) {
-              deleted = true;
-              deleteError = null;
-            }
-          }
-        } catch (err) {}
+      if (deleted) {
+        showToast('Collection deleted successfully.', 'info');
+        await loadCategoriesFromDatabase();
+      } else {
+        showToast('Failed to delete collection: ' + (deleteError || 'Check admin permissions.'), 'danger');
       }
-
-      if (!deleted) {
-        showToast('Error removing collection: ' + (deleteError || 'Permission denied.'), 'danger');
-        return;
-      }
-
-      showToast('Collection removed from database.', 'info');
-      await loadCategoriesFromDatabase();
     }
   </script>
 </body>

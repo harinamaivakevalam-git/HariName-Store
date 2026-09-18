@@ -308,7 +308,7 @@
       const filterCatSelect = document.getElementById('category-filter');
       if (!catSelect) return;
 
-      // 1. Primary: Fast Backend API (uses server-side DNS resilient connection)
+      // 1. Fast Backend API (uses server-side DNS resilient connection)
       try {
         const res = await fetch('/api/categories');
         if (res.ok) {
@@ -319,32 +319,11 @@
             if (filterCatSelect) {
               filterCatSelect.innerHTML = `<option value="all">All Categories</option>` + databaseCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
             }
-            return;
           }
         }
       } catch (err) {
         console.warn('[AdminProducts] Backend API categories notice:', err);
       }
-
-      // 2. Direct Supabase fallback
-      try {
-        const sb = initSupabase();
-        if (sb) {
-          const { data: cats, error } = await sb
-            .from('categories')
-            .select('id, name, slug')
-            .eq('status', 'active')
-            .order('name', { ascending: true });
-
-          if (!error && Array.isArray(cats) && cats.length > 0) {
-            databaseCategories = cats;
-            catSelect.innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-            if (filterCatSelect) {
-              filterCatSelect.innerHTML = `<option value="all">All Categories</option>` + cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-            }
-          }
-        }
-      } catch (err) {}
     }
 
     async function loadProductsFromDatabase() {
@@ -398,49 +377,6 @@
         }
       } catch (err) {
         console.warn('[AdminProducts] Backend API products notice:', err);
-      }
-
-      // 2. Direct Supabase Fallback
-      if (!remoteLoaded) {
-        try {
-          const sb = initSupabase();
-          if (sb) {
-            const { data, error } = await sb
-              .from('products')
-              .select('*, product_images(*), categories(id, name, slug)')
-              .order('created_at', { ascending: false });
-
-            if (!error && Array.isArray(data)) {
-              remoteLoaded = true;
-              remoteProducts = data.map(p => {
-                const imgList = (p.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(i => i.image_url);
-                const img = imgList[0] || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80';
-                return {
-                  id: p.id,
-                  sku: p.sku,
-                  name: p.name,
-                  title: p.title || p.name,
-                  slug: p.slug,
-                  category: p.categories?.name || 'Devotional Items',
-                  category_id: p.category_id || p.categories?.id || null,
-                  category_slug: p.categories?.slug || '',
-                  material: p.material || (p.specifications && p.specifications.material) || 'Standard',
-                  price: parseFloat(p.price) || 0,
-                  old_price: p.compare_price ? parseFloat(p.compare_price) : null,
-                  compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
-                  stock: p.stock !== undefined ? p.stock : 25,
-                  rating: parseFloat(p.rating) || 5.0,
-                  reviews_count: p.reviews_count || 0,
-                  image: img,
-                  primary_image: img,
-                  images: imgList.length > 0 ? imgList : [img],
-                  gallery: imgList.length > 0 ? imgList : [img],
-                  description: p.description || ''
-                };
-              });
-            }
-          }
-        } catch (sbErr) {}
       }
 
       // Sync state and render

@@ -297,67 +297,17 @@ HARINAMA_DATA.syncWithApi = async function() {
     }
   } catch (e) {}
 
-  // 2. Direct Supabase Query fallback
+  // 2. Fallback to authentic baseline if API was offline
   if (!databaseLoaded) {
-    try {
-      if (window.supabase && typeof window.supabase.createClient === 'function') {
-        const sb = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        window.supabaseClient = sb;
-
-        const [prodResult, catResult] = await Promise.allSettled([
-          sb.from('products').select('*, product_images(*), categories(id, name, slug)').order('created_at', { ascending: false }),
-          sb.from('categories').select('*').eq('status', 'active').order('sort_order', { ascending: true })
-        ]);
-
-        if (catResult.status === 'fulfilled' && !catResult.value.error && Array.isArray(catResult.value.data)) {
-          fetchedCategories = catResult.value.data.map(c => ({
-            id: c.id,
-            name: c.name,
-            slug: c.slug,
-            desc: c.description || 'Sacred collection',
-            image: resolveCategoryImage(c)
-          }));
-        }
-
-        if (prodResult.status === 'fulfilled' && !prodResult.value.error && Array.isArray(prodResult.value.data)) {
-          const data = prodResult.value.data;
-          fetchedProducts = data.map(p => {
-            const imgList = (p.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map(i => i.image_url);
-            const img = imgList[0] || p.primary_image || '';
-            return {
-              id: p.id,
-              sku: p.sku,
-              name: p.name,
-              title: p.title || p.name,
-              slug: p.slug,
-              category: p.categories?.name || p.category || 'Devotional Items',
-              category_id: p.category_id || p.categories?.id,
-              category_slug: p.categories?.slug || 'devotional-keychains',
-              material: p.material || 'Standard',
-              price: parseFloat(p.price) || 0,
-              old_price: p.compare_price ? parseFloat(p.compare_price) : null,
-              compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
-              stock: p.stock !== undefined ? p.stock : 25,
-              rating: parseFloat(p.rating) || 5.0,
-              reviews_count: p.reviews_count || 0,
-              image: img,
-              primary_image: img,
-              images: imgList.length > 0 ? imgList : (img ? [img] : []),
-              gallery: imgList.length > 0 ? imgList : (img ? [img] : []),
-              description: p.description || '',
-              featured: Boolean(p.featured),
-              trending: Boolean(p.trending)
-            };
-          });
-          HARINAMA_DATA.products = fetchedProducts;
-          HARINAMA_DATA.categories = computeCategoryCounts(fetchedProducts, fetchedCategories);
-          HARINAMA_DATA.isLoaded = true;
-          databaseLoaded = true;
-        }
-      }
-    } catch (sbE) {
-      console.warn('[HARINAMA_DATA] Supabase fetch notice:', sbE);
+    if (!fetchedProducts || fetchedProducts.length === 0) {
+      fetchedProducts = [...HARINAMA_AUTHENTIC_PRODUCTS];
     }
+    if (!fetchedCategories || fetchedCategories.length === 0) {
+      fetchedCategories = [...HARINAMA_BASE_AUTHENTIC_COLLECTIONS];
+    }
+    HARINAMA_DATA.products = fetchedProducts;
+    HARINAMA_DATA.categories = computeCategoryCounts(fetchedProducts, fetchedCategories);
+    HARINAMA_DATA.isLoaded = true;
   }
 
   // Save active products so other tabs read seamlessly
@@ -378,10 +328,7 @@ HARINAMA_DATA.validateCoupon = async function(rawCode, subtotal = 0) {
     return { valid: false, message: 'Please enter a coupon code.' };
   }
 
-  const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
-
-  // 1. Try Backend API
+  // 1. Try Backend API (fast and secure)
   try {
     const res = await fetch('/api/coupons/validate', {
       method: 'POST',
@@ -399,75 +346,21 @@ HARINAMA_DATA.validateCoupon = async function(rawCode, subtotal = 0) {
           discountValue: parseFloat(json.data.discount_value),
           message: `Coupon ${json.data.code} applied! ₹${json.data.discount_amount || json.data.discount} discount.`
         };
+      } else if (json.message) {
+        return { valid: false, message: json.message };
       }
     }
   } catch (e) {}
 
-  // 2. Direct Supabase Query
-  try {
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
-      const sb = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      window.supabaseClient = sb;
-
-      const { data: coupon, error } = await sb
-        .from('coupons')
-        .select('*')
-        .ilike('code', code)
-        .eq('status', 'active')
-        .maybeSingle();
-
-      if (!error && coupon) {
-        if (coupon.expiry_date && new Date(coupon.expiry_date) < new Date()) {
-          return { valid: false, message: `Coupon ${code} has expired.` };
-        }
-        if (coupon.min_order_amount && subtotal < parseFloat(coupon.min_order_amount)) {
-          return { valid: false, message: `Minimum order amount of ₹${coupon.min_order_amount} required.` };
-        }
-        let discount = 0;
-        if (coupon.discount_type === 'percentage') {
-          discount = Math.round((subtotal * parseFloat(coupon.discount_value)) / 100);
-          if (coupon.max_discount_amount) {
-            discount = Math.min(discount, parseFloat(coupon.max_discount_amount));
-          }
-        } else {
-          discount = parseFloat(coupon.discount_value);
-        }
-        return {
-          valid: true,
-          code: coupon.code,
-          discount,
-          discountType: coupon.discount_type,
-          discountValue: parseFloat(coupon.discount_value),
-          message: `Sacred Coupon ${coupon.code} applied! ₹${discount} discount.`
-        };
-      }
-    }
-  } catch (sbE) {}
-
-  // 3. Fallback standard coupons
-  const defaultCoupons = {
-    'HAREKRISHNA': { type: 'percentage', val: 10, min: 199, desc: '10% off for all devotees' },
-    'VRINDAVAN': { type: 'flat', val: 50, min: 299, desc: '₹50 off holy items' },
-    'PRABHUPADA': { type: 'percentage', val: 15, min: 499, desc: '15% off shastra books' },
-    'FIRST10': { type: 'percentage', val: 10, min: 99, desc: '10% off first order' }
-  };
-
-  const found = defaultCoupons[code];
-  if (found) {
-    if (subtotal < found.min) {
-      return { valid: false, message: `Minimum order amount of ₹${found.min} required for ${code}.` };
-    }
-    const discount = found.type === 'percentage' ? Math.round((subtotal * found.val) / 100) : found.val;
-    return {
-      valid: true,
-      code,
-      discount,
-      discountType: found.type,
-      discountValue: found.val,
-      message: `Coupon ${code} applied! ₹${discount} discount.`
-    };
+  // 2. Local fallback for WELCOME10, HAREKRISHNA
+  if (code === 'WELCOME10') {
+    const discount = Math.round(subtotal * 0.10);
+    return { valid: true, code: 'WELCOME10', discount, discountType: 'percentage', discountValue: 10, message: `Coupon WELCOME10 applied! ₹${discount} discount.` };
   }
-
+  if (code === 'HAREKRISHNA') {
+    const discount = 108;
+    return { valid: true, code: 'HAREKRISHNA', discount, discountType: 'fixed', discountValue: 108, message: `Coupon HAREKRISHNA applied! ₹108 discount.` };
+  }
   return { valid: false, message: 'Invalid or expired coupon code.' };
 };
 

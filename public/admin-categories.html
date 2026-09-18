@@ -271,7 +271,7 @@
       let loaded = false;
       let remoteCategories = [];
 
-      // 1. Backend API (primary source)
+      // 1. Backend API (primary source, Anycast resilient)
       try {
         const res = await fetch('/api/categories');
         if (res.ok) {
@@ -282,20 +282,6 @@
           }
         }
       } catch (_) {}
-
-      // 2. Direct Supabase Query fallback
-      if (!loaded) {
-        try {
-          const sb = initSupabase();
-          if (sb) {
-            const { data } = await sb.from('categories').select('*').order('created_at', { ascending: false });
-            if (Array.isArray(data) && data.length > 0) {
-              remoteCategories = data;
-              loaded = true;
-            }
-          }
-        } catch (_) {}
-      }
 
       if (loaded && remoteCategories.length > 0) {
         databaseCategories = remoteCategories.map(c => {

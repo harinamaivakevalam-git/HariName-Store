@@ -291,16 +291,14 @@
       return window.supabaseClient;
     }
 
-    function getAuthHeaders() {
-      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-      const headers = {
-        'Content-Type': 'application/json',
-        'x-admin-email': 'harinamaivakevalam@gmail.com'
-      };
-      if (token) {
-        headers['Authorization'] = 'Bearer ' + token;
+    function getApiUrl(path) {
+      if (window.location.protocol === 'file:') {
+        return 'http://localhost:5000' + path;
       }
-      return headers;
+      if (window.location.port && window.location.port !== '5000' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        return `http://${window.location.hostname}:5000${path}`;
+      }
+      return path;
     }
 
     async function loadCategoriesIntoDropdown() {
@@ -310,7 +308,7 @@
 
       // 1. Fast Backend API (uses server-side DNS resilient connection)
       try {
-        const res = await fetch('/api/categories');
+        const res = await fetch(getApiUrl('/api/categories'));
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data) && json.data.length > 0) {
@@ -344,7 +342,7 @@
 
       // 1. Primary: Fetch fast from Express Backend API (bypasses browser ISP DNS blocks)
       try {
-        const res = await fetch('/api/products?limit=100', {
+        const res = await fetch(getApiUrl('/api/products?limit=100'), {
           headers: getAuthHeaders()
         });
         if (res.ok) {
@@ -686,7 +684,7 @@
           formData.append('media', file);
           formData.append('file', file);
 
-          const res = await fetch('/api/upload/image', {
+          const res = await fetch(getApiUrl('/api/upload/image'), {
             method: 'POST',
             headers: getUploadAuthHeaders(),
             body: formData
@@ -859,7 +857,7 @@
       // 1. Primary: Save through Express Backend API (uses server-side service role & Anycast connection)
       try {
         const isUpdate = Boolean(id && isIdUuid);
-        const endpoint = isUpdate ? `/api/products/${id}` : '/api/products';
+        const endpoint = getApiUrl(isUpdate ? `/api/products/${id}` : '/api/products');
         const method = isUpdate ? 'PUT' : 'POST';
 
         const apiRes = await fetch(endpoint, {
@@ -1024,7 +1022,7 @@
 
       // 1. Primary: Delete via Backend API
       try {
-        const res = await fetch(`/api/products/${id}`, {
+        const res = await fetch(getApiUrl(`/api/products/${id}`), {
           method: 'DELETE',
           headers: getAuthHeaders()
         });

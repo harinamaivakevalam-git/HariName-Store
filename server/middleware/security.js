@@ -29,7 +29,7 @@ const corsOptions = {
   origin: true, // Reflect request origin in development & local testing
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-admin-email', 'x-admin-token']
 };
 
 const helmetConfig = helmet({

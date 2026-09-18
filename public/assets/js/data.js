@@ -71,13 +71,12 @@ function computeCategoryCounts(productsList, dbCategories = null) {
   let catList = dbCategories;
   if (!catList || catList.length === 0) {
     catList = [
-      { id: 'cat-all', name: 'All Products', slug: 'all-products', desc: 'Browse all divine items.', image: '/assets/images/cat_keychains.jpg' },
-      { id: 'c0000001-0000-0000-0000-000000000001', name: 'Japa Malas', slug: 'japa-malas', desc: 'Sacred 108 Tulsi and Neem beads for attentive chanting.', image: '/assets/images/cat_japa_malas.jpg' },
-      { id: 'c0000001-0000-0000-0000-000000000002', name: 'Keychains', slug: 'keychains', desc: 'Devotional brass Krishna flute and peacock feather keychains.', image: '/assets/images/cat_keychains.jpg' },
-      { id: 'c0000001-0000-0000-0000-000000000003', name: 'Books', slug: 'books', desc: 'Deluxe Bhagavad Gita and timeless Vedic wisdom literature.', image: '/assets/images/cat_books.jpg' },
-      { id: 'c0000001-0000-0000-0000-000000000004', name: 'Deity Statues', slug: 'deity-statues', desc: 'Handcrafted brass Krishna & Radha with sacred Surabhi cow murtis.', image: '/assets/images/cat_deity_statues.jpg' },
-      { id: 'c0000001-0000-0000-0000-000000000005', name: 'Japa Bags', slug: 'japa-bags', desc: 'Organic cotton Hare Krishna chanting bead bags.', image: '/assets/images/cat_japa_bags.jpg' },
-      { id: 'c0000001-0000-0000-0000-000000000006', name: 'Spiritual Gifts', slug: 'spiritual-gifts', desc: 'Sacred peacock feathers and blessed keepsakes.', image: '/assets/images/cat_spiritual_gifts.jpg' }
+      { id: 'c0000001-0000-0000-0000-000000000001', name: 'Japa Malas', slug: 'japa-malas', desc: 'Authentic Vrindavan Tulasi & Neem meditation prayer beads.', image: '/assets/images/cat_japa_malas.jpg' },
+      { id: 'c0000001-0000-0000-0000-000000000002', name: 'Keychains', slug: 'keychains', desc: 'Handcrafted acrylic, enamel, and brass devotional keychains.', image: '/assets/images/cat_keychains.jpg' },
+      { id: 'c0000001-0000-0000-0000-000000000003', name: 'Books', slug: 'books', desc: 'Authentic Vedic scriptures, Bhagavad Gita, and sacred philosophy.', image: '/assets/images/cat_books.jpg' },
+      { id: 'c0000001-0000-0000-0000-000000000004', name: 'Deity Statues', slug: 'deity-statues', desc: 'Exquisite brass and marble finish sacred deity statues.', image: '/assets/images/cat_deity_statues.jpg' },
+      { id: 'c0000001-0000-0000-0000-000000000005', name: 'Japa Bags', slug: 'japa-bags', desc: 'Embroidered cotton and silk sacred bead bags for chanting.', image: '/assets/images/cat_japa_bags.jpg' },
+      { id: 'c0000001-0000-0000-0000-000000000006', name: 'Spiritual Gifts', slug: 'spiritual-gifts', desc: 'Curated spiritual gift hampers, keepsakes and divine gifts.', image: '/assets/images/cat_spiritual_gifts.jpg' }
     ];
   } else {
     // Ensure "All Products" is at the start
@@ -161,13 +160,26 @@ HARINAMA_DATA.syncWithApi = async function() {
       fetch('/api/categories').then(r => r.json())
     ]);
 
+    const resolveCategoryImage = (c) => {
+      if (c.image_url && !c.image_url.includes('unsplash.com')) return c.image_url;
+      if (c.image && !c.image.includes('unsplash.com')) return c.image;
+      const s = ((c.slug || '') + ' ' + (c.name || '')).toLowerCase();
+      if (s.includes('mala') || s.includes('japa-mala')) return '/assets/images/cat_japa_malas.jpg';
+      if (s.includes('keychain')) return '/assets/images/cat_keychains.jpg';
+      if (s.includes('book') || s.includes('gita') || s.includes('shastra')) return '/assets/images/cat_books.jpg';
+      if (s.includes('statue') || s.includes('deity') || s.includes('murti')) return '/assets/images/cat_deity_statues.jpg';
+      if (s.includes('bag')) return '/assets/images/cat_japa_bags.jpg';
+      if (s.includes('gift')) return '/assets/images/cat_spiritual_gifts.jpg';
+      return '/assets/images/cat_keychains.jpg';
+    };
+
     if (catRes.status === 'fulfilled' && catRes.value && catRes.value.success && Array.isArray(catRes.value.data)) {
       fetchedCategories = catRes.value.data.map(c => ({
         id: c.id,
         name: c.name,
         slug: c.slug,
         desc: c.description || 'Sacred collection',
-        image: c.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80'
+        image: resolveCategoryImage(c)
       }));
     }
 
@@ -221,7 +233,7 @@ HARINAMA_DATA.syncWithApi = async function() {
             name: c.name,
             slug: c.slug,
             desc: c.description || 'Sacred collection',
-            image: c.image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80'
+            image: resolveCategoryImage(c)
           }));
         }
 

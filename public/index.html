@@ -37,22 +37,27 @@
     <!-- ====================================================================
          1. HERO SECTION (Desktop & Mobile Synchronized)
          ==================================================================== -->
-    <section class="hn-hero-section">
-      <div class="container">
+    <section class="hn-hero-section" id="hn-hero-main-section">
+      <!-- Panoramic Background Overlay for crystal clear text readability -->
+      <div class="hn-hero-bg-overlay"></div>
 
-        <div class="row align-items-center g-4 g-lg-5">
+
+
+      <div class="container position-relative" style="z-index: 2;">
+        <div class="row align-items-center min-vh-hero">
 
           <!-- Left Column: Compelling Typography & Call to Actions -->
-          <div class="col-lg-6 hero-content-col">
+          <div class="col-lg-7 col-xl-6 hero-content-col">
 
             <!-- Devotional Eyebrow -->
             <div class="hn-hero-eyebrow">
-              A DEVOTIONAL LIFESTYLE STORE
+              <span class="hn-eyebrow-dot"></span>
+              <span class="hn-eyebrow-text">A DEVOTIONAL LIFESTYLE STORE</span>
             </div>
 
             <!-- Majestic Hero Title -->
             <h1 class="hn-hero-title">
-              <span class="hn-title-carry">Carry Krishna</span><br>
+              <span class="hn-title-carry">Carry</span> <span class="hn-title-accent">Krishna</span><br>
               <span class="hn-title-wherever">Wherever You Go</span>
             </h1>
 
@@ -63,120 +68,79 @@
 
             <!-- Action Button -->
             <div class="d-flex flex-wrap align-items-center gap-3 mb-4 hn-hero-btn-wrap">
-              <a href="/shop.html" class="btn hn-btn-gold hn-hero-cta-btn">
+              <a href="/shop.html" class="btn hn-hero-cta-btn">
                 <span>Shop Now</span>
                 <i class="bi bi-arrow-right ms-1"></i>
               </a>
             </div>
 
-            <!-- 3 Devotional Feature Badges (Pure & Meaningful, For a Higher Purpose, Worldwide Shipping) -->
-            <div class="hn-hero-features-row mb-4">
-              <div class="hn-feature-pill">
-                <span class="hn-feature-pill-icon">🪷</span>
-                <div class="hn-feature-pill-text">
-                  <span>Pure &amp;</span>
-                  <span>Meaningful</span>
-                </div>
+            <!-- 4 Devotional Trust Badges (Authentic Products, Worldwide Shipping, Secure Payments, Spreading Happiness) -->
+            <div class="hn-hero-trust-bar">
+              <div class="hn-trust-item">
+                <span class="hn-trust-icon">🪷</span>
+                <span class="hn-trust-label">Authentic<br class="d-none d-sm-inline"> Products</span>
               </div>
-              <div class="hn-feature-pill">
-                <span class="hn-feature-pill-icon">🤍</span>
-                <div class="hn-feature-pill-text">
-                  <span>For a</span>
-                  <span>Higher Purpose</span>
-                </div>
+              <div class="hn-trust-divider"></div>
+              <div class="hn-trust-item">
+                <span class="hn-trust-icon">🌐</span>
+                <span class="hn-trust-label">Worldwide<br class="d-none d-sm-inline"> Shipping</span>
               </div>
-              <!-- <div class="hn-feature-pill">
-                <span class="hn-feature-pill-icon">🌐</span>
-                <div class="hn-feature-pill-text">
-                  <span>Worldwide</span>
-                  <span>Shipping</span>
-                </div>
-              </div> -->
+              <div class="hn-trust-divider"></div>
+              <div class="hn-trust-item">
+                <span class="hn-trust-icon">🛡️</span>
+                <span class="hn-trust-label">Secure<br class="d-none d-sm-inline"> Payments</span>
+              </div>
+              <div class="hn-trust-divider"></div>
+              <div class="hn-trust-item">
+                <span class="hn-trust-icon">🤍</span>
+                <span class="hn-trust-label">Spreading<br class="d-none d-sm-inline"> Happiness</span>
+              </div>
             </div>
-
 
           </div>
 
-          <!-- Right Column: Hero Showcase Image -->
-          <div class="col-lg-6">
-            <div class="hn-hero-image-wrap">
-              <img src="/assets/images/mobile_hero_bg.jpg"
-                alt="Harinama Store Devotional Peacock Feather & Krishna Flute Keychain" class="hn-hero-img">
-
-              <!-- Floating Glass Badges (Desktop) -->
-              <div class="hn-floating-badge top-badge d-none d-md-flex">
-                <span class="badge-icon-wrap"><i class="bi bi-shield-check"></i></span>
-                <div>
-                  <div class="badge-title">Blessed in Vrindavan</div>
-                  <div class="badge-sub">Authentic &amp; Sacred</div>
-                </div>
+          <!-- Right Column: Visual balance & Floating Devotional Card (Desktop Only) -->
+          <div class="col-lg-5 col-xl-6 d-none d-lg-flex flex-column justify-content-end align-items-lg-end position-relative" style="min-height: 280px;">
+            
+            <!-- Bottom Right Floating Glassmorphic Devotional Card -->
+            <div class="hn-hero-devotional-pill d-none d-md-flex">
+              <div class="hn-pill-nav-row">
+                <a href="/shop.html" class="hn-pill-link">
+                  <span class="hn-pill-icon">🪷</span>
+                  <span class="hn-pill-text">Shop</span>
+                </a>
+                <div class="hn-pill-sep"></div>
+                <a href="/about.html" class="hn-pill-link">
+                  <span class="hn-pill-icon">🎵</span>
+                  <span class="hn-pill-text">Chant</span>
+                </a>
+                <div class="hn-pill-sep"></div>
+                <a href="/contact.html" class="hn-pill-link">
+                  <span class="hn-pill-icon">👥</span>
+                  <span class="hn-pill-text">Connect</span>
+                </a>
+                <div class="hn-pill-sep"></div>
+                <a href="/mission.html" class="hn-pill-link">
+                  <span class="hn-pill-icon">🤍</span>
+                  <span class="hn-pill-text">Spread Love</span>
+                </a>
               </div>
-
-              <div class="hn-floating-badge bottom-badge d-none d-md-flex">
-                <span class="badge-icon-wrap gold-icon"><i class="bi bi-gem"></i></span>
-                <div>
-                  <div class="badge-title">Solid Cast Brass &amp; Enamel</div>
-                  <div class="badge-sub">Lifelong Divine Craft</div>
-                </div>
-              </div>
-
+              <div class="hn-pill-tagline">— A KINDER WORLD THROUGH DEVOTION —</div>
             </div>
+
           </div>
 
         </div>
-
       </div>
     </section>
 
     <!-- ====================================================================
-         2. CIRCULAR COLLECTIONS STRIP (Japa Malas, Keychains, Books, Statues, Japa Bags, Spiritual Gifts)
+         2. CIRCULAR COLLECTIONS STRIP (Real Dynamic Collections)
          ==================================================================== -->
     <section class="hn-categories-circles-section py-4">
       <div class="container">
-        <div class="hn-cat-circles-scroll">
-
-          <a href="/shop.html?collection=japa-malas" class="hn-cat-circle-item" title="Japa Malas Collection">
-            <div class="hn-cat-circle-img-wrap">
-              <img src="/assets/images/cat_japa_malas.jpg" alt="Japa Malas">
-            </div>
-            <span class="hn-cat-circle-label">Japa Malas</span>
-          </a>
-
-          <a href="/shop.html?collection=keychains" class="hn-cat-circle-item" title="Keychains Collection">
-            <div class="hn-cat-circle-img-wrap">
-              <img src="/assets/images/cat_keychains.jpg" alt="Keychains">
-            </div>
-            <span class="hn-cat-circle-label">Keychains</span>
-          </a>
-
-          <a href="/shop.html?collection=books" class="hn-cat-circle-item" title="Books Collection">
-            <div class="hn-cat-circle-img-wrap">
-              <img src="/assets/images/cat_books.jpg" alt="Books">
-            </div>
-            <span class="hn-cat-circle-label">Books</span>
-          </a>
-
-          <a href="/shop.html?collection=deity-statues" class="hn-cat-circle-item" title="Deity Statues Collection">
-            <div class="hn-cat-circle-img-wrap">
-              <img src="/assets/images/cat_deity_statues.jpg" alt="Deity Statues">
-            </div>
-            <span class="hn-cat-circle-label">Deity Statues</span>
-          </a>
-
-          <a href="/shop.html?collection=japa-bags" class="hn-cat-circle-item" title="Japa Bags Collection">
-            <div class="hn-cat-circle-img-wrap">
-              <img src="/assets/images/cat_japa_bags.jpg" alt="Japa Bags">
-            </div>
-            <span class="hn-cat-circle-label">Japa Bags</span>
-          </a>
-
-          <a href="/shop.html?collection=spiritual-gifts" class="hn-cat-circle-item" title="Spiritual Gifts Collection">
-            <div class="hn-cat-circle-img-wrap">
-              <img src="/assets/images/cat_spiritual_gifts.jpg" alt="Spiritual Gifts">
-            </div>
-            <span class="hn-cat-circle-label">Spiritual Gifts</span>
-          </a>
-
+        <div class="hn-cat-circles-scroll" id="hn-cat-circles-container">
+          <!-- Populated dynamically with real collections from database -->
         </div>
       </div>
     </section>
@@ -278,10 +242,12 @@
 
 
 
+
+
     <!-- ====================================================================
-         7. TAKE KRISHNA WITH YOU (Lifestyle Grid - Desktop Only)
+         7. TAKE KRISHNA WITH YOU (Lifestyle Grid - Desktop & Mobile)
          ==================================================================== -->
-    <section class="py-5 d-none d-lg-block">
+    <section class="py-4 py-md-5 hn-lifestyle-section">
       <div class="container">
 
         <div class="hn-section-header hn-reveal">
@@ -315,24 +281,6 @@
       </div>
     </section>
 
-    <!-- ====================================================================
-         8. GIFT SECTION (Desktop Only)
-         ==================================================================== -->
-    <section class="py-5 d-none d-lg-block" id="hn-combos-section-wrapper"
-      style="background-color: var(--hn-cream); display: none;">
-      <div class="container">
-
-        <div class="hn-section-header hn-reveal">
-          <h2 class="hn-section-title">Sacred Devotional Gift Sets &amp; Combos</h2>
-          <div class="hn-section-subtitle">Specially curated blessed offerings from our live catalog.</div>
-        </div>
-
-        <div class="row g-4 justify-content-center hn-reveal-stagger" id="hn-home-combos-grid">
-          <!-- Dynamic Database Combos/Gift Sets -->
-        </div>
-
-      </div>
-    </section>
 
     <!-- ====================================================================
          9. DEVOTEE REVIEWS (Desktop Only)
@@ -366,6 +314,40 @@
   <script>
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+
+    // Render Real Collections dynamically from Database
+    function renderCategoryCircles() {
+      const container = document.getElementById('hn-cat-circles-container') || document.querySelector('.hn-cat-circles-scroll');
+      if (!container) return;
+
+      const cats = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.categories))
+        ? HARINAMA_DATA.categories.filter(c => c.slug !== 'all-products' && c.id !== 'cat-all')
+        : [];
+
+      if (cats.length === 0) {
+        const section = container.closest('.hn-categories-circles-section');
+        if (section && HARINAMA_DATA.isLoaded) {
+          section.style.display = 'none';
+        }
+        return;
+      }
+
+      const section = container.closest('.hn-categories-circles-section');
+      if (section) section.style.display = 'block';
+
+      container.innerHTML = cats.map(c => {
+        const catImg = c.image || c.image_url || '/assets/images/cat_keychains.jpg';
+        const linkUrl = `/shop.html?category=${encodeURIComponent(c.slug || c.id)}`;
+        return `
+          <a href="${linkUrl}" class="hn-cat-circle-item" title="${c.name} Collection">
+            <div class="hn-cat-circle-img-wrap">
+              <img src="${catImg}" alt="${c.name}" onerror="this.src='/assets/images/cat_keychains.jpg'">
+            </div>
+            <span class="hn-cat-circle-label">${c.name}</span>
+          </a>
+        `;
+      }).join('');
+    }
 
     // Render Featured Products from Database with Daily Dynamic Rotation
     function renderFeaturedSection() {
@@ -452,45 +434,8 @@
       wrapper.style.display = 'block';
     }
 
-    // Dynamic Combo Sets Binding
-    function renderCombosSection() {
-      const wrapper = document.getElementById('hn-combos-section-wrapper');
-      const container = document.getElementById('hn-home-combos-grid');
-      if (!wrapper || !container) return;
 
-      const prods = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
-      if (prods.length === 0) {
-        wrapper.style.display = 'none';
-        return;
-      }
 
-      const combos = prods.filter(p => (p.category && (p.category.includes('Combo') || p.category.includes('Gift'))));
-      const displayCombos = combos.length > 0 ? combos.slice(0, 2) : prods.slice(0, 2);
-
-      if (displayCombos.length === 0) {
-        wrapper.style.display = 'none';
-        return;
-      }
-
-      container.innerHTML = displayCombos.map(p => `
-        <div class="col-md-6 col-lg-5">
-          <div class="hn-gift-card">
-            <div class="hn-gift-img-box">
-              <img src="${p.image || p.primary_image || ''}" alt="${p.title || p.name}">
-            </div>
-            <h4 class="hn-gift-title">${p.title || p.name}</h4>
-            <div class="hn-gift-price-row">
-              <span class="hn-gift-price">${formatPrice(p.price)}</span>
-              ${p.old_price ? `<span class="hn-gift-old-price">${formatPrice(p.old_price)}</span>` : ''}
-              ${(p.old_price && p.old_price > p.price) ? `<span class="hn-gift-badge">Save ${formatPrice(p.old_price - p.price)}</span>` : ''}
-            </div>
-            <button class="btn hn-btn-gold mt-auto" onclick="handleAddToCart('${p.id}')">Add to Cart</button>
-          </div>
-        </div>
-      `).join('');
-
-      wrapper.style.display = 'block';
-    }
 
     // Dynamic Approved Reviews from Supabase
     async function loadHomeReviews() {
@@ -568,95 +513,141 @@
     function applyDynamicConfig(config) {
       if (!config) return;
 
+      const topbar = extractSectionContent(config.topbar);
       const hero = extractSectionContent(config.hero);
+      const dailyBhakti = extractSectionContent(config.daily_bhakti);
+      const featuredHeader = extractSectionContent(config.featured_header);
       const promo = extractSectionContent(config.promo_banner);
       const why = extractSectionContent(config.why_krishna);
       const gallery = extractSectionContent(config.lifestyle_gallery);
+      const reviewsHeader = extractSectionContent(config.reviews_header);
       const trust = extractSectionContent(config.trust_bar);
+      const footerSignoff = extractSectionContent(config.footer_signoff);
+
+      // 0. TOP ANNOUNCEMENT BAR
+      if (topbar) {
+        const topbarContent = document.querySelector('.hn-topbar-content');
+        if (topbarContent) {
+          const leaves = topbarContent.querySelectorAll('.hn-topbar-leaf');
+          if (leaves[0] && topbar.left_icon) leaves[0].innerText = topbar.left_icon;
+          if (leaves[1] && topbar.right_icon) leaves[1].innerText = topbar.right_icon;
+          const items = topbarContent.querySelectorAll('.hn-topbar-item');
+          if (items[0] && topbar.item1) items[0].innerText = topbar.item1;
+          if (items[1] && topbar.item2) items[1].innerText = topbar.item2;
+          if (items[2] && topbar.item3) items[2].innerText = topbar.item3;
+        }
+      }
 
       // A. HERO SECTION
       if (hero) {
+        const eyebrowEl = document.querySelector('.hn-hero-eyebrow');
+        if (eyebrowEl && hero.eyebrow) {
+          eyebrowEl.innerHTML = `<span class="hn-eyebrow-dot"></span><span>${hero.eyebrow}</span>`;
+        }
+
         const titleEl = document.querySelector('.hn-hero-title');
         if (titleEl) {
-          titleEl.innerHTML = `${hero.title_prefix || 'Carry'} <span class="hn-title-accent">${hero.title_accent || 'Krishna'}</span><br>${hero.title_suffix || 'Wherever You Go'}`;
+          const prefix = hero.title_prefix || 'Carry';
+          const accent = hero.title_accent || 'Krishna';
+          const suffix = hero.title_suffix || 'Wherever You Go';
+          titleEl.innerHTML = `<span class="hn-title-carry">${prefix}</span> <span class="hn-title-accent">${accent}</span><br><span class="hn-title-wherever">${suffix}</span>`;
         }
 
         const descEl = document.querySelector('.hn-hero-desc');
         if (descEl && hero.description) descEl.innerText = hero.description;
 
-        const ctaBtn = document.querySelector('.hn-hero-section .hn-btn-gold');
+        const ctaBtn = document.querySelector('.hn-hero-section .hn-hero-cta-btn');
         if (ctaBtn) {
           const btnText = (hero.cta_text && hero.cta_text !== 'Shop Collection') ? hero.cta_text : 'Shop Now';
           if (ctaBtn.querySelector('span')) ctaBtn.querySelector('span').innerText = btnText;
           if (hero.cta_link) ctaBtn.href = hero.cta_link;
         }
 
-        const quoteVerseEl = document.querySelector('.hn-quote-verse');
-        if (quoteVerseEl && hero.quote_verse) quoteVerseEl.innerText = hero.quote_verse;
+        // Hero Background Image
+        const heroSectionEl = document.getElementById('hn-hero-main-section');
+        if (heroSectionEl) {
+          const bgImg = hero.image_url || hero.background_image || hero.banner_url;
+          if (bgImg && bgImg.trim() && !isVideoMediaUrl(bgImg)) {
+            heroSectionEl.style.backgroundImage = `url('${bgImg.trim()}')`;
+          }
+        }
 
-        const quoteSubEl = document.querySelector('.hn-quote-sub');
-        if (quoteSubEl && hero.quote_subtitle) quoteSubEl.innerText = hero.quote_subtitle;
-
-        const trustRatingEl = document.querySelector('.hn-trust-details span.fw-bold');
-        if (trustRatingEl && hero.trust_rating) trustRatingEl.innerText = hero.trust_rating;
-
-        const trustCapEl = document.querySelector('.hn-trust-caption');
-        if (trustCapEl && hero.trust_caption) trustCapEl.innerText = hero.trust_caption;
-
-        // Hero Media (Image or Video)
-        const mediaWrap = document.querySelector('.hn-hero-image-wrap');
-        if (mediaWrap) {
-          const isHeroVideo = (hero.media_type === 'video') || isVideoMediaUrl(hero.video_url) || isVideoMediaUrl(hero.image_url);
-          const heroVideoSrc = (isVideoMediaUrl(hero.video_url) ? hero.video_url : (isVideoMediaUrl(hero.image_url) ? hero.image_url : hero.video_url || '')).trim();
-          const heroImageSrc = (!isVideoMediaUrl(hero.image_url) && hero.image_url ? hero.image_url : (!isVideoMediaUrl(hero.video_url) && hero.video_url ? hero.video_url : '')).trim();
-          const existingMedia = mediaWrap.querySelector('.hn-hero-img, .hn-hero-video-player, iframe');
-
-          if (isHeroVideo && heroVideoSrc) {
-            if (heroVideoSrc.includes('youtube.com') || heroVideoSrc.includes('youtu.be')) {
-              let embedUrl = heroVideoSrc;
-              if (heroVideoSrc.includes('watch?v=')) embedUrl = heroVideoSrc.replace('watch?v=', 'embed/');
-              else if (heroVideoSrc.includes('youtu.be/')) embedUrl = heroVideoSrc.replace('youtu.be/', 'www.youtube.com/embed/');
-              if (existingMedia) existingMedia.remove();
-              const iframe = document.createElement('iframe');
-              iframe.src = embedUrl + (embedUrl.includes('?') ? '&' : '?') + 'autoplay=1&mute=1&loop=1&playsinline=1';
-              iframe.className = 'hn-hero-video-player';
-              iframe.style.cssText = 'width: 100%; height: 380px; border-radius: 24px; border: none;';
-              iframe.allow = 'autoplay; encrypted-media';
-              mediaWrap.prepend(iframe);
-            } else {
-              if (existingMedia) existingMedia.remove();
-              const video = document.createElement('video');
-              video.src = heroVideoSrc;
-              video.className = 'hn-hero-img hn-hero-video-player';
-              video.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 24px;';
-              video.autoplay = true;
-              video.loop = true;
-              video.muted = true;
-              video.playsInline = true;
-              video.setAttribute('playsinline', '');
-              video.setAttribute('muted', '');
-              video.setAttribute('autoplay', '');
-              video.setAttribute('loop', '');
-              mediaWrap.prepend(video);
-              video.play().catch(() => { });
-            }
+        // 4 Trust Badges
+        const trustItems = document.querySelectorAll('.hn-hero-trust-bar .hn-trust-item');
+        if (trustItems.length > 0) {
+          if (Array.isArray(hero.trust_badges)) {
+            hero.trust_badges.forEach((b, idx) => {
+              if (trustItems[idx]) {
+                const iconEl = trustItems[idx].querySelector('.hn-trust-icon');
+                if (iconEl && b.icon) iconEl.innerText = b.icon;
+                const labelEl = trustItems[idx].querySelector('.hn-trust-label');
+                if (labelEl && b.label) labelEl.innerHTML = b.label.replace(/\n/g, '<br>');
+              }
+            });
           } else {
-            const finalHeroImg = (!isVideoMediaUrl(heroImageSrc) && heroImageSrc) ? heroImageSrc : '/assets/images/krishna_hero_keychain.jpg';
-            if (existingMedia && existingMedia.tagName === 'IMG') {
-              existingMedia.src = finalHeroImg;
-            } else {
-              if (existingMedia) existingMedia.remove();
-              const img = document.createElement('img');
-              img.src = finalHeroImg;
-              img.className = 'hn-hero-img';
-              img.alt = 'Harinama Devotional Showcase';
-              mediaWrap.prepend(img);
+            if (hero.badge1_label && trustItems[0]) {
+              if (hero.badge1_icon && trustItems[0].querySelector('.hn-trust-icon')) trustItems[0].querySelector('.hn-trust-icon').innerText = hero.badge1_icon;
+              if (trustItems[0].querySelector('.hn-trust-label')) trustItems[0].querySelector('.hn-trust-label').innerHTML = hero.badge1_label.replace(/\n/g, '<br>');
+            }
+            if (hero.badge2_label && trustItems[1]) {
+              if (hero.badge2_icon && trustItems[1].querySelector('.hn-trust-icon')) trustItems[1].querySelector('.hn-trust-icon').innerText = hero.badge2_icon;
+              if (trustItems[1].querySelector('.hn-trust-label')) trustItems[1].querySelector('.hn-trust-label').innerHTML = hero.badge2_label.replace(/\n/g, '<br>');
+            }
+            if (hero.badge3_label && trustItems[2]) {
+              if (hero.badge3_icon && trustItems[2].querySelector('.hn-trust-icon')) trustItems[2].querySelector('.hn-trust-icon').innerText = hero.badge3_icon;
+              if (trustItems[2].querySelector('.hn-trust-label')) trustItems[2].querySelector('.hn-trust-label').innerHTML = hero.badge3_label.replace(/\n/g, '<br>');
+            }
+            if (hero.badge4_label && trustItems[3]) {
+              if (hero.badge4_icon && trustItems[3].querySelector('.hn-trust-icon')) trustItems[3].querySelector('.hn-trust-icon').innerText = hero.badge4_icon;
+              if (trustItems[3].querySelector('.hn-trust-label')) trustItems[3].querySelector('.hn-trust-label').innerHTML = hero.badge4_label.replace(/\n/g, '<br>');
             }
           }
         }
+
+        // Devotional Pill Tagline
+        const pillTagline = document.querySelector('.hn-pill-tagline');
+        if (pillTagline && hero.devotional_tagline) {
+          pillTagline.innerText = hero.devotional_tagline;
+        }
       }
 
-      // B. PROMO BANNER
+      // B. DAILY BHAKTI BANNER
+      if (dailyBhakti) {
+        const titleEl = document.querySelector('.hn-bhakti-banner-title');
+        if (titleEl && dailyBhakti.title) titleEl.innerHTML = dailyBhakti.title.replace(/\n/g, '<br>');
+
+        const subEl = document.querySelector('.hn-bhakti-banner-sub');
+        if (subEl && dailyBhakti.subtitle) subEl.innerText = dailyBhakti.subtitle;
+
+        const btnEl = document.querySelector('.hn-bhakti-btn');
+        if (btnEl) {
+          if (dailyBhakti.cta_text && btnEl.querySelector('span')) btnEl.querySelector('span').innerText = dailyBhakti.cta_text;
+          if (dailyBhakti.cta_link) btnEl.href = dailyBhakti.cta_link;
+        }
+
+        const imgEl = document.querySelector('.hn-bhakti-banner-img');
+        if (imgEl && dailyBhakti.image_url) {
+          imgEl.src = dailyBhakti.image_url;
+          imgEl.onerror = function() { this.onerror=null; this.src='/assets/images/bhakti_mug_banner.jpg'; };
+        }
+      }
+
+      // C. FEATURED PRODUCTS HEADER
+      if (featuredHeader) {
+        const titleEl = document.querySelector('.hn-featured-header-wrap .hn-section-title');
+        if (titleEl && featuredHeader.title) titleEl.innerText = featuredHeader.title;
+
+        const subEl = document.querySelector('.hn-featured-header-wrap .hn-section-subtitle');
+        if (subEl && featuredHeader.subtitle) subEl.innerText = featuredHeader.subtitle;
+
+        const viewAllEl = document.querySelector('.hn-featured-header-wrap .hn-view-all-link');
+        if (viewAllEl) {
+          if (featuredHeader.view_all_text && viewAllEl.querySelector('span')) viewAllEl.querySelector('span').innerText = featuredHeader.view_all_text;
+          if (featuredHeader.view_all_link) viewAllEl.href = featuredHeader.view_all_link;
+        }
+      }
+
+      // D. PROMO BANNER
       if (promo) {
         window.__hn_homepage_custom_promo = true;
         const promoWrapper = document.getElementById('hn-promo-section-wrapper');
@@ -746,12 +737,13 @@
             img.src = finalImg;
             img.className = 'hn-promo-img';
             img.alt = promo.title || 'Sacred Devotional Item';
+            img.onerror = function() { this.onerror=null; this.src='/assets/images/krishna-logo.jpg'; };
             promoImgWrap.appendChild(img);
           }
         }
       }
 
-      // C. WHY CARRY KRISHNA SECTION
+      // E. WHY CARRY KRISHNA SECTION
       if (why) {
         const sectionHeader = document.querySelector('.hn-why-section .hn-section-title');
         if (sectionHeader && why.title) sectionHeader.innerText = why.title;
@@ -777,7 +769,7 @@
         }
       }
 
-      // D. LIFESTYLE GALLERY
+      // F. LIFESTYLE GALLERY
       if (gallery) {
         const gTitle = document.querySelector('section:has(.hn-lifestyle-grid) .hn-section-title');
         if (gTitle && gallery.title) gTitle.innerText = gallery.title;
@@ -790,12 +782,21 @@
           gallery.items.forEach((item, idx) => {
             if (imgs[idx]) {
               imgs[idx].src = typeof item === 'string' ? item : item.url;
+              imgs[idx].onerror = function() { this.onerror=null; this.src='/assets/images/krishna_hero_keychain.jpg'; };
             }
           });
         }
       }
 
-      // E. TRUST BAR
+      // G. REVIEWS SECTION HEADER
+      if (reviewsHeader) {
+        const rTitle = document.querySelector('#hn-reviews-home-wrapper .hn-section-title');
+        if (rTitle && reviewsHeader.title) rTitle.innerText = reviewsHeader.title;
+        const rSub = document.querySelector('#hn-reviews-home-wrapper .hn-section-subtitle');
+        if (rSub && reviewsHeader.subtitle) rSub.innerText = reviewsHeader.subtitle;
+      }
+
+      // H. TRUST BAR
       if (trust && Array.isArray(trust.badges)) {
         const badgeEls = document.querySelectorAll('.hn-service-item');
         trust.badges.forEach((b, idx) => {
@@ -806,6 +807,18 @@
             if (spanEl && b.label) spanEl.innerText = b.label;
           }
         });
+      }
+
+      // I. FOOTER DEVOTIONAL SIGNOFF
+      if (footerSignoff) {
+        const verseEl = document.querySelector('.hn-signoff-verse');
+        if (verseEl && footerSignoff.verse) verseEl.innerText = footerSignoff.verse;
+
+        const iconEl = document.querySelector('.hn-divider-icon');
+        if (iconEl && footerSignoff.divider_icon) iconEl.innerText = footerSignoff.divider_icon;
+
+        const subEl = document.querySelector('.hn-signoff-sub');
+        if (subEl && footerSignoff.subtitle) subEl.innerText = footerSignoff.subtitle;
       }
     }
 
@@ -871,16 +884,16 @@
       renderHeader('home');
       renderFooter();
       await renderDynamicHomepageSections();
+      renderCategoryCircles();
       renderFeaturedSection();
       updatePromoSection();
-      renderCombosSection();
       loadHomeReviews();
 
       window.addEventListener('hn:catalog-loaded', async () => {
+        renderCategoryCircles();
         renderFeaturedSection();
         updatePromoSection();
         await renderDynamicHomepageSections();
-        renderCombosSection();
       });
     });
   </script>

@@ -132,10 +132,11 @@
         <table class="table hn-table align-middle mb-0">
           <thead>
             <tr>
-              <th style="min-width: 200px;">Collection Name</th>
+              <th style="width: 70px;">Image</th>
+              <th style="min-width: 180px;">Collection Name</th>
               <th style="min-width: 180px;">URL Slug</th>
-              <th style="min-width: 280px;">Spiritual Description</th>
-              <th style="min-width: 120px;">Items Count</th>
+              <th style="min-width: 260px;">Spiritual Description</th>
+              <th style="min-width: 110px;">Items Count</th>
               <th style="min-width: 100px;">Status</th>
               <th style="min-width: 100px;" class="text-end">Actions</th>
             </tr>
@@ -151,7 +152,7 @@
 
   <!-- Category Modal -->
   <div class="modal fade hn-admin-modal" id="categoryModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="categoryModalTitle">Add New Collection</h5>
@@ -163,22 +164,54 @@
             
             <div class="mb-3">
               <label class="form-label fw-semibold">Collection Title *</label>
-              <input type="text" id="cat-name" class="form-control" placeholder="e.g. Maha-Mantra Collection" required>
+              <input type="text" id="cat-name" class="form-control" placeholder="e.g. Japa Malas, Keychains, Books" required oninput="autoSlugCategory()">
             </div>
 
             <div class="mb-3">
               <label class="form-label fw-semibold">URL Slug *</label>
-              <input type="text" id="cat-slug" class="form-control" placeholder="e.g. maha-mantra-collection" required>
+              <input type="text" id="cat-slug" class="form-control" placeholder="e.g. japa-malas, keychains" required>
+            </div>
+
+            <!-- Collection Image Upload Box -->
+            <div class="mb-3 p-3 rounded border bg-light-subtle">
+              <label class="form-label fw-semibold d-flex align-items-center gap-1 mb-2">
+                <i class="bi bi-image text-gold"></i> Collection Image / Photo
+              </label>
+              
+              <div class="d-flex align-items-center gap-3">
+                <div class="position-relative" style="width: 72px; height: 72px; min-width: 72px;">
+                  <img id="cat-image-preview" src="/assets/images/cat_keychains.jpg" alt="Collection Image Preview" class="rounded-circle w-100 h-100 object-fit-cover border border-2 border-warning" style="box-shadow: 0 4px 12px rgba(160,112,40,0.15);">
+                  <div id="cat-image-spinner" class="position-absolute top-50 start-50 translate-middle d-none">
+                    <div class="spinner-border spinner-border-sm text-gold" role="status"></div>
+                  </div>
+                </div>
+
+                <div class="flex-grow-1">
+                  <div class="d-flex gap-2 mb-2">
+                    <button type="button" class="btn btn-sm btn-outline-dark d-flex align-items-center gap-1" onclick="document.getElementById('cat-image-file').click()">
+                      <i class="bi bi-cloud-arrow-up"></i> Upload Photo
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearCatImage()">
+                      <i class="bi bi-x"></i> Remove
+                    </button>
+                  </div>
+                  <input type="file" id="cat-image-file" class="d-none" accept="image/jpeg,image/png,image/webp,image/gif" onchange="handleCatImageUpload(event)">
+                  <input type="text" id="cat-image-url" class="form-control form-control-sm" placeholder="Or paste image URL (/assets/images/...)" oninput="updateCatImagePreview(this.value)">
+                </div>
+              </div>
+              <div class="form-text mt-2 text-muted" style="font-size: 0.76rem;">
+                Uploaded images are permanently stored in the database and public storage with non-expiring direct URLs.
+              </div>
             </div>
 
             <div class="mb-3">
               <label class="form-label fw-semibold">Spiritual Description</label>
-              <textarea id="cat-desc" class="form-control" rows="3" placeholder="Handcrafted keychains and sacred items inscribed with the Holy Names..."></textarea>
+              <textarea id="cat-desc" class="form-control" rows="3" placeholder="Handcrafted devotional items and sacred treasures..."></textarea>
             </div>
 
             <div class="d-flex justify-content-end gap-2 pt-3 border-top">
               <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-gold px-4">Save Collection</button>
+              <button type="submit" class="btn btn-gold px-4" id="cat-save-btn">Save Collection</button>
             </div>
           </form>
         </div>
@@ -206,14 +239,26 @@
       return window.supabaseClient;
     }
 
-    function getAuthHeaders() {
-      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+    function getAuthHeaders(includeContentType = true) {
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token') || 'admin-portal-session';
       const headers = {
-        'Content-Type': 'application/json',
-        'x-admin-email': 'harinamaivakevalam@gmail.com'
+        'x-admin-email': 'harinamaivakevalam@gmail.com',
+        'Authorization': 'Bearer ' + token
       };
-      if (token) headers['Authorization'] = 'Bearer ' + token;
+      if (includeContentType) headers['Content-Type'] = 'application/json';
       return headers;
+    }
+
+    function resolveCategoryFallbackImage(name, slug, img) {
+      if (img && img.trim() && !img.includes('unsplash.com')) return img;
+      const s = ((name || '') + ' ' + (slug || '')).toLowerCase();
+      if (s.includes('mala') || s.includes('japa-mala')) return '/assets/images/cat_japa_malas.jpg';
+      if (s.includes('keychain')) return '/assets/images/cat_keychains.jpg';
+      if (s.includes('book') || s.includes('gita') || s.includes('shastra')) return '/assets/images/cat_books.jpg';
+      if (s.includes('statue') || s.includes('deity') || s.includes('murti')) return '/assets/images/cat_deity_statues.jpg';
+      if (s.includes('bag')) return '/assets/images/cat_japa_bags.jpg';
+      if (s.includes('gift')) return '/assets/images/cat_spiritual_gifts.jpg';
+      return img || '/assets/images/cat_keychains.jpg';
     }
 
     async function loadCategoriesFromDatabase() {
@@ -234,10 +279,13 @@
             const activeProducts = (prodRes.status === 'fulfilled' && !prodRes.value.error && Array.isArray(prodRes.value.data)) ? prodRes.value.data : [];
             remoteCategories = catRes.value.data.map(c => {
               const count = activeProducts.filter(p => p.category_id === c.id).length;
+              const catImg = resolveCategoryFallbackImage(c.name, c.slug, c.image_url || c.image);
               return {
                 id: c.id,
                 name: c.name,
                 slug: c.slug,
+                image: catImg,
+                image_url: catImg,
                 count: count,
                 desc: c.description || 'Sacred collection',
                 status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
@@ -257,14 +305,19 @@
           if (res.ok) {
             const json = await res.json();
             if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-              remoteCategories = json.data.map(c => ({
-                id: c.id,
-                name: c.name,
-                slug: c.slug,
-                count: c.product_count !== undefined ? c.product_count : (c.count || 0),
-                desc: c.description || c.desc || 'Sacred collection',
-                status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
-              }));
+              remoteCategories = json.data.map(c => {
+                const catImg = resolveCategoryFallbackImage(c.name, c.slug, c.image_url || c.image);
+                return {
+                  id: c.id,
+                  name: c.name,
+                  slug: c.slug,
+                  image: catImg,
+                  image_url: catImg,
+                  count: c.product_count !== undefined ? c.product_count : (c.count || 0),
+                  desc: c.description || c.desc || 'Sacred collection',
+                  status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
+                };
+              });
               loaded = true;
             }
           }
@@ -286,8 +339,25 @@
       const tbody = document.getElementById('categories-table-body');
       if (!tbody) return;
 
-      tbody.innerHTML = databaseCategories.map(c => `
+      if (databaseCategories.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center py-4 text-muted">
+              <i class="bi bi-tags fs-1 d-block mb-2 text-gold"></i>
+              No collections found in database.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = databaseCategories.map(c => {
+        const imgSrc = c.image || c.image_url || '/assets/images/cat_keychains.jpg';
+        return `
         <tr>
+          <td>
+            <img src="${imgSrc}" alt="${c.name}" class="rounded-circle" style="width: 46px; height: 46px; min-width: 46px; object-fit: cover; border: 2px solid #E6D5BC; box-shadow: 0 2px 8px rgba(160,112,40,0.12);" onerror="this.src='/assets/images/cat_keychains.jpg'">
+          </td>
           <td>
             <div class="fw-bold text-navy text-nowrap">${c.name}</div>
           </td>
@@ -296,16 +366,108 @@
           <td class="text-nowrap"><span class="badge bg-light text-dark border">${c.count} items</span></td>
           <td class="text-nowrap"><span class="badge ${c.status === 'Active' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}">${c.status}</span></td>
           <td class="text-end text-nowrap">
-            <button class="btn btn-sm btn-outline-dark me-1" onclick="editCategory('${c.id}')"><i class="bi bi-pencil"></i></button>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory('${c.id}')"><i class="bi bi-trash"></i></button>
+            <button class="btn btn-sm btn-outline-dark me-1" onclick="editCategory('${c.id}')" title="Edit Collection"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory('${c.id}')" title="Delete Collection"><i class="bi bi-trash"></i></button>
           </td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
+    }
+
+    function autoSlugCategory() {
+      const editId = document.getElementById('edit-cat-id').value;
+      if (!editId) {
+        const name = document.getElementById('cat-name').value;
+        document.getElementById('cat-slug').value = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+      }
+    }
+
+    function updateCatImagePreview(url) {
+      const preview = document.getElementById('cat-image-preview');
+      if (preview) {
+        preview.src = url && url.trim() ? url.trim() : '/assets/images/cat_keychains.jpg';
+      }
+    }
+
+    function clearCatImage() {
+      document.getElementById('cat-image-url').value = '';
+      updateCatImagePreview('');
+    }
+
+    async function handleCatImageUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const spinner = document.getElementById('cat-image-spinner');
+      if (spinner) spinner.classList.remove('d-none');
+
+      let uploadedUrl = null;
+
+      // 1. Try Backend Upload API (permanent storage with Supabase service-role or local /uploads)
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('media', file);
+        formData.append('file', file);
+
+        const res = await fetch('/api/upload/image', {
+          method: 'POST',
+          headers: getAuthHeaders(false),
+          body: formData
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && (json.data?.url || json.url)) {
+            uploadedUrl = json.data?.url || json.url;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Direct Supabase Storage client
+      if (!uploadedUrl) {
+        try {
+          const sb = initSupabase();
+          if (sb && sb.storage) {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `categories/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+            const { data, error } = await sb.storage.from('product-images').upload(fileName, file, { upsert: true });
+            if (!error && data) {
+              const { data: pubData } = sb.storage.from('product-images').getPublicUrl(fileName);
+              if (pubData && pubData.publicUrl) {
+                uploadedUrl = pubData.publicUrl;
+              }
+            }
+          }
+        } catch (sbE) {}
+      }
+
+      // 3. Fallback WebP compression DataURL
+      if (!uploadedUrl) {
+        uploadedUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = () => resolve('');
+          reader.readAsDataURL(file);
+        });
+      }
+
+      if (spinner) spinner.classList.add('d-none');
+
+      if (uploadedUrl) {
+        document.getElementById('cat-image-url').value = uploadedUrl;
+        updateCatImagePreview(uploadedUrl);
+        showToast('Image uploaded successfully! 🪷', 'success');
+      } else {
+        showToast('Failed to upload image. Please try again or paste image link.', 'danger');
+      }
     }
 
     function prepareAddCategory() {
       document.getElementById('categoryForm').reset();
       document.getElementById('edit-cat-id').value = '';
+      document.getElementById('cat-image-url').value = '';
+      updateCatImagePreview('');
       document.getElementById('categoryModalTitle').innerText = 'Add New Collection';
     }
 
@@ -316,6 +478,9 @@
       document.getElementById('cat-name').value = c.name;
       document.getElementById('cat-slug').value = c.slug;
       document.getElementById('cat-desc').value = c.desc;
+      const img = c.image || c.image_url || '';
+      document.getElementById('cat-image-url').value = img;
+      updateCatImagePreview(img);
       document.getElementById('categoryModalTitle').innerText = 'Edit Collection — ' + c.name;
 
       const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
@@ -328,6 +493,13 @@
       const name = document.getElementById('cat-name').value.trim();
       const slug = document.getElementById('cat-slug').value.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       const desc = document.getElementById('cat-desc').value.trim();
+      const imageUrl = document.getElementById('cat-image-url').value.trim() || resolveCategoryFallbackImage(name, slug, '');
+
+      const saveBtn = document.getElementById('cat-save-btn');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+      }
 
       let saved = false;
       let saveError = null;
@@ -341,6 +513,7 @@
               name,
               slug,
               description: desc,
+              image_url: imageUrl,
               updated_at: new Date().toISOString()
             }).eq('id', id);
 
@@ -355,6 +528,7 @@
               name,
               slug,
               description: desc,
+              image_url: imageUrl,
               status: 'active'
             });
 
@@ -379,7 +553,7 @@
           const res = await fetch(endpoint, {
             method,
             headers: getAuthHeaders(),
-            body: JSON.stringify({ name, slug, description: desc })
+            body: JSON.stringify({ name, slug, description: desc, image: imageUrl, image_url: imageUrl })
           });
           if (res.ok) {
             const json = await res.json();
@@ -389,6 +563,11 @@
             }
           }
         } catch (err) {}
+      }
+
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = 'Save Collection';
       }
 
       if (!saved) {

@@ -271,12 +271,48 @@
     <form id="homepageEditorForm" onsubmit="event.preventDefault(); saveAllHomepageSections();">
       
       <!-- =========================================================
+           0. TOP ANNOUNCEMENT BAR
+           ========================================================= -->
+      <div class="editor-section-card">
+        <div class="editor-section-header" data-bs-toggle="collapse" data-bs-target="#collapseTopbar">
+          <h5><i class="bi bi-megaphone text-gold"></i> 1. Top Announcement Bar (Header Strip)</h5>
+          <span class="badge bg-light text-dark border">Top Bar</span>
+        </div>
+        <div class="collapse show" id="collapseTopbar">
+          <div class="editor-section-body">
+            <div class="row g-3">
+              <div class="col-md-2">
+                <label class="form-label">Left Icon / Emoji</label>
+                <input type="text" id="topbar_left_icon" class="form-control" value="🌿" placeholder="e.g. 🌿 or ✨">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Item 1 Text</label>
+                <input type="text" id="topbar_item1" class="form-control" value="Hare Krishna" placeholder="e.g. Hare Krishna">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Item 2 Text</label>
+                <input type="text" id="topbar_item2" class="form-control" value="Spread Love" placeholder="e.g. Spread Love">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Item 3 Text</label>
+                <input type="text" id="topbar_item3" class="form-control" value="Be Remembered" placeholder="e.g. Be Remembered">
+              </div>
+              <div class="col-md-1">
+                <label class="form-label">Right Icon</label>
+                <input type="text" id="topbar_right_icon" class="form-control" value="🌿" placeholder="🌿">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
            1. HERO SECTION
            ========================================================= -->
       <div class="editor-section-card">
         <div class="editor-section-header" data-bs-toggle="collapse" data-bs-target="#collapseHero">
-          <h5><i class="bi bi-stars text-gold"></i> 1. Hero Section (Top Banner)</h5>
-          <span class="badge bg-light text-dark border">Main Showcase</span>
+          <h5><i class="bi bi-stars text-gold"></i> 2. Hero Section (Main Showcase)</h5>
+          <span class="badge bg-light text-dark border">Main Hero</span>
         </div>
         <div class="collapse show" id="collapseHero">
           <div class="editor-section-body">
@@ -285,6 +321,10 @@
               <!-- Left: Text Content Fields -->
               <div class="col-lg-7">
                 <div class="row g-3">
+                  <div class="col-12">
+                    <label class="form-label">Devotional Eyebrow Tag</label>
+                    <input type="text" id="hero_eyebrow" class="form-control" value="A DEVOTIONAL LIFESTYLE STORE" placeholder="e.g. A DEVOTIONAL LIFESTYLE STORE">
+                  </div>
                   <div class="col-md-4">
                     <label class="form-label">Headline Prefix</label>
                     <input type="text" id="hero_prefix" class="form-control" value="Carry" placeholder="e.g. Carry">
@@ -300,7 +340,7 @@
 
                   <div class="col-12">
                     <label class="form-label">Description / Subtitle</label>
-                    <textarea id="hero_desc" class="form-control" rows="3">Exquisite handcrafted devotional products, sacred shastras, and spiritual keepsakes designed to keep divine remembrance in your heart and everyday life.</textarea>
+                    <textarea id="hero_desc" class="form-control" rows="2">Beautiful devotional products to keep Krishna in your heart and everyday life.</textarea>
                   </div>
 
                   <div class="col-md-6">
@@ -312,22 +352,42 @@
                     <input type="text" id="hero_cta_link" class="form-control" value="/shop.html">
                   </div>
 
-                  <div class="col-md-6">
-                    <label class="form-label">Sacred Quote Verse</label>
-                    <input type="text" id="hero_quote_verse" class="form-control" value="“In every step, remember Krishna.”">
+                  <!-- 4 Devotional Trust Badges on Hero -->
+                  <div class="col-12 mt-3">
+                    <label class="form-label fw-bold text-navy">4 Hero Trust Badges</label>
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label">Quote Attribution / Subtitle</label>
-                    <input type="text" id="hero_quote_sub" class="form-control" value="Inspired by the timeless wisdom of Vrindavan">
+                    <label class="form-label small">Badge 1</label>
+                    <div class="input-group input-group-sm">
+                      <input type="text" id="hero_b1_icon" class="form-control" style="max-width: 50px;" value="🪷" placeholder="Icon">
+                      <input type="text" id="hero_b1_label" class="form-control" value="Authentic Products" placeholder="Badge Label">
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Badge 2</label>
+                    <div class="input-group input-group-sm">
+                      <input type="text" id="hero_b2_icon" class="form-control" style="max-width: 50px;" value="🌐" placeholder="Icon">
+                      <input type="text" id="hero_b2_label" class="form-control" value="Worldwide Shipping" placeholder="Badge Label">
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Badge 3</label>
+                    <div class="input-group input-group-sm">
+                      <input type="text" id="hero_b3_icon" class="form-control" style="max-width: 50px;" value="🛡️" placeholder="Icon">
+                      <input type="text" id="hero_b3_label" class="form-control" value="Secure Payments" placeholder="Badge Label">
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small">Badge 4</label>
+                    <div class="input-group input-group-sm">
+                      <input type="text" id="hero_b4_icon" class="form-control" style="max-width: 50px;" value="🤍" placeholder="Icon">
+                      <input type="text" id="hero_b4_label" class="form-control" value="Spreading Happiness" placeholder="Badge Label">
+                    </div>
                   </div>
 
-                  <div class="col-md-6">
-                    <label class="form-label">Devotee Rating Badge Text</label>
-                    <input type="text" id="hero_trust_rating" class="form-control" value="4.9 / 5.0">
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Social Proof Caption</label>
-                    <input type="text" id="hero_trust_caption" class="form-control" value="Blessed by 1,200+ devotees across India">
+                  <div class="col-12 mt-2">
+                    <label class="form-label small">Devotional Glass Card Tagline</label>
+                    <input type="text" id="hero_devotional_tagline" class="form-control form-control-sm" value="— A KINDER WORLD THROUGH DEVOTION —" placeholder="e.g. — A KINDER WORLD THROUGH DEVOTION —">
                   </div>
                 </div>
               </div>
@@ -335,19 +395,19 @@
               <!-- Right: Hero Media (Unified Image/Video) -->
               <div class="col-lg-5">
                 <div class="border rounded p-3 bg-light h-100 d-flex flex-column">
-                  <label class="form-label fw-bold mb-2"><i class="bi bi-camera-reels text-gold me-1"></i> Hero Media (Image or Video)</label>
+                  <label class="form-label fw-bold mb-2"><i class="bi bi-camera-reels text-gold me-1"></i> Hero Panoramic Background Image</label>
                   <div class="input-group mb-2">
-                    <input type="text" id="hero_media_url" class="form-control" value="/assets/images/krishna_hero_keychain.jpg" placeholder="Image URL, Video URL (MP4), or YouTube Link" oninput="updateHeroPreview()">
+                    <input type="text" id="hero_media_url" class="form-control" value="/assets/images/desktop_hero_banner.jpg" placeholder="Image URL or Cloud Link" oninput="updateHeroPreview()">
                     <button class="btn btn-outline-dark px-3" type="button" onclick="triggerFileUpload('hero_media_file_input')">
                       <i class="bi bi-upload"></i> Upload
                     </button>
                   </div>
                   <input type="file" id="hero_media_file_input" class="d-none" accept="image/*,video/*" onchange="handleSingleFileUpload(event, 'hero_media_url', updateHeroPreview)">
-                  <div class="form-text small text-muted mb-3">Upload any image or video (MP4/WebM) or paste a link. Videos will automatically autoplay in muted loop on the storefront.</div>
+                  <div class="form-text small text-muted mb-3">Upload panoramic desktop hero image or video. Uploads permanently to cloud storage.</div>
 
                   <!-- Media Preview Box -->
                   <div class="media-preview-box mt-auto" id="hero_media_preview">
-                    <img id="hero_preview_img" src="/assets/images/krishna_hero_keychain.jpg" alt="Hero Preview">
+                    <img id="hero_preview_img" src="/assets/images/desktop_hero_banner.jpg" alt="Hero Preview">
                     <video id="hero_preview_video" class="d-none" controls autoplay loop muted playsinline></video>
                     <iframe id="hero_preview_iframe" class="d-none" allowfullscreen></iframe>
                   </div>
@@ -360,11 +420,98 @@
       </div>
 
       <!-- =========================================================
-           2. PROMOTIONAL & MAHA-MANTRA BANNER
+           2. DAILY BHAKTI BANNER
+           ========================================================= -->
+      <div class="editor-section-card">
+        <div class="editor-section-header" data-bs-toggle="collapse" data-bs-target="#collapseBhakti">
+          <h5><i class="bi bi-cup-hot text-gold"></i> 3. Daily Bhakti Banner ("Bring Bhakti into Daily Life")</h5>
+          <span class="badge bg-light text-dark border">Middle Card Banner</span>
+        </div>
+        <div class="collapse show" id="collapseBhakti">
+          <div class="editor-section-body">
+            <div class="row g-4">
+              <!-- Left: Text Fields -->
+              <div class="col-lg-7">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Banner Title</label>
+                    <input type="text" id="bhakti_title" class="form-control" value="Bring Bhakti into Daily Life" placeholder="e.g. Bring Bhakti into Daily Life">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Banner Subtitle</label>
+                    <input type="text" id="bhakti_subtitle" class="form-control" value="Simple items. Eternal connection." placeholder="e.g. Simple items. Eternal connection.">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">CTA Button Text</label>
+                    <input type="text" id="bhakti_cta_text" class="form-control" value="Explore Collection" placeholder="e.g. Explore Collection">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">CTA Button Link</label>
+                    <input type="text" id="bhakti_cta_link" class="form-control" value="/shop.html" placeholder="e.g. /shop.html">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Banner Image Upload -->
+              <div class="col-lg-5">
+                <div class="border rounded p-3 bg-light h-100 d-flex flex-column">
+                  <label class="form-label fw-bold mb-2"><i class="bi bi-image text-gold me-1"></i> Daily Bhakti Banner Image</label>
+                  <div class="input-group mb-2">
+                    <input type="text" id="bhakti_media_url" class="form-control" value="/assets/images/bhakti_mug_banner.jpg" placeholder="Image URL" oninput="updateBhaktiPreview()">
+                    <button class="btn btn-outline-dark px-3" type="button" onclick="triggerFileUpload('bhakti_media_file_input')">
+                      <i class="bi bi-upload"></i> Upload
+                    </button>
+                  </div>
+                  <input type="file" id="bhakti_media_file_input" class="d-none" accept="image/*" onchange="handleSingleFileUpload(event, 'bhakti_media_url', updateBhaktiPreview)">
+                  
+                  <div class="media-preview-box mt-auto" style="height: 180px;">
+                    <img id="bhakti_preview_img" src="/assets/images/bhakti_mug_banner.jpg" alt="Daily Bhakti Preview">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
+           3. FEATURED PRODUCTS HEADER
+           ========================================================= -->
+      <div class="editor-section-card">
+        <div class="editor-section-header" data-bs-toggle="collapse" data-bs-target="#collapseFeaturedHeader">
+          <h5><i class="bi bi-grid text-gold"></i> 4. Featured Products Section Header</h5>
+          <span class="badge bg-light text-dark border">Catalog Strip</span>
+        </div>
+        <div class="collapse show" id="collapseFeaturedHeader">
+          <div class="editor-section-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Section Title</label>
+                <input type="text" id="featured_title" class="form-control" value="Featured Products" placeholder="e.g. Featured Products">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Section Subtitle</label>
+                <input type="text" id="featured_subtitle" class="form-control" value="Handpicked with love for your devotional journey" placeholder="Subtitle text">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">"View All" Button Text</label>
+                <input type="text" id="featured_view_all_text" class="form-control" value="View All">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">"View All" Link</label>
+                <input type="text" id="featured_view_all_link" class="form-control" value="/shop.html">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
+           4. PROMOTIONAL & MAHA-MANTRA BANNER
            ========================================================= -->
       <div class="editor-section-card">
         <div class="editor-section-header" data-bs-toggle="collapse" data-bs-target="#collapsePromo">
-          <h5><i class="bi bi-music-note-beamed text-gold"></i> 2. Promotional & Maha-Mantra Section</h5>
+          <h5><i class="bi bi-music-note-beamed text-gold"></i> 5. Promotional & Maha-Mantra Section</h5>
           <span class="badge bg-light text-dark border">Middle Banner</span>
         </div>
         <div class="collapse show" id="collapsePromo">
@@ -391,16 +538,17 @@
 Krishna Krishna Hare Hare
 Hare Rama Hare Rama
 Rama Rama Hare Hare</textarea>
+                  </div>
                   <div class="col-md-6">
                     <label class="form-label">Chant Tagline / Slogan</label>
                     <input type="text" id="promo_chant" class="form-control" value="Chant & Be Happy.">
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label">Price Display (Leave blank to remove)</label>
+                    <label class="form-label">Price Display (Leave blank to hide)</label>
                     <input type="text" id="promo_price" class="form-control" placeholder="e.g. ₹122 or Special Edition">
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label">Button Text (Leave blank to remove)</label>
+                    <label class="form-label">Button Text (Leave blank to hide)</label>
                     <input type="text" id="promo_cta_text" class="form-control" value="" placeholder="e.g. Add to Cart or Shop Now">
                   </div>
                   <div class="col-md-6">
@@ -443,11 +591,11 @@ Rama Rama Hare Hare</textarea>
       </div>
 
       <!-- =========================================================
-           3. "WHY CARRY KRISHNA?" SECTION
+           5. "WHY CARRY KRISHNA?" SECTION
            ========================================================= -->
       <div class="editor-section-card">
         <div class="editor-section-header" data-bs-toggle="collapse" data-bs-target="#collapseWhy">
-          <h5><i class="bi bi-flower2 text-gold"></i> 3. "Why Carry Krishna?" Feature Cards</h5>
+          <h5><i class="bi bi-flower2 text-gold"></i> 6. "Why Carry Krishna?" Feature Cards</h5>
           <span class="badge bg-light text-dark border">3 Value Pillars</span>
         </div>
         <div class="collapse show" id="collapseWhy">
@@ -533,11 +681,11 @@ Rama Rama Hare Hare</textarea>
       </div>
 
       <!-- =========================================================
-           4. "TAKE KRISHNA WITH YOU" LIFESTYLE GALLERY
+           6. "TAKE KRISHNA WITH YOU" LIFESTYLE GALLERY
            ========================================================= -->
       <div class="editor-section-card">
         <div class="editor-section-header" data-bs-toggle="collapse" data-bs-target="#collapseGallery">
-          <h5><i class="bi bi-images text-gold"></i> 4. "Take Krishna With You" Lifestyle Grid</h5>
+          <h5><i class="bi bi-images text-gold"></i> 7. "Take Krishna With You" Lifestyle Grid</h5>
           <span class="badge bg-light text-dark border">5 Photo Slots</span>
         </div>
         <div class="collapse show" id="collapseGallery">
@@ -601,11 +749,35 @@ Rama Rama Hare Hare</textarea>
       </div>
 
       <!-- =========================================================
-           5. TRUST & SERVICE HIGHLIGHTS BAR
+           7. DEVOTEE REVIEWS SECTION HEADER
+           ========================================================= -->
+      <div class="editor-section-card">
+        <div class="editor-section-header" data-bs-toggle="collapse" data-bs-target="#collapseReviewsHeader">
+          <h5><i class="bi bi-star text-gold"></i> 8. Devotee Reviews Section Header</h5>
+          <span class="badge bg-light text-dark border">Testimonials Strip</span>
+        </div>
+        <div class="collapse show" id="collapseReviewsHeader">
+          <div class="editor-section-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Reviews Section Title</label>
+                <input type="text" id="reviews_title" class="form-control" value="Loved by Devotees Across India" placeholder="e.g. Loved by Devotees Across India">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Reviews Section Subtitle</label>
+                <input type="text" id="reviews_subtitle" class="form-control" value="Real feedback from sincere practitioners and pilgrims." placeholder="Subtitle">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
+           8. TRUST & SERVICE HIGHLIGHTS BAR
            ========================================================= -->
       <div class="editor-section-card">
         <div class="editor-section-header" data-bs-toggle="collapse" data-bs-target="#collapseTrust">
-          <h5><i class="bi bi-shield-check text-gold"></i> 5. Trust & Service Highlights Bar</h5>
+          <h5><i class="bi bi-shield-check text-gold"></i> 9. Trust & Service Highlights Bar</h5>
           <span class="badge bg-light text-dark border">5 Badges</span>
         </div>
         <div class="collapse show" id="collapseTrust">
@@ -645,6 +817,34 @@ Rama Rama Hare Hare</textarea>
                   <span class="input-group-text"><i class="bi bi-chat-heart"></i></span>
                   <input type="text" id="trust_b5_label" class="form-control" value="Devotee Support">
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
+           9. FOOTER DEVOTIONAL SIGNOFF STRIP
+           ========================================================= -->
+      <div class="editor-section-card">
+        <div class="editor-section-header" data-bs-toggle="collapse" data-bs-target="#collapseFooterSignoff">
+          <h5><i class="bi bi-heart text-gold"></i> 10. Footer Devotional Signoff Strip</h5>
+          <span class="badge bg-light text-dark border">Footer Top Strip</span>
+        </div>
+        <div class="collapse show" id="collapseFooterSignoff">
+          <div class="editor-section-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Signoff Verse / Blessing</label>
+                <input type="text" id="signoff_verse" class="form-control" value="Hare Krishna ♡" placeholder="e.g. Hare Krishna ♡">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Divider Emblem / Icon</label>
+                <input type="text" id="signoff_icon" class="form-control" value="🪷" placeholder="e.g. 🪷">
+              </div>
+              <div class="col-md-5">
+                <label class="form-label">Devotional Subtitle / Tagline</label>
+                <input type="text" id="signoff_subtitle" class="form-control" value="A KINDER WORLD THROUGH DEVOTION" placeholder="e.g. A KINDER WORLD THROUGH DEVOTION">
               </div>
             </div>
           </div>
@@ -877,6 +1077,14 @@ Rama Rama Hare Hare</textarea>
       }
     }
 
+    function updateBhaktiPreview() {
+      const mediaUrl = document.getElementById('bhakti_media_url')?.value?.trim() || '/assets/images/bhakti_mug_banner.jpg';
+      const imgEl = document.getElementById('bhakti_preview_img');
+      if (imgEl && mediaUrl) {
+        imgEl.src = mediaUrl;
+      }
+    }
+
     function updateGalleryThumb(index) {
       const val = document.getElementById(`gallery_img_${index}`)?.value;
       const imgEl = document.getElementById(`gallery_img_prev_${index}`);
@@ -925,33 +1133,70 @@ Rama Rama Hare Hare</textarea>
     }
 
     function populateFormFields(cfg) {
+      // 0. Topbar
+      if (cfg.topbar) {
+        const t = cfg.topbar;
+        if (t.left_icon !== undefined) document.getElementById('topbar_left_icon').value = t.left_icon;
+        if (t.item1 !== undefined) document.getElementById('topbar_item1').value = t.item1;
+        if (t.item2 !== undefined) document.getElementById('topbar_item2').value = t.item2;
+        if (t.item3 !== undefined) document.getElementById('topbar_item3').value = t.item3;
+        if (t.right_icon !== undefined) document.getElementById('topbar_right_icon').value = t.right_icon;
+      }
+
       // 1. Hero
       if (cfg.hero) {
         const h = cfg.hero;
+        if (h.eyebrow !== undefined) document.getElementById('hero_eyebrow').value = h.eyebrow;
         if (h.title_prefix !== undefined) document.getElementById('hero_prefix').value = h.title_prefix;
         if (h.title_accent !== undefined) document.getElementById('hero_accent').value = h.title_accent;
         if (h.title_suffix !== undefined) document.getElementById('hero_suffix').value = h.title_suffix;
         if (h.description !== undefined) document.getElementById('hero_desc').value = h.description;
         if (h.cta_text !== undefined) document.getElementById('hero_cta_text').value = h.cta_text;
         if (h.cta_link !== undefined) document.getElementById('hero_cta_link').value = h.cta_link;
-        if (h.quote_verse !== undefined) document.getElementById('hero_quote_verse').value = h.quote_verse;
-        if (h.quote_subtitle !== undefined) document.getElementById('hero_quote_sub').value = h.quote_subtitle;
-        if (h.trust_rating !== undefined) document.getElementById('hero_trust_rating').value = h.trust_rating;
-        if (h.trust_caption !== undefined) document.getElementById('hero_trust_caption').value = h.trust_caption;
+        
+        if (h.badge1_icon !== undefined) document.getElementById('hero_b1_icon').value = h.badge1_icon;
+        if (h.badge1_label !== undefined) document.getElementById('hero_b1_label').value = h.badge1_label;
+        if (h.badge2_icon !== undefined) document.getElementById('hero_b2_icon').value = h.badge2_icon;
+        if (h.badge2_label !== undefined) document.getElementById('hero_b2_label').value = h.badge2_label;
+        if (h.badge3_icon !== undefined) document.getElementById('hero_b3_icon').value = h.badge3_icon;
+        if (h.badge3_label !== undefined) document.getElementById('hero_b3_label').value = h.badge3_label;
+        if (h.badge4_icon !== undefined) document.getElementById('hero_b4_icon').value = h.badge4_icon;
+        if (h.badge4_label !== undefined) document.getElementById('hero_b4_label').value = h.badge4_label;
+        if (h.devotional_tagline !== undefined) document.getElementById('hero_devotional_tagline').value = h.devotional_tagline;
 
-        const heroMedia = (h.media_type === 'video' ? h.video_url : h.image_url) || h.video_url || h.image_url || '/assets/images/krishna_hero_keychain.jpg';
+        const heroMedia = (h.media_type === 'video' ? h.video_url : h.image_url) || h.video_url || h.image_url || '/assets/images/desktop_hero_banner.jpg';
         const heroInput = document.getElementById('hero_media_url');
         if (heroInput) heroInput.value = heroMedia;
       }
 
-      // 2. Promo Banner
+      // 2. Daily Bhakti Banner
+      if (cfg.daily_bhakti) {
+        const d = cfg.daily_bhakti;
+        if (d.title !== undefined) document.getElementById('bhakti_title').value = d.title;
+        if (d.subtitle !== undefined) document.getElementById('bhakti_subtitle').value = d.subtitle;
+        if (d.cta_text !== undefined) document.getElementById('bhakti_cta_text').value = d.cta_text;
+        if (d.cta_link !== undefined) document.getElementById('bhakti_cta_link').value = d.cta_link;
+        if (d.image_url !== undefined) document.getElementById('bhakti_media_url').value = d.image_url;
+        updateBhaktiPreview();
+      }
+
+      // 3. Featured Header
+      if (cfg.featured_header) {
+        const f = cfg.featured_header;
+        if (f.title !== undefined) document.getElementById('featured_title').value = f.title;
+        if (f.subtitle !== undefined) document.getElementById('featured_subtitle').value = f.subtitle;
+        if (f.view_all_text !== undefined) document.getElementById('featured_view_all_text').value = f.view_all_text;
+        if (f.view_all_link !== undefined) document.getElementById('featured_view_all_link').value = f.view_all_link;
+      }
+
+      // 4. Promo Banner
       if (cfg.promo_banner) {
         const p = cfg.promo_banner;
         if (p.title !== undefined) document.getElementById('promo_title').value = p.title;
         if (p.subtitle !== undefined) document.getElementById('promo_subtitle').value = p.subtitle;
         if (p.description !== undefined) document.getElementById('promo_desc').value = p.description;
         if (p.mantra_verse !== undefined) document.getElementById('promo_mantra').value = p.mantra_verse;
-        if (p.chant !== undefined || p.mantra_chant !== undefined) document.getElementById('promo_chant').value = p.chant || p.mantra_chant || 'Chant & Be Happy ✨.';
+        if (p.chant !== undefined || p.mantra_chant !== undefined) document.getElementById('promo_chant').value = p.chant || p.mantra_chant || 'Chant & Be Happy.';
         if (p.price !== undefined) document.getElementById('promo_price').value = p.price;
         if (p.cta_text !== undefined) document.getElementById('promo_cta_text').value = p.cta_text;
         if (p.cta_link !== undefined) document.getElementById('promo_cta_link').value = p.cta_link;
@@ -963,7 +1208,7 @@ Rama Rama Hare Hare</textarea>
         if (promoInput) promoInput.value = promoMedia;
       }
 
-      // 3. Why Krishna
+      // 5. Why Krishna
       if (cfg.why_krishna) {
         const w = cfg.why_krishna;
         if (w.title !== undefined) document.getElementById('why_title').value = w.title;
@@ -984,7 +1229,7 @@ Rama Rama Hare Hare</textarea>
         }
       }
 
-      // 4. Lifestyle Gallery
+      // 6. Lifestyle Gallery
       if (cfg.lifestyle_gallery && Array.isArray(cfg.lifestyle_gallery.items)) {
         if (cfg.lifestyle_gallery.title !== undefined) document.getElementById('gallery_title').value = cfg.lifestyle_gallery.title;
         if (cfg.lifestyle_gallery.subtitle !== undefined) document.getElementById('gallery_subtitle').value = cfg.lifestyle_gallery.subtitle;
@@ -999,7 +1244,14 @@ Rama Rama Hare Hare</textarea>
         });
       }
 
-      // 5. Trust Bar
+      // 7. Reviews Header
+      if (cfg.reviews_header) {
+        const r = cfg.reviews_header;
+        if (r.title !== undefined) document.getElementById('reviews_title').value = r.title;
+        if (r.subtitle !== undefined) document.getElementById('reviews_subtitle').value = r.subtitle;
+      }
+
+      // 8. Trust Bar
       if (cfg.trust_bar && Array.isArray(cfg.trust_bar.badges)) {
         cfg.trust_bar.badges.forEach((b, idx) => {
           const num = idx + 1;
@@ -1008,45 +1260,90 @@ Rama Rama Hare Hare</textarea>
         });
       }
 
+      // 9. Footer Signoff
+      if (cfg.footer_signoff) {
+        const fs = cfg.footer_signoff;
+        if (fs.verse !== undefined) document.getElementById('signoff_verse').value = fs.verse;
+        if (fs.divider_icon !== undefined) document.getElementById('signoff_icon').value = fs.divider_icon;
+        if (fs.subtitle !== undefined) document.getElementById('signoff_subtitle').value = fs.subtitle;
+      }
+
       updateHeroPreview();
       updatePromoPreview();
+      updateBhaktiPreview();
     }
 
     async function saveAllHomepageSections() {
-      const heroMedia = (document.getElementById('hero_media_url')?.value || '').trim() || '/assets/images/krishna_hero_keychain.jpg';
+      const heroMedia = (document.getElementById('hero_media_url')?.value || '').trim() || '/assets/images/mobile_hero_bg.jpg';
       const isHeroVid = isVideoUrl(heroMedia);
 
       const promoMedia = (document.getElementById('promo_media_url')?.value || '').trim() || '/assets/images/krishna-logo.jpg';
       const isPromoVid = isVideoUrl(promoMedia);
 
+      const bhaktiMedia = (document.getElementById('bhakti_media_url')?.value || '').trim() || '/assets/images/bhakti_mug_banner.jpg';
+
       const payload = {
+        topbar: {
+          id: 'topbar',
+          title: 'Top Announcement Bar',
+          subtitle: 'Header top marquee strip',
+          content: {
+            left_icon: document.getElementById('topbar_left_icon').value,
+            item1: document.getElementById('topbar_item1').value,
+            item2: document.getElementById('topbar_item2').value,
+            item3: document.getElementById('topbar_item3').value,
+            right_icon: document.getElementById('topbar_right_icon').value
+          }
+        },
         hero: {
           id: 'hero',
           title: `${document.getElementById('hero_prefix').value} ${document.getElementById('hero_accent').value} ${document.getElementById('hero_suffix').value}`.trim(),
           subtitle: document.getElementById('hero_desc').value,
           content: {
+            eyebrow: document.getElementById('hero_eyebrow').value,
             title_prefix: document.getElementById('hero_prefix').value,
             title_accent: document.getElementById('hero_accent').value,
             title_suffix: document.getElementById('hero_suffix').value,
             description: document.getElementById('hero_desc').value,
             cta_text: document.getElementById('hero_cta_text').value,
             cta_link: document.getElementById('hero_cta_link').value,
-            quote_verse: document.getElementById('hero_quote_verse').value,
-            quote_subtitle: document.getElementById('hero_quote_sub').value,
-            trust_rating: document.getElementById('hero_trust_rating').value,
-            trust_caption: document.getElementById('hero_trust_caption').value,
+            badge1_icon: document.getElementById('hero_b1_icon').value,
+            badge1_label: document.getElementById('hero_b1_label').value,
+            badge2_icon: document.getElementById('hero_b2_icon').value,
+            badge2_label: document.getElementById('hero_b2_label').value,
+            badge3_icon: document.getElementById('hero_b3_icon').value,
+            badge3_label: document.getElementById('hero_b3_label').value,
+            badge4_icon: document.getElementById('hero_b4_icon').value,
+            badge4_label: document.getElementById('hero_b4_label').value,
+            devotional_tagline: document.getElementById('hero_devotional_tagline').value,
             media_type: isHeroVid ? 'video' : 'image',
             image_url: isHeroVid ? '' : heroMedia,
-            video_url: isHeroVid ? heroMedia : '',
-            badge_top_title: 'Blessed in Vrindavan',
-            badge_top_sub: 'Authentic & Sacred',
-            badge_bottom_title: 'Solid Cast Brass & Enamel',
-            badge_bottom_sub: 'Lifelong Divine Craft',
-            benefits: [
-              { icon: 'bi-flower1', title: 'REMEMBER', desc: 'Keep Krishna close throughout your daily journey.' },
-              { icon: 'bi-music-note-beamed', title: 'CHANT', desc: 'Let the Maha-mantra be your sacred anchor in every moment.' },
-              { icon: 'bi-gift', title: 'SHARE', desc: 'Gift a divine reminder to those you love and cherish.' }
-            ]
+            video_url: isHeroVid ? heroMedia : ''
+          }
+        },
+        daily_bhakti: {
+          id: 'daily_bhakti',
+          title: document.getElementById('bhakti_title').value,
+          subtitle: document.getElementById('bhakti_subtitle').value,
+          content: {
+            title: document.getElementById('bhakti_title').value,
+            subtitle: document.getElementById('bhakti_subtitle').value,
+            cta_text: document.getElementById('bhakti_cta_text').value,
+            cta_link: document.getElementById('bhakti_cta_link').value,
+            image_url: bhaktiMedia,
+            video_url: '',
+            media_type: 'image'
+          }
+        },
+        featured_header: {
+          id: 'featured_header',
+          title: document.getElementById('featured_title').value,
+          subtitle: document.getElementById('featured_subtitle').value,
+          content: {
+            title: document.getElementById('featured_title').value,
+            subtitle: document.getElementById('featured_subtitle').value,
+            view_all_text: document.getElementById('featured_view_all_text').value,
+            view_all_link: document.getElementById('featured_view_all_link').value
           }
         },
         promo_banner: {
@@ -1111,6 +1408,15 @@ Rama Rama Hare Hare</textarea>
             ]
           }
         },
+        reviews_header: {
+          id: 'reviews_header',
+          title: document.getElementById('reviews_title').value,
+          subtitle: document.getElementById('reviews_subtitle').value,
+          content: {
+            title: document.getElementById('reviews_title').value,
+            subtitle: document.getElementById('reviews_subtitle').value
+          }
+        },
         trust_bar: {
           id: 'trust_bar',
           title: 'Sacred Service Highlights',
@@ -1123,6 +1429,16 @@ Rama Rama Hare Hare</textarea>
               { icon: 'bi-arrow-counterclockwise', label: document.getElementById('trust_b4_label').value },
               { icon: 'bi-chat-heart', label: document.getElementById('trust_b5_label').value }
             ]
+          }
+        },
+        footer_signoff: {
+          id: 'footer_signoff',
+          title: 'Footer Devotional Signoff',
+          subtitle: 'Artwork and closing verse',
+          content: {
+            verse: document.getElementById('signoff_verse').value,
+            divider_icon: document.getElementById('signoff_icon').value,
+            subtitle: document.getElementById('signoff_subtitle').value
           }
         }
       };
@@ -1163,13 +1479,10 @@ Rama Rama Hare Hare</textarea>
       } catch (apiErr) {}
 
       // Save normalized client-ready config to localStorage for instant cross-tab live updates
-      const normalizedForClient = {
-        hero: payload.hero.content,
-        promo_banner: payload.promo_banner.content,
-        why_krishna: payload.why_krishna.content,
-        lifestyle_gallery: payload.lifestyle_gallery.content,
-        trust_bar: payload.trust_bar.content
-      };
+      const normalizedForClient = {};
+      Object.keys(payload).forEach(k => {
+        normalizedForClient[k] = payload[k].content;
+      });
       localStorage.setItem('hn_homepage_config', JSON.stringify(normalizedForClient));
 
       if (saved) {

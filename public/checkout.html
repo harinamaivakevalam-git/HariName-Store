@@ -899,7 +899,17 @@
             body: JSON.stringify({
               amount: total,
               currency: 'INR',
-              provider: 'razorpay'
+              provider: 'razorpay',
+              order_number: orderNumber,
+              customer_name: name,
+              customer_email: email,
+              customer_phone: phone,
+              notes: {
+                order_number: orderNumber,
+                customer_name: name,
+                customer_email: email,
+                customer_phone: phone
+              }
             })
           });
 
@@ -925,12 +935,18 @@
           amount: rzpAmount,
           currency: 'INR',
           name: 'Harinama Store',
-          description: 'Sacred Devotional Products Order',
+          description: `Devotional Order #${orderNumber}`,
           image: window.location.origin + '/assets/images/krishna-logo.jpg',
           prefill: {
             name: name,
             email: email,
             contact: phone
+          },
+          notes: {
+            order_number: orderNumber,
+            customer_name: name,
+            customer_email: email,
+            customer_phone: phone
           },
           theme: {
             color: '#0F1E36' // Elegant Harinama Deep Navy
@@ -946,6 +962,8 @@
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     provider: 'razorpay',
+                    order_number: orderNumber,
+                    amount: total,
                     razorpay_order_id: response.razorpay_order_id,
                     razorpay_payment_id: response.razorpay_payment_id,
                     razorpay_signature: response.razorpay_signature

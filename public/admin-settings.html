@@ -184,7 +184,62 @@
           </div>
         </div>
 
-      </div>
+        <!-- Razorpay Live Payment Gateway & Webhooks Configuration -->
+        <div class="col-12">
+          <div class="hn-admin-card p-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 pb-3 mb-3 border-bottom">
+              <h5 class="hn-admin-card-title mb-0 text-navy d-flex align-items-center gap-2">
+                <i class="bi bi-credit-card-2-front text-gold"></i> Razorpay Live Payment Gateway & Webhook Integration
+              </h5>
+              <span class="badge bg-success-subtle text-success border border-success px-3 py-1">
+                <i class="bi bi-shield-check me-1"></i> Live Ready
+              </span>
+            </div>
+
+            <div class="row g-4">
+              <div class="col-lg-7">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Razorpay Key ID <span class="text-danger">*</span></label>
+                    <input type="text" id="setting-rzp-key-id" class="form-control" placeholder="rzp_live_..." value="rzp_test_TcJx8pIdmhtsSA">
+                    <div class="form-text text-muted">From Razorpay Dashboard > Settings > API Keys</div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Razorpay Key Secret <span class="text-danger">*</span></label>
+                    <input type="password" id="setting-rzp-key-secret" class="form-control" placeholder="Key Secret..." value="uBEtvD6BoQwRcDpmKHaocb38">
+                    <div class="form-text text-muted">Kept secure on backend for HMAC signature generation</div>
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label fw-semibold">Razorpay Webhook Secret</label>
+                    <input type="text" id="setting-rzp-webhook-secret" class="form-control" placeholder="Enter secret set in Razorpay webhook..." value="harinama_rzp_webhook_secret_2026">
+                    <div class="form-text text-muted">Used to verify authenticity of incoming Razorpay webhook events</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-lg-5">
+                <div class="p-3 rounded border bg-light-subtle h-100">
+                  <label class="form-label fw-bold text-navy mb-1"><i class="bi bi-link-45deg text-gold"></i> Your Live Webhook URL</label>
+                  <p class="small text-muted mb-2">Paste this URL into your <strong>Razorpay Dashboard > Settings > Webhooks > Add New Webhook</strong>:</p>
+                  
+                  <div class="input-group mb-2">
+                    <input type="text" id="webhook-url-input" class="form-control form-control-sm font-monospace" value="https://www.harinamastore.com/api/payments/webhook/razorpay" readonly>
+                    <button type="button" class="btn btn-sm btn-outline-dark" onclick="copyWebhookUrl()"><i class="bi bi-clipboard"></i> Copy</button>
+                  </div>
+
+                  <div class="small fw-semibold text-navy mt-3 mb-1">Required Events to Enable:</div>
+                  <ul class="small text-muted ps-3 mb-0">
+                    <li><code class="text-primary">payment.captured</code> (Instant order payment capture)</li>
+                    <li><code class="text-primary">order.paid</code> (Order status synchronization)</li>
+                    <li><code class="text-primary">payment.failed</code> (Failed transaction logging)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
       <div class="d-flex justify-content-end gap-2 mb-5">
         <button type="submit" class="btn btn-gold px-5 py-2 fw-bold">
@@ -201,6 +256,17 @@
   <script src="/assets/js/components.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Dynamic Webhook URL based on deployment domain
+      const origin = window.location.origin;
+      const webhookInput = document.getElementById('webhook-url-input');
+      if (webhookInput) {
+        if (!origin.includes('localhost')) {
+          webhookInput.value = `${origin}/api/payments/webhook/razorpay`;
+        } else {
+          webhookInput.value = 'https://www.harinamastore.com/api/payments/webhook/razorpay';
+        }
+      }
+
       const stored = localStorage.getItem('harinama_store_settings');
       if (stored) {
         try {
@@ -213,9 +279,24 @@
           if (s.freeShipping) document.getElementById('setting-free-shipping').value = s.freeShipping;
           if (s.shippingFee) document.getElementById('setting-shipping-fee').value = s.shippingFee;
           if (s.announcement) document.getElementById('setting-announcement').value = s.announcement;
+          if (s.rzpKeyId) document.getElementById('setting-rzp-key-id').value = s.rzpKeyId;
+          if (s.rzpKeySecret) document.getElementById('setting-rzp-key-secret').value = s.rzpKeySecret;
+          if (s.rzpWebhookSecret) document.getElementById('setting-rzp-webhook-secret').value = s.rzpWebhookSecret;
         } catch(e) {}
       }
     });
+
+    function copyWebhookUrl() {
+      const input = document.getElementById('webhook-url-input');
+      if (!input) return;
+      navigator.clipboard.writeText(input.value).then(() => {
+        showToast('Webhook URL copied to clipboard! 📋', 'success');
+      }).catch(() => {
+        input.select();
+        document.execCommand('copy');
+        showToast('Webhook URL copied! 📋', 'success');
+      });
+    }
 
     function saveStoreSettings(e) {
       e.preventDefault();
@@ -227,11 +308,14 @@
         address: document.getElementById('setting-address').value,
         freeShipping: document.getElementById('setting-free-shipping').value,
         shippingFee: document.getElementById('setting-shipping-fee').value,
-        announcement: document.getElementById('setting-announcement').value
+        announcement: document.getElementById('setting-announcement').value,
+        rzpKeyId: document.getElementById('setting-rzp-key-id').value.trim(),
+        rzpKeySecret: document.getElementById('setting-rzp-key-secret').value.trim(),
+        rzpWebhookSecret: document.getElementById('setting-rzp-webhook-secret').value.trim()
       };
 
       localStorage.setItem('harinama_store_settings', JSON.stringify(settings));
-      showToast('Store settings saved successfully!');
+      showToast('Store & Razorpay settings saved successfully! 🌸', 'success');
     }
   </script>
 </body>

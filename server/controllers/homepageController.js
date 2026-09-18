@@ -1,36 +1,73 @@
 const { supabase, supabaseAdmin, isSupabaseConfigured } = require('../config/supabase');
 const db = require('../models/db');
 
-// Default initial homepage structure
+// Default initial homepage structure - Complete Top to Bottom Editable Sections
 const DEFAULT_HOMEPAGE_SECTIONS = [
+  {
+    id: 'topbar',
+    title: 'Top Announcement Bar',
+    subtitle: 'Header top marquee and devotional greeting strip.',
+    is_active: true,
+    content: {
+      left_icon: '🌿',
+      item1: 'Hare Krishna',
+      item2: 'Spread Love',
+      item3: 'Be Remembered',
+      right_icon: '🌿'
+    }
+  },
   {
     id: 'hero',
     title: 'Carry Krishna Wherever You Go',
     subtitle: 'Exquisite handcrafted devotional products, sacred shastras, and spiritual keepsakes designed to keep divine remembrance in your heart and everyday life.',
     is_active: true,
     content: {
+      eyebrow: 'A DEVOTIONAL LIFESTYLE STORE',
       title_prefix: 'Carry',
       title_accent: 'Krishna',
       title_suffix: 'Wherever You Go',
-      description: 'Exquisite handcrafted devotional products, sacred shastras, and spiritual keepsakes designed to keep divine remembrance in your heart and everyday life.',
+      description: 'Beautiful devotional products to keep Krishna in your heart and everyday life.',
       cta_text: 'Shop Now',
       cta_link: '/shop.html',
-      quote_verse: '“In every step, remember Krishna.”',
-      quote_subtitle: 'Inspired by the timeless wisdom of Vrindavan',
-      trust_rating: '4.9 / 5.0',
-      trust_caption: 'Blessed by 1,200+ devotees across India',
+      badge1_icon: '🪷',
+      badge1_label: 'Authentic Products',
+      badge2_icon: '🌐',
+      badge2_label: 'Worldwide Shipping',
+      badge3_icon: '🛡️',
+      badge3_label: 'Secure Payments',
+      badge4_icon: '🤍',
+      badge4_label: 'Spreading Happiness',
+      devotional_tagline: '— A KINDER WORLD THROUGH DEVOTION —',
       media_type: 'image', // 'image' | 'video'
-      image_url: '/assets/images/krishna_hero_keychain.jpg',
+      image_url: '/assets/images/desktop_hero_banner.jpg',
+      video_url: ''
+    }
+  },
+  {
+    id: 'daily_bhakti',
+    title: 'Bring Bhakti into Daily Life',
+    subtitle: 'Simple items. Eternal connection.',
+    is_active: true,
+    content: {
+      title: 'Bring Bhakti into Daily Life',
+      subtitle: 'Simple items. Eternal connection.',
+      cta_text: 'Explore Collection',
+      cta_link: '/shop.html',
+      image_url: '/assets/images/bhakti_mug_banner.jpg',
       video_url: '',
-      badge_top_title: 'Blessed in Vrindavan',
-      badge_top_sub: 'Authentic & Sacred',
-      badge_bottom_title: 'Solid Cast Brass & Enamel',
-      badge_bottom_sub: 'Lifelong Divine Craft',
-      benefits: [
-        { icon: 'bi-flower1', title: 'REMEMBER', desc: 'Keep Krishna close throughout your daily journey.' },
-        { icon: 'bi-music-note-beamed', title: 'CHANT', desc: 'Let the Maha-mantra be your sacred anchor in every moment.' },
-        { icon: 'bi-gift', title: 'SHARE', desc: 'Gift a divine reminder to those you love and cherish.' }
-      ]
+      media_type: 'image'
+    }
+  },
+  {
+    id: 'featured_header',
+    title: 'Featured Products',
+    subtitle: 'Handpicked with love for your devotional journey',
+    is_active: true,
+    content: {
+      title: 'Featured Products',
+      subtitle: 'Handpicked with love for your devotional journey',
+      view_all_text: 'View All',
+      view_all_link: '/shop.html'
     }
   },
   {
@@ -44,7 +81,10 @@ const DEFAULT_HOMEPAGE_SECTIONS = [
       description: 'A simple everyday reminder to pause, remember Krishna, and chant.',
       mantra_verse: 'Hare Krishna Hare Krishna\nKrishna Krishna Hare Hare\nHare Rama Hare Rama\nRama Rama Hare Hare',
       mantra_chant: 'Chant & Be Happy.',
-      cta_text: 'Add to Cart',
+      price: '',
+      cta_text: '',
+      cta_link: '',
+      show_cta: false,
       image_url: '/assets/images/krishna-logo.jpg',
       video_url: '',
       media_type: 'image'
@@ -96,6 +136,16 @@ const DEFAULT_HOMEPAGE_SECTIONS = [
     }
   },
   {
+    id: 'reviews_header',
+    title: 'Loved by Devotees Across India',
+    subtitle: 'Real feedback from sincere practitioners and pilgrims.',
+    is_active: true,
+    content: {
+      title: 'Loved by Devotees Across India',
+      subtitle: 'Real feedback from sincere practitioners and pilgrims.'
+    }
+  },
+  {
     id: 'trust_bar',
     title: 'Sacred Service Highlights',
     subtitle: 'Our devotional commitments to every pilgrim and devotee.',
@@ -108,6 +158,17 @@ const DEFAULT_HOMEPAGE_SECTIONS = [
         { icon: 'bi-arrow-counterclockwise', label: 'Authentic Vedic Craft' },
         { icon: 'bi-chat-heart', label: 'Devotee Support' }
       ]
+    }
+  },
+  {
+    id: 'footer_signoff',
+    title: 'Footer Devotional Signoff',
+    subtitle: 'Artwork and closing verse shown right above the footer.',
+    is_active: true,
+    content: {
+      verse: 'Hare Krishna ♡',
+      divider_icon: '🪷',
+      subtitle: 'A KINDER WORLD THROUGH DEVOTION'
     }
   }
 ];

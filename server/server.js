@@ -13,7 +13,12 @@ const PORT = process.env.PORT || 5000;
 // Security & Parsing Middleware
 app.use(helmetConfig);
 app.use(require('cors')(corsOptions));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 if (process.env.NODE_ENV !== 'test') {

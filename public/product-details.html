@@ -594,8 +594,32 @@
       if (descEl) descEl.innerText = prod.description || 'Devotional handcrafted item from Harinama Store.';
       const tabDescEl = document.getElementById('hn-tab-desc');
       if (tabDescEl) tabDescEl.innerText = prod.description || 'Devotional handcrafted item from Harinama Store.';
+      // Thumbs & Main Image
+      let gallery = [];
+      if (Array.isArray(prod.gallery)) {
+        gallery = prod.gallery.filter(Boolean);
+      } else if (typeof prod.gallery === 'string' && prod.gallery.trim()) {
+        try {
+          const parsed = JSON.parse(prod.gallery);
+          if (Array.isArray(parsed)) gallery = parsed.filter(Boolean);
+        } catch (_) {
+          gallery = prod.gallery.split(',').map(s => s.trim()).filter(Boolean);
+        }
+      }
+      if (gallery.length === 0) {
+        const fallbackImg = prod.image || prod.primary_image || '/assets/images/krishna_hero_keychain.jpg';
+        gallery = [fallbackImg];
+      }
+
       const mainImg = document.getElementById('hn-main-image');
-      if (mainImg) mainImg.src = prod.image || prod.primary_image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80';
+      if (mainImg) {
+        mainImg.src = gallery[0] || '/assets/images/krishna_hero_keychain.jpg';
+        mainImg.onerror = function() {
+          this.onerror = null;
+          this.src = '/assets/images/krishna_hero_keychain.jpg';
+        };
+      }
+
       const reviewsEl = document.getElementById('hn-product-reviews');
       if (reviewsEl) {
         reviewsEl.innerText = `(${prod.reviews_count || 0} reviews)`;
@@ -619,12 +643,10 @@
         }
       }
 
-      // Thumbs
-      const gallery = prod.gallery && prod.gallery.length ? prod.gallery : [prod.image || prod.primary_image];
       const thumbContainer = document.getElementById('hn-thumb-gallery');
       if (thumbContainer) {
-        thumbContainer.innerHTML = gallery.filter(Boolean).map((img, idx) => `
-          <img src="${img}" class="hn-thumb-img ${idx === 0 ? 'active' : ''}" onclick="document.getElementById('hn-main-image').src = '${img}'; document.querySelectorAll('.hn-thumb-img').forEach(t => t.classList.remove('active')); this.classList.add('active');" alt="Thumbnail">
+        thumbContainer.innerHTML = gallery.map((img, idx) => `
+          <img src="${img}" class="hn-thumb-img ${idx === 0 ? 'active' : ''}" onclick="document.getElementById('hn-main-image').src = this.src; document.querySelectorAll('.hn-thumb-img').forEach(t => t.classList.remove('active')); this.classList.add('active');" onerror="this.onerror=null; this.src='/assets/images/krishna_hero_keychain.jpg';" alt="${prod.title || prod.name || 'Sacred Item'}">
         `).join('');
       }
 

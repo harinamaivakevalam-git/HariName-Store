@@ -1428,10 +1428,30 @@
     const onScroll = () => {
       const header = document.querySelector('.hn-header');
       if (!header) return;
-      if (window.scrollY > 30) {
+
+      const isScrolled = window.scrollY > 30;
+      if (isScrolled) {
         header.classList.add('scrolled');
       } else {
         header.classList.remove('scrolled');
+      }
+
+      // Hide floating navbar once user scrolls down to the footer
+      const footer = document.querySelector('.hn-footer') ||
+                     document.querySelector('.hn-footer-signoff') ||
+                     document.getElementById('hn-footer-placeholder') ||
+                     document.querySelector('footer');
+
+      if (footer && isScrolled) {
+        const footerRect = footer.getBoundingClientRect();
+        const headerHeight = header.offsetHeight || 60;
+        if (footerRect.top <= (headerHeight + 20)) {
+          header.classList.add('footer-reached');
+        } else {
+          header.classList.remove('footer-reached');
+        }
+      } else {
+        header.classList.remove('footer-reached');
       }
     };
 
@@ -1454,43 +1474,6 @@
     if (!container) return;
 
     container.innerHTML = `
-    <!-- Service / Trust Bar (On top of footer) -->
-    <div class="hn-service-bar">
-      <div class="container">
-        <div class="row g-2 g-md-3 text-center align-items-center">
-          
-          <div class="col-6 col-md-3">
-            <div class="hn-service-item">
-              <i class="bi bi-shield-check"></i>
-              <span>Secure Payments</span>
-            </div>
-          </div>
-
-          <div class="col-6 col-md-3">
-            <div class="hn-service-item">
-              <i class="bi bi-arrow-repeat"></i>
-              <span>Easy Returns</span>
-            </div>
-          </div>
-
-          <div class="col-6 col-md-3">
-            <div class="hn-service-item">
-              <i class="bi bi-truck"></i>
-              <span>All India Delivery</span>
-            </div>
-          </div>
-
-          <div class="col-6 col-md-3">
-            <div class="hn-service-item">
-              <i class="bi bi-arrow-counterclockwise"></i>
-              <span>Authentic Vedic Craft</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
     <!-- Devotional Footer Artwork Signoff Strip -->
     <div class="hn-footer-signoff">
       <div class="hn-footer-signoff-bg" style="background-image: url('/assets/images/footer_lotus_bg.jpg');"></div>

@@ -692,28 +692,30 @@
 
         let uploadedUrl = null;
 
-        // 1. Try Supabase Storage upload directly
-        uploadedUrl = await uploadToSupabaseStorage(file);
+        // 1. Try Backend Cloud Storage upload endpoint first (uses Supabase service-role)
+        try {
+          const formData = new FormData();
+          formData.append('image', file);
+          formData.append('media', file);
+          formData.append('file', file);
 
-        // 2. Try Backend upload endpoint if storage was unavailable
-        if (!uploadedUrl) {
-          try {
-            const formData = new FormData();
-            formData.append('image', file);
+          const res = await fetch('/api/upload/image', {
+            method: 'POST',
+            headers: getUploadAuthHeaders(),
+            body: formData
+          });
 
-            const res = await fetch('/api/upload/image', {
-              method: 'POST',
-              headers: getUploadAuthHeaders(),
-              body: formData
-            });
-
-            if (res.ok) {
-              const json = await res.json();
-              if (json.success && json.data && json.data.url) {
-                uploadedUrl = json.data.url;
-              }
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && (json.data?.url || json.url)) {
+              uploadedUrl = json.data?.url || json.url;
             }
-          } catch (apiErr) {}
+          }
+        } catch (apiErr) {}
+
+        // 2. Direct Supabase Storage client fallback
+        if (!uploadedUrl) {
+          uploadedUrl = await uploadToSupabaseStorage(file);
         }
 
         // 3. Fallback: Compress locally as fast WebP Data URL

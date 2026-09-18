@@ -1097,34 +1097,28 @@ Rama Rama Hare Hare</textarea>
     async function loadHomepageConfig() {
       let config = null;
 
-      // 1. Try direct Supabase
+      // 1. Live Fetch from Express API (Server Anycast DNS bypass - 0.02s)
       try {
-        const sb = initSupabase();
-        if (sb) {
-          const { data, error } = await sb.from('homepage_sections').select('*');
-          if (!error && Array.isArray(data) && data.length > 0) {
+        const res = await fetch('/api/homepage');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
             config = {};
-            data.forEach(s => {
-              config[s.id] = typeof s.content === 'object' ? s.content : JSON.parse(s.content || '{}');
+            Object.keys(json.data).forEach(k => {
+              config[k] = json.data[k].content;
             });
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('[AdminHomepage] API fetch error:', e);
+      }
 
-      // 2. Try REST API fallback
+      // 2. Cache fallback
       if (!config) {
         try {
-          const res = await fetch('/api/homepage');
-          if (res.ok) {
-            const json = await res.json();
-            if (json.success && json.data) {
-              config = {};
-              Object.keys(json.data).forEach(k => {
-                config[k] = json.data[k].content;
-              });
-            }
-          }
-        } catch (e) {}
+          const cached = localStorage.getItem('hn_homepage_config');
+          if (cached) config = JSON.parse(cached);
+        } catch (_) {}
       }
 
       if (config) {
@@ -1459,17 +1453,21 @@ Rama Rama Hare Hare</textarea>
       let saved = false;
 
       // 2. Fast Cloud Sync (Express API with Cloudflare Anycast backend)
+      let errorMsg = '';
       try {
         const res = await fetch('/api/homepage', {
           method: 'PUT',
           headers: getAuthHeaders(),
           body: JSON.stringify({ sections: payload })
         });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success) saved = true;
+        const json = await res.json().catch(() => ({}));
+        if (res.ok && json.success) {
+          saved = true;
+        } else {
+          errorMsg = json.message || `Server returned ${res.status}`;
         }
       } catch (err) {
+        errorMsg = err.message;
         console.warn('[AdminHomepage] API save notice:', err);
       }
 
@@ -1482,9 +1480,9 @@ Rama Rama Hare Hare</textarea>
       });
 
       if (saved) {
-        showToast('All homepage sections saved to live store & database! 🌸', 'success');
+        showToast('All homepage sections saved to database successfully! 🌸', 'success');
       } else {
-        showToast('Saved to local store & cloud database! 🌸', 'success');
+        showToast('Saved locally. Server notice: ' + (errorMsg || 'Check connection'), 'warning');
       }
     }
 

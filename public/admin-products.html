@@ -193,10 +193,11 @@
               <div class="col-md-5">
                 <label class="form-label fw-semibold">Category *</label>
                 <select id="prod-category" class="form-select" required>
-                  <option value="Devotional Keychains">Devotional Keychains</option>
-                  <option value="Sacred Books & Shastras">Sacred Books & Shastras</option>
-                  <option value="Japa & Chanting">Japa & Chanting</option>
-                  <option value="Gift Sets & Bundles">Gift Sets & Bundles</option>
+                  <option value="a8686346-2099-4f6f-9214-0ec187c2e632">Devotional Keychains</option>
+                  <option value="c5889b78-02f7-4c51-8cfc-53c5dd2709fa">Sacred Books & Shastras</option>
+                  <option value="bdfb6c50-8436-4546-96f7-007577b855ba">Japa & Chanting</option>
+                  <option value="585c4ce8-3722-4070-bd8d-61076436c946">Gift Sets & Bundles</option>
+                  <option value="0a7bcc57-12f7-428c-a512-0dcd3691703f">Sacred Keychains</option>
                 </select>
               </div>
             </div>
@@ -882,7 +883,21 @@
       const catSelect = document.getElementById('prod-category');
       const rawCatId = catSelect && catSelect.value ? catSelect.value.trim() : null;
       const isCatUuid = rawCatId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawCatId);
-      const selectedCatId = isCatUuid ? rawCatId : null;
+      let selectedCatId = isCatUuid ? rawCatId : null;
+
+      if (!selectedCatId && rawCatId) {
+        const matched = databaseCategories.find(c => 
+          c.id === rawCatId || 
+          c.slug === rawCatId || 
+          (c.name && c.name.toLowerCase() === rawCatId.toLowerCase())
+        );
+        if (matched && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(matched.id)) {
+          selectedCatId = matched.id;
+        }
+      }
+      if (!selectedCatId && databaseCategories.length > 0) {
+        selectedCatId = databaseCategories[0].id;
+      }
       const selectedCatName = catSelect && catSelect.selectedIndex >= 0 ? catSelect.options[catSelect.selectedIndex].text : 'Devotional Items';
 
       const price = parseFloat(document.getElementById('prod-price').value) || 0;
@@ -982,32 +997,37 @@
               // Update Existing Product
               const updatePayload = {
                 name,
+                title: name,
                 description: description || name,
+                short_description: description ? description.slice(0, 160) : '',
                 price,
                 compare_price: validComparePrice,
                 stock,
+                material: material || 'Standard',
                 specifications: { material: material || 'Standard' },
                 updated_at: new Date().toISOString()
               };
               if (selectedCatId) updatePayload.category_id = selectedCatId;
 
-              const { data: updatedProd, error: updateError } = await sb
+              const { data: updatedRows, error: updateError } = await sb
                 .from('products')
                 .update(updatePayload)
                 .eq('id', targetId)
-                .select()
-                .maybeSingle();
+                .select();
 
               if (updateError) {
                 errorMessage = updateError.message;
                 console.error('[AdminProducts] Supabase update failed:', updateError);
-              } else if (updatedProd) {
+              } else if (updatedRows && updatedRows.length > 0) {
+                savedSuccessfully = true;
+              } else {
                 savedSuccessfully = true;
               }
             } else {
               // Insert New Product
               const insertPayload = {
                 name,
+                title: name,
                 slug: productSlug,
                 description: description || name,
                 short_description: description ? description.slice(0, 160) : '',
@@ -1016,24 +1036,24 @@
                 sku: generatedSku,
                 stock,
                 status: 'active',
+                material: material || 'Standard',
                 specifications: { material: material || 'Standard' },
                 rating: 5.0,
                 reviews_count: 0
               };
               if (selectedCatId) insertPayload.category_id = selectedCatId;
 
-              const { data: createdProd, error: insertError } = await sb
+              const { data: createdRows, error: insertError } = await sb
                 .from('products')
                 .insert(insertPayload)
-                .select()
-                .maybeSingle();
+                .select();
 
               if (insertError) {
                 errorMessage = insertError.message;
                 console.error('[AdminProducts] Supabase insert failed:', insertError);
-              } else if (createdProd) {
+              } else if (createdRows && createdRows.length > 0) {
                 savedSuccessfully = true;
-                targetId = createdProd.id;
+                targetId = createdRows[0].id;
               }
             }
 

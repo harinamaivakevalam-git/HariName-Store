@@ -351,75 +351,33 @@
           </div>
         </div>
 
-        <!-- Right Column: Warm Cream Form Card -->
-        <div class="hn-sprout-right">
+        <!-- Right Column: Warm Cream Card with Google Sign-in -->
+        <div class="hn-sprout-right d-flex flex-column justify-content-center text-center">
           
-          <h2 class="hn-sprout-title">Log in to your account</h2>
+          <div class="mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow-sm" style="width: 68px; height: 68px; background: #FFFFFF; border: 1.5px solid #EFE8DE;">
+              <svg width="34" height="34" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.35 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.97 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
+            </div>
+            <h2 class="hn-sprout-title mb-2">Welcome to HariNama</h2>
+            <p class="text-secondary small mb-0 px-2" style="max-width: 380px; margin: 0 auto; line-height: 1.5;">
+              Sign in with your Google account to access your sacred orders, track shipments, and manage your wishlist.
+            </p>
+          </div>
 
           <!-- Alert notification -->
           <div id="loginAlert" class="hn-alert-box alert alert-danger"></div>
 
-          <!-- Login Form -->
-          <form id="loginForm" onsubmit="handleLoginSubmit(event)">
-            
-            <!-- Email Field -->
-            <div class="hn-sprout-field">
-              <label class="hn-sprout-label" for="login-email">Email address</label>
-              <div class="hn-sprout-input-wrap">
-                <div class="hn-sprout-icon"><i class="bi bi-envelope"></i></div>
-                <input type="email" id="login-email" class="hn-sprout-input" placeholder="Enter your email" required autocomplete="email" value="user@harinama.com">
-              </div>
-            </div>
-
-            <!-- Password Field -->
-            <div class="hn-sprout-field">
-              <label class="hn-sprout-label" for="login-password">Password</label>
-              <div class="hn-sprout-input-wrap">
-                <div class="hn-sprout-icon"><i class="bi bi-lock"></i></div>
-                <input type="password" id="login-password" class="hn-sprout-input" placeholder="Enter your password" required autocomplete="current-password" value="user123">
-                <button type="button" class="hn-sprout-eye-btn" onclick="togglePasswordVisibility('login-password', this)" aria-label="Toggle password">
-                  <i class="bi bi-eye"></i>
-                </button>
-              </div>
-            </div>
-
-            <!-- Forgot password link -->
-            <div class="hn-sprout-forgot-wrap">
-              <a href="#" class="hn-sprout-forgot-link" onclick="showForgotPasswordAlert(event)">Forgot your password?</a>
-            </div>
-
-            <!-- Submit Button -->
-            <button type="submit" class="hn-sprout-btn-login" id="btn-login">
-              <span>Log in</span>
-            </button>
-
-            <!-- Quick Demo 1-Click Login Shortcuts -->
-            <div class="d-flex gap-2 justify-content-center my-3">
-              <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-1" style="font-size: 0.8rem;" onclick="fillLogin('user@harinama.com', 'user123')">
-                <i class="bi bi-person me-1"></i> Customer Login
-              </button>
-              <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1" style="font-size: 0.8rem;" onclick="fillLogin('harinamaivakevalam@gmail.com', 'harinama@123')">
-                <i class="bi bi-shield-lock me-1"></i> Admin Login
-              </button>
-            </div>
-
-            <!-- Divider -->
-            <div class="hn-sprout-divider">
-              <span>or continue with</span>
-            </div>
-
-            <!-- Google Sign-In Button -->
-            <button type="button" class="hn-sprout-btn-google" id="btn-google" onclick="handleGoogleSignIn()">
-              <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.35 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.97 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
+          <!-- Primary & Only Google Sign-In Action -->
+          <div class="my-3">
+            <button type="button" class="hn-sprout-btn-google py-3 shadow-sm text-dark fw-bold border-2 rounded-3 w-100 d-flex align-items-center justify-content-center gap-3" id="btn-google" onclick="handleGoogleSignIn()" style="background: #FFFFFF; border-color: #E2D9CD; font-size: 1.05rem;">
+              <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.35 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.97 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
               <span>Continue with Google</span>
             </button>
+          </div>
 
-            <!-- Switch Link -->
-            <div class="hn-sprout-switch">
-              Don't have an account? <a href="/register.html">Sign up</a>
-            </div>
-
-          </form>
+          <div class="text-muted text-center mt-3 small" style="font-size: 0.8rem;">
+            <i class="bi bi-shield-check text-success me-1"></i> Fast, 100% Secure & One-Click Auth
+          </div>
 
         </div>
       </div>
@@ -487,7 +445,6 @@
   <!-- Global Footer -->
   <div id="hn-footer-placeholder"></div>
 
-
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
@@ -509,46 +466,16 @@
       }
     }
 
-    // Toggle Password Visibility
-    window.togglePasswordVisibility = function(fieldId, btn) {
-      const input = document.getElementById(fieldId);
-      if (!input) return;
-      const isPwd = input.type === 'password';
-      input.type = isPwd ? 'text' : 'password';
-      const icon = btn.querySelector('i');
-      if (icon) {
-        icon.className = isPwd ? 'bi bi-eye-slash' : 'bi bi-eye';
-      }
-    };
-
-    // Quick Fill Demo Credentials
-    window.fillLogin = function(email, pwd) {
-      const emailEl = document.getElementById('login-email');
-      const pwdEl = document.getElementById('login-password');
-      if (emailEl) emailEl.value = email;
-      if (pwdEl) pwdEl.value = pwd;
-      const form = document.getElementById('loginForm');
-      if (form) window.handleLoginSubmit();
-    };
-
-    // Forgot Password Alert
-    window.showForgotPasswordAlert = function(e) {
-      if (e) e.preventDefault();
-      const email = document.getElementById('login-email')?.value.trim() || 'your email';
-      alert(`Password reset link will be sent to: ${email}\n\nPlease check your inbox.`);
-    };
-
     // Google Sign-In Prompt & Handler
     window.handleGoogleSignIn = async function(customEmail, customName) {
       const googleBtn = document.getElementById('btn-google');
       const alertBox = document.getElementById('loginAlert');
-      const origText = googleBtn ? googleBtn.innerHTML : '';
 
       if (alertBox) {
         alertBox.style.display = 'none';
       }
 
-      // If called with parameters (e.g. from Google Account selector)
+      // If called with specific credentials (from modal selection)
       if (customEmail) {
         return window.submitGoogleAuth({
           email: customEmail,
@@ -560,7 +487,7 @@
       // Open Google Account Selection Modal
       const googleModalEl = document.getElementById('hnGoogleAuthModal');
       if (googleModalEl) {
-        const modal = new bootstrap.Modal(googleModalEl);
+        const modal = bootstrap.Modal.getOrCreateInstance(googleModalEl);
         modal.show();
         return;
       }
@@ -610,7 +537,7 @@
 
         if (alertBox) {
           alertBox.className = 'hn-alert-box alert alert-success';
-          alertBox.innerText = `Welcome, ${res.user.name || 'Devotee'}! 🌸 Signed in with Google. Redirecting...`;
+          alertBox.innerText = `Welcome, ${res.user.name || 'Devotee'}! 🌸 Signed in with Google. Redirecting to website...`;
           alertBox.style.display = 'block';
         }
 
@@ -627,7 +554,7 @@
           } else if (window.isAdminUser ? window.isAdminUser(res.user) : res.user.role === 'admin') {
             window.location.href = window._getAdminRoute ? window._getAdminRoute() : '/admin.html';
           } else {
-            window.location.href = '/account.html';
+            window.location.href = '/index.html';
           }
         }, 400);
 
@@ -649,108 +576,10 @@
       }
     };
 
-
-    // Form Submit Handler
-    window.handleLoginSubmit = async function(e) {
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-
-      const email = document.getElementById('login-email')?.value.trim();
-      const password = document.getElementById('login-password')?.value;
-      const btn = document.getElementById('btn-login');
-      const alertBox = document.getElementById('loginAlert');
-
-      if (alertBox) {
-        alertBox.style.display = 'none';
-        alertBox.className = 'hn-alert-box alert alert-danger';
-      }
-
-      if (!email || !password) {
-        if (alertBox) {
-          alertBox.innerText = 'Please enter both email and password.';
-          alertBox.style.display = 'block';
-        }
-        return false;
-      }
-
-      const origText = btn ? btn.innerHTML : '<span>Log in</span>';
-      if (btn) {
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Logging in...';
-        btn.disabled = true;
-      }
-
-      try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        }).then(r => r.json());
-
-        if (!res.success || !res.token) {
-          throw new Error(res.message || 'Login failed. Please check your credentials.');
-        }
-
-        // Save tokens and user session
-        localStorage.setItem('hn_auth_token', res.token);
-        localStorage.setItem('token', res.token);
-        localStorage.setItem('hn_user_profile', JSON.stringify(res.user));
-        localStorage.setItem('hn_user', JSON.stringify(res.user));
-        localStorage.setItem('user', JSON.stringify(res.user));
-
-        if (alertBox) {
-          alertBox.className = 'hn-alert-box alert alert-success';
-          alertBox.innerText = `Welcome back, ${res.user.name || 'Devotee'}! 🌸 Redirecting...`;
-          alertBox.style.display = 'block';
-        }
-
-        if (typeof showToast === 'function') {
-          showToast(`Welcome back, ${res.user.name}! 🌸`, 'success');
-        }
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirectParam = urlParams.get('redirect');
-
-        setTimeout(() => {
-          if (redirectParam) {
-            window.location.href = redirectParam;
-          } else if (window.isAdminUser ? window.isAdminUser(res.user) : res.user.role === 'admin') {
-            window.location.href = window._getAdminRoute ? window._getAdminRoute() : '/admin.html';
-          } else {
-            window.location.href = '/account.html';
-          }
-        }, 500);
-
-        return false;
-      } catch (err) {
-        console.error('Login error:', err);
-        if (alertBox) {
-          alertBox.className = 'hn-alert-box alert alert-danger';
-          alertBox.innerText = err.message || 'Login failed. Please check your credentials.';
-          alertBox.style.display = 'block';
-        }
-        if (typeof showToast === 'function') {
-          showToast(err.message || 'Login failed', 'danger');
-        }
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = origText;
-        }
-      }
-
-      return false;
-    };
-
     // DOM Ready initialization
     document.addEventListener('DOMContentLoaded', () => {
       renderHeader('account');
       renderFooter();
-
-      const form = document.getElementById('loginForm');
-      if (form) {
-        form.addEventListener('submit', window.handleLoginSubmit);
-      }
 
       // Check if redirected with Supabase session
       if (sbClient && sbClient.auth) {
@@ -768,7 +597,7 @@
             localStorage.setItem('hn_user', JSON.stringify(user));
             localStorage.setItem('token', session.access_token);
             localStorage.setItem('user', JSON.stringify(user));
-            window.location.href = '/account.html';
+            window.location.href = '/index.html';
           }
         }).catch(e => console.warn('Supabase session check:', e));
       }

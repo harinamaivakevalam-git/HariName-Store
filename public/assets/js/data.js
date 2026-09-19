@@ -146,13 +146,22 @@ HARINAMA_DATA.syncWithApi = async function() {
   let categoriesLoaded = false;
   let productsLoaded = false;
 
+  // The Render backend URL for production API calls
+  const RENDER_BACKEND_URL = 'https://harinama-store.onrender.com';
+
   function getBackendUrl(path) {
     if (typeof window !== 'undefined') {
       if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        if (window.location.port === '5000') return path;
+      const { hostname, port } = window.location;
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        if (port === '5000') return path;
         return 'http://localhost:5000' + path;
       }
+      // Production: if hosted on a static domain (not the Render backend), use the Render URL
+      if (hostname.includes('harinamastore.com') || hostname.includes('harinama')) {
+        return RENDER_BACKEND_URL + path;
+      }
+      // For onrender.com or any same-origin setup, use relative path
       return path;
     }
     return 'http://localhost:5000' + path;
@@ -222,7 +231,81 @@ HARINAMA_DATA.syncWithApi = async function() {
     console.warn('[data.js] API fetch notice:', e);
   }
 
-  // 2. Direct Supabase Fallback
+  // 2. Direct Supabase REST API Fallback (no JS client needed — works everywhere)
+  if (!productsLoaded || !categoriesLoaded) {
+    const sbHeaders = {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json'
+    };
+
+    try {
+      // Fetch categories directly via REST if not loaded
+      if (!categoriesLoaded) {
+        const catRes = await fetch(
+          SUPABASE_URL + '/rest/v1/categories?status=neq.archived&order=name',
+          { headers: sbHeaders }
+        ).then(r => r.ok ? r.json() : null).catch(() => null);
+
+        if (Array.isArray(catRes) && catRes.length > 0) {
+          fetchedCategories = catRes.map(c => ({
+            id: c.id,
+            name: c.name,
+            slug: c.slug,
+            desc: c.description || 'Sacred collection',
+            image: resolveCategoryImage(c),
+            image_url: resolveCategoryImage(c),
+            product_count: 0
+          }));
+          categoriesLoaded = true;
+        }
+      }
+
+      // Fetch products directly via REST if not loaded
+      if (!productsLoaded) {
+        const prodRes = await fetch(
+          SUPABASE_URL + '/rest/v1/products?status=eq.active&order=created_at.desc&select=*,product_images(*),categories(id,name,slug)',
+          { headers: sbHeaders }
+        ).then(r => r.ok ? r.json() : null).catch(() => null);
+
+        if (Array.isArray(prodRes) && prodRes.length > 0) {
+          fetchedProducts = prodRes.map(p => {
+            const imgs = (p.product_images || []).map(img => img.image_url || img.url);
+            const primaryImg = imgs[0] || p.image_url || p.image || '';
+            return {
+              id: p.id,
+              sku: p.sku || `HN-${(p.id || '').slice(0, 6)}`,
+              name: p.name || p.title,
+              title: p.title || p.name,
+              slug: p.slug,
+              category: p.categories?.name || p.category_name || p.category || 'General',
+              category_id: p.category_id || null,
+              category_slug: p.categories?.slug || '',
+              material: (p.specifications && p.specifications.material) || p.material || 'Standard',
+              price: parseFloat(p.price) || 0,
+              old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+              compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
+              stock: p.stock !== undefined ? p.stock : 25,
+              rating: parseFloat(p.rating) || 5.0,
+              reviews_count: p.reviews_count || 0,
+              image: primaryImg,
+              primary_image: primaryImg,
+              images: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
+              gallery: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
+              description: p.description || '',
+              featured: Boolean(p.featured),
+              trending: Boolean(p.trending)
+            };
+          });
+          productsLoaded = true;
+        }
+      }
+    } catch (restErr) {
+      console.warn('[data.js] Supabase REST fallback notice:', restErr);
+    }
+  }
+
+  // 3. Supabase JS Client Fallback (if REST also failed and JS client is available)
   if ((!categoriesLoaded || !productsLoaded) && typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function') {
     try {
       const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -281,7 +364,9 @@ HARINAMA_DATA.syncWithApi = async function() {
               primary_image: primaryImg,
               images: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
               gallery: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
-              description: p.description || ''
+              description: p.description || '',
+              featured: Boolean(p.featured),
+              trending: Boolean(p.trending)
             };
           });
           productsLoaded = true;

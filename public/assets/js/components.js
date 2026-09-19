@@ -1958,6 +1958,7 @@ if (document.readyState === 'loading') {
 }
 
 // Universal API URL Resolver
+const RENDER_BACKEND = 'https://harinama-store.onrender.com';
 const getApiUrl = (path) => {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
@@ -1980,7 +1981,12 @@ const getApiUrl = (path) => {
     return `http://${hostname}:5000${path}`;
   }
 
-  // Default to relative path for same-origin and production deployments
+  // Production: if hosted on a static domain, route API calls to Render backend
+  if (hostname.includes('harinamastore.com') || hostname.includes('harinama')) {
+    return `${RENDER_BACKEND}${path}`;
+  }
+
+  // Default to relative path for same-origin and Render deployments
   return path;
 };
 window.getApiUrl = getApiUrl;
@@ -1999,24 +2005,13 @@ const downloadOrderInvoice = async (orderIdentifier) => {
 
   showToast(`Preparing official tax invoice for #${orderNum}... 🌸`);
 
-  // Determine the optimal invoice endpoint
+  // Build the invoice URL using getApiUrl for correct resolution
   const invoiceUrl = getApiUrl(`/api/orders/${encodeURIComponent(orderNum)}/invoice?print=true`);
 
-  try {
-    // Test if endpoint is reachable directly
-    const testRes = await fetch(invoiceUrl, { method: 'HEAD' }).catch(() => null);
-    if (testRes && testRes.ok) {
-      const win = window.open(invoiceUrl, '_blank');
-      if (!win) {
-        window.location.href = invoiceUrl;
-      }
-      return;
-    }
-  } catch (_) { }
-
-  // Fallback: Open in new window or iframe with client-rendered authentic invoice
+  // Open invoice in new tab directly (no HEAD pre-check which can fail on some servers)
   const win = window.open(invoiceUrl, '_blank');
   if (!win) {
+    // Popup blocked — navigate directly
     window.location.href = invoiceUrl;
   }
 };

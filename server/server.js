@@ -131,17 +131,25 @@ app.post('/api/internal/seed-products', async (req, res) => {
   }
 });
 
-// Fallback for HTML page routes
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));
-app.get('/shop', (req, res) => res.sendFile(path.join(__dirname, '../public/shop.html')));
-app.get('/product', (req, res) => res.sendFile(path.join(__dirname, '../public/product.html')));
-app.get('/cart', (req, res) => res.sendFile(path.join(__dirname, '../public/cart.html')));
-app.get('/checkout', (req, res) => res.sendFile(path.join(__dirname, '../public/checkout.html')));
-app.get('/order-success', (req, res) => res.sendFile(path.join(__dirname, '../public/order-success.html')));
-app.get('/order-tracking', (req, res) => res.sendFile(path.join(__dirname, '../public/order-tracking.html')));
-app.get('/account', (req, res) => res.sendFile(path.join(__dirname, '../public/account.html')));
-app.get('/auth', (req, res) => res.sendFile(path.join(__dirname, '../public/auth.html')));
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, '../public/admin.html')));
+// Fallback for HTML page routes (clean URLs without .html extension)
+const htmlPages = [
+  '', 'index', 'shop', 'product', 'product-details', 'products', 'collections',
+  'cart', 'checkout', 'order-success', 'order-tracking', 'orders',
+  'account', 'auth', 'login', 'register', 'forgot-password', 'wishlist', 'addresses',
+  'about', 'contact', 'faq', 'terms',
+  'admin', 'admin-products', 'admin-orders', 'admin-categories', 'admin-coupons',
+  'admin-customers', 'admin-reviews', 'admin-analytics', 'admin-settings', 'admin-homepage'
+];
+
+htmlPages.forEach(page => {
+  const route = page === '' || page === 'index' ? '/' : `/${page}`;
+  const file = page === '' ? 'index' : page;
+  if (route !== '/') {
+    app.get(route, (req, res) => res.sendFile(path.join(__dirname, `../public/${file}.html`)));
+  } else {
+    app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));
+  }
+});
 
 // Catch 404 & Global Error Handling
 app.use(notFoundHandler);

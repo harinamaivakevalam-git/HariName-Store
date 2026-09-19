@@ -267,8 +267,25 @@
       return headers;
     }
 
+    function resolveSafeAssetUrl(url) {
+      if (!url || typeof url !== 'string') return '';
+      const match = url.match(/\/storage\/v1\/object\/public\/product-images\/(products|categories)\/([^/?#]+)/);
+      if (match) {
+        return `/assets/images/${match[1]}/${match[2]}`;
+      }
+      return url;
+    }
+
+    function fetchWithTimeout(url, options = {}, timeoutMs = 2000) {
+      if (typeof AbortController === 'undefined') return fetch(url, options);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      return fetch(url, { ...options, signal: controller.signal })
+        .finally(() => clearTimeout(timer));
+    }
+
     function resolveCategoryFallbackImage(name, slug, img) {
-      if (img && img.trim() && !img.startsWith('data:') && !img.startsWith('blob:')) return img;
+      if (img && img.trim()) return resolveSafeAssetUrl(img);
       const s = ((name || '') + ' ' + (slug || '')).toLowerCase();
       if (s.includes('mala') || s.includes('japa')) return '/assets/images/cat_japa_malas.jpg';
       if (s.includes('keychain')) return '/assets/images/cat_keychains.jpg';
@@ -283,24 +300,41 @@
       let loaded = false;
       let remoteCategories = [];
 
-      // 1. Backend API (primary source, Anycast resilient)
+      // 1. Instant local static JSON (10-30ms)
       try {
-        const res = await fetch(getApiUrl('/api/categories'));
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-            remoteCategories = json.data;
+        const localRes = await fetchWithTimeout('/assets/data/categories.json', {}, 1500);
+        if (localRes.ok) {
+          const catJson = await localRes.json();
+          if (Array.isArray(catJson) && catJson.length > 0) {
+            remoteCategories = catJson;
             loaded = true;
           }
         }
       } catch (_) {}
 
-      // 2. Direct Supabase Fallback
+      // 2. Backend API (Anycast resilient)
+      if (!loaded) {
+        try {
+          const res = await fetchWithTimeout(getApiUrl('/api/categories'), {}, 2000);
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+              remoteCategories = json.data;
+              loaded = true;
+            }
+          }
+        } catch (_) {}
+      }
+
+      // 3. Direct Supabase Fallback (with 2.5s timeout)
       if (!loaded) {
         try {
           const sb = initSupabase();
           if (sb) {
-            const { data: sbCats, error: cErr } = await sb.from('categories').select('*').neq('status', 'archived').order('name');
+            const { data: sbCats, error: cErr } = await Promise.race([
+              sb.from('categories').select('*').neq('status', 'archived').order('name'),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500))
+            ]);
             if (!cErr && Array.isArray(sbCats) && sbCats.length > 0) {
               remoteCategories = sbCats;
               loaded = true;
@@ -309,7 +343,7 @@
         } catch (_) {}
       }
 
-      // 3. Local Cache Fallback
+      // 4. Local Cache Fallback
       if (!loaded) {
         try {
           const cached = localStorage.getItem('hn_admin_categories');

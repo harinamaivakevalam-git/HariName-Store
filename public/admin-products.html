@@ -282,6 +282,23 @@
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
 
+    function resolveSafeAssetUrl(url) {
+      if (!url || typeof url !== 'string') return '';
+      const match = url.match(/\/storage\/v1\/object\/public\/product-images\/(products|categories)\/([^/?#]+)/);
+      if (match) {
+        return `/assets/images/${match[1]}/${match[2]}`;
+      }
+      return url;
+    }
+
+    function fetchWithTimeout(url, options = {}, timeoutMs = 2000) {
+      if (typeof AbortController === 'undefined') return fetch(url, options);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      return fetch(url, { ...options, signal: controller.signal })
+        .finally(() => clearTimeout(timer));
+    }
+
     function initSupabase() {
       if (!window.supabaseClient && window.supabase && typeof window.supabase.createClient === 'function') {
         try {
@@ -308,9 +325,24 @@
       const filterCatSelect = document.getElementById('category-filter');
       if (!catSelect) return;
 
-      // 1. Fast Backend API (uses server-side DNS resilient connection)
+      // 1. Fast static JSON fallback (10-30ms)
       try {
-        const res = await fetch(getApiUrl('/api/categories'));
+        const localRes = await fetchWithTimeout('/assets/data/categories.json', {}, 1500);
+        if (localRes.ok) {
+          const catJson = await localRes.json();
+          if (Array.isArray(catJson) && catJson.length > 0) {
+            databaseCategories = catJson;
+            catSelect.innerHTML = databaseCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            if (filterCatSelect) {
+              filterCatSelect.innerHTML = `<option value="all">All Categories</option>` + databaseCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            }
+          }
+        }
+      } catch (_) {}
+
+      // 2. Fast Backend API
+      try {
+        const res = await fetchWithTimeout(getApiUrl('/api/categories'), {}, 2000);
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data) && json.data.length > 0) {
@@ -324,37 +356,72 @@
       } catch (err) {
         console.warn('[AdminProducts] Backend API categories notice:', err);
       }
-
-      // 2. Direct Supabase Fallback
-      if (databaseCategories.length === 0) {
-        try {
-          const sb = initSupabase();
-          if (sb) {
-            const { data: catData } = await sb.from('categories').select('*').order('name');
-            if (catData && catData.length > 0) {
-              databaseCategories = catData;
-              catSelect.innerHTML = databaseCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-              if (filterCatSelect) {
-                filterCatSelect.innerHTML = `<option value="all">All Categories</option>` + databaseCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-              }
-            }
-          }
-        } catch (_) {}
-      }
     }
 
     async function loadProductsFromDatabase() {
       let remoteProducts = [];
       let remoteLoaded = false;
 
-      // 1. Primary: Fetch from Express Backend API
+      // Fast initial render from cached storage
+      const cached = localStorage.getItem('hn_live_products');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            databaseProducts = parsed;
+            renderProductsTable(databaseProducts);
+          }
+        } catch (_) {}
+      }
+
+      // 1. Instant local static JSON catalog (10-30ms)
       try {
-        const res = await fetch(getApiUrl('/api/products?limit=100'), {
+        const staticRes = await fetchWithTimeout('/assets/data/products.json', {}, 1500);
+        if (staticRes.ok) {
+          const staticJson = await staticRes.json();
+          if (Array.isArray(staticJson) && staticJson.length > 0) {
+            remoteProducts = staticJson.map(p => {
+              const imgs = (p.product_images || []).map(img => resolveSafeAssetUrl(img.image_url || img.url));
+              const primaryImg = resolveSafeAssetUrl(imgs[0] || p.primary_image || p.image_url || p.image || '');
+              return {
+                id: p.id,
+                sku: p.sku || `HN-${(p.id || '').slice(0, 6)}`,
+                name: p.name || p.title,
+                title: p.title || p.name,
+                slug: p.slug,
+                category: p.categories?.name || p.category_name || p.category || 'General',
+                category_id: p.category_id || null,
+                category_slug: p.categories?.slug || '',
+                material: (p.specifications && p.specifications.material) || p.material || 'Standard',
+                price: parseFloat(p.price) || 0,
+                old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+                compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
+                stock: p.stock !== undefined ? p.stock : 25,
+                rating: parseFloat(p.rating) || 5.0,
+                reviews_count: p.reviews_count || 0,
+                image: primaryImg,
+                primary_image: primaryImg,
+                images: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
+                gallery: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
+                description: p.description || ''
+              };
+            });
+            remoteLoaded = true;
+            databaseProducts = remoteProducts;
+            renderProductsTable(databaseProducts);
+            localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
+          }
+        }
+      } catch (_) {}
+
+      // 2. Backend Express API
+      try {
+        const res = await fetchWithTimeout(getApiUrl('/api/products?limit=100'), {
           headers: getAuthHeaders()
-        });
+        }, 2000);
         if (res.ok) {
           const json = await res.json();
-          if (json.success && Array.isArray(json.data)) {
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
             remoteProducts = json.data.map(p => ({
               id: p.id,
               sku: p.sku || `HN-${p.id.slice(0, 6)}`,
@@ -371,35 +438,40 @@
               stock: p.stock !== undefined ? p.stock : 25,
               rating: parseFloat(p.rating) || 5.0,
               reviews_count: p.reviews_count || 0,
-              image: p.primary_image || p.image || (Array.isArray(p.images) && p.images[0]?.image_url) || (Array.isArray(p.gallery) && p.gallery[0]) || '',
-              primary_image: p.primary_image || p.image || '',
-              images: Array.isArray(p.images) ? p.images : (p.primary_image ? [p.primary_image] : []),
-              gallery: Array.isArray(p.gallery) ? p.gallery : (p.primary_image ? [p.primary_image] : []),
+              image: resolveSafeAssetUrl(p.primary_image || p.image || (Array.isArray(p.images) && p.images[0]?.image_url) || (Array.isArray(p.gallery) && p.gallery[0]) || ''),
+              primary_image: resolveSafeAssetUrl(p.primary_image || p.image || ''),
+              images: Array.isArray(p.images) ? p.images.map(img => resolveSafeAssetUrl(typeof img === 'string' ? img : (img.image_url || img.url))) : (p.primary_image ? [resolveSafeAssetUrl(p.primary_image)] : []),
+              gallery: Array.isArray(p.gallery) ? p.gallery.map(img => resolveSafeAssetUrl(typeof img === 'string' ? img : (img.image_url || img.url))) : (p.primary_image ? [resolveSafeAssetUrl(p.primary_image)] : []),
               description: p.description || ''
             }));
             remoteLoaded = true;
+            databaseProducts = remoteProducts;
+            renderProductsTable(databaseProducts);
+            localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
           }
         }
       } catch (err) {
         console.warn('[AdminProducts] Backend API products notice:', err);
       }
 
-      // 2. Direct Supabase Database Fallback
+      // 3. Direct Supabase Database Fallback (with 2.5s timeout)
       if (!remoteLoaded) {
         try {
           const sb = initSupabase();
           if (sb) {
-            const { data: sbData, error: sbErr } = await sb
-              .from('products')
-              .select('*, product_images(*), categories(id, name, slug)')
-              .neq('status', 'archived')
-              .neq('status', 'deleted')
-              .order('created_at', { ascending: false });
+            const { data: sbData, error: sbErr } = await Promise.race([
+              sb.from('products')
+                .select('*, product_images(*), categories(id, name, slug)')
+                .neq('status', 'archived')
+                .neq('status', 'deleted')
+                .order('created_at', { ascending: false }),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500))
+            ]);
 
-            if (!sbErr && Array.isArray(sbData)) {
+            if (!sbErr && Array.isArray(sbData) && sbData.length > 0) {
               remoteProducts = sbData.map(p => {
-                const imgs = (p.product_images || []).map(img => img.image_url || img.url);
-                const primaryImg = imgs[0] || p.image_url || p.image || '';
+                const imgs = (p.product_images || []).map(img => resolveSafeAssetUrl(img.image_url || img.url));
+                const primaryImg = resolveSafeAssetUrl(imgs[0] || p.image_url || p.image || '');
                 return {
                   id: p.id,
                   sku: p.sku || `HN-${p.id.slice(0, 6)}`,
@@ -424,25 +496,13 @@
                 };
               });
               remoteLoaded = true;
+              databaseProducts = remoteProducts;
+              renderProductsTable(databaseProducts);
+              localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
             }
           }
         } catch (sbEx) {
           console.warn('[AdminProducts] Supabase direct fetch notice:', sbEx);
-        }
-      }
-
-      // Sync state and render
-      if (remoteLoaded) {
-        databaseProducts = remoteProducts;
-        renderProductsTable(databaseProducts);
-        localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
-      } else {
-        const cached = localStorage.getItem('hn_live_products');
-        if (cached) {
-          try {
-            databaseProducts = JSON.parse(cached);
-            renderProductsTable(databaseProducts);
-          } catch (_) {}
         }
       }
 
@@ -502,11 +562,12 @@
       }
 
       tbody.innerHTML = products.map(p => {
-        const imgSrc = p.image || p.primary_image || (Array.isArray(p.images) && p.images[0]?.image_url) || (Array.isArray(p.gallery) && p.gallery[0]) || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
+        const rawImg = p.image || p.primary_image || (Array.isArray(p.images) && (p.images[0]?.image_url || p.images[0])) || (Array.isArray(p.gallery) && p.gallery[0]) || '';
+        const imgSrc = resolveSafeAssetUrl(rawImg) || '/assets/images/krishna-logo.jpg';
         return `
         <tr>
           <td>
-            <img src="${imgSrc}" alt="${p.name || p.title}" class="hn-table-thumb">
+            <img src="${imgSrc}" alt="${p.name || p.title}" class="hn-table-thumb" onerror="if(!this.dataset.triedLocal){this.dataset.triedLocal='1';const m=this.src.match(/([^/?#]+\\.(jpeg|jpg|png|webp))/i);if(m)this.src='/assets/images/products/'+m[1];else this.src='/assets/images/krishna-logo.jpg';}else{this.src='/assets/images/krishna-logo.jpg';}">
           </td>
           <td>
             <div class="fw-bold text-navy text-nowrap">${p.name || p.title}</div>

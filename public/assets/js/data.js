@@ -278,115 +278,124 @@ HARINAMA_DATA.syncWithApi = async function() {
     return '/assets/images/cat_keychains.jpg';
   };
 
-  // 1. Try Backend Express API
+  // Fast fetch helper with timeout to avoid browser hangs
+  function fetchWithTimeout(url, options = {}, timeoutMs = 2000) {
+    if (typeof AbortController === 'undefined') return fetch(url, options);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...options, signal: controller.signal })
+      .finally(() => clearTimeout(timer));
+  }
+
+  // 1. FAST LOCAL STATIC JSON SYNC (Instant: 10-30ms, 100% reliable on static hosting & CDN)
   try {
-    const [prodRes, catRes] = await Promise.allSettled([
-      fetch(getBackendUrl('/api/products?limit=100')).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(getBackendUrl('/api/categories')).then(r => r.ok ? r.json() : null).catch(() => null)
+    const [prodJsonRes, catJsonRes] = await Promise.allSettled([
+      fetchWithTimeout('/assets/data/products.json', {}, 1500).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetchWithTimeout('/assets/data/categories.json', {}, 1500).then(r => r.ok ? r.json() : null).catch(() => null)
     ]);
 
-    if (catRes.status === 'fulfilled' && catRes.value && catRes.value.success && Array.isArray(catRes.value.data) && catRes.value.data.length > 0) {
-      fetchedCategories = catRes.value.data.map(c => ({
+    if (catJsonRes.status === 'fulfilled' && Array.isArray(catJsonRes.value) && catJsonRes.value.length > 0) {
+      fetchedCategories = catJsonRes.value.map(c => ({
         id: c.id,
         name: c.name,
         slug: c.slug,
         desc: c.description || 'Sacred collection',
         image: resolveSafeAssetUrl(resolveCategoryImage(c)),
         image_url: resolveSafeAssetUrl(resolveCategoryImage(c)),
-        product_count: c.product_count || 0
+        product_count: 0
       }));
       categoriesLoaded = true;
     }
 
-    if (prodRes.status === 'fulfilled' && prodRes.value && prodRes.value.success && Array.isArray(prodRes.value.data) && prodRes.value.data.length > 0) {
-      fetchedProducts = prodRes.value.data.map(p => ({
-        id: p.id,
-        sku: p.sku,
-        name: p.name,
-        title: p.title || p.name,
-        slug: p.slug,
-        category: p.category_name || p.category || 'Devotional Items',
-        category_id: p.category_id,
-        category_slug: p.category_slug || '',
-        material: p.material || 'Standard',
-        price: parseFloat(p.price) || 0,
-        old_price: p.compare_price ? parseFloat(p.compare_price) : null,
-        compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
-        stock: p.stock !== undefined ? p.stock : 25,
-        rating: parseFloat(p.rating) || 5.0,
-        reviews_count: p.reviews_count || 0,
-        image: resolveSafeAssetUrl(p.primary_image || p.image || (p.images && p.images[0]) || ''),
-        primary_image: resolveSafeAssetUrl(p.primary_image || p.image || (p.images && p.images[0]) || ''),
-        images: (p.images && p.images.length > 0) ? p.images.map(img => resolveSafeAssetUrl(typeof img === 'string' ? img : (img.image_url || img.url))) : (p.primary_image ? [resolveSafeAssetUrl(p.primary_image)] : []),
-        gallery: (p.images && p.images.length > 0) ? p.images.map(img => resolveSafeAssetUrl(typeof img === 'string' ? img : (img.image_url || img.url))) : (p.primary_image ? [resolveSafeAssetUrl(p.primary_image)] : []),
-        description: p.description || '',
-        featured: Boolean(p.featured),
-        trending: Boolean(p.trending)
-      }));
+    if (prodJsonRes.status === 'fulfilled' && Array.isArray(prodJsonRes.value) && prodJsonRes.value.length > 0) {
+      fetchedProducts = prodJsonRes.value.map(p => {
+        const imgs = (p.product_images || []).map(img => resolveSafeAssetUrl(img.image_url || img.url));
+        const primaryImg = resolveSafeAssetUrl(imgs[0] || p.primary_image || p.image_url || p.image || '');
+        return {
+          id: p.id,
+          sku: p.sku || `HN-${(p.id || '').slice(0, 6)}`,
+          name: p.name || p.title,
+          title: p.title || p.name,
+          slug: p.slug,
+          category: p.categories?.name || p.category_name || p.category || 'Krishna Keychains',
+          category_id: p.category_id,
+          category_slug: p.categories?.slug || p.category_slug || '',
+          material: (p.specifications && p.specifications.material) || p.material || 'Artwork',
+          price: parseFloat(p.price) || 0,
+          old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+          compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
+          stock: p.stock !== undefined ? p.stock : 25,
+          rating: parseFloat(p.rating) || 5.0,
+          reviews_count: p.reviews_count || 0,
+          image: primaryImg,
+          primary_image: primaryImg,
+          images: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
+          gallery: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
+          description: p.description || '',
+          featured: Boolean(p.featured),
+          trending: Boolean(p.trending)
+        };
+      });
       productsLoaded = true;
     }
-  } catch (e) {
-    console.warn('[data.js] API fetch notice:', e);
+  } catch (jsonErr) {
+    console.warn('[data.js] Static JSON fallback notice:', jsonErr);
   }
 
-  // 2. Static JSON Catalog Fallback (Works on static hosting, CDNs, offline — instant & reliable)
+  // 2. Try Backend Express API (If running and responsive within 2s)
   if (!productsLoaded || !categoriesLoaded) {
     try {
-      const [prodJsonRes, catJsonRes] = await Promise.allSettled([
-        fetch('/assets/data/products.json').then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch('/assets/data/categories.json').then(r => r.ok ? r.json() : null).catch(() => null)
+      const [prodRes, catRes] = await Promise.allSettled([
+        fetchWithTimeout(getBackendUrl('/api/products?limit=100'), {}, 2000).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetchWithTimeout(getBackendUrl('/api/categories'), {}, 2000).then(r => r.ok ? r.json() : null).catch(() => null)
       ]);
 
-      if (catJsonRes.status === 'fulfilled' && Array.isArray(catJsonRes.value) && catJsonRes.value.length > 0) {
-        fetchedCategories = catJsonRes.value.map(c => ({
+      if (catRes.status === 'fulfilled' && catRes.value && catRes.value.success && Array.isArray(catRes.value.data) && catRes.value.data.length > 0) {
+        fetchedCategories = catRes.value.data.map(c => ({
           id: c.id,
           name: c.name,
           slug: c.slug,
           desc: c.description || 'Sacred collection',
           image: resolveSafeAssetUrl(resolveCategoryImage(c)),
           image_url: resolveSafeAssetUrl(resolveCategoryImage(c)),
-          product_count: 0
+          product_count: c.product_count || 0
         }));
         categoriesLoaded = true;
       }
 
-      if (prodJsonRes.status === 'fulfilled' && Array.isArray(prodJsonRes.value) && prodJsonRes.value.length > 0) {
-        fetchedProducts = prodJsonRes.value.map(p => {
-          const imgs = (p.product_images || []).map(img => resolveSafeAssetUrl(img.image_url || img.url));
-          const primaryImg = resolveSafeAssetUrl(imgs[0] || p.primary_image || p.image_url || p.image || '');
-          return {
-            id: p.id,
-            sku: p.sku || `HN-${(p.id || '').slice(0, 6)}`,
-            name: p.name || p.title,
-            title: p.title || p.name,
-            slug: p.slug,
-            category: p.categories?.name || p.category_name || p.category || 'Krishna Keychains',
-            category_id: p.category_id,
-            category_slug: p.categories?.slug || p.category_slug || '',
-            material: (p.specifications && p.specifications.material) || p.material || 'Artwork',
-            price: parseFloat(p.price) || 0,
-            old_price: p.compare_price ? parseFloat(p.compare_price) : null,
-            compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
-            stock: p.stock !== undefined ? p.stock : 25,
-            rating: parseFloat(p.rating) || 5.0,
-            reviews_count: p.reviews_count || 0,
-            image: primaryImg,
-            primary_image: primaryImg,
-            images: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
-            gallery: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
-            description: p.description || '',
-            featured: Boolean(p.featured),
-            trending: Boolean(p.trending)
-          };
-        });
+      if (prodRes.status === 'fulfilled' && prodRes.value && prodRes.value.success && Array.isArray(prodRes.value.data) && prodRes.value.data.length > 0) {
+        fetchedProducts = prodRes.value.data.map(p => ({
+          id: p.id,
+          sku: p.sku,
+          name: p.name,
+          title: p.title || p.name,
+          slug: p.slug,
+          category: p.category_name || p.category || 'Devotional Items',
+          category_id: p.category_id,
+          category_slug: p.category_slug || '',
+          material: p.material || 'Standard',
+          price: parseFloat(p.price) || 0,
+          old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+          compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
+          stock: p.stock !== undefined ? p.stock : 25,
+          rating: parseFloat(p.rating) || 5.0,
+          reviews_count: p.reviews_count || 0,
+          image: resolveSafeAssetUrl(p.primary_image || p.image || (p.images && p.images[0]) || ''),
+          primary_image: resolveSafeAssetUrl(p.primary_image || p.image || (p.images && p.images[0]) || ''),
+          images: (p.images && p.images.length > 0) ? p.images.map(img => resolveSafeAssetUrl(typeof img === 'string' ? img : (img.image_url || img.url))) : (p.primary_image ? [resolveSafeAssetUrl(p.primary_image)] : []),
+          gallery: (p.images && p.images.length > 0) ? p.images.map(img => resolveSafeAssetUrl(typeof img === 'string' ? img : (img.image_url || img.url))) : (p.primary_image ? [resolveSafeAssetUrl(p.primary_image)] : []),
+          description: p.description || '',
+          featured: Boolean(p.featured),
+          trending: Boolean(p.trending)
+        }));
         productsLoaded = true;
       }
-    } catch (jsonErr) {
-      console.warn('[data.js] Static JSON fallback notice:', jsonErr);
+    } catch (e) {
+      console.warn('[data.js] API fetch notice:', e);
     }
   }
 
-  // 2. Direct Supabase REST API Fallback (no JS client needed — works everywhere)
+  // 3. Direct Supabase REST API Fallback (Only if both static & backend failed, with strict 2.5s timeout)
   if (!productsLoaded || !categoriesLoaded) {
     const sbHeaders = {
       'apikey': SUPABASE_ANON_KEY,
@@ -395,11 +404,11 @@ HARINAMA_DATA.syncWithApi = async function() {
     };
 
     try {
-      // Fetch categories directly via REST if not loaded
       if (!categoriesLoaded) {
-        const catRes = await fetch(
+        const catRes = await fetchWithTimeout(
           SUPABASE_URL + '/rest/v1/categories?status=neq.archived&order=name',
-          { headers: sbHeaders }
+          { headers: sbHeaders },
+          2500
         ).then(r => r.ok ? r.json() : null).catch(() => null);
 
         if (Array.isArray(catRes) && catRes.length > 0) {
@@ -416,11 +425,11 @@ HARINAMA_DATA.syncWithApi = async function() {
         }
       }
 
-      // Fetch products directly via REST if not loaded
       if (!productsLoaded) {
-        const prodRes = await fetch(
+        const prodRes = await fetchWithTimeout(
           SUPABASE_URL + '/rest/v1/products?status=eq.active&order=created_at.desc&select=*,product_images(*),categories(id,name,slug)',
-          { headers: sbHeaders }
+          { headers: sbHeaders },
+          2500
         ).then(r => r.ok ? r.json() : null).catch(() => null);
 
         if (Array.isArray(prodRes) && prodRes.length > 0) {
@@ -458,76 +467,6 @@ HARINAMA_DATA.syncWithApi = async function() {
     } catch (restErr) {
       console.warn('[data.js] Supabase REST fallback notice:', restErr);
     }
-  }
-
-  // 3. Supabase JS Client Fallback (if REST also failed and JS client is available)
-  if ((!categoriesLoaded || !productsLoaded) && typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function') {
-    try {
-      const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      
-      // Fetch categories if not loaded
-      if (!categoriesLoaded) {
-        const { data: sbCats, error: cErr } = await sbClient
-          .from('categories')
-          .select('*')
-          .neq('status', 'archived')
-          .order('name');
-
-        if (!cErr && Array.isArray(sbCats) && sbCats.length > 0) {
-          fetchedCategories = sbCats.map(c => ({
-            id: c.id,
-            name: c.name,
-            slug: c.slug,
-            desc: c.description || 'Sacred collection',
-            image: resolveCategoryImage(c),
-            image_url: resolveCategoryImage(c),
-            product_count: 0
-          }));
-          categoriesLoaded = true;
-        }
-      }
-
-      // Fetch products if not loaded
-      if (!productsLoaded) {
-        const { data: sbProds, error: pErr } = await sbClient
-          .from('products')
-          .select('*, product_images(*), categories(id, name, slug)')
-          .eq('status', 'active')
-          .order('created_at', { ascending: false });
-
-        if (!pErr && Array.isArray(sbProds)) {
-          fetchedProducts = sbProds.map(p => {
-            const imgs = (p.product_images || []).map(img => img.image_url || img.url);
-            const primaryImg = imgs[0] || p.image_url || p.image || '';
-            return {
-              id: p.id,
-              sku: p.sku || `HN-${p.id.slice(0, 6)}`,
-              name: p.name || p.title,
-              title: p.title || p.name,
-              slug: p.slug,
-              category: p.categories?.name || p.category_name || p.category || 'General',
-              category_id: p.category_id || null,
-              category_slug: p.categories?.slug || '',
-              material: (p.specifications && p.specifications.material) || p.material || 'Standard',
-              price: parseFloat(p.price) || 0,
-              old_price: p.compare_price ? parseFloat(p.compare_price) : null,
-              compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
-              stock: p.stock !== undefined ? p.stock : 25,
-              rating: parseFloat(p.rating) || 5.0,
-              reviews_count: p.reviews_count || 0,
-              image: primaryImg,
-              primary_image: primaryImg,
-              images: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
-              gallery: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
-              description: p.description || '',
-              featured: Boolean(p.featured),
-              trending: Boolean(p.trending)
-            };
-          });
-          productsLoaded = true;
-        }
-      }
-    } catch (_) {}
   }
 
   // 3. Cache fallback for categories if still empty

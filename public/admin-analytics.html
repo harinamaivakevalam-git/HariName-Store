@@ -232,7 +232,7 @@
   <script src="/assets/js/components.js"></script>
   <script>
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+    const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTMzODg1NiwiZXhwIjoyMTA0OTE0ODU2fQ.eV63FZ0bvtf5lAv_l4sGHtnk-ngpklZQbGxoxyHEzTs';
 
     function renderMetrics(totalRevenue, totalOrders, totalCustomers, topProducts) {
       const revEl = document.getElementById('stat-revenue');
@@ -301,10 +301,10 @@
       if (!loaded) {
         try {
           if (window.supabase && typeof window.supabase.createClient === 'function') {
-            const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
             
             const [ordersRes, profilesRes, productsRes] = await Promise.all([
-              sb.from('orders').select('total, guest_email, customer'),
+              sb.from('orders').select('total, guest_email'),
               sb.from('profiles').select('id', { count: 'exact' }),
               sb.from('products').select('*').limit(5)
             ]);

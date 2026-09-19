@@ -118,7 +118,8 @@
   window.isUserLoggedIn = isUserLoggedIn;
 
   const enforceProtectedPageAccess = () => {
-    const path = window.location.pathname.toLowerCase();
+    if (typeof window === 'undefined' || !window.location) return;
+    const path = (window.location.pathname || '').toLowerCase();
     const adminSegment = atob('YWRtaW4=');
     if (path.includes(adminSegment)) {
       if (!isAdminUser()) {
@@ -156,7 +157,7 @@
           }, msg);
         }, 350);
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const updateAdminTopbarUser = () => {
@@ -1423,9 +1424,10 @@
     initHeaderScrollEffect();
   };
 
-  // Floating Header Scroll Controller
+  // Floating Header Scroll Controller (Vibration-Free & Mobile-Optimized)
   const initHeaderScrollEffect = () => {
     let isTicking = false;
+    let lastScrolled = null;
 
     const onScroll = () => {
       if (!isTicking) {
@@ -1436,19 +1438,27 @@
             return;
           }
 
-          const isScrolled = window.scrollY > 25;
-          if (isScrolled) {
-            header.classList.add('scrolled');
-          } else {
-            header.classList.remove('scrolled');
+          const isDesktop = window.innerWidth >= 992;
+          const y = window.scrollY || window.pageYOffset || 0;
+
+          // Hysteresis threshold to prevent class thrashing and jitter on mobile touch scrolling
+          const isScrolled = isDesktop ? (y > 25) : (y > 45);
+
+          if (isScrolled !== lastScrolled) {
+            lastScrolled = isScrolled;
+            if (isScrolled) {
+              header.classList.add('scrolled');
+            } else {
+              header.classList.remove('scrolled');
+            }
           }
 
           // Hide floating navbar only on large screens when approaching footer
-          if (window.innerWidth >= 992) {
+          if (isDesktop) {
             const footer = document.querySelector('.hn-footer') ||
-                           document.querySelector('.hn-footer-signoff') ||
-                           document.getElementById('hn-footer-placeholder') ||
-                           document.querySelector('footer');
+              document.querySelector('.hn-footer-signoff') ||
+              document.getElementById('hn-footer-placeholder') ||
+              document.querySelector('footer');
 
             if (footer && isScrolled) {
               const footerRect = footer.getBoundingClientRect();
@@ -1471,25 +1481,27 @@
       }
     };
 
-    window.removeEventListener('scroll', onScroll);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.removeEventListener('scroll', onScroll);
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }
   };
 
-  if (typeof document !== 'undefined') {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initHeaderScrollEffect);
-    } else {
-      initHeaderScrollEffect();
-    }
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHeaderScrollEffect);
+  } else {
+    initHeaderScrollEffect();
   }
+}
 
-  // Global Footer Component
-  const renderFooter = () => {
-    const container = document.getElementById('hn-footer-placeholder') || document.getElementById('cres-footer-placeholder');
-    if (!container) return;
+// Global Footer Component
+const renderFooter = () => {
+  const container = document.getElementById('hn-footer-placeholder') || document.getElementById('cres-footer-placeholder');
+  if (!container) return;
 
-    container.innerHTML = `
+  container.innerHTML = `
     <!-- Devotional Footer Artwork Signoff Strip -->
     <div class="hn-footer-signoff">
       <div class="hn-footer-signoff-bg" style="background-image: url('/assets/images/footer_lotus_bg.jpg');"></div>
@@ -1573,61 +1585,61 @@
       </div>
     </footer>
   `;
-  };
+};
 
-  // Universal Product Catalog Resolver (Handles UUID, legacy prod-XXX, slug, or title)
-  const findCatalogProduct = (idOrSlug) => {
-    if (!idOrSlug) return null;
-    const str = String(idOrSlug).trim();
-    const list = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
-    const staticList = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA._staticProducts)) ? HARINAMA_DATA._staticProducts : [];
-    const allProds = [...list, ...staticList];
+// Universal Product Catalog Resolver (Handles UUID, legacy prod-XXX, slug, or title)
+const findCatalogProduct = (idOrSlug) => {
+  if (!idOrSlug) return null;
+  const str = String(idOrSlug).trim();
+  const list = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
+  const staticList = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA._staticProducts)) ? HARINAMA_DATA._staticProducts : [];
+  const allProds = [...list, ...staticList];
 
-    // 1. Direct match on id, legacy_id, sku, or slug
-    let found = allProds.find(p =>
-      p && (p.id === str || p.legacy_id === str || p.sku === str || p.slug === str)
-    );
+  // 1. Direct match on id, legacy_id, sku, or slug
+  let found = allProds.find(p =>
+    p && (p.id === str || p.legacy_id === str || p.sku === str || p.slug === str)
+  );
+  if (found) return found;
+
+  // 2. Case-insensitive slug / title match
+  const lower = str.toLowerCase();
+  found = allProds.find(p =>
+    p && (
+      (p.slug && p.slug.toLowerCase() === lower) ||
+      (p.name && p.name.toLowerCase() === lower) ||
+      (p.title && p.title.toLowerCase() === lower)
+    )
+  );
+  if (found) return found;
+
+  // 3. Numeric ID match (e.g. prod-003 or index 3 or uuid ending in 003)
+  const numMatch = str.match(/\d+/);
+  if (numMatch) {
+    const num = parseInt(numMatch[0], 10);
+    found = allProds.find(p => {
+      if (!p) return false;
+      const idNum = String(p.id).match(/\d+$/);
+      if (idNum && parseInt(idNum[0], 10) === num) return true;
+      const legNum = String(p.legacy_id || p.sku || '').match(/\d+$/);
+      if (legNum && parseInt(legNum[0], 10) === num) return true;
+      return false;
+    });
     if (found) return found;
+  }
 
-    // 2. Case-insensitive slug / title match
-    const lower = str.toLowerCase();
-    found = allProds.find(p =>
-      p && (
-        (p.slug && p.slug.toLowerCase() === lower) ||
-        (p.name && p.name.toLowerCase() === lower) ||
-        (p.title && p.title.toLowerCase() === lower)
-      )
-    );
-    if (found) return found;
+  return null;
+};
+window.findCatalogProduct = findCatalogProduct;
 
-    // 3. Numeric ID match (e.g. prod-003 or index 3 or uuid ending in 003)
-    const numMatch = str.match(/\d+/);
-    if (numMatch) {
-      const num = parseInt(numMatch[0], 10);
-      found = allProds.find(p => {
-        if (!p) return false;
-        const idNum = String(p.id).match(/\d+$/);
-        if (idNum && parseInt(idNum[0], 10) === num) return true;
-        const legNum = String(p.legacy_id || p.sku || '').match(/\d+$/);
-        if (legNum && parseInt(legNum[0], 10) === num) return true;
-        return false;
-      });
-      if (found) return found;
-    }
+// Render Product Card (Exact match to reference image with dual-ID wishlist awareness & resilient fallback images)
+const renderProductCard = (p) => {
+  if (!p) return '';
+  const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+  const isWish = wishlist.includes(p.id) || (p.legacy_id && wishlist.includes(p.legacy_id)) || (p.slug && wishlist.includes(p.slug));
+  const imgSrc = p.image || p.primary_image || (p.images && p.images[0]) || '/assets/images/krishna-logo.jpg';
+  const prodTitle = p.name || p.title || 'Sacred Devotional Item';
 
-    return null;
-  };
-  window.findCatalogProduct = findCatalogProduct;
-
-  // Render Product Card (Exact match to reference image with dual-ID wishlist awareness & resilient fallback images)
-  const renderProductCard = (p) => {
-    if (!p) return '';
-    const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
-    const isWish = wishlist.includes(p.id) || (p.legacy_id && wishlist.includes(p.legacy_id)) || (p.slug && wishlist.includes(p.slug));
-    const imgSrc = p.image || p.primary_image || (p.images && p.images[0]) || '/assets/images/krishna-logo.jpg';
-    const prodTitle = p.name || p.title || 'Sacred Devotional Item';
-
-    return `
+  return `
     <div class="col-6 col-md-4 col-lg-2">
       <div class="hn-product-card" data-product-id="${p.id}" data-legacy-id="${p.legacy_id || ''}">
         
@@ -1658,347 +1670,384 @@
       </div>
     </div>
   `;
-  };
-  window.renderProductCard = renderProductCard;
+};
+window.renderProductCard = renderProductCard;
 
-  // Cart Helpers with Universal Product Resolution
-  const handleAddToCart = (productId, qty = 1, selectedMaterial = null, btnElement = null) => {
-    if (!isUserLoggedIn()) {
-      openAuthModal(() => handleAddToCart(productId, qty, selectedMaterial, btnElement), 'Sign in to add divine items to your sacred cart 🌸');
-      return;
-    }
-
-    const product = findCatalogProduct(productId);
-    if (!product) {
-      showToast('Product not found in catalog.', 'error');
-      return;
-    }
-
-    const material = selectedMaterial || product.material || 'Acrylic';
-    const quantity = Math.max(1, Number(qty) || 1);
-
-    let cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
-
-    const canonId = product.id;
-    const legacyId = product.legacy_id || product.id;
-
-    const existingIndex = cart.findIndex(item =>
-      (item.id === canonId || (legacyId && item.id === legacyId) || item.id === productId) &&
-      (item.material === material)
-    );
-
-    if (existingIndex > -1) {
-      cart[existingIndex].qty += quantity;
-      cart[existingIndex].id = canonId; // maintain canonical id
-      if (legacyId) cart[existingIndex].legacy_id = legacyId;
-    } else {
-      cart.push({
-        id: canonId,
-        legacy_id: legacyId,
-        name: product.title || product.name,
-        price: Number(product.price) || 0,
-        image: product.image || product.primary_image,
-        material: material,
-        qty: quantity
-      });
-    }
-
-    localStorage.setItem('hn_cart', JSON.stringify(cart));
-    localStorage.setItem('cres_cart', JSON.stringify(cart));
-
-    // Update badge with micro bounce animation
-    updateHeaderBadges();
-    const badge = document.getElementById('hn-cart-badge') || document.getElementById('cres-cart-badge');
-    if (badge && !badge.classList.contains('d-none')) {
-      badge.classList.remove('hn-badge-bounce');
-      void badge.offsetWidth; // Force CSS reflow to re-trigger keyframe
-      badge.classList.add('hn-badge-bounce');
-    }
-
-    // Instant inline visual feedback on the button
-    const triggerBtn = btnElement ||
-      (window.event && window.event.target ? window.event.target.closest('button') : null) ||
-      document.querySelector(`[data-product-id="${canonId}"] .hn-btn-card-add`) ||
-      document.querySelector(`[data-product-id="${productId}"] .hn-btn-card-add`);
-    if (triggerBtn) {
-      const origHtml = triggerBtn.innerHTML;
-      triggerBtn.innerHTML = `<i class="bi bi-check2"></i> Added! ✓`;
-      triggerBtn.style.backgroundColor = '#166534';
-      triggerBtn.style.color = '#FFFFFF';
-      triggerBtn.disabled = true;
-      setTimeout(() => {
-        triggerBtn.innerHTML = origHtml;
-        triggerBtn.style.backgroundColor = '';
-        triggerBtn.style.color = '';
-        triggerBtn.disabled = false;
-      }, 1200);
-    }
-
-    // Dispatch global event for reactive listeners
-    window.dispatchEvent(new CustomEvent('hn_cart_updated', { detail: { cart, totalCount } }));
-
-    showToast(`Added "${product.title || product.name}" (${quantity}) to your cart 🌸`);
-  };
-  window.handleAddToCart = handleAddToCart;
-
-  // Buy Now Helper (Instant Checkout)
-  const handleBuyNow = (productId, qty = 1, selectedMaterial = null) => {
-    if (!isUserLoggedIn()) {
-      openAuthModal(() => handleBuyNow(productId, qty, selectedMaterial), 'Sign in to proceed to instant checkout 🌸');
-      return;
-    }
-
-    const product = findCatalogProduct(productId);
-    if (!product) {
-      showToast('Product not found in catalog.', 'error');
-      return;
-    }
-
-    const material = selectedMaterial || product.material || 'Acrylic';
-    const quantity = Math.max(1, Number(qty) || 1);
-
-    let cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
-    const canonId = product.id;
-    const legacyId = product.legacy_id || product.id;
-
-    const existingIndex = cart.findIndex(item =>
-      (item.id === canonId || (legacyId && item.id === legacyId) || item.id === productId) &&
-      (item.material === material)
-    );
-
-    if (existingIndex > -1) {
-      cart[existingIndex].qty += quantity;
-    } else {
-      cart.push({
-        id: canonId,
-        legacy_id: legacyId,
-        name: product.title || product.name,
-        price: Number(product.price) || 0,
-        image: product.image || product.primary_image,
-        material: material,
-        qty: quantity
-      });
-    }
-
-    localStorage.setItem('hn_cart', JSON.stringify(cart));
-    localStorage.setItem('cres_cart', JSON.stringify(cart));
-    updateHeaderBadges();
-
-    // Direct redirect to checkout without delaying or behaving like normal add to cart
-    window.location.href = '/checkout.html';
-  };
-  window.handleBuyNow = handleBuyNow;
-
-  // Wishlist Helper with Dual-ID Persistence & UI Sync
-  const toggleWishlist = (productId, btn = null) => {
-    if (!isUserLoggedIn()) {
-      openAuthModal(() => toggleWishlist(productId, btn), 'Sign in to save items to your sacred wishlist 🌸');
-      return;
-    }
-
-    const prod = findCatalogProduct(productId);
-    const canonId = prod ? prod.id : productId;
-    const legacyId = prod ? prod.legacy_id : null;
-    const slug = prod ? prod.slug : null;
-
-    let wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
-    const exists = wishlist.some(id =>
-      id === canonId || (legacyId && id === legacyId) || (slug && id === slug) || id === productId
-    );
-
-    let isNowWish = false;
-    if (exists) {
-      wishlist = wishlist.filter(id =>
-        id !== canonId && id !== legacyId && id !== slug && id !== productId
-      );
-      isNowWish = false;
-      showToast('Item removed from your sacred wishlist.');
-    } else {
-      wishlist.push(canonId);
-      if (legacyId && legacyId !== canonId) {
-        wishlist.push(legacyId);
-      }
-      isNowWish = true;
-      const title = prod ? (prod.title || prod.name) : 'Item';
-      showToast(`Saved "${title}" to your sacred wishlist 🌸`);
-    }
-
-    localStorage.setItem('hn_wishlist', JSON.stringify(wishlist));
-
-    // Update ALL heart buttons in the DOM matching this product
-    const idSelectors = [
-      `[data-product-id="${canonId}"] .hn-card-wishlist`,
-      `[data-product-id="${productId}"] .hn-card-wishlist`
-    ];
-    if (legacyId) {
-      idSelectors.push(`[data-product-id="${legacyId}"] .hn-card-wishlist`);
-      idSelectors.push(`[data-legacy-id="${legacyId}"] .hn-card-wishlist`);
-    }
-    if (slug) {
-      idSelectors.push(`[data-product-id="${slug}"] .hn-card-wishlist`);
-    }
-
-    const buttonsToUpdate = new Set();
-    if (btn) buttonsToUpdate.add(btn);
-
-    // Also check product details wishlist button
-    const detailBtn = document.getElementById('hn-detail-wishlist-btn');
-    if (detailBtn) buttonsToUpdate.add(detailBtn);
-
-    document.querySelectorAll(idSelectors.join(', ')).forEach(b => buttonsToUpdate.add(b));
-
-    buttonsToUpdate.forEach(targetBtn => {
-      targetBtn.classList.toggle('active', isNowWish);
-      targetBtn.classList.toggle('text-danger', isNowWish);
-      const icon = targetBtn.querySelector('i');
-      if (icon) {
-        icon.className = isNowWish ? 'bi bi-heart-fill text-danger' : 'bi bi-heart';
-      }
-    });
-
-    // Update header wishlist badge with bounce animation
-    updateHeaderBadges();
-    const wishBadge = document.getElementById('hn-wishlist-badge');
-    if (wishBadge && !wishBadge.classList.contains('d-none')) {
-      wishBadge.classList.remove('hn-badge-bounce');
-      void wishBadge.offsetWidth;
-      wishBadge.classList.add('hn-badge-bounce');
-    }
-
-    window.dispatchEvent(new CustomEvent('hn_wishlist_updated', { detail: wishlist }));
-  };
-  window.toggleWishlist = toggleWishlist;
-
-  // Universal Scroll Reveal Animation Engine
-  const initScrollAnimations = () => {
-    const elements = document.querySelectorAll('.hn-reveal, .hn-reveal-stagger');
-    if (!elements.length) return;
-
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      elements.forEach(el => el.classList.add('hn-revealed'));
-      return;
-    }
-
-    const observer = new IntersectionObserver((entries, obs) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('hn-revealed');
-          obs.unobserve(entry.target);
-        }
-      });
-    }, {
-      threshold: 0.1,
-      rootMargin: '0px 0px -40px 0px'
-    });
-
-    elements.forEach(el => observer.observe(el));
-  };
-
-  // Auto-run when DOM is loaded
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(initScrollAnimations, 100));
-  } else {
-    setTimeout(initScrollAnimations, 100);
+// Cart Helpers with Universal Product Resolution
+const handleAddToCart = (productId, qty = 1, selectedMaterial = null, btnElement = null) => {
+  if (!isUserLoggedIn()) {
+    openAuthModal(() => handleAddToCart(productId, qty, selectedMaterial, btnElement), 'Sign in to add divine items to your sacred cart 🌸');
+    return;
   }
 
-  const updateHeaderBadges = () => {
-    const loggedIn = isUserLoggedIn();
-    const cart = loggedIn ? JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]') : [];
-    const cartCount = loggedIn ? cart.reduce((acc, i) => acc + (i.qty || 1), 0) : 0;
-    const wishlist = loggedIn ? JSON.parse(localStorage.getItem('hn_wishlist') || localStorage.getItem('wishlist') || '[]') : [];
-    const wishlistCount = loggedIn && Array.isArray(wishlist) ? wishlist.length : 0;
+  const product = findCatalogProduct(productId);
+  if (!product) {
+    showToast('Product not found in catalog.', 'error');
+    return;
+  }
 
-    const cartBadge = document.getElementById('hn-cart-badge') || document.getElementById('cres-cart-badge');
-    if (cartBadge) {
-      cartBadge.innerText = cartCount;
-      if (loggedIn && cartCount > 0) {
-        cartBadge.classList.remove('d-none');
-      } else {
-        cartBadge.classList.add('d-none');
-      }
-    }
+  const material = selectedMaterial || product.material || 'Acrylic';
+  const quantity = Math.max(1, Number(qty) || 1);
 
-    const wishBadge = document.getElementById('hn-wishlist-badge');
-    if (wishBadge) {
-      wishBadge.innerText = wishlistCount;
-      if (loggedIn && wishlistCount > 0) {
-        wishBadge.classList.remove('d-none');
-      } else {
-        wishBadge.classList.add('d-none');
-      }
-    }
-  };
-  window.updateHeaderBadges = updateHeaderBadges;
+  let cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
 
-  // Initialize Page-Level Access & Topbar after definitions
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      enforceProtectedPageAccess();
-      checkAuthQueryPrompt();
-      updateAdminTopbarUser();
-      processOAuthRedirectAndSession();
-    });
+  const canonId = product.id;
+  const legacyId = product.legacy_id || product.id;
+
+  const existingIndex = cart.findIndex(item =>
+    (item.id === canonId || (legacyId && item.id === legacyId) || item.id === productId) &&
+    (item.material === material)
+  );
+
+  if (existingIndex > -1) {
+    cart[existingIndex].qty += quantity;
+    cart[existingIndex].id = canonId; // maintain canonical id
+    if (legacyId) cart[existingIndex].legacy_id = legacyId;
   } else {
+    cart.push({
+      id: canonId,
+      legacy_id: legacyId,
+      name: product.title || product.name,
+      price: Number(product.price) || 0,
+      image: product.image || product.primary_image,
+      material: material,
+      qty: quantity
+    });
+  }
+
+  localStorage.setItem('hn_cart', JSON.stringify(cart));
+  localStorage.setItem('cres_cart', JSON.stringify(cart));
+
+  // Update badge with micro bounce animation
+  updateHeaderBadges();
+  const badge = document.getElementById('hn-cart-badge') || document.getElementById('cres-cart-badge');
+  if (badge && !badge.classList.contains('d-none')) {
+    badge.classList.remove('hn-badge-bounce');
+    void badge.offsetWidth; // Force CSS reflow to re-trigger keyframe
+    badge.classList.add('hn-badge-bounce');
+  }
+
+  // Instant inline visual feedback on the button
+  const triggerBtn = btnElement ||
+    (window.event && window.event.target ? window.event.target.closest('button') : null) ||
+    document.querySelector(`[data-product-id="${canonId}"] .hn-btn-card-add`) ||
+    document.querySelector(`[data-product-id="${productId}"] .hn-btn-card-add`);
+  if (triggerBtn) {
+    const origHtml = triggerBtn.innerHTML;
+    triggerBtn.innerHTML = `<i class="bi bi-check2"></i> Added! ✓`;
+    triggerBtn.style.backgroundColor = '#166534';
+    triggerBtn.style.color = '#FFFFFF';
+    triggerBtn.disabled = true;
+    setTimeout(() => {
+      triggerBtn.innerHTML = origHtml;
+      triggerBtn.style.backgroundColor = '';
+      triggerBtn.style.color = '';
+      triggerBtn.disabled = false;
+    }, 1200);
+  }
+
+  // Dispatch global event for reactive listeners
+  window.dispatchEvent(new CustomEvent('hn_cart_updated', { detail: { cart, totalCount } }));
+
+  showToast(`Added "${product.title || product.name}" (${quantity}) to your cart 🌸`);
+};
+window.handleAddToCart = handleAddToCart;
+
+// Buy Now Helper (Instant Checkout)
+const handleBuyNow = (productId, qty = 1, selectedMaterial = null) => {
+  if (!isUserLoggedIn()) {
+    openAuthModal(() => handleBuyNow(productId, qty, selectedMaterial), 'Sign in to proceed to instant checkout 🌸');
+    return;
+  }
+
+  const product = findCatalogProduct(productId);
+  if (!product) {
+    showToast('Product not found in catalog.', 'error');
+    return;
+  }
+
+  const material = selectedMaterial || product.material || 'Acrylic';
+  const quantity = Math.max(1, Number(qty) || 1);
+
+  let cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
+  const canonId = product.id;
+  const legacyId = product.legacy_id || product.id;
+
+  const existingIndex = cart.findIndex(item =>
+    (item.id === canonId || (legacyId && item.id === legacyId) || item.id === productId) &&
+    (item.material === material)
+  );
+
+  if (existingIndex > -1) {
+    cart[existingIndex].qty += quantity;
+  } else {
+    cart.push({
+      id: canonId,
+      legacy_id: legacyId,
+      name: product.title || product.name,
+      price: Number(product.price) || 0,
+      image: product.image || product.primary_image,
+      material: material,
+      qty: quantity
+    });
+  }
+
+  localStorage.setItem('hn_cart', JSON.stringify(cart));
+  localStorage.setItem('cres_cart', JSON.stringify(cart));
+  updateHeaderBadges();
+
+  // Direct redirect to checkout without delaying or behaving like normal add to cart
+  window.location.href = '/checkout.html';
+};
+window.handleBuyNow = handleBuyNow;
+
+// Wishlist Helper with Dual-ID Persistence & UI Sync
+const toggleWishlist = (productId, btn = null) => {
+  if (!isUserLoggedIn()) {
+    openAuthModal(() => toggleWishlist(productId, btn), 'Sign in to save items to your sacred wishlist 🌸');
+    return;
+  }
+
+  const prod = findCatalogProduct(productId);
+  const canonId = prod ? prod.id : productId;
+  const legacyId = prod ? prod.legacy_id : null;
+  const slug = prod ? prod.slug : null;
+
+  let wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+  const exists = wishlist.some(id =>
+    id === canonId || (legacyId && id === legacyId) || (slug && id === slug) || id === productId
+  );
+
+  let isNowWish = false;
+  if (exists) {
+    wishlist = wishlist.filter(id =>
+      id !== canonId && id !== legacyId && id !== slug && id !== productId
+    );
+    isNowWish = false;
+    showToast('Item removed from your sacred wishlist.');
+  } else {
+    wishlist.push(canonId);
+    if (legacyId && legacyId !== canonId) {
+      wishlist.push(legacyId);
+    }
+    isNowWish = true;
+    const title = prod ? (prod.title || prod.name) : 'Item';
+    showToast(`Saved "${title}" to your sacred wishlist 🌸`);
+  }
+
+  localStorage.setItem('hn_wishlist', JSON.stringify(wishlist));
+
+  // Update ALL heart buttons in the DOM matching this product
+  const idSelectors = [
+    `[data-product-id="${canonId}"] .hn-card-wishlist`,
+    `[data-product-id="${productId}"] .hn-card-wishlist`
+  ];
+  if (legacyId) {
+    idSelectors.push(`[data-product-id="${legacyId}"] .hn-card-wishlist`);
+    idSelectors.push(`[data-legacy-id="${legacyId}"] .hn-card-wishlist`);
+  }
+  if (slug) {
+    idSelectors.push(`[data-product-id="${slug}"] .hn-card-wishlist`);
+  }
+
+  const buttonsToUpdate = new Set();
+  if (btn) buttonsToUpdate.add(btn);
+
+  // Also check product details wishlist button
+  const detailBtn = document.getElementById('hn-detail-wishlist-btn');
+  if (detailBtn) buttonsToUpdate.add(detailBtn);
+
+  document.querySelectorAll(idSelectors.join(', ')).forEach(b => buttonsToUpdate.add(b));
+
+  buttonsToUpdate.forEach(targetBtn => {
+    targetBtn.classList.toggle('active', isNowWish);
+    targetBtn.classList.toggle('text-danger', isNowWish);
+    const icon = targetBtn.querySelector('i');
+    if (icon) {
+      icon.className = isNowWish ? 'bi bi-heart-fill text-danger' : 'bi bi-heart';
+    }
+  });
+
+  // Update header wishlist badge with bounce animation
+  updateHeaderBadges();
+  const wishBadge = document.getElementById('hn-wishlist-badge');
+  if (wishBadge && !wishBadge.classList.contains('d-none')) {
+    wishBadge.classList.remove('hn-badge-bounce');
+    void wishBadge.offsetWidth;
+    wishBadge.classList.add('hn-badge-bounce');
+  }
+
+  window.dispatchEvent(new CustomEvent('hn_wishlist_updated', { detail: wishlist }));
+};
+window.toggleWishlist = toggleWishlist;
+
+// Universal Scroll Reveal Animation Engine
+const initScrollAnimations = () => {
+  const elements = document.querySelectorAll('.hn-reveal, .hn-reveal-stagger');
+  if (!elements.length) return;
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    elements.forEach(el => el.classList.add('hn-revealed'));
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('hn-revealed');
+        obs.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.1,
+    rootMargin: '0px 0px -40px 0px'
+  });
+
+  elements.forEach(el => observer.observe(el));
+};
+
+// Auto-run when DOM is loaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => setTimeout(initScrollAnimations, 100));
+} else {
+  setTimeout(initScrollAnimations, 100);
+}
+
+const updateHeaderBadges = () => {
+  const loggedIn = isUserLoggedIn();
+  const cart = loggedIn ? JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]') : [];
+  const cartCount = loggedIn ? cart.reduce((acc, i) => acc + (i.qty || 1), 0) : 0;
+  const wishlist = loggedIn ? JSON.parse(localStorage.getItem('hn_wishlist') || localStorage.getItem('wishlist') || '[]') : [];
+  const wishlistCount = loggedIn && Array.isArray(wishlist) ? wishlist.length : 0;
+
+  const cartBadge = document.getElementById('hn-cart-badge') || document.getElementById('cres-cart-badge');
+  if (cartBadge) {
+    cartBadge.innerText = cartCount;
+    if (loggedIn && cartCount > 0) {
+      cartBadge.classList.remove('d-none');
+    } else {
+      cartBadge.classList.add('d-none');
+    }
+  }
+
+  const wishBadge = document.getElementById('hn-wishlist-badge');
+  if (wishBadge) {
+    wishBadge.innerText = wishlistCount;
+    if (loggedIn && wishlistCount > 0) {
+      wishBadge.classList.remove('d-none');
+    } else {
+      wishBadge.classList.add('d-none');
+    }
+  }
+};
+window.updateHeaderBadges = updateHeaderBadges;
+
+// Initialize Page-Level Access & Topbar after definitions
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
     enforceProtectedPageAccess();
     checkAuthQueryPrompt();
     updateAdminTopbarUser();
     processOAuthRedirectAndSession();
+  });
+} else {
+  enforceProtectedPageAccess();
+  checkAuthQueryPrompt();
+  updateAdminTopbarUser();
+  processOAuthRedirectAndSession();
+}
+
+// Universal API URL Resolver
+const getApiUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  if (typeof window === 'undefined') return path;
+
+  const { hostname, port, protocol } = window.location;
+
+  // Running via local file protocol
+  if (protocol === 'file:') {
+    return `http://localhost:5000${path}`;
   }
 
-  // Global Tax Invoice Generator & Downloader
-  const downloadOrderInvoice = (orderIdentifier) => {
-    if (!orderIdentifier) {
-      showToast('Order number is required to generate invoice.', 'danger');
-      return;
-    }
-    const orderNum = typeof orderIdentifier === 'object' ? (orderIdentifier.order_number || orderIdentifier.id || orderIdentifier.orderId) : orderIdentifier;
-    if (!orderNum) {
-      showToast('Invalid order details for invoice.', 'danger');
-      return;
-    }
+  // Running locally on non-5000 port (e.g. Live Server port 5500)
+  if ((hostname === 'localhost' || hostname === '127.0.0.1') && port !== '5000') {
+    return `http://${hostname}:5000${path}`;
+  }
 
-    let invoiceUrl = `/api/orders/${encodeURIComponent(orderNum)}/invoice?print=true`;
-    if (typeof window !== 'undefined') {
-      if (window.location.protocol === 'file:' || window.location.port !== '5000') {
-        invoiceUrl = `http://localhost:5000/api/orders/${encodeURIComponent(orderNum)}/invoice?print=true`;
+  // Accessing via LAN IP (e.g. 192.168.x.x / 10.x.x.x from mobile device on local Wi-Fi)
+  if (/^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) && port !== '5000') {
+    return `http://${hostname}:5000${path}`;
+  }
+
+  // Default to relative path for same-origin and production deployments
+  return path;
+};
+window.getApiUrl = getApiUrl;
+
+// Global Tax Invoice Generator & Downloader (Universal & Zero Localhost Error)
+const downloadOrderInvoice = async (orderIdentifier) => {
+  if (!orderIdentifier) {
+    showToast('Order number is required to generate invoice.', 'danger');
+    return;
+  }
+  const orderNum = typeof orderIdentifier === 'object' ? (orderIdentifier.order_number || orderIdentifier.id || orderIdentifier.orderId) : orderIdentifier;
+  if (!orderNum) {
+    showToast('Invalid order details for invoice.', 'danger');
+    return;
+  }
+
+  showToast(`Preparing official tax invoice for #${orderNum}... 🌸`);
+
+  // Determine the optimal invoice endpoint
+  const invoiceUrl = getApiUrl(`/api/orders/${encodeURIComponent(orderNum)}/invoice?print=true`);
+
+  try {
+    // Test if endpoint is reachable directly
+    const testRes = await fetch(invoiceUrl, { method: 'HEAD' }).catch(() => null);
+    if (testRes && testRes.ok) {
+      const win = window.open(invoiceUrl, '_blank');
+      if (!win) {
+        window.location.href = invoiceUrl;
       }
+      return;
     }
+  } catch (_) { }
 
-    showToast(`Generating official tax invoice for #${orderNum}... 🌸`);
-    const win = window.open(invoiceUrl, '_blank');
-    if (!win) {
-      window.location.href = invoiceUrl;
-    }
-  };
-  window.downloadOrderInvoice = downloadOrderInvoice;
+  // Fallback: Open in new window or iframe with client-rendered authentic invoice
+  const win = window.open(invoiceUrl, '_blank');
+  if (!win) {
+    window.location.href = invoiceUrl;
+  }
+};
+window.downloadOrderInvoice = downloadOrderInvoice;
 
-  // Global Window Exports for Inline HTML Handlers
-  window.formatPrice = formatPrice;
-  window.renderRatingStars = renderRatingStars;
-  window.showToast = showToast;
-  window.isUserLoggedIn = isUserLoggedIn;
-  window.getLoggedInUser = getLoggedInUser;
-  window.logoutUser = logoutUser;
-  window.toggleUserDropdown = toggleUserDropdown;
-  window.ensureAuthModal = ensureAuthModal;
-  window.openAuthModal = openAuthModal;
-  window.closeAuthModal = closeAuthModal;
-  window.switchAuthTab = switchAuthTab;
-  window.togglePasswordVisibility = togglePasswordVisibility;
-  window.handleAuthSignIn = handleAuthSignIn;
-  window.handleAuthRegister = handleAuthRegister;
-  window.showForgotPasswordAlert = showForgotPasswordAlert;
-  window.renderHeader = renderHeader;
-  window.renderFooter = renderFooter;
-  window.renderProductCard = renderProductCard;
-  window.findCatalogProduct = findCatalogProduct;
-  window.handleAddToCart = handleAddToCart;
-  window.handleBuyNow = handleBuyNow;
-  window.toggleWishlist = toggleWishlist;
-  window.continueAsGuest = continueAsGuest;
-  window.handleGoogleSignIn = handleGoogleSignIn;
-  window.handleAuthOverlayClick = handleAuthOverlayClick;
-  window.handleHeaderAccountClick = handleHeaderAccountClick;
-  window.initScrollAnimations = initScrollAnimations;
+// Global Window Exports for Inline HTML Handlers
+window.formatPrice = formatPrice;
+window.renderRatingStars = renderRatingStars;
+window.showToast = showToast;
+window.isUserLoggedIn = isUserLoggedIn;
+window.getLoggedInUser = getLoggedInUser;
+window.logoutUser = logoutUser;
+window.toggleUserDropdown = toggleUserDropdown;
+window.ensureAuthModal = ensureAuthModal;
+window.openAuthModal = openAuthModal;
+window.closeAuthModal = closeAuthModal;
+window.switchAuthTab = switchAuthTab;
+window.togglePasswordVisibility = togglePasswordVisibility;
+window.handleAuthSignIn = handleAuthSignIn;
+window.handleAuthRegister = handleAuthRegister;
+window.showForgotPasswordAlert = showForgotPasswordAlert;
+window.renderHeader = renderHeader;
+window.renderFooter = renderFooter;
+window.renderProductCard = renderProductCard;
+window.findCatalogProduct = findCatalogProduct;
+window.handleAddToCart = handleAddToCart;
+window.handleBuyNow = handleBuyNow;
+window.toggleWishlist = toggleWishlist;
+window.continueAsGuest = continueAsGuest;
+window.handleGoogleSignIn = handleGoogleSignIn;
+window.handleAuthOverlayClick = handleAuthOverlayClick;
+window.handleHeaderAccountClick = handleHeaderAccountClick;
 })();
 

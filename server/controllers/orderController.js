@@ -161,7 +161,8 @@ exports.createOrder = async (req, res, next) => {
       ? req.body.order_number
       : generateOrderNumber();
 
-    const isOnlinePaid = ['razorpay', 'stripe'].includes(payment_method) && Boolean(transaction_id || payment_details.razorpay_payment_id);
+    const isOnlinePaid = ['razorpay', 'stripe'].includes(payment_method) && 
+      Boolean(transaction_id || payment_details?.razorpay_payment_id || req.body.payment_status === 'paid' || req.body.is_paid || payment_details?.id);
     const trackingNum = `HN-EXP-${Math.floor(100000 + Math.random() * 900000)}`;
     const trackingUrl = `/order-tracking.html?order=${orderNumber}`;
 

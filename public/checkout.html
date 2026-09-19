@@ -749,6 +749,8 @@
                 pin
               },
               payment_method: isCod ? 'cod' : 'razorpay',
+              payment_status: isCod ? 'pending' : 'paid',
+              is_paid: !isCod,
               payment_details: paymentDetails || {},
               transaction_id: paymentDetails?.razorpay_payment_id || null,
               coupon_code: checkoutCouponCode || null
@@ -993,12 +995,15 @@
             color: '#0F1E36' // Elegant Harinama Deep Navy
           },
           handler: async function (response) {
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Verifying Razorpay Payment...';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Confirming Sacred Order...';
 
-            // Attempt server-side verification if signature exists and backend is running
+            // 1. Submit and finalize order on backend first (with paid status and transaction ID)
+            await finalizeAndRedirect(orderNumber, response);
+
+            // 2. Asynchronously verify signature on backend for database record
             if (response.razorpay_order_id && response.razorpay_signature) {
               try {
-                const verifyRes = await fetch(getApiUrl('/api/payments/verify'), {
+                fetch(getApiUrl('/api/payments/verify'), {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
@@ -1009,22 +1014,9 @@
                     razorpay_payment_id: response.razorpay_payment_id,
                     razorpay_signature: response.razorpay_signature
                   })
-                });
-
-                const vType = verifyRes.headers.get('content-type') || '';
-                if (verifyRes.ok && vType.includes('application/json')) {
-                  const verifyData = await verifyRes.json();
-                  if (!verifyData.success) {
-                    console.warn('[Razorpay] Server signature warning:', verifyData.message);
-                  }
-                }
-              } catch (vErr) {
-                console.warn('[Razorpay] Verification warning:', vErr.message);
-              }
+                }).catch(() => {});
+              } catch (_) {}
             }
-
-            // Finalize order and redirect to confirmation
-            await finalizeAndRedirect(orderNumber, response);
           },
           modal: {
             ondismiss: function () {

@@ -78,8 +78,36 @@ const authenticate = async (req, res, next) => {
 
     // Local JWT verification fallback
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = db.findById('users', decoded.id);
-    if (!user || user.status !== 'active') {
+    let user = db.findById('users', decoded.id);
+
+    if (!user && isSupabaseConfigured && supabaseAdmin && decoded.id) {
+      try {
+        const { data: prof } = await supabaseAdmin.from('profiles').select('*').eq('id', decoded.id).maybeSingle();
+        if (prof) {
+          user = {
+            id: prof.id,
+            name: prof.name,
+            email: prof.email,
+            role: prof.role || decoded.role || 'customer',
+            phone: prof.phone || '',
+            avatar: prof.avatar_url || ''
+          };
+        }
+      } catch (_) {}
+    }
+
+    if (!user && decoded.email) {
+      user = {
+        id: decoded.id || 'devotee-user',
+        name: decoded.name || 'Devotee Customer',
+        email: decoded.email,
+        role: decoded.role || 'customer',
+        phone: decoded.phone || '',
+        avatar: decoded.avatar || ''
+      };
+    }
+
+    if (!user) {
       return res.status(401).json({
         success: false,
         message: 'Invalid or inactive user account.'

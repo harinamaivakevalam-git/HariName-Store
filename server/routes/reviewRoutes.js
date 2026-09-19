@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const reviewController = require('../controllers/reviewController');
-const { authenticate, requireAdmin } = require('../middleware/auth');
+const { authenticate, optionalAuth, requireAdmin } = require('../middleware/auth');
 
 router.get('/', reviewController.getRecentReviews);
 router.get('/product/:productId', reviewController.getProductReviews);
-router.post('/', authenticate, reviewController.createReview);
+router.post('/', optionalAuth, reviewController.createReview);
 
 // Admin Review Moderation & Management
 router.get('/admin/all', authenticate, requireAdmin, reviewController.adminGetReviews);

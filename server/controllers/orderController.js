@@ -837,3 +837,450 @@ exports.adminUpdateOrderStatus = async (req, res, next) => {
     next(err);
   }
 };
+
+// Generate & Download Order Tax Invoice (HTML / PDF Print / JSON)
+exports.getOrderInvoice = async (req, res, next) => {
+  try {
+    const { identifier } = req.params;
+    let order = null;
+
+    if (isSupabaseConfigured && supabaseAdmin) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+        let q = supabaseAdmin.from('orders').select('*, order_items(*), payments(*)');
+        if (isUuid) q = q.eq('id', identifier);
+        else q = q.eq('order_number', identifier);
+
+        const { data: sbOrder } = await q.maybeSingle();
+        if (sbOrder) order = sbOrder;
+      } catch (sbE) {
+        console.warn('[getOrderInvoice] Supabase fetch error:', sbE.message);
+      }
+    }
+
+    if (!order) {
+      const localOrd = db.findById('orders', identifier) || db.findOne('orders', o => o.order_number === identifier);
+      if (localOrd) {
+        const items = db.filter('order_items', oi => oi.order_id === localOrd.id);
+        const payments = db.filter('payments', p => p.order_id === localOrd.id);
+        order = { ...localOrd, order_items: items, payments };
+      }
+    }
+
+    if (!order) {
+      return res.status(404).send(`
+        <html>
+          <body style="font-family:sans-serif; text-align:center; padding:50px;">
+            <h2>Invoice Not Found</h2>
+            <p>Order ${identifier} was not found in the records.</p>
+            <a href="/index.html">Return to Harinama Store</a>
+          </body>
+        </html>
+      `);
+    }
+
+    const shipAddr = order.shipping_address || {};
+    const items = order.order_items || order.items || [];
+    const customerName = shipAddr.name || order.guest_name || 'Valued Devotee';
+    const customerPhone = shipAddr.phone || '—';
+    const customerEmail = shipAddr.email || order.guest_email || '—';
+    const addressLine = `${shipAddr.address_line_1 || ''}${shipAddr.village ? ', ' + shipAddr.village : ''}, ${shipAddr.city || ''}, ${shipAddr.state || ''} - ${shipAddr.pin || ''}`;
+
+    const orderDate = new Date(order.created_at || Date.now()).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+
+    const isPaid = (order.payment_status || '').toLowerCase() === 'paid';
+    const paymentBadgeText = isPaid ? 'PAID (PREPAID)' : 'CASH ON DELIVERY (PENDING)';
+    const paymentBadgeColor = isPaid ? '#15803D' : '#D97706';
+
+    const subtotal = Number(order.subtotal || 0);
+    const discount = Number(order.discount || 0);
+    const shippingFee = Number(order.shipping_fee || 0);
+    const tax = Number(order.tax || 0);
+    const total = Number(order.total || 0);
+
+    const invoiceNo = `INV-${(order.order_number || order.id || '').replace(/^HN-/, '')}`;
+
+    if (req.query.format === 'json') {
+      return res.json({
+        success: true,
+        data: {
+          invoice_number: invoiceNo,
+          order_number: order.order_number,
+          order_date: orderDate,
+          customer: { name: customerName, phone: customerPhone, email: customerEmail, address: addressLine },
+          items,
+          pricing: { subtotal, discount, shipping_fee: shippingFee, tax, total },
+          shipping: {
+            status: order.shipping_status || 'CONFIRMED',
+            courier: order.courier_name || 'India Post Speed Post',
+            awb_code: order.awb_code || '—',
+            tracking_number: order.tracking_number || '—'
+          }
+        }
+      });
+    }
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tax Invoice - ${order.order_number} | Harinama Store</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0F1E36;
+      --gold: #C59B27;
+      --gold-dark: #9A771C;
+      --border: #E2E8F0;
+      --text: #1E293B;
+      --text-muted: #64748B;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #F8FAFC;
+      color: var(--text);
+      padding: 30px 15px;
+      line-height: 1.5;
+    }
+    .invoice-container {
+      max-width: 820px;
+      margin: 0 auto;
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(15, 30, 54, 0.06);
+      padding: 40px;
+      position: relative;
+    }
+    .no-print {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      max-width: 820px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, #C59B27, #9A771C);
+      color: #FFFFFF;
+      border: none;
+    }
+    .btn-gold:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn-outline {
+      background: transparent;
+      color: var(--primary);
+      border: 1px solid var(--border);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #F1F5F9;
+      padding-bottom: 24px;
+      margin-bottom: 24px;
+    }
+    .store-brand {
+      font-family: 'Cinzel', serif;
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: 0.5px;
+    }
+    .store-tagline {
+      font-size: 12px;
+      color: var(--gold-dark);
+      font-weight: 600;
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .store-details {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+    .invoice-title-block {
+      text-align: right;
+    }
+    .invoice-title {
+      font-family: 'Cinzel', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--gold);
+    }
+    .invoice-meta-item {
+      font-size: 13px;
+      margin-top: 4px;
+      color: var(--text);
+    }
+    .invoice-meta-item span {
+      color: var(--text-muted);
+    }
+    .badge-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #FFFFFF;
+      background: ${paymentBadgeColor};
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 28px;
+      background: #F8FAFC;
+      border-radius: 8px;
+      padding: 16px 20px;
+      border: 1px solid #EDF2F7;
+    }
+    .section-heading {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      letter-spacing: 0.8px;
+      margin-bottom: 6px;
+    }
+    .section-content {
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--text);
+    }
+    table.invoice-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+    }
+    table.invoice-table th {
+      background: #0F1E36;
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 12px 14px;
+      text-align: left;
+    }
+    table.invoice-table th.text-right { text-align: right; }
+    table.invoice-table td {
+      padding: 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      vertical-align: middle;
+    }
+    table.invoice-table td.text-right { text-align: right; }
+    .item-title {
+      font-weight: 600;
+      color: var(--primary);
+    }
+    .item-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .summary-wrapper {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 30px;
+    }
+    .summary-table {
+      width: 320px;
+      border-collapse: collapse;
+    }
+    .summary-table td {
+      padding: 6px 0;
+      font-size: 13px;
+    }
+    .summary-table td:last-child {
+      text-align: right;
+      font-weight: 600;
+    }
+    .summary-table tr.total-row td {
+      border-top: 2px solid var(--primary);
+      padding-top: 10px;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+    .blessing-footer {
+      border-top: 1px dashed var(--border);
+      padding-top: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .blessing-quote {
+      font-family: 'Cinzel', serif;
+      font-style: italic;
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    @media print {
+      body { background: #FFFFFF; padding: 0; }
+      .no-print { display: none !important; }
+      .invoice-container { box-shadow: none; border: none; padding: 20px 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="no-print">
+    <a href="javascript:history.back()" class="btn btn-outline">← Back to Store</a>
+    <button onclick="window.print()" class="btn btn-gold">🖨️ Print / Download PDF</button>
+  </div>
+
+  <div class="invoice-container">
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <div class="store-brand">HARINAMA STORE</div>
+        <div class="store-tagline">Devotional Keepsakes & Sacred Scriptures</div>
+        <div class="store-details">
+          Radha Raman Marg, Vrindavan, Mathura, UP - 281121<br>
+          GSTIN: 09AAAPH1234F1Z5 | PAN: AAAPH1234F<br>
+          WhatsApp: +91 79937 91014 | Email: harinamaivakevalam@gmail.com
+        </div>
+      </div>
+      <div class="invoice-title-block">
+        <div class="invoice-title">TAX INVOICE</div>
+        <div class="invoice-meta-item"><span>Invoice No:</span> <strong>${invoiceNo}</strong></div>
+        <div class="invoice-meta-item"><span>Order No:</span> <strong>${order.order_number}</strong></div>
+        <div class="invoice-meta-item"><span>Order Date:</span> ${orderDate}</div>
+        <div><span class="badge-status">${paymentBadgeText}</span></div>
+      </div>
+    </div>
+
+    <!-- Customer & Dispatch Details -->
+    <div class="section-grid">
+      <div>
+        <div class="section-heading">Billed & Shipped To</div>
+        <div class="section-content">
+          <strong>${customerName}</strong><br>
+          ${addressLine}<br>
+          Phone: ${customerPhone}<br>
+          Email: ${customerEmail}
+        </div>
+      </div>
+      <div>
+        <div class="section-heading">Shipping & Courier Details</div>
+        <div class="section-content">
+          <strong>Courier:</strong> ${order.courier_name || 'India Post Speed Post'}<br>
+          <strong>AWB Code:</strong> ${order.awb_code || 'Assigned on Dispatch'}<br>
+          <strong>Tracking No:</strong> ${order.tracking_number || order.order_number}<br>
+          <strong>Payment Mode:</strong> ${(order.payment_method || 'Online').toUpperCase()}
+        </div>
+      </div>
+    </div>
+
+    <!-- Line Items Table -->
+    <table class="invoice-table">
+      <thead>
+        <tr>
+          <th style="width: 40px;">#</th>
+          <th>Sacred Product Description</th>
+          <th style="width: 80px;" class="text-right">Qty</th>
+          <th style="width: 100px;" class="text-right">Unit Price</th>
+          <th style="width: 110px;" class="text-right">Amount (INR)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map((it, idx) => {
+          const qty = it.quantity || it.qty || 1;
+          const price = Number(it.price || 0);
+          const itemTotal = price * qty;
+          const mat = it.variant_info?.material || it.material || 'Devotional Standard';
+          return `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>
+                <div class="item-title">${it.product_name || it.name || 'Sacred Devotional Item'}</div>
+                <div class="item-sub">SKU: ${it.sku || 'HN-SKU-SACRED'} • Material: ${mat}</div>
+              </td>
+              <td class="text-right">${qty}</td>
+              <td class="text-right">₹${price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+              <td class="text-right"><strong>₹${itemTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+
+    <!-- Pricing Summary -->
+    <div class="summary-wrapper">
+      <table class="summary-table">
+        <tr>
+          <td>Item Subtotal:</td>
+          <td>₹${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+        </tr>
+        ${discount > 0 ? `
+        <tr style="color: #15803D;">
+          <td>Holy Coupon Discount:</td>
+          <td>-₹${discount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+        </tr>` : ''}
+        <tr>
+          <td>Sacred Packaging & Dispatch:</td>
+          <td>${shippingFee === 0 ? 'FREE' : '₹' + shippingFee.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+        </tr>
+        <tr>
+          <td>GST (5% Inclusive):</td>
+          <td>₹${tax.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+        </tr>
+        <tr class="total-row">
+          <td>Grand Total:</td>
+          <td>₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Blessing Footer -->
+    <div class="blessing-footer">
+      <div class="blessing-quote">"Hare Krishna Hare Krishna Krishna Krishna Hare Hare | Hare Rama Hare Rama Rama Rama Hare Hare"</div>
+      <div>Thank you for choosing Harinama Store. May Sri Sri Radha Shyamasundara bring peace, devotion, and auspiciousness to your home. 🌸</div>
+      <div style="margin-top: 6px; font-size: 11px; color: #94A3B8;">This is a computer-generated tax invoice and requires no physical signature.</div>
+    </div>
+  </div>
+
+  <script>
+    if (window.location.search.includes('print=true')) {
+      window.onload = function() { window.print(); };
+    }
+  </script>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  } catch (err) {
+    next(err);
+  }
+};

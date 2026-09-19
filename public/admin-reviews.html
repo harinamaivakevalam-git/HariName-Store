@@ -292,6 +292,17 @@
       return supabaseClient;
     }
 
+    function getApiUrl(path) {
+      if (typeof window !== 'undefined') {
+        if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          if (window.location.port === '5000') return path;
+          return 'http://localhost:5000' + path;
+        }
+      }
+      return path;
+    }
+
     let databaseReviews = [];
     let availableProducts = [];
     let reviewModalInstance = null;
@@ -313,7 +324,7 @@
 
     async function loadProductsList() {
       try {
-        const res = await fetch('/api/products?limit=100');
+        const res = await fetch(getApiUrl('/api/products?limit=100'));
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data)) {
@@ -349,7 +360,7 @@
       
       // 1. Try Express API
       try {
-        const res = await fetch('/api/reviews/admin/all', { headers: getAuthHeaders() });
+        const res = await fetch(getApiUrl('/api/reviews/admin/all'), { headers: getAuthHeaders() });
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data) && json.data.length > 0) {
@@ -524,7 +535,7 @@
 
       // 1. Try Express API
       try {
-        const res = await fetch(`/api/reviews/admin/${id}/status`, {
+        const res = await fetch(getApiUrl(`/api/reviews/admin/${id}/status`), {
           method: 'PUT',
           headers: getAuthHeaders(),
           body: JSON.stringify({ status: newStatus })
@@ -567,7 +578,7 @@
 
       // 1. Try API
       try {
-        const res = await fetch(`/api/reviews/admin/${id}`, {
+        const res = await fetch(getApiUrl(`/api/reviews/admin/${id}`), {
           method: 'DELETE',
           headers: getAuthHeaders()
         });
@@ -658,7 +669,7 @@
       try {
         if (id) {
           // Update existing review
-          const res = await fetch(`/api/reviews/admin/${id}`, {
+          const res = await fetch(getApiUrl(`/api/reviews/admin/${id}`), {
             method: 'PUT',
             headers: getAuthHeaders(),
             body: JSON.stringify({ rating, comment, title: name, status })
@@ -673,7 +684,7 @@
           }
         } else {
           // Create new review
-          const res = await fetch('/api/reviews/admin/create', {
+          const res = await fetch(getApiUrl('/api/reviews/admin/create'), {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify({

@@ -6,6 +6,7 @@ const { authenticate, requireAdmin, optionalAuth } = require('../middleware/auth
 router.post('/', optionalAuth, orderController.createOrder);
 router.get('/my-orders', authenticate, orderController.getUserOrders);
 router.get('/user', authenticate, orderController.getUserOrders);
+router.get('/:identifier/invoice', optionalAuth, orderController.getOrderInvoice);
 router.get('/:identifier', optionalAuth, orderController.getOrderDetails);
 router.post('/:id/cancel', authenticate, orderController.cancelOrder);
 

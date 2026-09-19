@@ -89,6 +89,9 @@
 
             <div class="d-flex flex-wrap gap-2 justify-content-center">
               <a href="/shop.html" class="btn hn-btn-gold">Continue Shopping</a>
+              <button onclick="downloadOrderInvoice(new URLSearchParams(window.location.search).get('order') || 'HN-2026-98124')" class="btn btn-outline-primary">
+                <i class="bi bi-file-earmark-arrow-down me-1"></i> Download Invoice
+              </button>
               <a href="#" id="hn-btn-track-order" class="btn btn-outline-dark">Track Shipment</a>
               <a href="/orders.html" class="btn btn-link text-navy text-decoration-none">View My Orders</a>
             </div>

@@ -1945,6 +1945,33 @@
     processOAuthRedirectAndSession();
   }
 
+  // Global Tax Invoice Generator & Downloader
+  const downloadOrderInvoice = (orderIdentifier) => {
+    if (!orderIdentifier) {
+      showToast('Order number is required to generate invoice.', 'danger');
+      return;
+    }
+    const orderNum = typeof orderIdentifier === 'object' ? (orderIdentifier.order_number || orderIdentifier.id || orderIdentifier.orderId) : orderIdentifier;
+    if (!orderNum) {
+      showToast('Invalid order details for invoice.', 'danger');
+      return;
+    }
+
+    let invoiceUrl = `/api/orders/${encodeURIComponent(orderNum)}/invoice?print=true`;
+    if (typeof window !== 'undefined') {
+      if (window.location.protocol === 'file:' || window.location.port !== '5000') {
+        invoiceUrl = `http://localhost:5000/api/orders/${encodeURIComponent(orderNum)}/invoice?print=true`;
+      }
+    }
+
+    showToast(`Generating official tax invoice for #${orderNum}... 🌸`);
+    const win = window.open(invoiceUrl, '_blank');
+    if (!win) {
+      window.location.href = invoiceUrl;
+    }
+  };
+  window.downloadOrderInvoice = downloadOrderInvoice;
+
   // Global Window Exports for Inline HTML Handlers
   window.formatPrice = formatPrice;
   window.renderRatingStars = renderRatingStars;

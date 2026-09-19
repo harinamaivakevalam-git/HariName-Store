@@ -428,12 +428,23 @@
       if (e.target.id === 'hnReviewModalOverlay') closeReviewModal();
     }
 
+    function getApiUrl(path) {
+      if (typeof window !== 'undefined') {
+        if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          if (window.location.port === '5000') return path;
+          return 'http://localhost:5000' + path;
+        }
+      }
+      return path;
+    }
+
     async function handleReviewSubmit(e) {
       e.preventDefault();
       if (!currentProduct) return;
 
       const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-      const user = JSON.parse(localStorage.getItem('hn_user') || 'null');
+      const user = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || 'null');
       const rating = selectedRating;
       const title = document.getElementById('hnReviewTitle').value.trim();
       const comment = document.getElementById('hnReviewComment').value.trim();
@@ -446,31 +457,44 @@
 
       try {
         let success = false;
+        let successMsg = 'Your sacred review has been published! Hare Krishna. 🌸';
+
         // Try backend API first
         try {
-          const res = await fetch('/api/reviews', {
+          const headers = { 'Content-Type': 'application/json' };
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+
+          const res = await fetch(getApiUrl('/api/reviews'), {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
+            headers,
             body: JSON.stringify({
               product_id: currentProduct.id,
               rating,
               title,
-              comment
+              comment,
+              user_name: user?.name || user?.full_name || 'Devotee Customer',
+              user_email: user?.email || 'devotee@harinama.com'
             })
           }).then(r => r.json());
-          if (res && res.success) success = true;
-        } catch (_) {}
+
+          if (res && res.success) {
+            success = true;
+            if (res.message) successMsg = res.message;
+          } else if (res && res.message) {
+            throw new Error(res.message);
+          }
+        } catch (apiErr) {
+          console.warn('[ReviewSubmit] API notice:', apiErr);
+          if (apiErr.message && !apiErr.message.includes('fetch')) {
+            throw apiErr;
+          }
+        }
 
         // Direct Supabase fallback
         if (!success && sb) {
           const { error } = await sb.from('reviews').insert([{
             product_id: currentProduct.id,
-            user_id: user?.id || null,
-            user_name: user?.full_name || user?.name || 'Devotee',
-            user_avatar: user?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+            user_id: user?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id) ? user.id : '486bafd0-7d83-4554-a6b9-c0415a3c676a',
             rating,
             title,
             comment,
@@ -484,7 +508,7 @@
         if (alertEl) {
           alertEl.className = 'hn-review-alert success';
           alertEl.style.display = 'flex';
-          alertEl.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> Your review has been published! Hare Krishna. 🌸';
+          alertEl.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i> ${successMsg}`;
         }
 
         setTimeout(() => {
@@ -513,14 +537,14 @@
         let reviews = [];
         // 1. Try Express API
         try {
-          const res = await fetch(`/api/reviews/product/${encodeURIComponent(prodId)}`).then(r => r.json());
+          const res = await fetch(getApiUrl(`/api/reviews/product/${encodeURIComponent(prodId)}`)).then(r => r.json());
           if (res && res.success && Array.isArray(res.data)) reviews = res.data;
         } catch (_) {}
 
         // 2. Try direct Supabase
         if ((!reviews || reviews.length === 0) && sb) {
           const { data, error } = await sb.from('reviews')
-            .select('*')
+            .select('*, profiles:user_id(name, avatar_url)')
             .eq('product_id', prodId)
             .eq('status', 'approved')
             .order('created_at', { ascending: false });

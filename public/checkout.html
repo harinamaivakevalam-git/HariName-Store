@@ -610,7 +610,7 @@
           const controller = new AbortController();
           const timer = setTimeout(() => controller.abort(), 2500);
 
-          const r = await fetch(`/api/pincode/${pin}`, { signal: controller.signal });
+          const r = await fetch(getApiUrl(`/api/pincode/${pin}`), { signal: controller.signal });
           clearTimeout(timer);
 
           if (r.ok) {
@@ -729,6 +729,7 @@
             method: 'POST',
             headers: headers,
             body: JSON.stringify({
+              order_number: orderNumberToUse,
               items: cart.map(i => ({
                 product_id: i.id,
                 product_name: i.name,
@@ -850,6 +851,13 @@
                 if (lineItems.length > 0) {
                   await sb.from('order_items').insert(lineItems);
                 }
+
+                // Trigger backend Shiprocket fulfillment for the client-inserted order
+                fetch(getApiUrl('/api/shiprocket/create-order'), {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ order_id: finalOrderNum })
+                }).catch(() => {});
               }
             }
           } catch (sbE) {
@@ -887,7 +895,7 @@
 
               const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
               if (token) {
-                fetch('/api/addresses', {
+                fetch(getApiUrl('/api/addresses'), {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                   body: JSON.stringify(newAddrObj)
@@ -926,7 +934,7 @@
 
         // Attempt server-side order generation if API backend is present
         try {
-          const orderResponse = await fetch('/api/payments/create-order', {
+          const orderResponse = await fetch(getApiUrl('/api/payments/create-order'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -990,7 +998,7 @@
             // Attempt server-side verification if signature exists and backend is running
             if (response.razorpay_order_id && response.razorpay_signature) {
               try {
-                const verifyRes = await fetch('/api/payments/verify', {
+                const verifyRes = await fetch(getApiUrl('/api/payments/verify'), {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({

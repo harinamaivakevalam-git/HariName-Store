@@ -1151,15 +1151,24 @@ exports.getOrderInvoice = async (req, res, next) => {
       .invoice-container { box-shadow: none; border: none; padding: 20px 0; }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
   <div class="no-print">
     <a href="javascript:history.back()" class="btn btn-outline">← Back to Store</a>
-    <button onclick="window.print()" class="btn btn-gold">🖨️ Print / Download PDF</button>
+    <div style="display: flex; gap: 10px;">
+      <button onclick="downloadPDF()" class="btn btn-gold" id="btn-download-pdf">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+        Download PDF (.pdf)
+      </button>
+      <button onclick="window.print()" class="btn btn-outline">
+        🖨️ Print Invoice
+      </button>
+    </div>
   </div>
 
-  <div class="invoice-container">
+  <div class="invoice-container" id="invoice-doc">
     <!-- Header -->
     <div class="header">
       <div>
@@ -1271,8 +1280,39 @@ exports.getOrderInvoice = async (req, res, next) => {
   </div>
 
   <script>
-    if (window.location.search.includes('print=true')) {
-      window.onload = function() { window.print(); };
+    function downloadPDF() {
+      const btn = document.getElementById('btn-download-pdf');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = 'Generating PDF...';
+      btn.disabled = true;
+
+      const element = document.getElementById('invoice-doc');
+      const opt = {
+        margin: [8, 8, 8, 8],
+        filename: 'Harinama-Store-Invoice-${order.order_number}.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save().then(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }).catch(() => {
+        window.print();
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      });
+    }
+
+    if (window.location.search.includes('download=pdf') || window.location.search.includes('download=true')) {
+      window.onload = function() {
+        setTimeout(downloadPDF, 400);
+      };
+    } else if (window.location.search.includes('print=true')) {
+      window.onload = function() {
+        setTimeout(function() { window.print(); }, 400);
+      };
     }
   </script>
 </body>

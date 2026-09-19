@@ -215,12 +215,16 @@ const client = (isSupabaseConfigured && supabaseAdmin) ? supabaseAdmin : supabas
     }
   } catch (dbE) {}
 
-  // Trigger automatic Shiprocket fulfillment for newly paid order
+  // Trigger automatic Shiprocket fulfillment and email for newly paid order
   try {
     const { processOrderFulfillment } = require('../services/fulfillmentService');
+    const { sendOrderConfirmationEmail } = require('../services/emailService');
     const orderIdentifier = orderNumber || targetOrderId || orderId;
     if (orderIdentifier) {
-      await processOrderFulfillment(orderIdentifier);
+      processOrderFulfillment(orderIdentifier).catch(() => {});
+      if (typeof matchedOrder === 'object' && matchedOrder) {
+        sendOrderConfirmationEmail(matchedOrder).catch(() => {});
+      }
     }
   } catch (fErr) {
     console.warn('[Payment Controller] Fulfillment dispatch notice:', fErr.message);

@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const { supabaseAdmin, isSupabaseConfigured } = require('../config/supabase');
 const shiprocketService = require('../services/shiprocketService');
 const { processOrderFulfillment } = require('../services/fulfillmentService');
+const { sendOrderConfirmationEmail } = require('../services/emailService');
 
 // Helper to generate professional order number: HN-YYYY-XXXXX
 const generateOrderNumber = () => {
@@ -392,6 +393,26 @@ exports.createOrder = async (req, res, next) => {
     const finalSrOrderId = fulfillmentResult?.data?.shiprocket_order_id || null;
     const finalAwb = fulfillmentResult?.data?.awb_code || null;
     const finalCourier = fulfillmentResult?.data?.courier_name || 'India Post Speed Post';
+
+    // 4. Asynchronous Devotional Order Confirmation Email
+    try {
+      const emailPayload = {
+        ...(createdOrderRecord || localOrder),
+        order_number: orderNumber,
+        shipping_address,
+        billing_address: billing_address || shipping_address,
+        items: orderItemsToCreate,
+        subtotal,
+        discount: discountAmount,
+        shipping_fee: shippingFee,
+        total: grandTotal,
+        payment_method,
+        payment_status: isOnlinePaid ? 'paid' : 'pending'
+      };
+      sendOrderConfirmationEmail(emailPayload).catch(e => {
+        console.warn(`[Order Controller] Email notice for ${orderNumber}:`, e.message);
+      });
+    } catch (_) {}
 
     res.status(201).json({
       success: true,

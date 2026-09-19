@@ -18,3 +18,27 @@ services:
         value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTMzODg1NiwiZXhwIjoyMTA0OTE0ODU2fQ.eV63FZ0bvtf5lAv_l4sGHtnk-ngpklZQbGxoxyHEzTs
       - key: JWT_SECRET
         value: harinama_super_secure_jwt_secret_key_2026_change_in_production
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_SECURE
+        value: false
+      - key: SMTP_USER
+        value: harinamaivakevalam@gmail.com
+      - key: SMTP_PASS
+        value: kexkcrqtpqylndmt
+      - key: SMTP_FROM_NAME
+        value: HariNama Store
+      - key: SMTP_FROM_EMAIL
+        value: harinamaivakevalam@gmail.com
+      - key: RAZORPAY_KEY_ID
+        value: rzp_live_TdKaEz5Ly8qmgb
+      - key: RAZORPAY_KEY_SECRET
+        value: ewOOa8U6yA506eiwVJWPs95q
+      - key: SHIPROCKET_EMAIL
+        value: katturojuanilkuamr@gmail.com
+      - key: SHIPROCKET_PASSWORD
+        value: crw96DB2vlLcqhgnF25Gab^v9nJ89KN4
+      - key: SHIPROCKET_PICKUP_LOCATION
+        value: Home

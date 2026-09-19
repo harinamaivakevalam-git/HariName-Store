@@ -1,0 +1,68 @@
+[
+  {
+    "id": "5f5c9b9e-ef4e-4d7f-ada8-b6548116fa32",
+    "name": "Krishna Keychains",
+    "slug": "krishna-keychains",
+    "description": "",
+    "image_url": "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1789768086568-hlj4uh3.png",
+    "sort_order": 0,
+    "status": "active",
+    "created_at": "2026-09-18T21:48:11.812463+00:00",
+    "updated_at": "2026-09-18T21:48:11.812463+00:00"
+  },
+  {
+    "id": "a8686346-2099-4f6f-9214-0ec187c2e632",
+    "name": "Devotional Keychains",
+    "slug": "devotional-keychains",
+    "description": "Handcrafted acrylic, enamel, and brass devotional keychains.",
+    "image_url": null,
+    "sort_order": 0,
+    "status": "active",
+    "created_at": "2026-09-18T15:35:45.801786+00:00",
+    "updated_at": "2026-09-18T15:35:45.801786+00:00"
+  },
+  {
+    "id": "bdfb6c50-8436-4546-96f7-007577b855ba",
+    "name": "Japa & Chanting",
+    "slug": "japa-chanting",
+    "description": "Authentic Vrindavan Tulasi & Neem meditation prayer beads.",
+    "image_url": null,
+    "sort_order": 0,
+    "status": "active",
+    "created_at": "2026-09-18T15:35:46.452039+00:00",
+    "updated_at": "2026-09-18T15:35:46.452039+00:00"
+  },
+  {
+    "id": "585c4ce8-3722-4070-bd8d-61076436c946",
+    "name": "Gift Sets & Bundles",
+    "slug": "gift-sets",
+    "description": "Curated spiritual gift hampers, unboxing collections & puja sets.",
+    "image_url": null,
+    "sort_order": 0,
+    "status": "active",
+    "created_at": "2026-09-18T15:35:46.671559+00:00",
+    "updated_at": "2026-09-18T15:35:46.671559+00:00"
+  },
+  {
+    "id": "bff75ab7-217f-4bf2-95a1-9e8d2d850279",
+    "name": "Japa Mala & Prayer Beads",
+    "slug": "japa-mala-prayer-beads",
+    "description": "Discover our collection of Japa Mala & Prayer Beads, thoughtfully selected for chanting, meditation, prayer, and daily spiritual practice. From traditional Tulsi Japa Malas to beautiful prayer beads and Japa accessories, each piece is designed to support a peaceful connection with the Holy Name.\n\nCarry your spiritual practice wherever you go and create a sacred moment of remembrance, devotion, and inner peace with HarinamaStore.",
+    "image_url": "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1789749775631-xv9hxvd.png",
+    "sort_order": 0,
+    "status": "active",
+    "created_at": "2026-09-18T16:42:03.612484+00:00",
+    "updated_at": "2026-09-18T16:42:03.612484+00:00"
+  },
+  {
+    "id": "7b831506-0f28-434c-89ce-5312bb2169e8",
+    "name": "books",
+    "slug": "books",
+    "description": "",
+    "image_url": "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1789766294158-jdgclgj.png",
+    "sort_order": 0,
+    "status": "active",
+    "created_at": "2026-09-18T21:18:20.273825+00:00",
+    "updated_at": "2026-09-18T21:18:20.273825+00:00"
+  }
+]

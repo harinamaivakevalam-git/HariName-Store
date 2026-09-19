@@ -39,7 +39,7 @@ exports.createPaymentOrder = async (req, res, next) => {
     const orderAmount = Math.round(parseFloat(amount) * 100); // Amount in paise/cents
 
     if (provider === 'razorpay') {
-      const keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_TcJx8pIdmhtsSA';
+      const keyId = process.env.RAZORPAY_KEY_ID || 'rzp_live_TdKaEz5Ly8qmgb';
       const rzp = getRazorpayInstance();
 
       const orderReceipt = String(order_number || order_id || `rcpt_${Date.now()}`).slice(0, 40);

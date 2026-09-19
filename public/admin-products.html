@@ -756,22 +756,28 @@
         if (!sb || !sb.storage) return null;
 
         const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-        const filePath = `products/${fileName}`;
+        const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+        const filePath = `products/${uniqueFileName}`;
 
-        for (const bucket of ['product-images', 'products', 'public', 'images']) {
-          try {
-            const { data, error } = await sb.storage.from(bucket).upload(filePath, file, {
-              cacheControl: '3600',
-              upsert: false
-            });
-            if (!error && data) {
-              const { data: pubUrlData } = sb.storage.from(bucket).getPublicUrl(filePath);
-              if (pubUrlData && pubUrlData.publicUrl) {
-                return pubUrlData.publicUrl;
-              }
-            }
-          } catch (e) {}
+        const { error: uploadError } = await sb.storage
+          .from('product-images')
+          .upload(filePath, file, {
+            contentType: file.type || 'image/jpeg',
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.warn('[SupabaseStorage] Primary bucket upload note:', uploadError.message);
+          return null;
+        }
+
+        const { data: pubUrlData } = sb.storage
+          .from('product-images')
+          .getPublicUrl(filePath);
+
+        if (pubUrlData && pubUrlData.publicUrl) {
+          return pubUrlData.publicUrl;
         }
       } catch (err) {
         console.warn('[SupabaseStorage] Storage upload notice:', err);

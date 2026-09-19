@@ -672,7 +672,7 @@
             <div class="small text-muted text-nowrap"><i class="bi bi-telephone me-1"></i>${o.phone}</div>
           </td>
           <td>
-            ${o.items.map(i => `<span class="badge bg-light text-dark border me-1">${i.name} × ${i.qty}</span>`).join('')}
+            ${(Array.isArray(o.items) && o.items.length > 0 ? o.items : [{ name: 'Sacred Devotional Item', qty: 1 }]).map(i => `<span class="badge bg-light text-dark border me-1">${i.name || 'Sacred Item'} × ${i.qty || 1}</span>`).join('')}
           </td>
           <td class="text-nowrap">
             <span class="small fw-semibold text-success"><i class="bi bi-shield-check me-1"></i>${o.payment_method}</span>

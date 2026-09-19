@@ -96,8 +96,10 @@ exports.testConnection = async (req, res) => {
   }
 };
 
+const { processOrderFulfillment } = require('../services/fulfillmentService');
+
 /**
- * 2. Create Shipment for Order
+ * 2. Create Shipment for Order (Manual Admin Trigger or Retry)
  * POST /api/shiprocket/create-order
  */
 exports.createOrder = async (req, res, next) => {
@@ -109,57 +111,21 @@ exports.createOrder = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'order_id or order_number is required.' });
     }
 
-    const order = await findOrder(identifier);
-    if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found.' });
-    }
+    const result = await processOrderFulfillment(identifier, { force: true });
 
-    // Idempotency: If shipment already created, return existing info without duplicating
-    if (order.shiprocket_order_id && order.shiprocket_shipment_id) {
-      return res.json({
+    if (result.success) {
+      return res.status(200).json({
         success: true,
-        message: 'Shiprocket shipment already exists for this order.',
-        data: {
-          shiprocket_order_id: order.shiprocket_order_id,
-          shiprocket_shipment_id: order.shiprocket_shipment_id,
-          awb_code: order.awb_code || null,
-          courier_name: order.courier_name || null,
-          shipping_status: order.shipping_status || 'ORDER_CREATED'
-        }
+        message: result.duplicated
+          ? 'Shiprocket shipment already exists and has been synchronized.'
+          : 'Shiprocket shipment created successfully.',
+        data: result.data
       });
     }
 
-    const srResult = await shiprocketService.createOrder(order);
-
-    const updates = {
-      shiprocket_order_id: String(srResult.data.order_id),
-      shiprocket_shipment_id: String(srResult.data.shipment_id),
-      shipping_status: 'ORDER_CREATED',
-      shipping_status_code: String(srResult.data.status_code || 'NEW'),
-      awb_code: srResult.data.awb_code || null,
-      courier_name: srResult.data.courier_name || null
-    };
-
-    const currentHistory = Array.isArray(order.tracking_history) ? [...order.tracking_history] : [];
-    currentHistory.push({
-      date: new Date().toISOString(),
-      status: 'ORDER_CREATED',
-      location: (process.env.SHIPROCKET_PICKUP_LOCATION || 'Primary'),
-      activity: 'Shipment created with Shiprocket'
-    });
-    updates.tracking_history = currentHistory;
-
-    await updateOrderShipping(order.id, updates);
-
-    res.status(201).json({
-      success: true,
-      message: 'Shiprocket shipment created successfully.',
-      data: {
-        order_id: order.order_number || order.id,
-        shiprocket_order_id: updates.shiprocket_order_id,
-        shiprocket_shipment_id: updates.shiprocket_shipment_id,
-        shipping_status: 'ORDER_CREATED'
-      }
+    return res.status(400).json({
+      success: false,
+      message: result.message || 'Failed to create shipment on Shiprocket.'
     });
   } catch (err) {
     next(err);

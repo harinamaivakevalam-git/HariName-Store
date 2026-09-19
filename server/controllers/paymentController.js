@@ -123,7 +123,7 @@ async function recordSuccessfulPayment({
   method = 'online',
   rawDetails = {}
 }) {
-  const client = (isSupabaseConfigured && (supabaseAdmin || supabase)) ? (supabaseAdmin || supabase) : null;
+const client = (isSupabaseConfigured && supabaseAdmin) ? supabaseAdmin : supabase;
   let targetOrderId = orderId;
 
   if (client) {
@@ -136,23 +136,37 @@ async function recordSuccessfulPayment({
         if (isUuid) query = query.eq('id', orderId);
         else query = query.eq('order_number', orderId);
       } else if (paymentOrderId) {
-        query = query.eq('transaction_id', paymentOrderId);
+        const { data: payRow } = await client.from('payments').select('order_id').eq('payment_order_id', paymentOrderId).maybeSingle();
+        if (payRow && payRow.order_id) {
+          query = query.eq('id', payRow.order_id);
+        } else {
+          query = query.eq('order_number', paymentOrderId);
+        }
       }
 
-      const { data: matchedOrder } = await query.maybeSingle();
+      const { data: matchedOrder, error: fetchErr } = await query.maybeSingle();
+
+      if (fetchErr) {
+        console.warn('[PaymentController] Error finding order for payment:', fetchErr.message);
+      }
 
       if (matchedOrder) {
         targetOrderId = matchedOrder.id;
-        await client
+        const { error: updErr } = await client
           .from('orders')
           .update({
             payment_status: 'paid',
-            status: matchedOrder.status === 'pending' ? 'processing' : matchedOrder.status,
+            order_status: (matchedOrder.order_status === 'pending' ? 'confirmed' : matchedOrder.order_status) || 'confirmed',
             payment_method: provider,
-            transaction_id: paymentId || matchedOrder.transaction_id,
             updated_at: new Date().toISOString()
           })
           .eq('id', matchedOrder.id);
+
+        if (updErr) {
+          console.error('[PaymentController] Failed to update order payment status:', updErr.message);
+        } else {
+          console.log(`[PaymentController] Successfully marked order ${matchedOrder.order_number || matchedOrder.id} as PAID`);
+        }
 
         // Record in payments table
         await client
@@ -200,6 +214,17 @@ async function recordSuccessfulPayment({
       });
     }
   } catch (dbE) {}
+
+  // Trigger automatic Shiprocket fulfillment for newly paid order
+  try {
+    const { processOrderFulfillment } = require('../services/fulfillmentService');
+    const orderIdentifier = orderNumber || targetOrderId || orderId;
+    if (orderIdentifier) {
+      await processOrderFulfillment(orderIdentifier);
+    }
+  } catch (fErr) {
+    console.warn('[Payment Controller] Fulfillment dispatch notice:', fErr.message);
+  }
 }
 
 // 2. Client Verification Handler (POST /api/payments/verify)

@@ -646,6 +646,29 @@
       }
     }
 
+    function getShippingBadge(shipStatus, awb, srOrderId) {
+      const st = String(shipStatus || '').toUpperCase();
+      if (st === 'DELIVERED') {
+        return '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Delivered</span>';
+      }
+      if (st === 'AWB_ASSIGNED' || (awb && !awb.includes('HN-EXP'))) {
+        return '<span class="badge bg-info-subtle text-info-emphasis border border-info-subtle"><i class="bi bi-truck me-1"></i>AWB Assigned</span>';
+      }
+      if (st === 'ORDER_CREATED' || srOrderId) {
+        return '<span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle"><i class="bi bi-box-seam me-1"></i>Shiprocket Created</span>';
+      }
+      if (st === 'PICKUP_REQUESTED') {
+        return '<span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle"><i class="bi bi-calendar-check me-1"></i>Pickup Scheduled</span>';
+      }
+      if (st === 'FAILED') {
+        return '<span class="badge bg-danger-subtle text-danger border border-danger-subtle"><i class="bi bi-exclamation-triangle me-1"></i>Shipping Failed</span>';
+      }
+      if (st === 'CANCELLED') {
+        return '<span class="badge bg-secondary"><i class="bi bi-x-circle me-1"></i>Cancelled</span>';
+      }
+      return '<span class="badge bg-light text-muted border">Not Created</span>';
+    }
+
     function renderOrdersTable(orders) {
       const tbody = document.getElementById('orders-table-body');
       if (!tbody) return;
@@ -676,7 +699,8 @@
             ${(Array.isArray(o.items) && o.items.length > 0 ? o.items : [{ name: 'Sacred Devotional Item', qty: 1 }]).map(i => `<span class="badge bg-light text-dark border me-1">${i.name || 'Sacred Item'} × ${i.qty || 1}</span>`).join('')}
           </td>
           <td class="text-nowrap">
-            <span class="small fw-semibold text-success"><i class="bi bi-shield-check me-1"></i>${o.payment_method}</span>
+            <span class="small fw-semibold text-success d-block"><i class="bi bi-shield-check me-1"></i>${o.payment_method}</span>
+            <div class="mt-1">${getShippingBadge(o.shipping_status, o.awb_code, o.shiprocket_order_id)}</div>
           </td>
           <td class="fw-bold text-navy text-nowrap">₹${o.total}</td>
           <td class="text-nowrap">
@@ -724,10 +748,9 @@
       const hasAwb = Boolean(o.awb_code && o.awb_code !== '' && !o.awb_code.includes('HN-EXP'));
       const isPickupRequested = o.pickup_status === 'PICKUP_REQUESTED' || o.pickup_status === 'PICKED_UP';
       const hasLabel = Boolean(o.shipping_label_url && o.shipping_label_url !== '');
+      const isShippingFailed = String(o.shipping_status || '').toUpperCase() === 'FAILED';
 
-      const shipStatusBadge = o.shipping_status === 'DELIVERED' 
-        ? '<span class="badge bg-success">DELIVERED</span>'
-        : (o.shipping_status === 'CANCELLED' ? '<span class="badge bg-danger">CANCELLED</span>' : `<span class="badge bg-primary">${o.shipping_status || 'NOT_CREATED'}</span>`);
+      const shipStatusBadge = getShippingBadge(o.shipping_status, o.awb_code, o.shiprocket_order_id);
 
       document.getElementById('orderModalTitle').innerText = 'Order Details — ' + o.id;
       document.getElementById('orderModalBody').innerHTML = `
@@ -813,9 +836,19 @@
 
               <!-- Action Buttons Row -->
               <div class="d-flex flex-wrap gap-2 pt-2 border-top">
-                <button type="button" class="btn btn-sm btn-primary" onclick="adminCreateShiprocketOrder('${o.id}')" ${hasSrOrder ? 'disabled title="Shipment already created"' : ''}>
-                  <i class="bi bi-box-seam me-1"></i> Create Shipment
-                </button>
+                ${isShippingFailed ? `
+                  <button type="button" class="btn btn-sm btn-warning text-dark fw-semibold" onclick="adminCreateShiprocketOrder('${o.id}')">
+                    <i class="bi bi-arrow-repeat me-1"></i> Retry Shiprocket
+                  </button>
+                ` : (hasSrOrder ? `
+                  <button type="button" class="btn btn-sm btn-outline-success" disabled>
+                    <i class="bi bi-check-circle me-1"></i> Shiprocket Created
+                  </button>
+                ` : `
+                  <button type="button" class="btn btn-sm btn-primary" onclick="adminCreateShiprocketOrder('${o.id}')">
+                    <i class="bi bi-box-seam me-1"></i> Create Shipment
+                  </button>
+                `)}
 
                 <button type="button" class="btn btn-sm btn-outline-dark" onclick="adminAssignShiprocketAwb('${o.id}', '${o.shiprocket_shipment_id}')" ${!hasSrShipment || hasAwb ? 'disabled title="Requires Shipment without AWB"' : ''}>
                   <i class="bi bi-person-badge me-1"></i> Assign Courier / AWB

@@ -1,7 +1,8 @@
 const db = require('../models/db');
+const { supabaseAdmin, isSupabaseConfigured } = require('../config/supabase');
 
 // Server-side calculation and stock verification
-exports.calculateCheckout = (req, res, next) => {
+exports.calculateCheckout = async (req, res, next) => {
   try {
     const { items = [], coupon_code = null, shipping_address = null } = req.body;
 
@@ -17,14 +18,27 @@ exports.calculateCheckout = (req, res, next) => {
     const stockErrors = [];
 
     for (const reqItem of items) {
-      const product = db.findById('products', reqItem.product_id);
-      if (!product || product.status !== 'active') {
+      let product = null;
+      if (isSupabaseConfigured && supabaseAdmin) {
+        const isUuid = reqItem.product_id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(reqItem.product_id);
+        let q = supabaseAdmin.from('products').select('*');
+        if (isUuid) q = q.eq('id', reqItem.product_id);
+        else if (reqItem.product_id) q = q.or(`slug.eq.${reqItem.product_id},sku.eq.${reqItem.product_id}`);
+        const { data: dbProd } = await q.maybeSingle();
+        if (dbProd) product = dbProd;
+      }
+
+      if (!product) {
+        product = db.findById('products', reqItem.product_id) || db.findOne('products', p => p.slug === reqItem.product_id || p.sku === reqItem.product_id);
+      }
+
+      if (!product || product.status === 'inactive' || product.status === 'archived') {
         stockErrors.push(`Product "${reqItem.product_name || reqItem.product_id}" is currently unavailable.`);
         continue;
       }
 
       let unitPrice = parseFloat(product.price);
-      let availableStock = product.stock;
+      let availableStock = product.stock !== undefined ? product.stock : 25;
       let variantInfo = null;
 
       if (reqItem.variant_id) {

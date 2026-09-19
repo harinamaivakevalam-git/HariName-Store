@@ -262,6 +262,14 @@ class ShiprocketService {
       body: JSON.stringify(payload)
     });
 
+    // Strict validation: Verify response contains valid order_id and shipment_id
+    if (!result || !result.order_id || !result.shipment_id || (result.status_code && Number(result.status_code) >= 400)) {
+      const errMsg = result?.message || (result?.errors ? (typeof result.errors === 'string' ? result.errors : JSON.stringify(result.errors)) : 'Shiprocket did not return valid order and shipment identifiers');
+      const err = new Error(errMsg);
+      err.shiprocketData = result;
+      throw err;
+    }
+
     return {
       success: true,
       data: {
@@ -485,6 +493,42 @@ class ShiprocketService {
     const endpoint = query ? `/orders?${query}` : '/orders';
     const result = await this.request(endpoint, { method: 'GET' });
     return result;
+  }
+
+  /**
+   * 12. Search Order in Shiprocket by Channel Order ID or ID
+   * Endpoint: GET /orders?search=...
+   */
+  async searchOrder(orderNumber) {
+    if (!orderNumber || String(orderNumber).trim() === '') return null;
+    const cleanNum = String(orderNumber).trim();
+    try {
+      console.log(`[Shiprocket Service] Searching for existing order ${cleanNum}...`);
+      const res = await this.getOrders({ search: cleanNum });
+      const list = res?.data || [];
+      const matched = list.find(o =>
+        String(o.channel_order_id || '').trim().toLowerCase() === cleanNum.toLowerCase() ||
+        String(o.id || '') === cleanNum
+      );
+
+      if (matched && matched.id) {
+        const shipment = (matched.shipments && matched.shipments[0]) || {};
+        return {
+          exists: true,
+          order_id: matched.id,
+          shipment_id: shipment.id || matched.shipment_id || null,
+          status: matched.status || 'NEW',
+          status_code: matched.status_code || 1,
+          awb_code: shipment.awb_code || matched.awb_code || null,
+          courier_name: shipment.courier_name || matched.courier_name || null,
+          raw: matched
+        };
+      }
+      return null;
+    } catch (err) {
+      console.warn(`[Shiprocket Search] Search failed for ${cleanNum}:`, err.message);
+      return null;
+    }
   }
 }
 

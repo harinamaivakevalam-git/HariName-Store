@@ -298,6 +298,23 @@
       }
     }
 
+    function getShippingBadge(shipStatus, awb, srOrderId) {
+      const st = String(shipStatus || '').toUpperCase();
+      if (st === 'DELIVERED') {
+        return '<span class="badge bg-success small"><i class="bi bi-check-circle me-1"></i>Delivered</span>';
+      }
+      if (st === 'AWB_ASSIGNED' || (awb && !awb.includes('HN-EXP'))) {
+        return '<span class="badge bg-info-subtle text-info-emphasis border border-info-subtle small"><i class="bi bi-truck me-1"></i>AWB Assigned</span>';
+      }
+      if (st === 'ORDER_CREATED' || srOrderId) {
+        return '<span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle small"><i class="bi bi-box-seam me-1"></i>Shiprocket Created</span>';
+      }
+      if (st === 'FAILED') {
+        return '<span class="badge bg-danger-subtle text-danger border border-danger-subtle small"><i class="bi bi-exclamation-triangle me-1"></i>Shipping Failed</span>';
+      }
+      return '<span class="badge bg-light text-muted border small">Not Created</span>';
+    }
+
     function normalizeOrder(o) {
       if (!o) return null;
       const orderId = o.order_number || o.orderId || o.id || ('HN-2026-' + Math.floor(10000 + Math.random() * 90000));
@@ -333,6 +350,9 @@
         itemsSummary,
         total: parseFloat(o.total) || 0,
         status: statusNorm,
+        shipping_status: o.shipping_status || 'NOT_CREATED',
+        awb_code: o.awb_code || o.tracking_number || '',
+        shiprocket_order_id: o.shiprocket_order_id || '',
         created_at: o.created_at || new Date().toISOString()
       };
     }
@@ -413,7 +433,10 @@
                 <td class="text-nowrap">${o.customer}</td>
                 <td class="text-truncate" style="max-width: 260px;" title="${o.itemsSummary}">${o.itemsSummary}</td>
                 <td class="fw-bold text-nowrap">₹${o.total}</td>
-                <td>${getStatusBadge(o.status)}</td>
+                <td class="text-nowrap">
+                  <div>${getStatusBadge(o.status)}</div>
+                  <div class="mt-1">${getShippingBadge(o.shipping_status, o.awb_code, o.shiprocket_order_id)}</div>
+                </td>
                 <td class="text-end text-nowrap">
                   <a href="/admin-orders.html" class="btn btn-sm btn-outline-dark me-1"><i class="bi bi-eye"></i> View</a>
                   <a href="/admin-orders.html" class="btn btn-sm btn-gold"><i class="bi bi-pencil-square"></i> Edit</a>

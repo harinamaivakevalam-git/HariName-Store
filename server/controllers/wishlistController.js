@@ -1,9 +1,10 @@
 const db = require('../models/db');
+const { supabaseAdmin, isSupabaseConfigured } = require('../config/supabase');
 
 // Helper to hydrate product for wishlist
 const hydrateProductBasic = (product) => {
   const images = db.filter('product_images', img => img.product_id === product.id);
-  const primaryImage = images.find(img => img.is_primary)?.image_url || images[0]?.image_url || '';
+  const primaryImage = images.find(img => img.is_primary)?.image_url || images[0]?.image_url || product.image || product.primary_image || '';
   return {
     id: product.id,
     name: product.name,
@@ -11,9 +12,9 @@ const hydrateProductBasic = (product) => {
     price: product.price,
     compare_price: product.compare_price,
     image: primaryImage,
-    stock: product.stock,
-    rating: product.rating,
-    in_stock: product.stock > 0
+    stock: product.stock !== undefined ? product.stock : 25,
+    rating: product.rating || 5.0,
+    in_stock: (product.stock !== undefined ? product.stock : 25) > 0
   };
 };
 
@@ -44,7 +45,7 @@ exports.getWishlist = (req, res, next) => {
 };
 
 // Toggle Wishlist Item (Add if not present, remove if present)
-exports.toggleWishlist = (req, res, next) => {
+exports.toggleWishlist = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { product_id } = req.body;
@@ -53,7 +54,20 @@ exports.toggleWishlist = (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Product ID is required.' });
     }
 
-    const product = db.findById('products', product_id);
+    let product = null;
+    if (isSupabaseConfigured && supabaseAdmin) {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(product_id);
+      let q = supabaseAdmin.from('products').select('*');
+      if (isUuid) q = q.eq('id', product_id);
+      else q = q.or(`slug.eq.${product_id},sku.eq.${product_id}`);
+      const { data: dbProd } = await q.maybeSingle();
+      if (dbProd) product = dbProd;
+    }
+
+    if (!product) {
+      product = db.findById('products', product_id) || db.findOne('products', p => p.slug === product_id || p.sku === product_id);
+    }
+
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found.' });
     }

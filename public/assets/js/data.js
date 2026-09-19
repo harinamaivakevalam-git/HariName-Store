@@ -95,14 +95,6 @@ const HARINAMA_BASE_AUTHENTIC_COLLECTIONS = [
     image_url: "/assets/images/cat_japa_malas.jpg"
   },
   {
-    id: "7b831506-0f28-434c-89ce-5312bb2169e8",
-    name: "Books",
-    slug: "books",
-    desc: "Sacred Vedic texts, Bhagavad Gita As It Is, and spiritual wisdom.",
-    image: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1789766294158-jdgclgj.png",
-    image_url: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1789766294158-jdgclgj.png"
-  },
-  {
     id: "585c4ce8-3722-4070-bd8d-61076436c946",
     name: "Gift Sets & Bundles",
     slug: "gift-sets",

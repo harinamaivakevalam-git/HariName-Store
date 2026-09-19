@@ -732,19 +732,27 @@
       // 2. Query direct Supabase
       if (sb && prodId) {
         try {
-          const { data, error } = await sb.from('products')
-            .select(`
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(prodId);
+          let query = sb.from('products').select(`
               *,
               product_images (*),
               categories (name, slug)
-            `)
-            .or(`id.eq.${prodId},slug.eq.${prodId}`)
-            .maybeSingle();
+            `);
+          if (isUuid) {
+            query = query.eq('id', prodId);
+          } else {
+            query = query.eq('slug', prodId);
+          }
+          const { data, error } = await query.maybeSingle();
 
           if (!error && data) {
-            const images = (data.product_images || []).sort((a,b) => (a.sort_order || a.display_order || 0) - (b.sort_order || b.display_order || 0));
-            const primaryImg = images.find(i => i.is_primary)?.image_url || images[0]?.image_url || data.primary_image || data.image;
-            const galleryUrls = images.map(i => i.image_url);
+            const rawImages = (data.product_images || []).sort((a,b) => {
+              if (a.is_primary && !b.is_primary) return -1;
+              if (!a.is_primary && b.is_primary) return 1;
+              return (a.sort_order || a.display_order || 0) - (b.sort_order || b.display_order || 0);
+            });
+            const galleryUrls = rawImages.map(i => i.image_url).filter(Boolean);
+            const primaryImg = galleryUrls[0] || data.primary_image || data.image;
 
             const resolvedProd = {
               id: data.id,
@@ -757,7 +765,7 @@
               material: data.material || (data.specifications && data.specifications.material) || 'Devotional Finish',
               description: data.description || '',
               image: primaryImg,
-              gallery: galleryUrls.length > 0 ? galleryUrls : [primaryImg],
+              gallery: galleryUrls.length > 0 ? galleryUrls : (primaryImg ? [primaryImg] : []),
               stock: data.stock !== undefined ? data.stock : (data.stock_quantity ?? 10)
             };
             populateDetails(resolvedProd);

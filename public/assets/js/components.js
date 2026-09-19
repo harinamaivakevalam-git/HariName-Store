@@ -1635,6 +1635,7 @@ window.findCatalogProduct = findCatalogProduct;
 const renderProductCard = (p) => {
   if (!p) return '';
   const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+  const isWish = Array.isArray(wishlist) && (wishlist.includes(p.id) || (p.legacy_id && wishlist.includes(p.legacy_id)) || (p.slug && wishlist.includes(p.slug)));
   const rawImg = p.image || p.primary_image || (p.images && p.images[0]) || '';
   const imgSrc = window.getProductImageUrl ? window.getProductImageUrl(rawImg) : (rawImg || '/assets/images/krishna-logo.jpg');
   const prodTitle = p.name || p.title || 'Sacred Devotional Item';

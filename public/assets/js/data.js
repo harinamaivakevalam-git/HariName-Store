@@ -312,7 +312,12 @@ HARINAMA_DATA.syncWithApi = async function() {
 
     if (prodJsonRes.status === 'fulfilled' && Array.isArray(prodJsonRes.value) && prodJsonRes.value.length > 0) {
       fetchedProducts = prodJsonRes.value.map(p => {
-        const imgs = (p.product_images || []).map(img => resolveSafeAssetUrl(img.image_url || img.url));
+        const rawImgs = (p.product_images || []).sort((a, b) => {
+          if (a.is_primary && !b.is_primary) return -1;
+          if (!a.is_primary && b.is_primary) return 1;
+          return (a.sort_order || 0) - (b.sort_order || 0);
+        });
+        const imgs = rawImgs.map(img => resolveSafeAssetUrl(img.image_url || img.url)).filter(Boolean);
         const primaryImg = resolveSafeAssetUrl(imgs[0] || p.primary_image || p.image_url || p.image || '');
         return {
           id: p.id,
@@ -437,8 +442,13 @@ HARINAMA_DATA.syncWithApi = async function() {
 
         if (Array.isArray(prodRes) && prodRes.length > 0) {
           fetchedProducts = prodRes.map(p => {
-            const imgs = (p.product_images || []).map(img => img.image_url || img.url);
-            const primaryImg = imgs[0] || p.image_url || p.image || '';
+            const rawImgs = (p.product_images || []).sort((a, b) => {
+              if (a.is_primary && !b.is_primary) return -1;
+              if (!a.is_primary && b.is_primary) return 1;
+              return (a.sort_order || 0) - (b.sort_order || 0);
+            });
+            const imgs = rawImgs.map(img => resolveSafeAssetUrl(img.image_url || img.url)).filter(Boolean);
+            const primaryImg = imgs[0] || resolveSafeAssetUrl(p.image_url || p.image || '');
             return {
               id: p.id,
               sku: p.sku || `HN-${(p.id || '').slice(0, 6)}`,

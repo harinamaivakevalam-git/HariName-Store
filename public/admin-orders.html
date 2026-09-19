@@ -6,8 +6,9 @@
       try {
         var raw = localStorage.getItem('hn_user_profile') || localStorage.getItem('hn_user') || localStorage.getItem('user');
         var u = raw ? JSON.parse(raw) : null;
-        var scope = atob('aGFyaW5hbWFpdmFrZXZhbGFtQGdtYWlsLmNvbQ==');
-        if (!u || !u.email || (u.role !== 'admin' && String(u.email).toLowerCase().trim() !== scope)) {
+        var admins = ['harinamaivakevalam@gmail.com', 'katturojuanilkumar@gmail.com', 'admin@harinama.com'];
+        var userEmail = u && u.email ? String(u.email).toLowerCase().trim() : '';
+        if (!u || (!admins.includes(userEmail) && u.role !== 'admin' && !u.is_admin)) {
           window.location.replace('/login.html?redirect=' + encodeURIComponent(window.location.pathname));
         }
       } catch(e) {
@@ -410,6 +411,10 @@
       let email = '—';
       let addressStr = '—';
 
+      if (o.guest_name) customerName = o.guest_name;
+      if (o.guest_phone) phone = o.guest_phone;
+      if (o.guest_email) email = o.guest_email;
+
       if (o.customer && typeof o.customer === 'object') {
         customerName = o.customer.name || customerName;
         phone = o.customer.phone || phone;
@@ -418,17 +423,20 @@
         addressStr = `${c.address || ''}, ${c.city || ''}, ${c.state || ''} ${c.pin || ''}`.replace(/^[\s,]+|[\s,]+$/g, '');
       } else if (typeof o.customer === 'string') {
         customerName = o.customer;
-        phone = o.phone || '—';
-        email = o.email || '—';
-        addressStr = o.address || '—';
+        phone = o.phone || phone;
+        email = o.email || email;
+        addressStr = o.address || addressStr;
       }
 
-      if (o.shipping_address && typeof o.shipping_address === 'object') {
-        const sa = o.shipping_address;
-        customerName = sa.name || o.guest_name || customerName;
+      let sa = o.shipping_address;
+      if (typeof sa === 'string' && sa.startsWith('{')) {
+        try { sa = JSON.parse(sa); } catch (_) {}
+      }
+      if (sa && typeof sa === 'object') {
+        customerName = sa.name || customerName;
         phone = sa.phone || phone;
-        email = sa.email || o.guest_email || email;
-        const saText = `${sa.address_line_1 || ''}, ${sa.city || ''}, ${sa.state || ''} ${sa.postal_code || sa.pin || ''}`.replace(/^[\s,]+|[\s,]+$/g, '');
+        email = sa.email || email;
+        const saText = `${sa.address_line_1 || sa.address || ''}, ${sa.village ? sa.village + ', ' : ''}${sa.city || ''}, ${sa.state || ''} ${sa.postal_code || sa.pin || ''}`.replace(/^[\s,]+|[\s,]+$/g, '');
         if (saText && saText !== '—') addressStr = saText;
       }
 
@@ -686,12 +694,19 @@
     }
 
     function filterOrders() {
-      const query = document.getElementById('order-search').value.toLowerCase();
-      const status = document.getElementById('status-filter').value;
+      const searchEl = document.getElementById('order-search');
+      const statusEl = document.getElementById('status-filter');
+      const query = (searchEl ? searchEl.value : '').toLowerCase().trim();
+      const status = statusEl ? statusEl.value : 'all';
 
-      let filtered = localOrders.filter(o => {
-        const matchesQuery = o.id.toLowerCase().includes(query) || o.customer.toLowerCase().includes(query) || o.phone.includes(query);
-        const matchesStatus = status === 'all' || o.status === status;
+      let filtered = (localOrders || []).filter(o => {
+        if (!o) return false;
+        const idStr = String(o.id || o.order_number || '').toLowerCase();
+        const custStr = String(o.customer || o.guest_name || '').toLowerCase();
+        const phoneStr = String(o.phone || o.guest_phone || '');
+        const emailStr = String(o.email || o.guest_email || '').toLowerCase();
+        const matchesQuery = !query || idStr.includes(query) || custStr.includes(query) || phoneStr.includes(query) || emailStr.includes(query);
+        const matchesStatus = status === 'all' || (o.status && o.status.toLowerCase() === status.toLowerCase());
         return matchesQuery && matchesStatus;
       });
 

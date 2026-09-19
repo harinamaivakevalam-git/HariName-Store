@@ -6,8 +6,9 @@
       try {
         var raw = localStorage.getItem('hn_user_profile') || localStorage.getItem('hn_user') || localStorage.getItem('user');
         var u = raw ? JSON.parse(raw) : null;
-        var scope = atob('aGFyaW5hbWFpdmFrZXZhbGFtQGdtYWlsLmNvbQ==');
-        if (!u || !u.email || (u.role !== 'admin' && String(u.email).toLowerCase().trim() !== scope)) {
+        var admins = ['harinamaivakevalam@gmail.com', 'katturojuanilkumar@gmail.com', 'admin@harinama.com'];
+        var userEmail = u && u.email ? String(u.email).toLowerCase().trim() : '';
+        if (!u || (!admins.includes(userEmail) && u.role !== 'admin' && !u.is_admin)) {
           window.location.replace('/login.html?redirect=' + encodeURIComponent(window.location.pathname));
         }
       } catch(e) {

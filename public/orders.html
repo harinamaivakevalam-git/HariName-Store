@@ -143,35 +143,46 @@
           let u = null;
           try { u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}'); } catch (_) {}
           
-          if (u && (u.id || u.email)) {
-            let q = sb.from('orders').select('*, order_items(*)').order('created_at', { ascending: false });
-            if (u.email) {
-              q = q.or(`guest_email.eq.${u.email},user_id.eq.${u.id || '00000000-0000-0000-0000-000000000000'}`);
-            } else if (u.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u.id)) {
+          const adminEmails = ['harinamaivakevalam@gmail.com', 'katturojuanilkumar@gmail.com', 'admin@harinama.com'];
+          const userEmail = u && u.email ? String(u.email).toLowerCase().trim() : '';
+          const isAdmin = u && (u.role === 'admin' || u.is_admin || adminEmails.includes(userEmail));
+
+          let q = sb.from('orders').select('*, order_items(*)').order('created_at', { ascending: false });
+
+          if (!isAdmin) {
+            const cachedOrderIds = Array.from(orderMap.keys()).filter(Boolean);
+            if (userEmail && u.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u.id)) {
+              q = q.or(`guest_email.eq.${userEmail},user_id.eq.${u.id}`);
+            } else if (userEmail) {
+              q = q.eq('guest_email', userEmail);
+            } else if (u && u.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u.id)) {
               q = q.eq('user_id', u.id);
+            } else if (cachedOrderIds.length > 0) {
+              q = q.in('order_number', cachedOrderIds);
             }
-            const { data: sbOrders } = await q;
-            if (Array.isArray(sbOrders) && sbOrders.length > 0) {
-              sbOrders.forEach(o => {
-                const id = o.order_number || o.id;
-                if (id) {
-                  orderMap.set(id, {
-                    orderId: id,
-                    id: id,
-                    date: o.created_at ? new Date(o.created_at).toLocaleDateString('en-GB') : 'Recent',
-                    status: o.order_status || o.status || 'Confirmed',
-                    total: o.total || 0,
-                    items: (o.order_items || []).map(it => ({
-                      name: it.product_name || 'Sacred Item',
-                      image: it.product_image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=200&q=80',
-                      material: 'Devotional Grade',
-                      qty: it.quantity || 1,
-                      price: it.price || 0
-                    }))
-                  });
-                }
-              });
-            }
+          }
+
+          const { data: sbOrders } = await q;
+          if (Array.isArray(sbOrders) && sbOrders.length > 0) {
+            sbOrders.forEach(o => {
+              const id = o.order_number || o.id;
+              if (id) {
+                orderMap.set(id, {
+                  orderId: id,
+                  id: id,
+                  date: o.created_at ? new Date(o.created_at).toLocaleDateString('en-GB') : 'Recent',
+                  status: o.order_status || o.status || 'Confirmed',
+                  total: o.total || 0,
+                  items: (o.order_items || []).map(it => ({
+                    name: it.product_name || 'Sacred Item',
+                    image: it.product_image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=200&q=80',
+                    material: 'Devotional Grade',
+                    qty: it.quantity || 1,
+                    price: it.price || 0
+                  }))
+                });
+              }
+            });
           }
         }
       } catch (_) {}

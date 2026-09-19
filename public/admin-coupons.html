@@ -240,17 +240,20 @@
   <script src="/assets/js/components.js"></script>
   <script>
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
-    let supabaseClient = null;
+    const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTMzODg1NiwiZXhwIjoyMTA0OTE0ODU2fQ.eV63FZ0bvtf5lAv_l4sGHtnk-ngpklZQbGxoxyHEzTs';
+    let adminSbClient = null;
 
     function initSupabase() {
-      if (supabaseClient) return supabaseClient;
-      if (window.supabase && typeof window.supabase.createClient === 'function') {
-        supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
-        });
+      if (!adminSbClient && window.supabase && typeof window.supabase.createClient === 'function') {
+        try {
+          adminSbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+            auth: { persistSession: false, autoRefreshToken: false }
+          });
+        } catch (e) {
+          console.warn('[AdminCoupons] Supabase client init note:', e);
+        }
       }
-      return supabaseClient;
+      return adminSbClient;
     }
 
     function getApiUrl(path) {
@@ -287,31 +290,21 @@
 
     let databaseCoupons = [];
 
-    function getDeletedBlacklist() {
-      try {
-        const raw = localStorage.getItem('hn_deleted_coupons');
-        return raw ? JSON.parse(raw) : [];
-      } catch (_) {
-        return [];
-      }
-    }
-
-    function addToDeletedBlacklist(code, id) {
-      try {
-        const list = getDeletedBlacklist();
-        if (code && !list.includes(code.toUpperCase())) list.push(code.toUpperCase());
-        if (id && !list.includes(id)) list.push(id);
-        localStorage.setItem('hn_deleted_coupons', JSON.stringify(list));
-      } catch (_) {}
-    }
-
-    function removeFromDeletedBlacklist(code, id) {
-      try {
-        let list = getDeletedBlacklist();
-        if (code) list = list.filter(item => item !== code.toUpperCase());
-        if (id) list = list.filter(item => item !== id);
-        localStorage.setItem('hn_deleted_coupons', JSON.stringify(list));
-      } catch (_) {}
+    function normalizeCoupon(c) {
+      if (!c) return null;
+      return {
+        id: c.id || ('coup-' + (c.code || Math.random()).toString().toLowerCase()),
+        code: (c.code || '').toUpperCase().trim(),
+        description: c.description || '',
+        type: c.discount_type || c.type || 'fixed',
+        value: parseFloat(c.discount_value !== undefined ? c.discount_value : (c.value || 0)),
+        min: parseFloat(c.minimum_order !== undefined ? c.minimum_order : (c.min || 0)),
+        max_discount: c.maximum_discount ? parseFloat(c.maximum_discount) : null,
+        used: parseInt(c.times_used !== undefined ? c.times_used : (c.used || 0), 10) || 0,
+        limit: c.usage_limit ? parseInt(c.usage_limit, 10) : (c.limit ? parseInt(c.limit, 10) : 100),
+        expiry: c.expiry_date ? c.expiry_date.split('T')[0] : (c.expiry ? c.expiry.split('T')[0] : '2027-12-31'),
+        status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1).toLowerCase()
+      };
     }
 
     function getAuthHeaders(includeContentType = true) {
@@ -338,85 +331,74 @@
     }
 
     async function loadCouponsFromDatabase() {
-      const blacklist = getDeletedBlacklist();
-      let loaded = false;
-      let fetchedList = [];
+      const mergedMap = new Map();
 
-      // 1. Try Express API
+      // 1. Initial cached browser storage
+      try {
+        const cached = localStorage.getItem('hn_admin_coupons');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(c => {
+              const norm = normalizeCoupon(c);
+              if (norm && norm.code) mergedMap.set(norm.code, norm);
+            });
+          }
+        }
+      } catch (_) {}
+
+      // Fast initial render
+      databaseCoupons = Array.from(mergedMap.values());
+      renderCouponsTable();
+
+      // 2. Fetch from Live Backend Server API (/api/coupons)
       try {
         const res = await fetch(getApiUrl('/api/coupons'), { headers: getAuthHeaders() });
         if (res.ok) {
           const json = await res.json();
-          if (json.success && Array.isArray(json.data)) {
-            fetchedList = json.data;
-            loaded = true;
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            json.data.forEach(c => {
+              const norm = normalizeCoupon(c);
+              if (norm && norm.code) mergedMap.set(norm.code, norm);
+            });
           }
         }
       } catch (e) {
         console.warn('[AdminCoupons] API notice:', e);
       }
 
-      // 2. Try Direct Supabase if API not loaded
-      if (!loaded) {
-        try {
-          const client = initSupabase();
-          if (client) {
-            const { data, error } = await client.from('coupons').select('*').order('created_at', { ascending: false });
-            if (!error && Array.isArray(data)) {
-              fetchedList = data;
-              loaded = true;
-            }
+      // 3. Fetch live directly from Supabase Database
+      try {
+        const client = initSupabase();
+        if (client) {
+          const { data, error } = await client.from('coupons').select('*').order('created_at', { ascending: false });
+          if (!error && Array.isArray(data) && data.length > 0) {
+            data.forEach(c => {
+              const norm = normalizeCoupon(c);
+              if (norm && norm.code) mergedMap.set(norm.code, norm);
+            });
           }
-        } catch (sbErr) {
-          console.warn('[AdminCoupons] Supabase direct notice:', sbErr);
         }
+      } catch (sbErr) {
+        console.warn('[AdminCoupons] Supabase direct notice:', sbErr);
       }
 
-      // 3. Try LocalStorage Cache if API & Supabase not reachable
-      if (!loaded) {
-        try {
-          const cached = localStorage.getItem('hn_admin_coupons');
-          if (cached !== null) {
-            const parsed = JSON.parse(cached);
-            if (Array.isArray(parsed)) {
-              fetchedList = parsed;
-              loaded = true;
-            }
-          }
-        } catch (_) {}
-      }
-
-      // 4. Initial Seed Fallback only once on very first launch if never initialized
-      if (!loaded && localStorage.getItem('hn_admin_coupons_initialized') !== 'true') {
-        fetchedList = [
-          { id: '604b1f2e-73d8-4d3f-ab72-279b4a68d8c2', code: 'WELCOME10', type: 'percentage', value: 10, min: 1000, used: 14, limit: 500, expiry: '2027-12-31', status: 'Active' },
-          { id: 'fc0ba854-a092-4f75-88a3-1097cb7d4ede', code: 'KRISHNA50', type: 'fixed', value: 50, min: 249, used: 28, limit: 200, expiry: '2027-12-31', status: 'Active' },
-          { id: 'b648d19d-c135-464b-b974-896aff0ddcf3', code: 'RADHA100', type: 'fixed', value: 100, min: 499, used: 9, limit: 100, expiry: '2027-12-31', status: 'Active' },
-          { id: '06a2bf59-39b6-4120-878d-cb65b149bee3', code: 'VRINDAVAN', type: 'fixed', value: 150, min: 1499, used: 5, limit: 100, expiry: '2027-12-31', status: 'Active' },
-          { id: '47e30a43-d4c8-40f6-8372-2246f69507eb', code: 'MAHAMANTRA', type: 'percentage', value: 15, min: 1999, used: 18, limit: 300, expiry: '2027-12-31', status: 'Active' }
+      // 4. Initial Seed Fallback only if no coupons exist anywhere
+      if (mergedMap.size === 0) {
+        const defaultSeeds = [
+          { id: '604b1f2e-73d8-4d3f-ab72-279b4a68d8c2', code: 'WELCOME10', discount_type: 'percentage', discount_value: 10, minimum_order: 1000, times_used: 14, usage_limit: 500, expiry_date: '2027-12-31', status: 'active' },
+          { id: 'fc0ba854-a092-4f75-88a3-1097cb7d4ede', code: 'KRISHNA50', discount_type: 'fixed', discount_value: 50, minimum_order: 249, times_used: 28, usage_limit: 200, expiry_date: '2027-12-31', status: 'active' },
+          { id: 'b648d19d-c135-464b-b974-896aff0ddcf3', code: 'RADHA100', discount_type: 'fixed', discount_value: 100, minimum_order: 499, times_used: 9, usage_limit: 100, expiry_date: '2027-12-31', status: 'active' },
+          { id: '06a2bf59-39b6-4120-878d-cb65b149bee3', code: 'VRINDAVAN', discount_type: 'fixed', discount_value: 150, minimum_order: 1499, times_used: 5, usage_limit: 100, expiry_date: '2027-12-31', status: 'active' },
+          { id: '47e30a43-d4c8-40f6-8372-2246f69507eb', code: 'MAHAMANTRA', discount_type: 'percentage', discount_value: 15, minimum_order: 1999, times_used: 18, usage_limit: 300, expiry_date: '2027-12-31', status: 'active' }
         ];
-        localStorage.setItem('hn_admin_coupons_initialized', 'true');
+        defaultSeeds.forEach(c => {
+          const norm = normalizeCoupon(c);
+          if (norm && norm.code) mergedMap.set(norm.code, norm);
+        });
       }
 
-      // Map and filter against deletion blacklist
-      databaseCoupons = fetchedList
-        .filter(c => {
-          const codeUpper = (c.code || '').toUpperCase().trim();
-          const idVal = c.id || '';
-          return !blacklist.includes(codeUpper) && !blacklist.includes(idVal);
-        })
-        .map(c => ({
-          id: c.id,
-          code: (c.code || '').toUpperCase().trim(),
-          type: c.discount_type || c.type || 'fixed',
-          value: parseFloat(c.discount_value !== undefined ? c.discount_value : (c.value || 0)),
-          min: parseFloat(c.minimum_order !== undefined ? c.minimum_order : (c.min || 0)),
-          used: parseInt(c.times_used !== undefined ? c.times_used : (c.used || 0), 10) || 0,
-          limit: c.usage_limit ? parseInt(c.usage_limit, 10) : (c.limit ? parseInt(c.limit, 10) : 100),
-          expiry: c.expiry_date ? c.expiry_date.split('T')[0] : (c.expiry || ''),
-          status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1).toLowerCase()
-        }));
-
+      databaseCoupons = Array.from(mergedMap.values());
       localStorage.setItem('hn_admin_coupons', JSON.stringify(databaseCoupons));
       renderCouponsTable();
     }

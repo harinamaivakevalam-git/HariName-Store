@@ -49,5 +49,7 @@ router.use('/upload', uploadRoutes);
 router.use('/homepage', homepageRoutes);
 router.use('/pincode', pincodeRoutes);
 router.use('/shiprocket', shiprocketRoutes);
+const { proxyProductImage } = require('../controllers/imageProxyController');
+router.get('/product-images/*', proxyProductImage);
 
 module.exports = router;

@@ -274,6 +274,7 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/product-image-service.js"></script>
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
@@ -284,9 +285,8 @@
 
     function resolveSafeAssetUrl(url) {
       if (!url || typeof url !== 'string') return '';
-      const match = url.match(/\/storage\/v1\/object\/public\/product-images\/(products|categories)\/([^/?#]+)/);
-      if (match) {
-        return `/assets/images/${match[1]}/${match[2]}`;
+      if (window.ProductImageService) {
+        return window.ProductImageService.getProductImageUrl(url);
       }
       return url;
     }
@@ -563,11 +563,11 @@
 
       tbody.innerHTML = products.map(p => {
         const rawImg = p.image || p.primary_image || (Array.isArray(p.images) && (p.images[0]?.image_url || p.images[0])) || (Array.isArray(p.gallery) && p.gallery[0]) || '';
-        const imgSrc = resolveSafeAssetUrl(rawImg) || '/assets/images/krishna-logo.jpg';
+        const imgSrc = window.getProductImageUrl ? window.getProductImageUrl(rawImg) : (rawImg || '/assets/images/krishna-logo.jpg');
         return `
         <tr>
           <td>
-            <img src="${imgSrc}" alt="${p.name || p.title}" class="hn-table-thumb" onerror="if(!this.dataset.triedLocal){this.dataset.triedLocal='1';const m=this.src.match(/([^/?#]+\\.(jpeg|jpg|png|webp))/i);if(m)this.src='/assets/images/products/'+m[1];else this.src='/assets/images/krishna-logo.jpg';}else{this.src='/assets/images/krishna-logo.jpg';}">
+            <img src="${imgSrc}" data-original-src="${rawImg}" alt="${p.name || p.title}" class="hn-table-thumb" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawImg}');}else{this.onerror=null;this.src='/assets/images/krishna-logo.jpg';}">
           </td>
           <td>
             <div class="fw-bold text-navy text-nowrap">${p.name || p.title}</div>
@@ -690,11 +690,12 @@
         }
 
         if (imgUrl && imgUrl.trim()) {
+          const slotSrc = window.getProductImageUrl ? window.getProductImageUrl(imgUrl) : imgUrl;
           return `
             <div class="hn-image-box has-image" onclick="triggerUploadForSlot(${idx})">
               <span class="hn-image-box-badge ${isPrimary ? 'primary-badge' : ''}">${isPrimary ? '★ Cover' : '#' + slotNum}</span>
               <button type="button" class="hn-image-box-remove" onclick="removeImageSlot(${idx}, event)" title="Remove image">&times;</button>
-              <img src="${imgUrl}" alt="Product Image ${slotNum}">
+              <img src="${slotSrc}" data-original-src="${imgUrl}" alt="Product Image ${slotNum}" onerror="if(window.handleProductImageError){handleProductImageError(this, '${imgUrl}');}else{this.onerror=null;this.src='/assets/images/krishna-logo.jpg';}">
               <div class="hn-image-box-replace-hint">Change</div>
             </div>
           `;

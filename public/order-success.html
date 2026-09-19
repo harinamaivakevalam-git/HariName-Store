@@ -107,6 +107,7 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/product-image-service.js"></script>
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
@@ -150,15 +151,19 @@
         const list = document.getElementById('hn-success-items-list');
         if (wrap && list) {
           wrap.classList.remove('d-none');
-          list.innerHTML = currentOrder.items.map(item => `
-            <div class="d-flex align-items-center justify-content-between py-1 border-bottom small">
-              <div class="d-flex align-items-center gap-2">
-                <img src="${item.image}" alt="${item.name}" class="rounded border" style="width: 32px; height: 32px; object-fit: cover;">
-                <span class="fw-semibold text-truncate" style="max-width: 180px;">${item.name}</span>
+          list.innerHTML = currentOrder.items.map(item => {
+            const rawImg = item.image || '';
+            const itemImg = window.getProductImageUrl ? window.getProductImageUrl(rawImg) : (rawImg || '/assets/images/krishna-logo.jpg');
+            return `
+              <div class="d-flex align-items-center justify-content-between py-1 border-bottom small">
+                <div class="d-flex align-items-center gap-2">
+                  <img src="${itemImg}" data-original-src="${rawImg}" alt="${item.name}" class="rounded border" style="width: 32px; height: 32px; object-fit: cover;" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawImg}');}else{this.onerror=null;this.src='/assets/images/krishna-logo.jpg';}">
+                  <span class="fw-semibold text-truncate" style="max-width: 180px;">${item.name}</span>
+                </div>
+                <span class="text-muted">Qty: ${item.qty || 1} &nbsp;|&nbsp; <strong>₹${item.price * (item.qty || 1)}</strong></span>
               </div>
-              <span class="text-muted">Qty: ${item.qty || 1} &nbsp;|&nbsp; <strong>₹${item.price * (item.qty || 1)}</strong></span>
-            </div>
-          `).join('');
+            `;
+          }).join('');
         }
       }
     });

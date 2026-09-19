@@ -110,6 +110,7 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/js/product-image-service.js"></script>
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
@@ -135,8 +136,8 @@
 
       if (cats.length === 0) {
         grid.innerHTML = `
-          <div class="col-12 text-center py-5 text-muted">
-            <i class="bi bi-box-seam fs-1 text-gold d-block mb-2"></i>
+          <div class="col-12 py-5 text-center text-muted">
+            <i class="bi bi-collection fs-1 d-block mb-3 text-gold"></i>
             <h5>Devotional Collections updating</h5>
             <p class="small">Explore all items in our live store catalog.</p>
             <a href="/shop.html" class="btn btn-gold btn-sm px-4">Browse All Products</a>
@@ -146,14 +147,15 @@
       }
 
       grid.innerHTML = cats.map(c => {
-        const catImg = c.image || c.image_url || '/assets/images/cat_keychains.jpg';
+        const rawCatImg = c.image || c.image_url || '/assets/images/cat_keychains.jpg';
+        const catImg = window.getProductImageUrl ? window.getProductImageUrl(rawCatImg) : rawCatImg;
         const countText = `${c.count !== undefined ? c.count : (c.product_count || 0)} Products`;
         const linkUrl = `/shop.html?category=${encodeURIComponent(c.slug || c.id)}`;
         return `
           <div class="col-md-6 col-lg-3">
             <div class="hn-collection-card">
               <div class="hn-collection-img-wrap">
-                <img src="${catImg}" alt="${c.name}" class="hn-collection-img" onerror="this.src='/assets/images/cat_keychains.jpg'">
+                <img src="${catImg}" data-original-src="${rawCatImg}" alt="${c.name}" class="hn-collection-img" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawCatImg}');}else{this.onerror=null;this.src='/assets/images/cat_keychains.jpg';}">
                 <span class="hn-collection-badge">${countText}</span>
               </div>
               <div class="p-4 d-flex flex-column flex-grow-1">

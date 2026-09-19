@@ -266,6 +266,7 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/product-image-service.js"></script>
   <script src="/assets/js/data.js?v=5"></script>
   <script src="/assets/js/components.js?v=5"></script>
   <script>
@@ -636,10 +637,17 @@
 
       const mainImg = document.getElementById('hn-main-image');
       if (mainImg) {
-        mainImg.src = gallery[0] || '/assets/images/krishna_hero_keychain.jpg';
+        const firstRaw = gallery[0] || '';
+        const firstSrc = window.getProductImageUrl ? window.getProductImageUrl(firstRaw) : (firstRaw || '/assets/images/krishna_hero_keychain.jpg');
+        mainImg.src = firstSrc;
+        mainImg.dataset.originalSrc = firstRaw;
         mainImg.onerror = function() {
-          this.onerror = null;
-          this.src = '/assets/images/krishna_hero_keychain.jpg';
+          if (window.handleProductImageError) {
+            handleProductImageError(this, firstRaw);
+          } else {
+            this.onerror = null;
+            this.src = '/assets/images/krishna_hero_keychain.jpg';
+          }
         };
       }
 
@@ -668,9 +676,12 @@
 
       const thumbContainer = document.getElementById('hn-thumb-gallery');
       if (thumbContainer) {
-        thumbContainer.innerHTML = gallery.map((img, idx) => `
-          <img src="${img}" class="hn-thumb-img ${idx === 0 ? 'active' : ''}" onclick="document.getElementById('hn-main-image').src = this.src; document.querySelectorAll('.hn-thumb-img').forEach(t => t.classList.remove('active')); this.classList.add('active');" onerror="this.onerror=null; this.src='/assets/images/krishna_hero_keychain.jpg';" alt="${prod.title || prod.name || 'Sacred Item'}">
-        `).join('');
+        thumbContainer.innerHTML = gallery.map((rawUrl, idx) => {
+          const thumbSrc = window.getProductImageUrl ? window.getProductImageUrl(rawUrl) : (rawUrl || '/assets/images/krishna_hero_keychain.jpg');
+          return `
+            <img src="${thumbSrc}" data-original-src="${rawUrl}" class="hn-thumb-img ${idx === 0 ? 'active' : ''}" onclick="const m = document.getElementById('hn-main-image'); if(m){ m.src = this.src; m.dataset.originalSrc = this.dataset.originalSrc || ''; } document.querySelectorAll('.hn-thumb-img').forEach(t => t.classList.remove('active')); this.classList.add('active');" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawUrl}');}else{this.onerror=null; this.src='/assets/images/krishna_hero_keychain.jpg';}" alt="${prod.title || prod.name || 'Sacred Item'}">
+          `;
+        }).join('');
       }
 
       // Sync wishlist button state

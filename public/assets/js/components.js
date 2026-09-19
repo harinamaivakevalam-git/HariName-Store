@@ -1635,8 +1635,8 @@ window.findCatalogProduct = findCatalogProduct;
 const renderProductCard = (p) => {
   if (!p) return '';
   const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
-  const isWish = wishlist.includes(p.id) || (p.legacy_id && wishlist.includes(p.legacy_id)) || (p.slug && wishlist.includes(p.slug));
-  const imgSrc = p.image || p.primary_image || (p.images && p.images[0]) || '/assets/images/krishna-logo.jpg';
+  const rawImg = p.image || p.primary_image || (p.images && p.images[0]) || '';
+  const imgSrc = window.getProductImageUrl ? window.getProductImageUrl(rawImg) : (rawImg || '/assets/images/krishna-logo.jpg');
   const prodTitle = p.name || p.title || 'Sacred Devotional Item';
 
   return `
@@ -1648,7 +1648,7 @@ const renderProductCard = (p) => {
         </button>
 
         <a href="/product-details.html?id=${p.id}" class="hn-card-img-box">
-          <img src="${imgSrc}" alt="${prodTitle}" onerror="this.onerror=null;this.src='/assets/images/krishna-logo.jpg';" loading="lazy">
+          <img src="${imgSrc}" data-original-src="${rawImg}" alt="${prodTitle}" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawImg}');}else{this.onerror=null;this.src='/assets/images/krishna-logo.jpg';}" loading="lazy">
         </a>
 
         <div class="hn-card-title">
@@ -1709,7 +1709,7 @@ const handleAddToCart = (productId, qty = 1, selectedMaterial = null, btnElement
       legacy_id: legacyId,
       name: product.title || product.name,
       price: Number(product.price) || 0,
-      image: product.image || product.primary_image,
+      image: window.getProductImageUrl ? window.getProductImageUrl(product.image || product.primary_image) : (product.image || product.primary_image),
       material: material,
       qty: quantity
     });
@@ -1786,7 +1786,7 @@ const handleBuyNow = (productId, qty = 1, selectedMaterial = null) => {
       legacy_id: legacyId,
       name: product.title || product.name,
       price: Number(product.price) || 0,
-      image: product.image || product.primary_image,
+      image: window.getProductImageUrl ? window.getProductImageUrl(product.image || product.primary_image) : (product.image || product.primary_image),
       material: material,
       qty: quantity
     });

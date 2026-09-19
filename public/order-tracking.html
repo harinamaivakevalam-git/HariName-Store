@@ -330,6 +330,7 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/product-image-service.js"></script>
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
@@ -446,18 +447,22 @@
       // Render Items
       const itemsList = document.getElementById('hn-track-items-list');
       const items = order.items || [];
-      itemsList.innerHTML = items.map(i => `
-        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-          <div class="d-flex align-items-center gap-2">
-            ${i.image || i.product_image ? `<img src="${i.image || i.product_image}" alt="${i.name || i.product_name}" class="rounded border" style="width: 38px; height: 38px; object-fit: cover;">` : ''}
-            <div>
-              <div class="small fw-semibold text-navy lh-sm">${i.name || i.product_name}</div>
-              <div class="text-muted" style="font-size: 0.75rem;">Qty: ${i.qty || i.quantity || 1}</div>
+      itemsList.innerHTML = items.map(i => {
+        const rawImg = i.image || i.product_image || '';
+        const itemImg = window.getProductImageUrl ? window.getProductImageUrl(rawImg) : (rawImg || '/assets/images/krishna-logo.jpg');
+        return `
+          <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+            <div class="d-flex align-items-center gap-2">
+              ${rawImg ? `<img src="${itemImg}" data-original-src="${rawImg}" alt="${i.name || i.product_name}" class="rounded border" style="width: 38px; height: 38px; object-fit: cover;" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawImg}');}else{this.onerror=null;this.src='/assets/images/krishna-logo.jpg';}">` : ''}
+              <div>
+                <div class="small fw-semibold text-navy lh-sm">${i.name || i.product_name}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Qty: ${i.qty || i.quantity || 1}</div>
+              </div>
             </div>
+            <div class="small fw-bold text-navy">₹${(parseFloat(i.price || 0) * (i.qty || i.quantity || 1))}</div>
           </div>
-          <div class="small fw-bold text-navy">₹${(parseFloat(i.price || 0) * (i.qty || i.quantity || 1))}</div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
 
       document.getElementById('hn-track-total-amount').textContent = `₹${order.total || 0}`;
 

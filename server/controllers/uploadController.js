@@ -27,16 +27,29 @@ async function uploadToCloudStorage(file) {
   if (isSupabaseConfigured && supabaseAdmin && file && file.path && fs.existsSync(file.path)) {
     try {
       const fileBuffer = fs.readFileSync(file.path);
-      const ext = path.extname(file.originalname || file.filename).toLowerCase();
-      const cleanFileName = `uploads/${Date.now()}-${Math.random().toString(36).substring(2, 9)}${ext}`;
+      const ext = path.extname(file.originalname || file.filename).toLowerCase() || '.jpg';
+      const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}${ext}`;
+      const storagePath = `products/${uniqueFileName}`;
 
-      // Upload to Supabase in background for permanent cloud replication
-      supabaseAdmin.storage
+      const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
         .from(BUCKET_NAME)
-        .upload(cleanFileName, fileBuffer, {
+        .upload(storagePath, fileBuffer, {
           contentType: file.mimetype || 'image/jpeg',
-          upsert: true
-        }).catch(e => console.warn('[UploadController] Background cloud upload notice:', e.message));
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (!uploadError) {
+        const { data: pubData } = supabaseAdmin.storage
+          .from(BUCKET_NAME)
+          .getPublicUrl(storagePath);
+
+        if (pubData && pubData.publicUrl) {
+          return pubData.publicUrl;
+        }
+      } else {
+        console.warn('[UploadController] Cloud storage upload notice:', uploadError.message);
+      }
     } catch (err) {
       console.warn('[UploadController] Cloud storage upload fallback notice:', err.message);
     }

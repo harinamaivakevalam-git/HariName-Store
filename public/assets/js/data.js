@@ -3,12 +3,15 @@
  * Pre-seeded with authentic store catalog and synced in real-time with Supabase PostgreSQL & Admin Portal.
  */
 
-// Asset URL resolver: maps Supabase storage URLs to local bundled assets (avoids Indian ISP censorship of *.supabase.co)
+// Centralized image URL resolver: delegates to ProductImageService
 function resolveSafeAssetUrl(url) {
-  if (!url || typeof url !== 'string') return '';
-  const match = url.match(/\/storage\/v1\/object\/public\/product-images\/(products|categories)\/([^/?#]+)/);
+  if (typeof window !== 'undefined' && window.ProductImageService) {
+    return window.ProductImageService.getProductImageUrl(url);
+  }
+  if (!url || typeof url !== 'string') return '/assets/images/krishna-logo.jpg';
+  const match = url.match(/\/storage\/v1\/object\/public\/product-images\/(.+)$/);
   if (match) {
-    return `/assets/images/${match[1]}/${match[2]}`;
+    return `/api/product-images/${match[1]}`;
   }
   return url;
 }
@@ -38,20 +41,20 @@ const HARINAMA_AUTHENTIC_PRODUCTS = [
     trending: false,
     rating: 5,
     reviews_count: 1,
-    primary_image: "/assets/images/products/1789769234495-jly30m9.jpeg",
-    image: "/assets/images/products/1789769234495-jly30m9.jpeg",
-    secondary_image: "/assets/images/products/1789769243396-lr00hkq.jpeg",
+    primary_image: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769234495-jly30m9.jpeg",
+    image: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769234495-jly30m9.jpeg",
+    secondary_image: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769243396-lr00hkq.jpeg",
     gallery: [
-      "/assets/images/products/1789769234495-jly30m9.jpeg",
-      "/assets/images/products/1789769243396-lr00hkq.jpeg",
-      "/assets/images/products/1789769217722-5uwrf3c.jpeg",
-      "/assets/images/products/1789769219922-3ckakqi.jpeg"
+      "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769234495-jly30m9.jpeg",
+      "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769243396-lr00hkq.jpeg",
+      "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769217722-5uwrf3c.jpeg",
+      "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769219922-3ckakqi.jpeg"
     ],
     images: [
-      "/assets/images/products/1789769234495-jly30m9.jpeg",
-      "/assets/images/products/1789769243396-lr00hkq.jpeg",
-      "/assets/images/products/1789769217722-5uwrf3c.jpeg",
-      "/assets/images/products/1789769219922-3ckakqi.jpeg"
+      "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769234495-jly30m9.jpeg",
+      "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769243396-lr00hkq.jpeg",
+      "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769217722-5uwrf3c.jpeg",
+      "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769219922-3ckakqi.jpeg"
     ],
     in_stock: true,
     created_at: "2026-09-18T22:07:33.571172+00:00"
@@ -64,8 +67,8 @@ const HARINAMA_BASE_AUTHENTIC_COLLECTIONS = [
     name: "Krishna Keychains",
     slug: "krishna-keychains",
     desc: "Sacred handcrafted Krishna, Jagannath & Mahamantra keychains.",
-    image: "/assets/images/categories/1789768086568-hlj4uh3.png",
-    image_url: "/assets/images/categories/1789768086568-hlj4uh3.png"
+    image: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1789768086568-hlj4uh3.png",
+    image_url: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1789768086568-hlj4uh3.png"
   },
   {
     id: "a8686346-2099-4f6f-9214-0ec187c2e632",
@@ -80,8 +83,8 @@ const HARINAMA_BASE_AUTHENTIC_COLLECTIONS = [
     name: "Japa Mala & Prayer Beads",
     slug: "japa-mala-prayer-beads",
     desc: "Authentic Vrindavan Tulasi & Neem meditation prayer beads.",
-    image: "/assets/images/categories/1789749775631-xv9hxvd.png",
-    image_url: "/assets/images/categories/1789749775631-xv9hxvd.png"
+    image: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1789749775631-xv9hxvd.png",
+    image_url: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1789749775631-xv9hxvd.png"
   },
   {
     id: "bdfb6c50-8436-4546-96f7-007577b855ba",
@@ -96,8 +99,8 @@ const HARINAMA_BASE_AUTHENTIC_COLLECTIONS = [
     name: "Books",
     slug: "books",
     desc: "Sacred Vedic texts, Bhagavad Gita As It Is, and spiritual wisdom.",
-    image: "/assets/images/categories/1789766294158-jdgclgj.png",
-    image_url: "/assets/images/categories/1789766294158-jdgclgj.png"
+    image: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1789766294158-jdgclgj.png",
+    image_url: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1789766294158-jdgclgj.png"
   },
   {
     id: "585c4ce8-3722-4070-bd8d-61076436c946",

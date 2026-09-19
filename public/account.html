@@ -1438,8 +1438,8 @@
       try {
         if (window.supabase && typeof window.supabase.createClient === 'function') {
           const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
-          const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTMzODg1NiwiZXhwIjoyMTA0OTE0ODU2fQ.eV63FZ0bvtf5lAv_l4sGHtnk-ngpklZQbGxoxyHEzTs';
-          const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+          const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+          const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
           let u = null;
           try { u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}'); } catch (_) {}
           

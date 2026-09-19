@@ -139,6 +139,7 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/product-image-service.js"></script>
   <script src="/assets/js/data.js?v=5"></script>
   <script src="/assets/js/components.js?v=5"></script>
   <script>
@@ -156,6 +157,8 @@
 
       grid.innerHTML = items.map(p => {
         const isWish = wishlist.includes(p.id) || (p.legacy_id && wishlist.includes(p.legacy_id)) || (p.slug && wishlist.includes(p.slug));
+        const rawImg = p.image || p.primary_image || (p.images && p.images[0]) || '';
+        const imgSrc = window.getProductImageUrl ? window.getProductImageUrl(rawImg) : (rawImg || '/assets/images/krishna-logo.jpg');
         return `
           <div class="col-6 col-md-4 col-lg-3">
             <div class="hn-product-card" data-product-id="${p.id}" data-legacy-id="${p.legacy_id || ''}">
@@ -165,7 +168,7 @@
               </button>
 
               <a href="/product-details.html?id=${p.id}" class="hn-card-img-box">
-                <img src="${p.image || p.primary_image || '/assets/images/krishna-logo.jpg'}" alt="${p.name || p.title || 'Sacred Item'}" onerror="this.onerror=null;this.src='/assets/images/krishna-logo.jpg';" loading="lazy">
+                <img src="${imgSrc}" data-original-src="${rawImg}" alt="${p.name || p.title || 'Sacred Item'}" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawImg}');}else{this.onerror=null;this.src='/assets/images/krishna-logo.jpg';}" loading="lazy">
               </a>
 
               <div class="hn-card-title">

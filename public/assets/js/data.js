@@ -205,7 +205,18 @@ HARINAMA_DATA.fetchProductBySlug = async function(slugOrId) {
 };
 
 // Dynamic Sync with Live Database (Backend Express API & Direct Supabase Fallback)
+let _isCatalogSyncing = false;
+let _lastCatalogSyncTime = 0;
+
 HARINAMA_DATA.syncWithApi = async function(forceRefresh = false) {
+  const now = Date.now();
+  // Throttle non-forced syncs within 2 seconds or if already syncing
+  if (_isCatalogSyncing && !forceRefresh) return;
+  if (!forceRefresh && (now - _lastCatalogSyncTime < 2000)) return;
+
+  _isCatalogSyncing = true;
+  _lastCatalogSyncTime = now;
+
   const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
 
@@ -400,6 +411,7 @@ HARINAMA_DATA.syncWithApi = async function(forceRefresh = false) {
   HARINAMA_DATA.products = fetchedProducts;
   HARINAMA_DATA.categories = computeCategoryCounts(fetchedProducts, fetchedCategories);
   HARINAMA_DATA.isLoaded = true;
+  _isCatalogSyncing = false;
 
   // Dispatch events to all active pages
   if (typeof window !== 'undefined') {
@@ -578,7 +590,7 @@ HARINAMA_DATA.validateCoupon = async function(rawCode, subtotal = 0) {
   return { valid: false, message: 'Invalid or expired coupon code.' };
 };
 
-// Real-time Singleton Supabase Channel Subscription
+// Real-time Singleton Supabase Channel Subscription (Memory Protected)
 let _supabaseRealtimeChannel = null;
 let _realtimeDebounceTimer = null;
 
@@ -594,23 +606,19 @@ function setupSupabaseRealtimeSync() {
 
   try {
     _supabaseRealtimeChannel = sb.channel('hn-catalog-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
         clearTimeout(_realtimeDebounceTimer);
         _realtimeDebounceTimer = setTimeout(() => {
           HARINAMA_DATA.syncWithApi(true);
-        }, 300);
+        }, 1500);
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
         clearTimeout(_realtimeDebounceTimer);
         _realtimeDebounceTimer = setTimeout(() => {
           HARINAMA_DATA.syncWithApi(true);
-        }, 300);
+        }, 1500);
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          // Connected cleanly
-        }
-      });
+      .subscribe();
 
     // Cleanup on window unload to prevent memory leaks
     window.addEventListener('beforeunload', () => {
@@ -624,14 +632,17 @@ function setupSupabaseRealtimeSync() {
   }
 }
 
-// Cross-tab Synchronization (Admin CRUD to Storefront in Real Time)
+// Cross-tab Synchronization with Loop Prevention
+let _lastBroadcastReceivedTime = 0;
 if (typeof window !== 'undefined') {
   // 1. BroadcastChannel API
   if (typeof BroadcastChannel !== 'undefined') {
     try {
       const bc = new BroadcastChannel('hn_catalog_channel');
       bc.onmessage = (event) => {
-        if (event.data && (event.data.type === 'CATALOG_INVALIDATED' || event.data.type === 'PRODUCT_UPDATED')) {
+        const now = Date.now();
+        if (now - _lastBroadcastReceivedTime > 2000 && event.data && (event.data.type === 'CATALOG_INVALIDATED' || event.data.type === 'PRODUCT_UPDATED')) {
+          _lastBroadcastReceivedTime = now;
           HARINAMA_DATA.syncWithApi(true);
         }
       };
@@ -641,7 +652,9 @@ if (typeof window !== 'undefined') {
 
   // 2. Storage event fallback for cross-tab sync
   window.addEventListener('storage', (e) => {
-    if (e.key === 'hn_catalog_sync_timestamp' || e.key === 'hn_catalog_invalidated') {
+    const now = Date.now();
+    if (now - _lastBroadcastReceivedTime > 2000 && (e.key === 'hn_catalog_sync_timestamp' || e.key === 'hn_catalog_invalidated')) {
+      _lastBroadcastReceivedTime = now;
       HARINAMA_DATA.syncWithApi(true);
     }
   });
@@ -663,7 +676,7 @@ HARINAMA_DATA.broadcastCatalogChange = function() {
 if (typeof document !== 'undefined') {
   const onReady = () => {
     HARINAMA_DATA.syncWithApi();
-    setTimeout(setupSupabaseRealtimeSync, 1000);
+    setTimeout(setupSupabaseRealtimeSync, 1500);
   };
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', onReady);

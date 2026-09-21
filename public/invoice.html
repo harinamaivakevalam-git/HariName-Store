@@ -27,7 +27,7 @@
       min-height: 100vh;
     }
     .invoice-container {
-      max-width: 820px;
+      max-width: 840px;
       margin: 0 auto;
       background: #FFFFFF;
       border: 1px solid var(--border);
@@ -41,7 +41,7 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
-      max-width: 820px;
+      max-width: 840px;
       margin-left: auto;
       margin-right: auto;
       gap: 12px;
@@ -286,27 +286,53 @@
       return path;
     }
 
+    function sanitizeOrderId(raw) {
+      if (!raw) return '';
+      return decodeURIComponent(String(raw))
+        .trim()
+        .replace(/^[#\s]+/, '')
+        .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\uFE58\uFE63\uFF0D]/g, '-')
+        .trim();
+    }
+
     async function fetchOrderDetails(orderId) {
       if (!orderId) return null;
-      const cleanId = orderId.trim();
+      const cleanId = sanitizeOrderId(orderId);
+      if (!cleanId) return null;
 
-      // 1. Try Backend API
+      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token') || '';
+      const authHeaders = {
+        'Accept': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
+
+      // 1. Try Backend Express API (/api/orders/:id/invoice?format=json)
       try {
         const apiUrl = getApiUrl(`/api/orders/${encodeURIComponent(cleanId)}/invoice?format=json`);
-        const res = await fetch(apiUrl, { cache: 'no-store' });
+        const res = await fetch(apiUrl, { cache: 'no-store', headers: authHeaders });
         if (res.ok) {
           const json = await res.json();
           if (json && (json.data || json.order)) return json.data || json.order;
         }
       } catch (err) {
-        console.warn('[Invoice] Express backend route unavailable, falling back to direct Supabase REST:', err);
+        console.warn('[Invoice] Express backend invoice endpoint notice:', err);
       }
+
+      // 1b. Try Backend Generic Order Endpoint (/api/orders/:id)
+      try {
+        const genUrl = getApiUrl(`/api/orders/${encodeURIComponent(cleanId)}`);
+        const res = await fetch(genUrl, { cache: 'no-store', headers: authHeaders });
+        if (res.ok) {
+          const json = await res.json();
+          if (json && (json.data || json.order)) return json.data || json.order;
+        }
+      } catch (_) {}
 
       // 2. Direct Supabase REST API Query
       try {
         const sbHeaders = {
           'apikey': SUPABASE_ANON_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + (token || SUPABASE_ANON_KEY),
           'Content-Type': 'application/json'
         };
 
@@ -326,9 +352,10 @@
           }
         }
 
-        // Fuzzy match if exact match missed prefix
+        // Fuzzy search if prefix varied (e.g. without HN- prefix)
         if (!isUuid) {
-          const fallbackRes = await fetch(`${SUPABASE_URL}/rest/v1/orders?select=*,order_items(*)&order_number=ilike.*${encodeURIComponent(cleanId.replace(/^HN-/, ''))}*&limit=1`, { headers: sbHeaders });
+          const stripped = cleanId.replace(/^HN-/, '');
+          const fallbackRes = await fetch(`${SUPABASE_URL}/rest/v1/orders?select=*,order_items(*)&order_number=ilike.*${encodeURIComponent(stripped)}*&limit=1`, { headers: sbHeaders });
           if (fallbackRes.ok) {
             const fbOrders = await fallbackRes.json();
             if (Array.isArray(fbOrders) && fbOrders.length > 0) return fbOrders[0];
@@ -341,16 +368,25 @@
       // 3. Check LocalStorage / Local Orders Cache
       try {
         const userOrders = JSON.parse(localStorage.getItem('hn_user_orders') || '[]');
-        const found = userOrders.find(o => 
-          (o.order_number && o.order_number.toUpperCase() === cleanId.toUpperCase()) || 
-          (o.id && o.id === cleanId) || 
-          (o.orderId && o.orderId === cleanId)
-        );
+        const found = userOrders.find(o => {
+          const ordNum = sanitizeOrderId(o.order_number || o.id || o.orderId);
+          return ordNum.toUpperCase() === cleanId.toUpperCase() || (o.id && o.id === cleanId);
+        });
         if (found) return found;
 
+        const allOrders = JSON.parse(localStorage.getItem('hn_all_orders') || '[]');
+        const foundAdmin = allOrders.find(o => {
+          const ordNum = sanitizeOrderId(o.order_number || o.id || o.orderId);
+          return ordNum.toUpperCase() === cleanId.toUpperCase() || (o.id && o.id === cleanId);
+        });
+        if (foundAdmin) return foundAdmin;
+
         const lastOrder = JSON.parse(localStorage.getItem('hn_last_order') || 'null');
-        if (lastOrder && (lastOrder.order_number === cleanId || lastOrder.id === cleanId)) {
-          return lastOrder;
+        if (lastOrder) {
+          const lastNum = sanitizeOrderId(lastOrder.order_number || lastOrder.id);
+          if (lastNum.toUpperCase() === cleanId.toUpperCase() || lastOrder.id === cleanId) {
+            return lastOrder;
+          }
         }
       } catch (_) {}
 
@@ -358,7 +394,8 @@
     }
 
     function renderInvoice(order) {
-      document.title = `Tax Invoice - ${order.order_number || order.id} | Harinama Store`;
+      const orderNum = sanitizeOrderId(order.order_number || order.id || 'HN-ORDER');
+      document.title = `Tax Invoice - ${orderNum} | Harinama Store`;
 
       const shipAddr = order.shipping_address || order.customer?.address || {};
       const items = Array.isArray(order.order_items) ? order.order_items : (Array.isArray(order.items) ? order.items : []);
@@ -366,7 +403,15 @@
       const customerName = typeof shipAddr === 'string' ? shipAddr : (shipAddr.name || order.customer?.name || order.guest_name || 'Valued Devotee');
       const customerPhone = typeof shipAddr === 'object' ? (shipAddr.phone || order.customer?.phone || '—') : '—';
       const customerEmail = typeof shipAddr === 'object' ? (shipAddr.email || order.customer?.email || order.guest_email || '—') : '—';
-      const addressLine = typeof shipAddr === 'string' ? shipAddr : `${shipAddr.address_line_1 || shipAddr.street || ''}${shipAddr.village ? ', ' + shipAddr.village : ''}, ${shipAddr.city || ''}, ${shipAddr.state || ''} - ${shipAddr.pin || shipAddr.postalCode || ''}`;
+      
+      let addressLine = '';
+      if (typeof shipAddr === 'string') {
+        addressLine = shipAddr;
+      } else if (order.customer?.address && typeof order.customer.address === 'string') {
+        addressLine = order.customer.address;
+      } else {
+        addressLine = `${shipAddr.address_line_1 || shipAddr.street || ''}${shipAddr.village ? ', ' + shipAddr.village : ''}, ${shipAddr.city || ''}, ${shipAddr.state || ''} - ${shipAddr.pin || shipAddr.postalCode || ''}`;
+      }
 
       const orderDate = new Date(order.created_at || order.order_date || Date.now()).toLocaleDateString('en-IN', {
         day: '2-digit',
@@ -378,15 +423,13 @@
       const paymentBadgeText = isPaid ? 'PAID (PREPAID)' : 'CASH ON DELIVERY (PENDING)';
       const paymentBadgeColor = isPaid ? '#15803D' : '#D97706';
 
-      const subtotal = Number(order.pricing?.subtotal || order.subtotal || 0);
-      const discount = Number(order.pricing?.discount || order.discount || 0);
-      const shippingFee = Number(order.pricing?.shipping_fee || order.shipping_fee || 0);
-      const tax = Number(order.pricing?.tax || order.tax || Math.round((subtotal - discount) * 0.05 * 100) / 100);
-      const total = Number(order.pricing?.total || order.total || (subtotal - discount + shippingFee));
+      const subtotal = Number(order.pricing?.subtotal ?? (order.subtotal || 0));
+      const discount = Number(order.pricing?.discount ?? (order.discount || 0));
+      const shippingFee = Number(order.pricing?.shipping_fee ?? (order.shipping_fee || 0));
+      const tax = Number(order.pricing?.tax ?? (order.tax || 0));
+      const total = Number(order.pricing?.total ?? (order.total || (subtotal - discount + shippingFee)));
 
-      const orderNum = order.order_number || order.id || 'HN-ORDER';
       const invoiceNo = order.invoice_number || `INV-${orderNum.replace(/^HN-/, '')}`;
-
       const courierName = order.shipping?.courier || order.courier_name || 'India Post Speed Post';
       const awbCode = order.shipping?.awb_code || order.awb_code || 'Assigned on Dispatch';
       const trackingNumber = order.shipping?.tracking_number || order.tracking_number || orderNum;
@@ -549,8 +592,8 @@
             ${message || 'We could not locate an active invoice for the specified order.'}
           </p>
 
-          <form onsubmit="event.preventDefault(); const val = document.getElementById('search-ord-input').value.trim(); if(val) window.location.href = '/invoice.html?order=' + encodeURIComponent(val);" style="display: flex; gap: 8px; margin-bottom: 24px; max-width: 380px; margin-left: auto; margin-right: auto;">
-            <input type="text" id="search-ord-input" value="${orderId || ''}" placeholder="Enter Order # (e.g. HN-12345)" style="flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 14px;">
+          <form onsubmit="event.preventDefault(); const val = document.getElementById('search-ord-input').value.trim(); if(val) window.location.href = '/invoice.html?order=' + encodeURIComponent(val);" style="display: flex; gap: 8px; margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto;">
+            <input type="text" id="search-ord-input" value="${orderId || ''}" placeholder="Enter Order # (e.g. HN-2026-58507)" style="flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 14px;">
             <button type="submit" class="btn btn-gold">Find Invoice</button>
           </form>
 
@@ -571,7 +614,7 @@
 
       const element = document.getElementById('invoice-doc');
       const params = new URLSearchParams(window.location.search);
-      const orderNum = params.get('order') || params.get('id') || 'HarinamaStore';
+      const orderNum = sanitizeOrderId(params.get('order') || params.get('id') || 'HarinamaStore');
 
       const opt = {
         margin: [8, 8, 8, 8],
@@ -600,12 +643,14 @@
     // Initialize Page
     (async function init() {
       const params = new URLSearchParams(window.location.search);
-      const orderId = params.get('order') || params.get('id') || params.get('order_number') || params.get('orderId') || params.get('no');
+      const rawOrderId = params.get('order') || params.get('id') || params.get('order_number') || params.get('orderId') || params.get('no');
 
-      if (!orderId) {
+      if (!rawOrderId) {
         renderError('Please enter or specify an Order Number to view its Tax Invoice.', '');
         return;
       }
+
+      const orderId = sanitizeOrderId(rawOrderId);
 
       try {
         const order = await fetchOrderDetails(orderId);

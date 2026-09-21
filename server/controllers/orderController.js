@@ -892,7 +892,8 @@ exports.adminUpdateOrderStatus = async (req, res, next) => {
 // Generate & Download Order Tax Invoice (HTML / PDF Print / JSON)
 exports.getOrderInvoice = async (req, res, next) => {
   try {
-    const { identifier } = req.params;
+    const rawId = (req.params.identifier || '').trim();
+    const identifier = decodeURIComponent(rawId).replace(/^#/, '').replace(/[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\uFE58\uFE63\uFF0D]/g, '-').trim();
     let order = null;
 
     if (isSupabaseConfigured && supabaseAdmin) {
@@ -902,7 +903,18 @@ exports.getOrderInvoice = async (req, res, next) => {
         if (isUuid) q = q.eq('id', identifier);
         else q = q.eq('order_number', identifier);
 
-        const { data: sbOrder } = await q.maybeSingle();
+        let { data: sbOrder } = await q.maybeSingle();
+        if (!sbOrder && !isUuid) {
+          // Fallback to ilike match in case prefix differed
+          const { data: fuzzyOrders } = await supabaseAdmin
+            .from('orders')
+            .select('*, order_items(*), payments(*)')
+            .ilike('order_number', `%${identifier.replace(/^HN-/, '')}%`)
+            .limit(1);
+          if (Array.isArray(fuzzyOrders) && fuzzyOrders.length > 0) {
+            sbOrder = fuzzyOrders[0];
+          }
+        }
         if (sbOrder) order = sbOrder;
       } catch (sbE) {
         console.warn('[getOrderInvoice] Supabase fetch error:', sbE.message);

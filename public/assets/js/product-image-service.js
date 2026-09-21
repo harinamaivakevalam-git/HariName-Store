@@ -68,28 +68,45 @@
      * Builds a high-speed Cloudflare Edge CDN proxy URL for Supabase Storage objects.
      * Bypasses Indian ISP QUIC / DNS blocks and delivers in <40ms across all networks.
      */
-    getCdnProxyUrl: function(urlOrPath) {
+    /**
+     * Builds a high-speed Cloudflare Edge CDN proxy URL for Supabase Storage objects.
+     * Bypasses Indian ISP QUIC / DNS blocks and delivers in <40ms across all networks.
+     */
+    getCdnProxyUrl: function(urlOrPath, options = {}) {
       const fullUrl = this.getSupabasePublicUrl(urlOrPath);
       if (!fullUrl || fullUrl === PLACEHOLDER_IMAGE) return PLACEHOLDER_IMAGE;
-      return `https://wsrv.nl/?url=${encodeURIComponent(fullUrl)}`;
+      let cdnUrl = `https://wsrv.nl/?url=${encodeURIComponent(fullUrl)}`;
+      if (options.width) cdnUrl += `&w=${parseInt(options.width, 10)}`;
+      if (options.height) cdnUrl += `&h=${parseInt(options.height, 10)}`;
+      if (options.quality) cdnUrl += `&q=${parseInt(options.quality, 10)}`;
+      if (options.format) cdnUrl += `&output=${encodeURIComponent(options.format)}`;
+      return cdnUrl;
     },
 
     /**
      * Central resolver: Returns the optimal URL for product images.
      * - Local development (localhost / 127.0.0.1): Uses Express same-domain proxy (/api/product-images/...)
-     * - Production / Static hosting (harinamastore.com): Uses global Cloudflare Edge CDN proxy
+     * - Production / Static hosting (harinamastore.com): Uses global Cloudflare Edge CDN proxy with responsive resizing
      * @param {string} imageUrl - Original image URL or storage path
+     * @param {Object} [options] - Optional transformations: { width, height, quality, format }
      * @returns {string} - Optimized image URL
      */
-    getProductImageUrl: function(imageUrl) {
+    getProductImageUrl: function(imageUrl, options = {}) {
       if (!imageUrl || typeof imageUrl !== 'string' || !imageUrl.trim()) {
         return PLACEHOLDER_IMAGE;
       }
 
       const trimmed = imageUrl.trim();
 
-      // If already a CDN proxy URL or brand placeholder, return as-is
-      if (trimmed.includes('wsrv.nl') || trimmed.startsWith('/assets/')) {
+      // If already a CDN proxy URL, append options if not present
+      if (trimmed.includes('wsrv.nl')) {
+        if (options.width && !trimmed.includes('&w=')) {
+          return `${trimmed}&w=${parseInt(options.width, 10)}&q=${parseInt(options.quality || 80, 10)}&output=${encodeURIComponent(options.format || 'webp')}`;
+        }
+        return trimmed;
+      }
+
+      if (trimmed.startsWith('/assets/')) {
         return trimmed;
       }
 
@@ -100,14 +117,27 @@
           (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
           window.location.port === '5000';
 
-        if (isLocalDev) {
+        if (isLocalDev && !options.forceCdn) {
           return `/api/product-images/${storagePath}`;
         }
 
-        // On production domains (e.g. harinamastore.com, Render static site, mobile browsers):
-        // Cloudflare Edge CDN proxy guarantees 200 OK delivery without ISP QUIC/DNS drops
+        // Production Cloudflare Edge CDN proxy with WebP & dimension optimization
         const fullSupabaseUrl = `https://${SUPABASE_PROJECT_REF}.supabase.co/storage/v1/object/public/${BUCKET_NAME}/${storagePath}`;
-        return `https://wsrv.nl/?url=${encodeURIComponent(fullSupabaseUrl)}`;
+        let cdnUrl = `https://wsrv.nl/?url=${encodeURIComponent(fullSupabaseUrl)}`;
+        const w = options.width || 400;
+        const q = options.quality || 80;
+        const fmt = options.format || 'webp';
+        cdnUrl += `&w=${w}&q=${q}&output=${fmt}`;
+        return cdnUrl;
+      }
+
+      // If Unsplash image, optimize with query parameters
+      if (trimmed.includes('images.unsplash.com')) {
+        const urlObj = new URL(trimmed, 'https://images.unsplash.com');
+        if (options.width) urlObj.searchParams.set('w', String(options.width));
+        urlObj.searchParams.set('q', String(options.quality || 80));
+        urlObj.searchParams.set('auto', 'format');
+        return urlObj.toString();
       }
 
       // If already a same-domain proxy URL, return as-is
@@ -115,19 +145,19 @@
         return trimmed;
       }
 
-      // External CDN or other URL (e.g. Unsplash), return as-is
       return trimmed;
     },
 
     /**
      * Batch resolver for image arrays
      * @param {string[]} imageUrls - Array of image URLs
+     * @param {Object} [options] - Optional transformations
      * @returns {string[]} - Transformed image URLs
      */
-    getProductImageUrls: function(imageUrls) {
+    getProductImageUrls: function(imageUrls, options = {}) {
       if (!Array.isArray(imageUrls)) return [];
       return imageUrls
-        .map(url => this.getProductImageUrl(url))
+        .map(url => this.getProductImageUrl(url, options))
         .filter(Boolean);
     },
 

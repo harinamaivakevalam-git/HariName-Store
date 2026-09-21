@@ -38,6 +38,18 @@ app.get([
 
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Ensure all dynamic API responses are never cached by intermediate proxies or browsers
+app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/product-images')) {
+    return next();
+  }
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+  next();
+});
+
 // Mount API Endpoints
 app.use('/api', apiLimiter, apiRoutes);
 

@@ -720,28 +720,48 @@
       const urlParams = new URLSearchParams(window.location.search);
       const prodId = urlParams.get('id') || urlParams.get('slug');
 
-      // 1. Try resolving from local active cache
-      if (prodId) {
-        const cached = typeof findCatalogProduct === 'function' ? findCatalogProduct(prodId) : null;
-        if (cached) {
-          populateDetails(cached);
+      if (!prodId) {
+        showNotFound();
+        return;
+      }
+
+      const cleanId = prodId.trim();
+
+      // 1. Primary: Fetch fresh product data from live Backend Express API
+      try {
+        const res = await fetch(`/api/products/${encodeURIComponent(cleanId)}`, {
+          cache: 'no-store',
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            populateDetails(json.data);
+            return;
+          }
+        } else if (res.status === 404) {
+          showNotFound();
           return;
         }
+      } catch (apiErr) {
+        console.warn('[product-details] Live API notice:', apiErr);
       }
 
       // 2. Query direct Supabase
-      if (sb && prodId) {
+      if (sb) {
         try {
-          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(prodId);
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
           let query = sb.from('products').select(`
               *,
               product_images (*),
               categories (name, slug)
-            `);
+            `).neq('status', 'archived').neq('status', 'deleted');
+
           if (isUuid) {
-            query = query.eq('id', prodId);
+            query = query.or(`id.eq.${cleanId},slug.eq.${cleanId}`);
           } else {
-            query = query.eq('slug', prodId);
+            query = query.eq('slug', cleanId);
           }
           const { data, error } = await query.maybeSingle();
 
@@ -774,21 +794,12 @@
         } catch (_) {}
       }
 
-      // 3. Fall back to first real product if available
-      if (HARINAMA_DATA.products && HARINAMA_DATA.products.length > 0) {
-        populateDetails(HARINAMA_DATA.products[0]);
+      // 3. Fallback to in-memory lookup if available
+      const found = typeof findCatalogProduct === 'function' ? findCatalogProduct(cleanId) : null;
+      if (found) {
+        populateDetails(found);
       } else {
-        // If still no products loaded, wait for catalog event
-        const onLoaded = () => {
-          window.removeEventListener('hn:catalog-loaded', onLoaded);
-          const found = prodId ? findCatalogProduct(prodId) : HARINAMA_DATA.products[0];
-          if (found) {
-            populateDetails(found);
-          } else {
-            showNotFound();
-          }
-        };
-        window.addEventListener('hn:catalog-loaded', onLoaded);
+        showNotFound();
       }
     }
 
@@ -796,6 +807,10 @@
       renderHeader('shop');
       renderFooter();
       loadLiveProduct();
+
+      window.addEventListener('hn:catalog-changed', () => {
+        loadLiveProduct();
+      });
 
       window.addEventListener('hn_wishlist_updated', () => {
         if (currentProduct) populateDetails(currentProduct);

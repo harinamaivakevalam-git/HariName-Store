@@ -298,45 +298,35 @@
 
     async function loadCategoriesFromDatabase() {
       let loaded = false;
-      let remoteCategories = [];
-
-      // 1. Live Backend API
+      let remoteCategories = [];      // 1. Live Backend Express API
       try {
-        const res = await fetchWithTimeout(getApiUrl('/api/categories'), {}, 2500);
+        const res = await fetchWithTimeout(getApiUrl('/api/categories'), {
+          headers: getAuthHeaders(),
+          cache: 'no-store'
+        }, 8000);
         if (res.ok) {
           const json = await res.json();
-          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          if (json.success && Array.isArray(json.data)) {
             remoteCategories = json.data;
             loaded = true;
           }
         }
-      } catch (_) {}
+      } catch (err) {
+        console.warn('[AdminCategories] Backend API categories notice:', err);
+      }
 
-      // 2. Direct Supabase Fallback (with 2.5s timeout)
+      // 2. Direct Supabase Fallback
       if (!loaded) {
         try {
           const sb = initSupabase();
           if (sb) {
-            const { data: sbCats, error: cErr } = await Promise.race([
-              sb.from('categories').select('*').neq('status', 'archived').order('name'),
-              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500))
+            const { data: sbCats, error: sbErr } = await Promise.race([
+              sb.from('categories').select('*').order('name'),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
             ]);
-            if (!cErr && Array.isArray(sbCats) && sbCats.length > 0) {
-              remoteCategories = sbCats;
-              loaded = true;
-            }
-          }
-        } catch (_) {}
-      }
 
-      // 4. Local Cache Fallback
-      if (!loaded) {
-        try {
-          const cached = localStorage.getItem('hn_admin_categories');
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              remoteCategories = parsed;
+            if (!sbErr && Array.isArray(sbCats) && sbCats.length > 0) {
+              remoteCategories = sbCats;
               loaded = true;
             }
           }
@@ -359,10 +349,6 @@
         };
       });
 
-      if (databaseCategories.length > 0) {
-        localStorage.setItem('hn_admin_categories', JSON.stringify(databaseCategories));
-        localStorage.setItem('hn_live_categories', JSON.stringify(databaseCategories));
-      }
       renderCategoriesTable();
     }
 
@@ -629,6 +615,10 @@
 
       showToast(id ? 'Collection updated in live database! 🌸' : 'New collection created in live database! 🌸', 'success');
 
+      if (window.HARINAMA_DATA && typeof window.HARINAMA_DATA.broadcastCatalogChange === 'function') {
+        window.HARINAMA_DATA.broadcastCatalogChange();
+      }
+
       const modalEl = document.getElementById('categoryModal');
       const modal = bootstrap.Modal.getInstance(modalEl);
       if (modal) modal.hide();
@@ -645,7 +635,8 @@
       try {
         const res = await fetch(getApiUrl(`/api/categories/${id}`), {
           method: 'DELETE',
-          headers: getAuthHeaders()
+          headers: getAuthHeaders(),
+          cache: 'no-store'
         });
         if (res.ok) {
           const json = await res.json();
@@ -692,6 +683,9 @@
 
       if (deleted) {
         showToast('Collection deleted successfully.', 'info');
+        if (window.HARINAMA_DATA && typeof window.HARINAMA_DATA.broadcastCatalogChange === 'function') {
+          window.HARINAMA_DATA.broadcastCatalogChange();
+        }
         await loadCategoriesFromDatabase();
       } else {
         showToast('Failed to delete collection: ' + (deleteError || 'Check admin permissions.'), 'danger');

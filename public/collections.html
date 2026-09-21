@@ -123,15 +123,9 @@
         : [];
 
       if (cats.length === 0) {
-        try {
-          const cached = localStorage.getItem('hn_admin_categories') || localStorage.getItem('hn_live_categories');
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              cats = parsed.filter(c => c.slug !== 'all-products' && c.id !== 'cat-all');
-            }
-          }
-        } catch (_) {}
+        cats = (typeof HARINAMA_BASE_AUTHENTIC_COLLECTIONS !== 'undefined' && Array.isArray(HARINAMA_BASE_AUTHENTIC_COLLECTIONS))
+          ? HARINAMA_BASE_AUTHENTIC_COLLECTIONS
+          : [];
       }
 
       if (cats.length === 0) {
@@ -148,14 +142,14 @@
 
       grid.innerHTML = cats.map(c => {
         const rawCatImg = c.image || c.image_url || '/assets/images/cat_keychains.jpg';
-        const catImg = window.getProductImageUrl ? window.getProductImageUrl(rawCatImg) : rawCatImg;
+        const catImg = window.getProductImageUrl ? window.getProductImageUrl(rawCatImg, { width: 400, quality: 80, format: 'webp' }) : rawCatImg;
         const countText = `${c.count !== undefined ? c.count : (c.product_count || 0)} Products`;
         const linkUrl = `/shop.html?category=${encodeURIComponent(c.slug || c.id)}`;
         return `
           <div class="col-md-6 col-lg-3">
             <div class="hn-collection-card">
               <div class="hn-collection-img-wrap">
-                <img src="${catImg}" data-original-src="${rawCatImg}" alt="${c.name}" class="hn-collection-img" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawCatImg}');}else{this.onerror=null;this.src='/assets/images/cat_keychains.jpg';}">
+                <img src="${catImg}" data-original-src="${rawCatImg}" alt="${c.name}" class="hn-collection-img" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawCatImg}');}else{this.onerror=null;this.src='/assets/images/cat_keychains.jpg';}" loading="lazy">
                 <span class="hn-collection-badge">${countText}</span>
               </div>
               <div class="p-4 d-flex flex-column flex-grow-1">
@@ -178,6 +172,7 @@
       renderFooter();
       renderCollections();
       window.addEventListener('hn:catalog-loaded', renderCollections);
+      window.addEventListener('hn:catalog-changed', renderCollections);
     });
   </script>
 </body>

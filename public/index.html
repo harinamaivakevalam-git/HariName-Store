@@ -828,7 +828,7 @@
       let freshConfig = null;
 
       try {
-        const res = await fetch('/api/homepage');
+        const res = await fetch('/api/homepage', { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
           if (json.success && json.data) {
@@ -880,7 +880,7 @@
       initHomePage();
     }
 
-    window.addEventListener('hn:catalog-loaded', async () => {
+    const onHomeCatalogUpdate = async () => {
       try {
         if (typeof renderCategoryCircles === 'function') renderCategoryCircles();
         if (typeof renderFeaturedSection === 'function') renderFeaturedSection();
@@ -889,7 +889,10 @@
       } catch (e) {
         console.warn('[home] Catalog refresh notice:', e);
       }
-    });
+    };
+
+    window.addEventListener('hn:catalog-loaded', onHomeCatalogUpdate);
+    window.addEventListener('hn:catalog-changed', onHomeCatalogUpdate);
   </script>
 </body>
 

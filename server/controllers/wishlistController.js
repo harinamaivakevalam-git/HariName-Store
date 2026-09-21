@@ -19,9 +19,50 @@ const hydrateProductBasic = (product) => {
 };
 
 // Get User's Wishlist
-exports.getWishlist = (req, res, next) => {
+exports.getWishlist = async (req, res, next) => {
   try {
     const userId = req.user.id;
+    if (isSupabaseConfigured && supabaseAdmin) {
+      try {
+        const { data: wishData, error } = await supabaseAdmin
+          .from('wishlists')
+          .select('id, created_at, product_id, products(*, product_images(*))')
+          .eq('user_id', userId);
+
+        if (!error && Array.isArray(wishData)) {
+          const items = wishData.map(w => {
+            if (!w.products) return null;
+            const p = w.products;
+            const images = (p.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+            const primaryImg = images.find(img => img.is_primary)?.image_url || images[0]?.image_url || p.image_url || '';
+            return {
+              wishlist_id: w.id,
+              added_at: w.created_at,
+              product: {
+                id: p.id,
+                name: p.name,
+                slug: p.slug,
+                price: parseFloat(p.price) || 0,
+                compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
+                image: primaryImg,
+                stock: p.stock !== undefined ? p.stock : 25,
+                rating: parseFloat(p.rating) || 5.0,
+                in_stock: (p.stock || 0) > 0
+              }
+            };
+          }).filter(Boolean);
+
+          return res.json({
+            success: true,
+            data: items,
+            count: items.length
+          });
+        }
+      } catch (sbErr) {
+        console.warn('[wishlistController] Supabase getWishlist fallback:', sbErr.message);
+      }
+    }
+
     const wishlistItems = db.filter('wishlists', w => w.user_id === userId);
 
     const items = wishlistItems.map(w => {

@@ -1692,8 +1692,9 @@ const renderProductCard = (p) => {
   const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
   const isWish = Array.isArray(wishlist) && (wishlist.includes(p.id) || (p.legacy_id && wishlist.includes(p.legacy_id)) || (p.slug && wishlist.includes(p.slug)));
   const rawImg = p.image || p.primary_image || (p.images && p.images[0]) || '';
-  const imgSrc = window.getProductImageUrl ? window.getProductImageUrl(rawImg) : (rawImg || '/assets/images/krishna-logo.jpg');
+  const imgSrc = window.getProductImageUrl ? window.getProductImageUrl(rawImg, { width: 360, quality: 80, format: 'webp' }) : (rawImg || '/assets/images/krishna-logo.jpg');
   const prodTitle = p.name || p.title || 'Sacred Devotional Item';
+  const prodLink = `/product-details.html?id=${encodeURIComponent(p.slug || p.id)}`;
 
   return `
     <div class="col-6 col-md-4 col-lg-2">
@@ -1703,16 +1704,17 @@ const renderProductCard = (p) => {
           <i class="bi ${isWish ? 'bi-heart-fill text-danger' : 'bi-heart'}"></i>
         </button>
 
-        <a href="/product-details.html?id=${p.id}" class="hn-card-img-box">
-          <img src="${imgSrc}" data-original-src="${rawImg}" alt="${prodTitle}" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawImg}');}else{this.onerror=null;this.src='/assets/images/krishna-logo.jpg';}" loading="lazy">
+        <a href="${prodLink}" class="hn-card-img-box">
+          <img src="${imgSrc}" data-original-src="${rawImg}" alt="${prodTitle}" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawImg}');}else{this.onerror=null;this.src='/assets/images/krishna-logo.jpg';}" loading="lazy" decoding="async">
         </a>
 
         <div class="hn-card-title">
-          <a href="/product-details.html?id=${p.id}">${prodTitle}</a>
+          <a href="${prodLink}">${prodTitle}</a>
         </div>
 
         <div class="hn-card-price">
           ${formatPrice(p.price)}
+          ${p.compare_price && p.compare_price > p.price ? `<span class="text-muted text-decoration-line-through small ms-1">${formatPrice(p.compare_price)}</span>` : ''}
         </div>
 
         ${renderRatingStars(p.rating, p.reviews_count)}

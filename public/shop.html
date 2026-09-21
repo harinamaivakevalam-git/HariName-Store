@@ -125,7 +125,12 @@
         <!-- Right Product Grid -->
         <div class="col-lg-9">
           <div class="row g-3" id="hn-shop-grid">
-            <!-- Dynamically populated from HARINAMA_DATA -->
+            <!-- Dynamically populated from API / Database -->
+          </div>
+
+          <!-- Pagination Controls -->
+          <div class="d-flex justify-content-center align-items-center gap-2 mt-4 pt-2" id="hn-shop-pagination">
+            <!-- Dynamically populated -->
           </div>
         </div>
 
@@ -139,11 +144,16 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/assets/js/product-image-service.js"></script>
-  <script src="/assets/js/data.js?v=5"></script>
-  <script src="/assets/js/components.js?v=5"></script>
+  <script src="/assets/js/product-image-service.js?v=6"></script>
+  <script src="/assets/js/data.js?v=6"></script>
+  <script src="/assets/js/components.js?v=6"></script>
   <script>
     let activeCollection = 'all';
+    let currentPage = 1;
+    const limitPerPage = 12;
+    let totalPages = 1;
+    let totalProducts = 0;
+    let isLoadingShop = false;
 
     function renderShopProducts(items) {
       const grid = document.getElementById('hn-shop-grid');
@@ -158,7 +168,8 @@
       grid.innerHTML = items.map(p => {
         const isWish = wishlist.includes(p.id) || (p.legacy_id && wishlist.includes(p.legacy_id)) || (p.slug && wishlist.includes(p.slug));
         const rawImg = p.image || p.primary_image || (p.images && p.images[0]) || '';
-        const imgSrc = window.getProductImageUrl ? window.getProductImageUrl(rawImg) : (rawImg || '/assets/images/krishna-logo.jpg');
+        const imgSrc = window.getProductImageUrl ? window.getProductImageUrl(rawImg, { width: 360, quality: 80, format: 'webp' }) : (rawImg || '/assets/images/krishna-logo.jpg');
+        const prodLink = `/product-details.html?id=${encodeURIComponent(p.slug || p.id)}`;
         return `
           <div class="col-6 col-md-4 col-lg-3">
             <div class="hn-product-card" data-product-id="${p.id}" data-legacy-id="${p.legacy_id || ''}">
@@ -167,16 +178,17 @@
                 <i class="bi ${isWish ? 'bi-heart-fill text-danger' : 'bi-heart'}"></i>
               </button>
 
-              <a href="/product-details.html?id=${p.id}" class="hn-card-img-box">
-                <img src="${imgSrc}" data-original-src="${rawImg}" alt="${p.name || p.title || 'Sacred Item'}" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawImg}');}else{this.onerror=null;this.src='/assets/images/krishna-logo.jpg';}" loading="lazy">
+              <a href="${prodLink}" class="hn-card-img-box">
+                <img src="${imgSrc}" data-original-src="${rawImg}" alt="${p.name || p.title || 'Sacred Item'}" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawImg}');}else{this.onerror=null;this.src='/assets/images/krishna-logo.jpg';}" loading="lazy" decoding="async">
               </a>
 
               <div class="hn-card-title">
-                <a href="/product-details.html?id=${p.id}">${p.name || p.title}</a>
+                <a href="${prodLink}">${p.name || p.title}</a>
               </div>
 
               <div class="hn-card-price">
                 ${formatPrice(p.price)}
+                ${p.compare_price && p.compare_price > p.price ? `<span class="text-muted text-decoration-line-through small ms-1">${formatPrice(p.compare_price)}</span>` : ''}
               </div>
 
               ${renderRatingStars(p.rating, p.reviews_count)}
@@ -193,11 +205,52 @@
       }).join('');
     }
 
+    function renderPaginationControls() {
+      const container = document.getElementById('hn-shop-pagination');
+      if (!container) return;
+      if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+
+      let html = '';
+      // Prev button
+      html += `<button class="btn btn-sm ${currentPage === 1 ? 'btn-light disabled' : 'btn-outline-dark'}" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}><i class="bi bi-chevron-left me-1"></i> Prev</button>`;
+
+      // Page numbers (smart window)
+      let startP = Math.max(1, currentPage - 2);
+      let endP = Math.min(totalPages, currentPage + 2);
+      if (startP > 1) {
+        html += `<button class="btn btn-sm btn-outline-dark" onclick="goToPage(1)">1</button>`;
+        if (startP > 2) html += `<span class="px-1 text-muted">...</span>`;
+      }
+      for (let i = startP; i <= endP; i++) {
+        html += `<button class="btn btn-sm ${i === currentPage ? 'btn-dark active fw-bold' : 'btn-outline-dark'}" onclick="goToPage(${i})">${i}</button>`;
+      }
+      if (endP < totalPages) {
+        if (endP < totalPages - 1) html += `<span class="px-1 text-muted">...</span>`;
+        html += `<button class="btn btn-sm btn-outline-dark" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+      }
+
+      // Next button
+      html += `<button class="btn btn-sm ${currentPage === totalPages ? 'btn-light disabled' : 'btn-outline-dark'}" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next <i class="bi bi-chevron-right ms-1"></i></button>`;
+
+      container.innerHTML = html;
+    }
+
+    function goToPage(page) {
+      if (page < 1 || page > totalPages || page === currentPage) return;
+      currentPage = page;
+      applyFilters(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     function filterByCollection(col, el) {
       activeCollection = col;
+      currentPage = 1;
       document.querySelectorAll('.hn-filter-link').forEach(a => a.classList.remove('active'));
       if (el) el.classList.add('active');
-      applyFilters();
+      applyFilters(true);
     }
 
     function clearShopSearch() {
@@ -206,7 +259,8 @@
         input.value = '';
         input.focus();
       }
-      applyFilters();
+      currentPage = 1;
+      applyFilters(true);
     }
 
     function renderShopCategories() {
@@ -228,31 +282,78 @@
       catListEl.innerHTML = markup;
     }
 
-    function applyFilters() {
+    async function applyFilters(resetPage = false) {
+      if (resetPage) currentPage = 1;
       renderShopCategories();
-      let filtered = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.products)) ? [...HARINAMA_DATA.products] : [];
 
-      // Search query filter
       const searchInput = document.getElementById('hn-shop-search');
-      const searchQuery = (searchInput ? searchInput.value : '').toLowerCase().trim();
+      const searchQuery = (searchInput ? searchInput.value : '').trim();
       const clearBtn = document.getElementById('hn-shop-search-clear');
       if (clearBtn) {
         if (searchQuery) clearBtn.classList.remove('d-none');
         else clearBtn.classList.add('d-none');
       }
 
+      const sortVal = document.getElementById('hn-sort-select') ? document.getElementById('hn-sort-select').value : 'featured';
+      let sortParam = 'featured';
+      if (sortVal === 'price-low') sortParam = 'price-asc';
+      else if (sortVal === 'price-high') sortParam = 'price-desc';
+      else if (sortVal === 'rating') sortParam = 'rating';
+
+      // 1. Fetch paginated from live backend API
+      try {
+        const queryParams = new URLSearchParams({
+          page: String(currentPage),
+          limit: String(limitPerPage),
+          sort: sortParam
+        });
+
+        if (activeCollection && activeCollection !== 'all') {
+          queryParams.set('category', activeCollection);
+        }
+        if (searchQuery) {
+          queryParams.set('search', searchQuery);
+        }
+
+        const checkedPrices = Array.from(document.querySelectorAll('.filter-price:checked')).map(cb => cb.value);
+        if (checkedPrices.length === 1) {
+          if (checkedPrices[0] === 'under-150') queryParams.set('max_price', '150');
+          else if (checkedPrices[0] === '150-300') { queryParams.set('min_price', '150'); queryParams.set('max_price', '300'); }
+          else if (checkedPrices[0] === '300-600') queryParams.set('min_price', '300');
+        }
+
+        const res = await fetch(`/api/products?${queryParams.toString()}`, {
+          cache: 'no-store',
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            totalProducts = json.total || json.data.length;
+            totalPages = json.totalPages || Math.ceil(totalProducts / limitPerPage) || 1;
+            renderShopProducts(json.data);
+            renderPaginationControls();
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('[shop.html] Live API query fallback:', err);
+      }
+
+      // 2. Local memory fallback if server was temporarily offline
+      let filtered = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.products)) ? [...HARINAMA_DATA.products] : [];
       if (searchQuery) {
+        const q = searchQuery.toLowerCase();
         filtered = filtered.filter(p => {
           const name = (p.name || '').toLowerCase();
           const title = (p.title || '').toLowerCase();
           const desc = (p.description || '').toLowerCase();
           const cat = (p.category || '').toLowerCase();
-          const mat = (p.material || '').toLowerCase();
-          return name.includes(searchQuery) || title.includes(searchQuery) || desc.includes(searchQuery) || cat.includes(searchQuery) || mat.includes(searchQuery);
+          return name.includes(q) || title.includes(q) || desc.includes(q) || cat.includes(q);
         });
       }
 
-      // Collection filter
       if (activeCollection && activeCollection !== 'all') {
         const colLower = activeCollection.toLowerCase().trim();
         filtered = filtered.filter(p => {
@@ -260,49 +361,16 @@
           if (p.category_id === activeCollection) return true;
           if (p.category_slug && p.category_slug.toLowerCase() === colLower) return true;
           if (p.category && p.category.toLowerCase() === colLower) return true;
-          // Keyword matching for collections
-          const catStr = (p.category || '').toLowerCase();
-          const nameStr = (p.name || p.title || '').toLowerCase();
-          const slugStr = (p.slug || '').toLowerCase();
-          if (colLower.includes('keychain') && (catStr.includes('keychain') || nameStr.includes('keychain') || slugStr.includes('keychain'))) return true;
-          if ((colLower.includes('mala') || colLower.includes('japa')) && (catStr.includes('mala') || catStr.includes('japa') || nameStr.includes('mala') || nameStr.includes('japa'))) return true;
-          if ((colLower.includes('book') || colLower.includes('gita')) && (catStr.includes('book') || catStr.includes('gita') || nameStr.includes('book') || nameStr.includes('gita'))) return true;
-          if ((colLower.includes('statue') || colLower.includes('deity')) && (catStr.includes('statue') || catStr.includes('deity') || nameStr.includes('statue') || nameStr.includes('deity'))) return true;
-          if (colLower.includes('bag') && (catStr.includes('bag') || nameStr.includes('bag') || slugStr.includes('bag'))) return true;
-          if (colLower.includes('gift') && (catStr.includes('gift') || nameStr.includes('gift') || slugStr.includes('gift') || nameStr.includes('peacock'))) return true;
           return false;
         });
       }
 
-      // Price filters
-      const checkedPrices = Array.from(document.querySelectorAll('.filter-price:checked')).map(cb => cb.value);
-      if (checkedPrices.length > 0) {
-        filtered = filtered.filter(p => {
-          return checkedPrices.some(range => {
-            if (range === 'under-150') return p.price < 150;
-            if (range === '150-300') return p.price >= 150 && p.price <= 300;
-            if (range === '300-600') return p.price > 300 && p.price <= 600;
-            return false;
-          });
-        });
-      }
-
-      // Material filters
-      const checkedMaterials = Array.from(document.querySelectorAll('.filter-material:checked')).map(cb => cb.value);
-      if (checkedMaterials.length > 0) {
-        filtered = filtered.filter(p => {
-          if (!p.material) return false;
-          return checkedMaterials.some(m => p.material.toLowerCase().includes(m.toLowerCase()));
-        });
-      }
-
-      // Sort
-      const sortVal = document.getElementById('hn-sort-select').value;
-      if (sortVal === 'price-low') filtered.sort((a, b) => a.price - b.price);
-      else if (sortVal === 'price-high') filtered.sort((a, b) => b.price - a.price);
-      else if (sortVal === 'rating') filtered.sort((a, b) => b.rating - a.rating);
-
-      renderShopProducts(filtered);
+      totalProducts = filtered.length;
+      totalPages = Math.ceil(totalProducts / limitPerPage) || 1;
+      const startIdx = (currentPage - 1) * limitPerPage;
+      const pagedItems = filtered.slice(startIdx, startIdx + limitPerPage);
+      renderShopProducts(pagedItems);
+      renderPaginationControls();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -323,13 +391,16 @@
       }
 
       renderShopCategories();
-      applyFilters();
+      applyFilters(true);
 
       window.addEventListener('hn:catalog-loaded', () => {
         renderShopCategories();
-        applyFilters();
+        applyFilters(false);
       });
-      window.addEventListener('hn_wishlist_updated', () => applyFilters());
+      window.addEventListener('hn:catalog-changed', () => {
+        applyFilters(false);
+      });
+      window.addEventListener('hn_wishlist_updated', () => applyFilters(false));
     });
   </script>
 </body>

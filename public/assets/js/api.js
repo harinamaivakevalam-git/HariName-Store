@@ -49,9 +49,28 @@ class ApiClient {
     return sid;
   }
 
+  // Protected Authentication Storage Keys (Never wiped by application cache refresh)
+  static AUTH_KEYS = [
+    'hn_auth_token',
+    'token',
+    'hn_user_profile',
+    'hn_user',
+    'user',
+    'hn_guest_session',
+    'supabase.auth.token'
+  ];
+
+  static isAuthKey(key) {
+    if (!key) return false;
+    return ApiClient.AUTH_KEYS.includes(key) || key.startsWith('sb-') || key.includes('auth-token');
+  }
+
   clearAuth() {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userKey);
+    localStorage.removeItem('token');
+    localStorage.removeItem('hn_user');
+    localStorage.removeItem('user');
   }
 
   async request(endpoint, options = {}) {
@@ -75,6 +94,7 @@ class ApiClient {
 
     try {
       const response = await fetch(url, {
+        cache: options.cache || 'no-store',
         ...options,
         headers
       });

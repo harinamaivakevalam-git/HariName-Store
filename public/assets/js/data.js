@@ -144,9 +144,19 @@ function computeCategoryCounts(productsList = [], dbCategories = null) {
   });
 }
 
-// Universal Immediate Purge for legacy dummy test data
-(function purgeLegacyDummyStorage() {
+// Universal Safe Application Storage Purge (Leaves All Authentication Tokens Untouched)
+(function purgeObsoleteCatalogStorage() {
   try {
+    const obsoleteKeys = [
+      'hn_live_products',
+      'harinama_admin_products',
+      'hn_admin_categories',
+      'hn_live_categories'
+    ];
+    obsoleteKeys.forEach(k => {
+      try { localStorage.removeItem(k); } catch (_) {}
+    });
+
     const dummyIds = ['HN-2026-98124', 'HN-2026-88219', 'HN-2026-77312', 'HN-2026-66415', 'HN-2026-55102', 'HN-2026-44298'];
     ['harinama_admin_orders', 'hn_orders', 'hn_admin_orders', 'hn_recent_orders'].forEach(key => {
       const stored = localStorage.getItem(key);
@@ -163,57 +173,12 @@ function computeCategoryCounts(productsList = [], dbCategories = null) {
         }
       }
     });
-
-    // Clean mock products from storage
-    const prodKey = 'hn_live_products';
-    const storedProds = localStorage.getItem(prodKey);
-    if (storedProds) {
-      try {
-        const parsedP = JSON.parse(storedProds);
-        if (Array.isArray(parsedP)) {
-          const validP = parsedP.filter(p => p && p.id && !p.id.startsWith('prod-'));
-          if (validP.length > 0) localStorage.setItem(prodKey, JSON.stringify(validP));
-          else localStorage.removeItem(prodKey);
-        }
-      } catch (_) {
-        localStorage.removeItem(prodKey);
-      }
-    }
   } catch (_) {}
 })();
 
-// Get initial cached products & categories
-function getInitialProducts() {
-  try {
-    const saved = localStorage.getItem('hn_live_products');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const valid = parsed.filter(p => p && p.id && !p.id.startsWith('prod-'));
-        if (valid.length > 0) return valid;
-      }
-    }
-  } catch (e) {}
-  return [...HARINAMA_AUTHENTIC_PRODUCTS];
-}
-
-function getInitialCategories() {
-  try {
-    const saved = localStorage.getItem('hn_admin_categories') || localStorage.getItem('hn_live_categories');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch (e) {}
-  return [...HARINAMA_BASE_AUTHENTIC_COLLECTIONS];
-}
-
-const initialProducts = getInitialProducts();
-const initialCategories = getInitialCategories();
-
 const HARINAMA_DATA = {
-  products: initialProducts,
-  categories: computeCategoryCounts(initialProducts, initialCategories),
+  products: [...HARINAMA_AUTHENTIC_PRODUCTS],
+  categories: computeCategoryCounts(HARINAMA_AUTHENTIC_PRODUCTS, HARINAMA_BASE_AUTHENTIC_COLLECTIONS),
   isLoaded: false
 };
 
@@ -235,6 +200,88 @@ HARINAMA_DATA.getProductBySlug = function(slug) {
   if (!slug) return null;
   const cleanSlug = String(slug).trim().toLowerCase();
   return HARINAMA_DATA.products.find(p => String(p.slug).toLowerCase() === cleanSlug) || null;
+};
+
+// Async Fresh Product Fetcher (Guarantees fresh database state for single product views)
+HARINAMA_DATA.fetchProductBySlug = async function(slugOrId) {
+  if (!slugOrId) return null;
+  const clean = String(slugOrId).trim();
+
+  function getBackendUrl(path) {
+    if (typeof window !== 'undefined') {
+      if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
+      const { hostname, port } = window.location;
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        if (port === '5000') return path;
+        return 'http://localhost:5000' + path;
+      }
+      return path;
+    }
+    return 'http://localhost:5000' + path;
+  }
+
+  // 1. Try Backend Express API with cache: 'no-store'
+  try {
+    const res = await fetch(getBackendUrl(`/api/products/${encodeURIComponent(clean)}`), {
+      cache: 'no-store',
+      headers: { 'Accept': 'application/json' }
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && json.data) {
+        return json.data;
+      }
+    }
+  } catch (e) {
+    console.warn('[data.js] fetchProductBySlug backend notice:', e);
+  }
+
+  // 2. Direct Supabase Fallback
+  try {
+    const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+    const sb = window.supabaseClient || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null);
+    if (sb) {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean);
+      let query = sb.from('products').select('*, product_images(*), categories(id, name, slug)').neq('status', 'archived').neq('status', 'deleted');
+      if (isUuid) query = query.or(`id.eq.${clean},slug.eq.${clean}`);
+      else query = query.eq('slug', clean);
+      const { data, error } = await query.maybeSingle();
+      if (!error && data) {
+        const rawImgs = (data.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+        const imgs = rawImgs.map(img => resolveSafeAssetUrl(img.image_url || img.url)).filter(Boolean);
+        const primaryImg = imgs[0] || resolveSafeAssetUrl(data.image_url || data.image || '');
+        return {
+          id: data.id,
+          sku: data.sku || `HN-${data.id.slice(0, 6)}`,
+          name: data.name || data.title,
+          title: data.title || data.name,
+          slug: data.slug,
+          category: data.categories?.name || data.category || 'General',
+          category_id: data.category_id || null,
+          category_slug: data.categories?.slug || '',
+          material: data.material || (data.specifications && data.specifications.material) || 'Standard',
+          price: parseFloat(data.price) || 0,
+          old_price: data.compare_price ? parseFloat(data.compare_price) : null,
+          compare_price: data.compare_price ? parseFloat(data.compare_price) : null,
+          stock: data.stock !== undefined ? data.stock : 25,
+          rating: parseFloat(data.rating) || 5.0,
+          reviews_count: data.reviews_count || 0,
+          image: primaryImg,
+          primary_image: primaryImg,
+          images: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
+          gallery: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
+          description: data.description || '',
+          featured: Boolean(data.featured),
+          trending: Boolean(data.trending)
+        };
+      }
+    }
+  } catch (sbErr) {
+    console.warn('[data.js] fetchProductBySlug Supabase notice:', sbErr);
+  }
+
+  return HARINAMA_DATA.getProductBySlug(clean) || HARINAMA_DATA.getProductById(clean);
 };
 
 // Dynamic Sync with Live Database (Backend Express API & Direct Supabase Fallback)
@@ -273,20 +320,24 @@ HARINAMA_DATA.syncWithApi = async function(forceRefresh = false) {
     return '/assets/images/cat_keychains.jpg';
   };
 
-  // Fast fetch helper with timeout to avoid browser hangs
-  function fetchWithTimeout(url, options = {}, timeoutMs = 2500) {
-    if (typeof AbortController === 'undefined') return fetch(url, options);
+  // Safe fetch helper with timeout and cache: 'no-store'
+  function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+    const fetchOptions = {
+      cache: 'no-store',
+      ...options
+    };
+    if (typeof AbortController === 'undefined') return fetch(url, fetchOptions);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
-    return fetch(url, { ...options, signal: controller.signal })
+    return fetch(url, { ...fetchOptions, signal: controller.signal })
       .finally(() => clearTimeout(timer));
   }
 
   // 1. LIVE BACKEND EXPRESS API (Primary Live Database Source)
   try {
     const [prodRes, catRes] = await Promise.allSettled([
-      fetchWithTimeout(getBackendUrl('/api/products?limit=200'), {}, 2500).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetchWithTimeout(getBackendUrl('/api/categories'), {}, 2500).then(r => r.ok ? r.json() : null).catch(() => null)
+      fetchWithTimeout(getBackendUrl('/api/products?limit=100'), {}, 8000).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetchWithTimeout(getBackendUrl('/api/categories'), {}, 8000).then(r => r.ok ? r.json() : null).catch(() => null)
     ]);
 
     if (catRes.status === 'fulfilled' && catRes.value && catRes.value.success && Array.isArray(catRes.value.data) && catRes.value.data.length > 0) {
@@ -346,7 +397,7 @@ HARINAMA_DATA.syncWithApi = async function(forceRefresh = false) {
         const catRes = await fetchWithTimeout(
           SUPABASE_URL + '/rest/v1/categories?status=neq.archived&order=name',
           { headers: sbHeaders },
-          2500
+          8000
         ).then(r => r.ok ? r.json() : null).catch(() => null);
 
         if (Array.isArray(catRes) && catRes.length > 0) {
@@ -365,9 +416,9 @@ HARINAMA_DATA.syncWithApi = async function(forceRefresh = false) {
 
       if (!productsLoaded) {
         const prodRes = await fetchWithTimeout(
-          SUPABASE_URL + '/rest/v1/products?status=eq.active&order=created_at.desc&select=*,product_images(*),categories(id,name,slug)',
+          SUPABASE_URL + '/rest/v1/products?status=eq.active&order=created_at.desc&select=*,product_images(*),categories(id,name,slug)&limit=100',
           { headers: sbHeaders },
-          2500
+          8000
         ).then(r => r.ok ? r.json() : null).catch(() => null);
 
         if (Array.isArray(prodRes) && prodRes.length > 0) {
@@ -412,32 +463,31 @@ HARINAMA_DATA.syncWithApi = async function(forceRefresh = false) {
     }
   }
 
-  // 3. Keep existing products if network was completely offline
+  // 3. Fallback only if network was completely offline
   if (!productsLoaded || fetchedProducts.length === 0) {
-    fetchedProducts = (HARINAMA_DATA.products && HARINAMA_DATA.products.length > 0) ? HARINAMA_DATA.products : [...HARINAMA_AUTHENTIC_PRODUCTS];
+    if (forceRefresh || !HARINAMA_DATA.isLoaded) {
+      fetchedProducts = (HARINAMA_DATA.products && HARINAMA_DATA.products.length > 0) ? HARINAMA_DATA.products : [...HARINAMA_AUTHENTIC_PRODUCTS];
+    } else {
+      fetchedProducts = HARINAMA_DATA.products;
+    }
   }
 
   if (!categoriesLoaded || fetchedCategories.length === 0) {
     fetchedCategories = (HARINAMA_DATA.categories && HARINAMA_DATA.categories.length > 0) ? HARINAMA_DATA.categories : [...HARINAMA_BASE_AUTHENTIC_COLLECTIONS];
   }
 
-  // Apply to global state
+  // Apply to in-memory global state (NOT to localStorage)
   HARINAMA_DATA.products = fetchedProducts;
   HARINAMA_DATA.categories = computeCategoryCounts(fetchedProducts, fetchedCategories);
   HARINAMA_DATA.isLoaded = true;
 
-  // Persist live products & categories to cache for instant sub-millisecond next load
+  // Dispatch events to all active pages
   if (typeof window !== 'undefined') {
     try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('hn_live_products', JSON.stringify(HARINAMA_DATA.products));
-        localStorage.setItem('hn_live_categories', JSON.stringify(HARINAMA_DATA.categories));
-      }
-    } catch (e) {}
-
-    // Notify all storefront listeners in real time
-    try {
       window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
+        detail: { products: HARINAMA_DATA.products, categories: HARINAMA_DATA.categories }
+      }));
+      window.dispatchEvent(new CustomEvent('hn:catalog-changed', {
         detail: { products: HARINAMA_DATA.products, categories: HARINAMA_DATA.categories }
       }));
     } catch (_) {}
@@ -455,7 +505,7 @@ HARINAMA_DATA.refreshCatalog = async function() {
   }
 };
 
-// Safe Cache Clear: Clears ONLY the product/category cache without logging the devotee out
+// Safe Cache Clear: Clears ONLY application temporary data without logging the devotee out
 HARINAMA_DATA.clearStorefrontCatalogCache = function() {
   try {
     localStorage.removeItem('hn_live_products');
@@ -623,39 +673,97 @@ HARINAMA_DATA.validateCoupon = async function(rawCode, subtotal = 0) {
   return { valid: false, message: 'Invalid or expired coupon code.' };
 };
 
-// Listen for storage events from Admin Portal across tabs
+// Real-time Singleton Supabase Channel Subscription
+let _supabaseRealtimeChannel = null;
+let _realtimeDebounceTimer = null;
+
+function setupSupabaseRealtimeSync() {
+  if (typeof window === 'undefined') return;
+  if (_supabaseRealtimeChannel) return; // Singleton protection
+
+  const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+
+  const sb = window.supabaseClient || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null);
+  if (!sb || typeof sb.channel !== 'function') return;
+
+  try {
+    _supabaseRealtimeChannel = sb.channel('hn-catalog-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
+        clearTimeout(_realtimeDebounceTimer);
+        _realtimeDebounceTimer = setTimeout(() => {
+          HARINAMA_DATA.syncWithApi(true);
+        }, 300);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, (payload) => {
+        clearTimeout(_realtimeDebounceTimer);
+        _realtimeDebounceTimer = setTimeout(() => {
+          HARINAMA_DATA.syncWithApi(true);
+        }, 300);
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          // Connected cleanly
+        }
+      });
+
+    // Cleanup on window unload to prevent memory leaks
+    window.addEventListener('beforeunload', () => {
+      if (_supabaseRealtimeChannel && sb) {
+        try { sb.removeChannel(_supabaseRealtimeChannel); } catch (_) {}
+        _supabaseRealtimeChannel = null;
+      }
+    });
+  } catch (err) {
+    console.warn('[data.js] Supabase Realtime notice:', err);
+  }
+}
+
+// Cross-tab Synchronization (Admin CRUD to Storefront in Real Time)
 if (typeof window !== 'undefined') {
+  // 1. BroadcastChannel API
+  if (typeof BroadcastChannel !== 'undefined') {
+    try {
+      const bc = new BroadcastChannel('hn_catalog_channel');
+      bc.onmessage = (event) => {
+        if (event.data && (event.data.type === 'CATALOG_INVALIDATED' || event.data.type === 'PRODUCT_UPDATED')) {
+          HARINAMA_DATA.syncWithApi(true);
+        }
+      };
+      window._hn_catalog_broadcast = bc;
+    } catch (_) {}
+  }
+
+  // 2. Storage event fallback for cross-tab sync
   window.addEventListener('storage', (e) => {
-    if (e.key === 'hn_live_products' || e.key === 'harinama_admin_products' || e.key === 'hn_admin_categories' || e.key === 'hn_live_categories') {
-      try {
-        let products = HARINAMA_DATA.products;
-        let categories = HARINAMA_DATA.categories;
-        if (e.key === 'hn_live_products' || e.key === 'harinama_admin_products') {
-          const updated = JSON.parse(e.newValue);
-          if (Array.isArray(updated) && updated.length > 0) products = updated;
-        }
-        if (e.key === 'hn_admin_categories' || e.key === 'hn_live_categories') {
-          const updatedCats = JSON.parse(e.newValue);
-          if (Array.isArray(updatedCats) && updatedCats.length > 0) categories = updatedCats;
-        }
-        HARINAMA_DATA.products = products;
-        HARINAMA_DATA.categories = computeCategoryCounts(products, categories);
-        window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
-          detail: { products: HARINAMA_DATA.products, categories: HARINAMA_DATA.categories }
-        }));
-      } catch (_) {}
+    if (e.key === 'hn_catalog_sync_timestamp' || e.key === 'hn_catalog_invalidated') {
+      HARINAMA_DATA.syncWithApi(true);
     }
   });
 }
 
-// Auto-trigger sync on load
+// Global broadcast trigger for Admin portal actions
+HARINAMA_DATA.broadcastCatalogChange = function() {
+  if (typeof window === 'undefined') return;
+  try {
+    if (window._hn_catalog_broadcast) {
+      window._hn_catalog_broadcast.postMessage({ type: 'CATALOG_INVALIDATED', timestamp: Date.now() });
+    }
+    localStorage.setItem('hn_catalog_sync_timestamp', String(Date.now()));
+  } catch (_) {}
+  HARINAMA_DATA.syncWithApi(true);
+};
+
+// Auto-trigger sync and Realtime listener on load
 if (typeof document !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      HARINAMA_DATA.syncWithApi();
-    });
-  } else {
+  const onReady = () => {
     HARINAMA_DATA.syncWithApi();
+    setTimeout(setupSupabaseRealtimeSync, 1000);
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', onReady);
+  } else {
+    onReady();
   }
 }
 

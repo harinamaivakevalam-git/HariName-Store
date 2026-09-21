@@ -460,7 +460,7 @@
 
         // On local development, if Supabase OAuth redirect is restricted by whitelist:
         if (isLocal) {
-          const emailInput = prompt('Google Sign-In (Local Development Mode):\nEnter your Google email address to continue:', 'katturojuanilkumar@gmail.com');
+          const emailInput = prompt('Google Sign-In (Local Development Mode):\nEnter your Google email address to continue:');
           if (emailInput && emailInput.trim()) {
             const cleanEmail = emailInput.trim().toLowerCase();
             const cleanName = cleanEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());

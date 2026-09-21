@@ -74,63 +74,10 @@
   const _getAuthScope = () => atob('aGFyaW5hbWFpdmFrZXZhbGFtQGdtYWlsLmNvbQ==');
   const _getAdminRoute = () => atob('L2FkbWluLmh0bWw=');
 
-  // Automatic Local Development Login (Active ONLY on localhost/127.0.0.1, never in deployed/production)
-  const isLocalHostEnvironment = () => {
-    if (typeof window === 'undefined' || !window.location) return false;
-    const h = window.location.hostname;
-    return h === 'localhost' || h === '127.0.0.1' || h === '::1' || h.startsWith('192.168.') || h.endsWith('.local');
-  };
-
-  const autoInitLocalDevAuth = () => {
-    if (!isLocalHostEnvironment()) return;
-    try {
-      const existingToken = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-      const existingProfile = localStorage.getItem('hn_user_profile') || localStorage.getItem('hn_user');
-      if (!existingToken || !existingProfile) {
-        const localDevUser = {
-          id: 'a2222222-2222-4222-8222-222222222222',
-          name: 'Anil Kumar',
-          email: 'katturojuanilkumar@gmail.com',
-          role: 'admin',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'
-        };
-        localStorage.setItem('hn_user_profile', JSON.stringify(localDevUser));
-        localStorage.setItem('hn_user', JSON.stringify(localDevUser));
-        localStorage.setItem('user', JSON.stringify(localDevUser));
-        localStorage.setItem('hn_auth_token', 'local_dev_token');
-        localStorage.setItem('token', 'local_dev_token');
-
-        // Fetch official JWT from backend so protected APIs succeed seamlessly
-        fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: 'katturojuanilkumar@gmail.com', password: 'admin123' })
-        }).then(r => r.json()).then(data => {
-          if (data && data.token) {
-            localStorage.setItem('hn_auth_token', data.token);
-            localStorage.setItem('token', data.token);
-            if (data.user) {
-              localStorage.setItem('hn_user_profile', JSON.stringify(data.user));
-              localStorage.setItem('hn_user', JSON.stringify(data.user));
-            }
-          }
-        }).catch(() => {});
-      }
-    } catch (_) {}
-  };
-
-  // Run immediately for local environment
-  autoInitLocalDevAuth();
-
   const getLoggedInUser = () => {
     try {
       const raw = localStorage.getItem('hn_user_profile') || localStorage.getItem('hn_user') || localStorage.getItem('user');
       if (!raw || raw === 'undefined' || raw === 'null') {
-        if (isLocalHostEnvironment()) {
-          autoInitLocalDevAuth();
-          const retry = localStorage.getItem('hn_user_profile');
-          if (retry) return JSON.parse(retry);
-        }
         return null;
       }
       const parsed = JSON.parse(raw);
@@ -149,18 +96,10 @@
   const isUserLoggedIn = () => {
     const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
     if (!token || token === 'undefined' || token === 'null' || token === '') {
-      if (isLocalHostEnvironment()) {
-        autoInitLocalDevAuth();
-        return true;
-      }
       return false;
     }
     const user = getLoggedInUser();
     if (!user) {
-      if (isLocalHostEnvironment()) {
-        autoInitLocalDevAuth();
-        return true;
-      }
       return false;
     }
     return true;
@@ -1561,7 +1500,6 @@
       
       // On mobile devices, keep header stable and avoid class thrashing / resize jitter
       if (!isDesktop) {
-        header.classList.remove('footer-reached');
         _headerScrollTicking = false;
         return;
       }

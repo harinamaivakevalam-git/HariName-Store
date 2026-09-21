@@ -4176,10 +4176,10 @@ img, video, iframe, object {
     overflow: visible !important;
     -webkit-backface-visibility: hidden !important;
     backface-visibility: hidden !important;
-    transform: none !important;
-    -webkit-transform: none !important;
-    will-change: auto !important;
-    transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease !important;
+    transform: translate3d(0, 0, 0) !important;
+    -webkit-transform: translate3d(0, 0, 0) !important;
+    will-change: transform !important;
+    transition: none !important;
   }
 
   /* Scrolled State: Stable identical geometry with deep soft shadow */
@@ -4201,9 +4201,27 @@ img, video, iframe, object {
       0 14px 34px -4px rgba(28, 20, 10, 0.16),
       0 5px 12px -2px rgba(28, 20, 10, 0.08),
       0 0 0 1px rgba(255, 255, 255, 0.9) inset !important;
-    transform: none !important;
-    -webkit-transform: none !important;
-    will-change: auto !important;
+    transform: translate3d(0, 0, 0) !important;
+    -webkit-transform: translate3d(0, 0, 0) !important;
+    will-change: transform !important;
+    transition: none !important;
+  }
+
+  .hn-header,
+  .hn-header.scrolled,
+  .hn-header .container,
+  .hn-header.scrolled .container,
+  .hn-header .hn-brand-logo-wrap,
+  .hn-header.scrolled .hn-brand-logo-wrap,
+  .hn-header .hn-brand-title,
+  .hn-header.scrolled .hn-brand-title,
+  .hn-header .hn-brand-tagline,
+  .hn-header.scrolled .hn-brand-tagline,
+  .hn-header .hn-icon-btn,
+  .hn-header.scrolled .hn-icon-btn,
+  .hn-header .hn-header-account-btn,
+  .hn-header.scrolled .hn-header-account-btn {
+    transition: none !important;
   }
 
   .hn-header .container,

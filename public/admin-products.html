@@ -4,27 +4,14 @@
   <script>
     (function(){
       try {
-        var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         var raw = localStorage.getItem('hn_user_profile') || localStorage.getItem('hn_user') || localStorage.getItem('user');
         var u = raw ? JSON.parse(raw) : null;
         var allowedAdmins = ['katturojuanilkumar@gmail.com', 'harinamaivakevalam@gmail.com', 'admin@harinama.com'];
         var userEmail = u && u.email ? String(u.email).toLowerCase().trim() : '';
         if (!u || !userEmail || (u.role !== 'admin' && !allowedAdmins.includes(userEmail))) {
-          if (isLocal) {
-            var localAdmin = {
-              email: 'katturojuanilkumar@gmail.com',
-              name: 'Anilkumar katturoju',
-              role: 'admin'
-            };
-            localStorage.setItem('hn_user_profile', JSON.stringify(localAdmin));
-            localStorage.setItem('hn_user', JSON.stringify(localAdmin));
-            localStorage.setItem('hn_auth_token', 'admin-portal-session');
-            return;
-          }
           window.location.replace('/login.html?redirect=' + encodeURIComponent(window.location.pathname));
         }
       } catch(e) {
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') return;
         window.location.replace('/login.html?redirect=' + encodeURIComponent(window.location.pathname));
       }
     })();

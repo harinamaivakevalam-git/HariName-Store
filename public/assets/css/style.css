@@ -4187,11 +4187,6 @@ img, video, iframe, object {
     z-index: 1050 !important;
     box-sizing: border-box !important;
     overflow: visible !important;
-    -webkit-backface-visibility: hidden !important;
-    backface-visibility: hidden !important;
-    transform: translate3d(0, 0, 0) !important;
-    -webkit-transform: translate3d(0, 0, 0) !important;
-    will-change: transform !important;
     transition: none !important;
   }
 
@@ -4214,9 +4209,6 @@ img, video, iframe, object {
       0 14px 34px -4px rgba(28, 20, 10, 0.16),
       0 5px 12px -2px rgba(28, 20, 10, 0.08),
       0 0 0 1px rgba(255, 255, 255, 0.9) inset !important;
-    transform: translate3d(0, 0, 0) !important;
-    -webkit-transform: translate3d(0, 0, 0) !important;
-    will-change: transform !important;
     transition: none !important;
   }
 
@@ -4337,8 +4329,18 @@ img, video, iframe, object {
   }
 
   .hn-hamburger-btn {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    z-index: 1060 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    user-select: none !important;
+    -webkit-tap-highlight-color: transparent !important;
     flex-shrink: 0;
   }
 
@@ -4384,14 +4386,17 @@ img, video, iframe, object {
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
-    z-index: 1060 !important;
-    display: none;
+    z-index: 1065 !important;
+    display: none !important;
     animation: hnMobileDrawerFade 0.2s ease-out;
   }
 
   #hnMobileNav.show,
   #hnMobileNav.active {
     display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
   }
 
   @keyframes hnMobileDrawerFade {

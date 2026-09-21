@@ -120,9 +120,25 @@
       <a href="/admin-settings.html" class="hn-admin-tab"><i class="bi bi-gear"></i> Settings</a>
     </div>
 
-    <!-- Action Bar -->
-    <div class="hn-admin-filter-bar d-flex flex-wrap align-items-center justify-content-between gap-3">
-      <p class="mb-0 text-muted">Manage the devotional product collections displayed across the storefront and navigation.</p>
+    <!-- Filter & Action Bar -->
+    <div class="hn-admin-filter-bar d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+      <div class="d-flex flex-wrap align-items-center gap-2 flex-grow-1">
+        <div class="input-group" style="max-width: 320px;">
+          <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" id="category-search" class="form-control" placeholder="Search collections..." oninput="filterCategories()">
+        </div>
+        
+        <select id="status-filter" class="form-select" style="max-width: 180px;" onchange="filterCategories()">
+          <option value="all">All Statuses</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+
+        <span class="badge bg-gold-subtle text-gold-emphasis border border-warning px-3 py-2 fs-7" id="total-categories-count">
+          <i class="bi bi-tags me-1"></i> Loading collections...
+        </span>
+      </div>
+
       <button class="btn btn-gold d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#categoryModal" onclick="prepareAddCategory()">
         <i class="bi bi-plus-lg"></i> Add New Collection
       </button>
@@ -135,12 +151,13 @@
           <thead>
             <tr>
               <th style="width: 70px;">Image</th>
-              <th style="min-width: 180px;">Collection Name</th>
-              <th style="min-width: 180px;">URL Slug</th>
+              <th style="min-width: 200px;">Collection Title</th>
+              <th style="min-width: 200px;">URL Slug & Link</th>
               <th style="min-width: 260px;">Spiritual Description</th>
               <th style="min-width: 110px;">Items Count</th>
+              <th style="min-width: 100px;">Sort Order</th>
               <th style="min-width: 100px;">Status</th>
-              <th style="min-width: 100px;" class="text-end">Actions</th>
+              <th style="min-width: 110px;" class="text-end">Actions</th>
             </tr>
           </thead>
           <tbody id="categories-table-body">
@@ -154,34 +171,52 @@
 
   <!-- Category Modal -->
   <div class="modal fade hn-admin-modal" id="categoryModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="categoryModalTitle">Add New Collection</h5>
+          <h5 class="modal-title d-flex align-items-center gap-2" id="categoryModalTitle">
+            <i class="bi bi-tags text-gold"></i> Add New Collection
+          </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body p-4">
           <form id="categoryForm" onsubmit="saveCategory(event)">
             <input type="hidden" id="edit-cat-id">
             
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Collection Title *</label>
-              <input type="text" id="cat-name" class="form-control" placeholder="e.g. Japa Malas, Keychains, Books" required oninput="autoSlugCategory()">
+            <div class="row g-3 mb-3">
+              <div class="col-md-7">
+                <label class="form-label fw-semibold">Collection Title *</label>
+                <input type="text" id="cat-name" class="form-control" placeholder="e.g. Japa Malas, Devotional Keychains, Sacred Books" required oninput="autoSlugCategory()">
+              </div>
+              <div class="col-md-5">
+                <label class="form-label fw-semibold">URL Slug *</label>
+                <input type="text" id="cat-slug" class="form-control" placeholder="e.g. japa-malas, keychains" required>
+              </div>
             </div>
 
-            <div class="mb-3">
-              <label class="form-label fw-semibold">URL Slug *</label>
-              <input type="text" id="cat-slug" class="form-control" placeholder="e.g. japa-malas, keychains" required>
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Display Sort Order</label>
+                <input type="number" id="cat-sort" class="form-control" placeholder="1" min="0" value="0">
+                <div class="form-text text-muted" style="font-size: 0.75rem;">Lower numbers appear first on storefront navigation</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Status</label>
+                <select id="cat-status" class="form-select">
+                  <option value="active">Active (Visible in Store)</option>
+                  <option value="inactive">Inactive (Hidden)</option>
+                </select>
+              </div>
             </div>
 
             <!-- Collection Image Upload Box -->
             <div class="mb-3 p-3 rounded border bg-light-subtle">
-              <label class="form-label fw-semibold d-flex align-items-center gap-1 mb-2">
-                <i class="bi bi-image text-gold"></i> Collection Image / Photo
+              <label class="form-label fw-semibold d-flex align-items-center gap-1 mb-2 text-navy">
+                <i class="bi bi-image text-gold"></i> Collection Banner / Cover Image *
               </label>
               
               <div class="d-flex align-items-center gap-3">
-                <div class="position-relative" style="width: 72px; height: 72px; min-width: 72px;">
+                <div class="position-relative" style="width: 80px; height: 80px; min-width: 80px;">
                   <img id="cat-image-preview" src="/assets/images/cat_keychains.jpg" alt="Collection Image Preview" class="rounded-circle w-100 h-100 object-fit-cover border border-2 border-warning" style="box-shadow: 0 4px 12px rgba(160,112,40,0.15);">
                   <div id="cat-image-spinner" class="position-absolute top-50 start-50 translate-middle d-none">
                     <div class="spinner-border spinner-border-sm text-gold" role="status"></div>
@@ -194,7 +229,7 @@
                       <i class="bi bi-cloud-arrow-up"></i> Upload Photo
                     </button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearCatImage()">
-                      <i class="bi bi-x"></i> Remove
+                      <i class="bi bi-x"></i> Reset
                     </button>
                   </div>
                   <input type="file" id="cat-image-file" class="d-none" accept="image/jpeg,image/png,image/webp,image/gif" onchange="handleCatImageUpload(event)">
@@ -202,13 +237,13 @@
                 </div>
               </div>
               <div class="form-text mt-2 text-muted" style="font-size: 0.76rem;">
-                Uploaded images are permanently stored in the database and public storage with non-expiring direct URLs.
+                Uploaded images are automatically compressed, optimized, and stored permanently in Supabase / server cloud storage.
               </div>
             </div>
 
             <div class="mb-3">
               <label class="form-label fw-semibold">Spiritual Description</label>
-              <textarea id="cat-desc" class="form-control" rows="3" placeholder="Handcrafted devotional items and sacred treasures..."></textarea>
+              <textarea id="cat-desc" class="form-control" rows="3" placeholder="Handcrafted devotional items, sacred treasures, and divine blessings for your sadhana..."></textarea>
             </div>
 
             <div class="d-flex justify-content-end gap-2 pt-3 border-top">
@@ -227,6 +262,7 @@
   <script src="/assets/js/components.js"></script>
   <script>
     let databaseCategories = [];
+    let displayedCategories = [];
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
 
@@ -283,7 +319,7 @@
       return url;
     }
 
-    function fetchWithTimeout(url, options = {}, timeoutMs = 2000) {
+    function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
       if (typeof AbortController === 'undefined') return fetch(url, options);
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -303,9 +339,50 @@
       return '/assets/images/cat_keychains.jpg';
     }
 
+    // Client-side instant image compressor
+    async function compressImageFile(file, maxWidth = 1200, quality = 0.85) {
+      return new Promise((resolve) => {
+        if (!file || !file.type.startsWith('image/')) return resolve(file);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            canvas.toBlob((blob) => {
+              if (blob && blob.size < file.size) {
+                const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".webp", {
+                  type: 'image/webp',
+                  lastModified: Date.now()
+                });
+                resolve(compressedFile);
+              } else {
+                resolve(file);
+              }
+            }, 'image/webp', quality);
+          };
+          img.onerror = () => resolve(file);
+          img.src = e.target.result;
+        };
+        reader.onerror = () => resolve(file);
+        reader.readAsDataURL(file);
+      });
+    }
+
     async function loadCategoriesFromDatabase() {
       let loaded = false;
-      let remoteCategories = [];      // 1. Live Backend Express API
+      let remoteCategories = [];
+
+      // 1. Live Backend Express API
       try {
         const res = await fetchWithTimeout(getApiUrl('/api/categories'), {
           headers: getAuthHeaders(),
@@ -328,16 +405,30 @@
           const sb = initSupabase();
           if (sb) {
             const { data: sbCats, error: sbErr } = await Promise.race([
-              sb.from('categories').select('*').order('name'),
+              sb.from('categories').select('*, products(id, status)').order('sort_order', { ascending: true }),
               new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
             ]);
 
             if (!sbErr && Array.isArray(sbCats) && sbCats.length > 0) {
-              remoteCategories = sbCats;
+              remoteCategories = sbCats.map(c => {
+                const pCount = (c.products || []).filter(p => p.status === 'active').length;
+                return {
+                  ...c,
+                  product_count: pCount
+                };
+              });
               loaded = true;
             }
           }
         } catch (_) {}
+      }
+
+      // 3. Fallback to Local Data
+      if (!loaded && window.HARINAMA_DATA && typeof window.HARINAMA_DATA.getCategories === 'function') {
+        const local = await window.HARINAMA_DATA.getCategories();
+        if (Array.isArray(local) && local.length > 0) {
+          remoteCategories = local;
+        }
       }
 
       databaseCategories = remoteCategories.map(c => {
@@ -351,41 +442,58 @@
           image_url: resolvedImg,
           count: count,
           product_count: count,
-          desc: c.description || c.desc || 'Sacred collection',
-          status: (c.status || 'Active').charAt(0).toUpperCase() + (c.status || 'Active').slice(1)
+          sort_order: c.sort_order || 0,
+          desc: c.description || c.desc || 'Sacred devotional collection',
+          status: (c.status || 'active').toLowerCase()
         };
+      });
+
+      filterCategories();
+    }
+
+    function filterCategories() {
+      const search = (document.getElementById('category-search')?.value || '').toLowerCase().trim();
+      const statusFilter = document.getElementById('status-filter')?.value || 'all';
+
+      displayedCategories = databaseCategories.filter(c => {
+        const matchSearch = !search || 
+          (c.name && c.name.toLowerCase().includes(search)) || 
+          (c.slug && c.slug.toLowerCase().includes(search)) || 
+          (c.desc && c.desc.toLowerCase().includes(search));
+        
+        const matchStatus = statusFilter === 'all' || (c.status === statusFilter);
+
+        return matchSearch && matchStatus;
       });
 
       renderCategoriesTable();
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      loadCategoriesFromDatabase();
-    });
-
     function renderCategoriesTable() {
       const tbody = document.getElementById('categories-table-body');
       const countBadge = document.getElementById('total-categories-count');
-      if (countBadge) countBadge.innerText = `${databaseCategories.length} Collections`;
+      if (countBadge) {
+        countBadge.innerHTML = `<i class="bi bi-tags me-1"></i> ${databaseCategories.length} Collections Total`;
+      }
 
       if (!tbody) return;
 
-      if (databaseCategories.length === 0) {
+      if (displayedCategories.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="7" class="text-center py-4 text-muted">
+            <td colspan="8" class="text-center py-5 text-muted">
               <i class="bi bi-tags fs-1 d-block mb-2 text-gold"></i>
-              No collections found in database.
+              No devotional collections match your criteria.
             </td>
           </tr>
         `;
         return;
       }
 
-      tbody.innerHTML = databaseCategories.map(c => {
+      tbody.innerHTML = displayedCategories.map(c => {
         const imgSrc = c.image || c.image_url || '/assets/images/cat_keychains.jpg';
         const itemCount = c.count !== undefined ? c.count : (c.product_count || 0);
-        const statusVal = c.status || 'Active';
+        const isActive = c.status === 'active';
         return `
         <tr>
           <td>
@@ -394,10 +502,19 @@
           <td>
             <div class="fw-bold text-navy text-nowrap">${c.name}</div>
           </td>
-          <td class="text-nowrap"><code>/shop.html?category=${c.slug}</code></td>
+          <td class="text-nowrap">
+            <a href="/shop.html?category=${encodeURIComponent(c.slug)}" target="_blank" class="text-decoration-none text-muted font-monospace small">
+              <i class="bi bi-link-45deg"></i> /shop.html?category=${c.slug}
+            </a>
+          </td>
           <td class="text-muted small">${c.desc}</td>
-          <td class="text-nowrap"><span class="badge bg-light text-dark border">${itemCount} items</span></td>
-          <td class="text-nowrap"><span class="badge ${statusVal.toLowerCase() === 'active' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}">${statusVal}</span></td>
+          <td class="text-nowrap"><span class="badge bg-light text-dark border px-2 py-1">${itemCount} items</span></td>
+          <td class="text-nowrap"><span class="badge bg-secondary-subtle text-secondary px-2 py-1">#${c.sort_order || 0}</span></td>
+          <td class="text-nowrap">
+            <span class="badge ${isActive ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'} px-2 py-1">
+              <i class="bi ${isActive ? 'bi-check-circle-fill' : 'bi-pause-circle'} me-1"></i> ${isActive ? 'Active' : 'Inactive'}
+            </span>
+          </td>
           <td class="text-end text-nowrap">
             <button class="btn btn-sm btn-outline-dark me-1" onclick="editCategory('${c.id}')" title="Edit Collection"><i class="bi bi-pencil"></i></button>
             <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory('${c.id}')" title="Delete Collection"><i class="bi bi-trash"></i></button>
@@ -424,25 +541,30 @@
 
     function clearCatImage() {
       document.getElementById('cat-image-url').value = '';
-      updateCatImagePreview('');
+      const catName = document.getElementById('cat-name')?.value || '';
+      const fallback = resolveCategoryFallbackImage(catName, '', '');
+      updateCatImagePreview(fallback);
     }
 
     async function handleCatImageUpload(event) {
-      const file = event.target.files && event.target.files[0];
-      if (!file) return;
+      const rawFile = event.target.files && event.target.files[0];
+      if (!rawFile) return;
 
       // Instant preview in 0.01s
       try {
-        const localBlob = URL.createObjectURL(file);
+        const localBlob = URL.createObjectURL(rawFile);
         updateCatImagePreview(localBlob);
       } catch (_) {}
 
       const spinner = document.getElementById('cat-image-spinner');
       if (spinner) spinner.classList.remove('d-none');
 
+      // Auto-compress on client
+      const file = await compressImageFile(rawFile, 1200, 0.85);
+
       let uploadedUrl = null;
 
-      // 1. Fast Backend Upload API (saves directly to /uploads and cloud storage)
+      // 1. Fast Backend Upload API (Express)
       try {
         const formData = new FormData();
         formData.append('image', file);
@@ -463,14 +585,17 @@
         }
       } catch (e) {}
 
-      // 2. Direct Supabase Storage client
+      // 2. Direct Supabase Storage fallback (product-images bucket)
       if (!uploadedUrl) {
         try {
           const sb = initSupabase();
           if (sb && sb.storage) {
-            const fileExt = file.name.split('.').pop() || 'jpg';
+            const fileExt = file.name.split('.').pop() || 'webp';
             const fileName = `categories/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-            const { data, error } = await sb.storage.from('product-images').upload(fileName, file, { upsert: true });
+            const { data, error } = await sb.storage.from('product-images').upload(fileName, file, { 
+              upsert: true,
+              contentType: file.type || 'image/webp'
+            });
             if (!error && data) {
               const { data: pubData } = sb.storage.from('product-images').getPublicUrl(fileName);
               if (pubData && pubData.publicUrl) {
@@ -486,14 +611,13 @@
       if (uploadedUrl) {
         document.getElementById('cat-image-url').value = uploadedUrl;
         updateCatImagePreview(uploadedUrl);
-        showToast('Image uploaded successfully! 🪷', 'success');
+        showToast('Image uploaded and optimized successfully! 🪷', 'success');
       } else {
-        // Use standard collection fallback instead of broken base64
         const catName = document.getElementById('cat-name')?.value || '';
         const fallback = resolveCategoryFallbackImage(catName, '', '');
         document.getElementById('cat-image-url').value = fallback;
         updateCatImagePreview(fallback);
-        showToast('Image set with standard collection asset! 🪷', 'success');
+        showToast('Using standard devotional asset! 🪷', 'info');
       }
     }
 
@@ -501,8 +625,10 @@
       document.getElementById('categoryForm').reset();
       document.getElementById('edit-cat-id').value = '';
       document.getElementById('cat-image-url').value = '';
+      document.getElementById('cat-sort').value = '0';
+      document.getElementById('cat-status').value = 'active';
       updateCatImagePreview('');
-      document.getElementById('categoryModalTitle').innerText = 'Add New Collection';
+      document.getElementById('categoryModalTitle').innerHTML = '<i class="bi bi-tags text-gold"></i> Add New Collection';
     }
 
     function editCategory(id) {
@@ -512,9 +638,11 @@
       document.getElementById('cat-name').value = c.name;
       document.getElementById('cat-slug').value = c.slug;
       document.getElementById('cat-desc').value = c.desc;
+      document.getElementById('cat-sort').value = c.sort_order || 0;
+      document.getElementById('cat-status').value = c.status || 'active';
       document.getElementById('cat-image-url').value = c.image;
       updateCatImagePreview(c.image);
-      document.getElementById('categoryModalTitle').innerText = 'Edit Collection';
+      document.getElementById('categoryModalTitle').innerHTML = '<i class="bi bi-pencil-square text-gold"></i> Edit Collection';
       const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
       modal.show();
     }
@@ -526,6 +654,8 @@
       const name = document.getElementById('cat-name').value.trim();
       const slug = document.getElementById('cat-slug').value.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
       const desc = document.getElementById('cat-desc').value.trim();
+      const sort_order = parseInt(document.getElementById('cat-sort').value, 10) || 0;
+      const status = document.getElementById('cat-status').value || 'active';
       let imageUrl = document.getElementById('cat-image-url').value.trim();
 
       if (!imageUrl || imageUrl.startsWith('data:') || imageUrl.startsWith('blob:')) {
@@ -533,7 +663,7 @@
       }
 
       if (!name) {
-        showToast('Collection name is required.', 'warning');
+        showToast('Collection title is required.', 'warning');
         return;
       }
 
@@ -546,6 +676,16 @@
       let saved = false;
       let saveError = null;
 
+      const payload = {
+        name,
+        slug,
+        description: desc,
+        image: imageUrl,
+        image_url: imageUrl,
+        sort_order,
+        status
+      };
+
       // 1. Save via Backend API (primary, service-role authorized)
       try {
         const endpoint = getApiUrl(id ? `/api/categories/${id}` : '/api/categories');
@@ -554,7 +694,7 @@
         const res = await fetch(endpoint, {
           method,
           headers: getAuthHeaders(),
-          body: JSON.stringify({ name, slug, description: desc, image: imageUrl, image_url: imageUrl })
+          body: JSON.stringify(payload)
         });
 
         if (res.ok) {
@@ -589,6 +729,8 @@
                 slug,
                 description: desc,
                 image_url: imageUrl,
+                sort_order,
+                status,
                 updated_at: new Date().toISOString()
               }).eq('id', targetId);
               if (!error) saved = true;
@@ -599,7 +741,8 @@
                 slug,
                 description: desc,
                 image_url: imageUrl,
-                status: 'active'
+                sort_order,
+                status
               });
               if (!error) saved = true;
               else saveError = error.message;
@@ -634,9 +777,29 @@
     }
 
     async function deleteCategory(id) {
-      if (!confirm('Are you sure you want to remove this collection?')) return;
+      if (!confirm('Are you sure you want to remove this devotional collection?')) return;
       let deleted = false;
       let deleteError = null;
+
+      // Check linked products safety guard
+      try {
+        const sb = initSupabase();
+        if (sb) {
+          const isUuid = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+          let targetId = isUuid ? id : null;
+          if (!targetId) {
+            const { data: rec } = await sb.from('categories').select('id').eq('slug', id).maybeSingle();
+            if (rec) targetId = rec.id;
+          }
+          if (targetId) {
+            const { data: prods } = await sb.from('products').select('id').eq('category_id', targetId);
+            if (Array.isArray(prods) && prods.length > 0) {
+              showToast(`Cannot delete: ${prods.length} product(s) are currently in this collection. Reassign or delete those products first.`, 'warning');
+              return;
+            }
+          }
+        }
+      } catch (_) {}
 
       // 1. Primary: Delete via Backend API
       try {
@@ -667,14 +830,6 @@
 
           if (targetId) {
             try {
-              const { data: prods } = await sb.from('products').select('id').eq('category_id', targetId);
-              if (Array.isArray(prods) && prods.length > 0) {
-                showToast(`Cannot delete collection: ${prods.length} product(s) are currently assigned to it. Reassign or delete those products first.`, 'warning');
-                return;
-              }
-            } catch (chkErr) {}
-
-            try {
               const { error } = await sb.from('categories').delete().eq('id', targetId);
               if (error) {
                 deleteError = error.message;
@@ -689,7 +844,7 @@
       }
 
       if (deleted) {
-        showToast('Collection deleted successfully.', 'info');
+        showToast('Collection deleted successfully. 🌸', 'info');
         if (window.HARINAMA_DATA && typeof window.HARINAMA_DATA.broadcastCatalogChange === 'function') {
           window.HARINAMA_DATA.broadcastCatalogChange();
         }
@@ -698,6 +853,10 @@
         showToast('Failed to delete collection: ' + (deleteError || 'Check admin permissions.'), 'danger');
       }
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadCategoriesFromDatabase();
+    });
   </script>
 </body>
 </html>

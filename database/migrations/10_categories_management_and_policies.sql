@@ -1,6 +1,6 @@
 -- ============================================================================
--- HARINAMA STORE — COMPLETE CATEGORIES (COLLECTIONS) MANAGEMENT & POLICIES
--- Migration 10: Complete Categories Table, Indexes, RLS Policies & Storage
+-- HARINAMA STORE — CATEGORIES (COLLECTIONS) PERMISSIONS & POLICIES
+-- Migration 10: Pure Schema, RLS Policies & Storage (No Seed Data)
 -- ============================================================================
 
 -- 1. Ensure Categories Table Schema
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public.categories (
     description TEXT DEFAULT '',
     image_url TEXT DEFAULT '/assets/images/cat_keychains.jpg',
     sort_order INTEGER DEFAULT 0,
-    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'draft')),
+    status TEXT DEFAULT 'active',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -41,7 +41,7 @@ BEGIN
     END IF;
 END $$;
 
--- 2. Indexes for High Performance
+-- 2. Performance Indexes
 CREATE INDEX IF NOT EXISTS idx_categories_slug ON public.categories (slug);
 CREATE INDEX IF NOT EXISTS idx_categories_status ON public.categories (status);
 CREATE INDEX IF NOT EXISTS idx_categories_sort_order ON public.categories (sort_order);
@@ -49,7 +49,7 @@ CREATE INDEX IF NOT EXISTS idx_categories_sort_order ON public.categories (sort_
 -- 3. Enable Row Level Security
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 
--- 4. Clean up any conflicting policies
+-- 4. Clean up any existing policies on categories
 DROP POLICY IF EXISTS "Public can view active categories" ON public.categories;
 DROP POLICY IF EXISTS "Public can view categories" ON public.categories;
 DROP POLICY IF EXISTS "categories_select_public" ON public.categories;
@@ -64,7 +64,7 @@ CREATE POLICY "Public can view active categories" ON public.categories
     FOR SELECT
     USING (true);
 
--- 6. RLS Policy: Authorized Admins & Authenticated Devotee Admins can Insert, Update, and Delete
+-- 6. RLS Policy: Admins & Authenticated users can Insert, Update, and Delete categories
 CREATE POLICY "Admins can manage categories" ON public.categories
     FOR ALL
     USING (
@@ -128,21 +128,5 @@ CREATE POLICY "Admins can delete product images storage" ON storage.objects
         AND (auth.role() = 'authenticated' OR public.is_admin())
     );
 
--- 9. Seed Canonical Devotional Categories (Preserves existing while ensuring standard categories)
-INSERT INTO public.categories (id, name, slug, description, image_url, sort_order, status)
-VALUES
-    ('a8686346-2099-4f6f-9214-0ec187c2e632', 'Devotional Keychains', 'keychains', 'Sacred acrylic and metal keychains with divine darshan of Sri Krishna, Radha, and sacred Mantras.', '/assets/images/cat_keychains.jpg', 1, 'active'),
-    ('c5889b78-02f7-4c51-8cfc-53c5dd2709fa', 'Sacred Books & Shastras', 'books', 'Spiritual wisdom, Bhagavad Gita As It Is, Srimad Bhagavatam, and sacred Vedic literature.', '/assets/images/cat_books.jpg', 2, 'active'),
-    ('bdfb6c50-8436-4546-96f7-007577b855ba', 'Japa & Chanting', 'japa-chanting', 'Authentic sacred Tulasi malas, neem japa beads, bead bags, and chanting counters.', '/assets/images/cat_japa_malas.jpg', 3, 'active'),
-    ('585c4ce8-3722-4070-bd8d-61076436c946', 'Gift Sets & Bundles', 'gift-sets', 'Curated spiritual gift bundles for Vaishnava festivals, initiation, and devotional celebrations.', '/assets/images/cat_spiritual_gifts.jpg', 4, 'active'),
-    ('0a7bcc57-12f7-428c-a512-0dcd3691703f', 'Deity Statues & Altars', 'deity-statues', 'Exquisite brass and marble murtis of Radha Krishna, Jagannath, and Gaura Nitai.', '/assets/images/cat_deity_statues.jpg', 5, 'active')
-ON CONFLICT (slug) DO UPDATE SET
-    name = EXCLUDED.name,
-    description = EXCLUDED.description,
-    image_url = COALESCE(public.categories.image_url, EXCLUDED.image_url),
-    sort_order = EXCLUDED.sort_order,
-    status = 'active',
-    updated_at = NOW();
-
--- 10. Refresh schema cache
+-- 9. Refresh schema cache
 NOTIFY pgrst, 'reload schema';

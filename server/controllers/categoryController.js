@@ -104,17 +104,24 @@ exports.createCategory = async (req, res, next) => {
     if (!name) {
       return res.status(400).json({ success: false, message: 'Category name is required.' });
     }
-    let slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    let slug = (req.body.slug || name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
     if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       const client = supabaseAdmin || supabase;
+
+      // Check if slug exists
+      const { data: existing } = await client.from('categories').select('id').eq('slug', slug).maybeSingle();
+      if (existing) {
+        slug = `${slug}-${Date.now().toString().slice(-4)}`;
+      }
+
       const { data, error } = await client
         .from('categories')
         .insert({
           name,
           slug,
           description: description || '',
-          image_url: image_url || image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
+          image_url: image_url || image || '/assets/images/cat_keychains.jpg',
           status: 'active',
           sort_order: parseInt(sort_order, 10) || 0
         })
@@ -122,19 +129,29 @@ exports.createCategory = async (req, res, next) => {
         .single();
 
       if (!error && data) {
+        // Also sync to local db
+        db.insert('categories', data);
         return res.status(201).json({
           success: true,
           message: 'Category created successfully in Supabase.',
           data
         });
+      } else if (error) {
+        console.warn('[categoryController] Supabase insert note:', error.message);
       }
+    }
+
+    let existingSlug = db.findOne('categories', c => c.slug === slug);
+    if (existingSlug) {
+      slug = `${slug}-${Date.now().toString().slice(-4)}`;
     }
 
     const newCategory = db.insert('categories', {
       name,
       slug,
       description: description || '',
-      image: image || image_url || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
+      image: image || image_url || '/assets/images/cat_keychains.jpg',
+      image_url: image || image_url || '/assets/images/cat_keychains.jpg',
       status: 'active',
       sort_order: parseInt(sort_order, 10) || 0
     });

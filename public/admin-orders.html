@@ -929,6 +929,11 @@
         await fetchJsonSafe(`/api/orders/admin/${encodeURIComponent(id)}/status`, {
           method: 'PUT',
           body: JSON.stringify({
+            customer: updatedFields.customer,
+            phone: updatedFields.phone,
+            email: updatedFields.email,
+            address: updatedFields.address,
+            payment_method: updatedFields.payment_method,
             order_status: updatedFields.status.toLowerCase(),
             payment_status: updatedFields.payment_status.toLowerCase(),
             tracking_number: updatedFields.tracking_number,
@@ -944,16 +949,30 @@
       try {
         const sb = initSupabase();
         if (sb) {
-          await sb
-            .from('orders')
-            .update({
-              order_status: updatedFields.status.toLowerCase(),
-              payment_status: updatedFields.payment_status.toLowerCase(),
-              tracking_number: updatedFields.tracking_number,
-              courier: updatedFields.courier,
-              notes: updatedFields.notes
-            })
-            .or(`order_number.eq.${id},id.eq.${localOrders[idx].db_id || id}`);
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+          const sbUpdates = {
+            guest_name: updatedFields.customer,
+            guest_phone: updatedFields.phone,
+            guest_email: updatedFields.email,
+            payment_method: updatedFields.payment_method,
+            order_status: updatedFields.status.toLowerCase(),
+            payment_status: updatedFields.payment_status.toLowerCase(),
+            tracking_number: updatedFields.tracking_number,
+            courier: updatedFields.courier,
+            notes: updatedFields.notes,
+            shipping_address: {
+              name: updatedFields.customer,
+              phone: updatedFields.phone,
+              email: updatedFields.email,
+              address_line_1: updatedFields.address,
+              address: updatedFields.address
+            }
+          };
+
+          let q = sb.from('orders').update(sbUpdates);
+          if (isUuid) q = q.eq('id', id);
+          else q = q.eq('order_number', id);
+          await q;
         }
       } catch (sbE) {
         console.warn('[AdminOrders] Supabase update note:', sbE);

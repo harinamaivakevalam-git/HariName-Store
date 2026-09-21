@@ -330,6 +330,7 @@
 
     async function loadCouponsFromDatabase() {
       const mergedMap = new Map();
+      const blacklist = getDeletedBlacklist();
 
       // 1. Initial cached browser storage
       try {
@@ -339,7 +340,9 @@
           if (Array.isArray(parsed)) {
             parsed.forEach(c => {
               const norm = normalizeCoupon(c);
-              if (norm && norm.code) mergedMap.set(norm.code, norm);
+              if (norm && norm.code && !blacklist.includes(norm.code) && !blacklist.includes(norm.id)) {
+                mergedMap.set(norm.code, norm);
+              }
             });
           }
         }
@@ -357,7 +360,9 @@
           if (json.success && Array.isArray(json.data) && json.data.length > 0) {
             json.data.forEach(c => {
               const norm = normalizeCoupon(c);
-              if (norm && norm.code) mergedMap.set(norm.code, norm);
+              if (norm && norm.code && !blacklist.includes(norm.code) && !blacklist.includes(norm.id)) {
+                mergedMap.set(norm.code, norm);
+              }
             });
           }
         }
@@ -373,7 +378,9 @@
           if (!error && Array.isArray(data) && data.length > 0) {
             data.forEach(c => {
               const norm = normalizeCoupon(c);
-              if (norm && norm.code) mergedMap.set(norm.code, norm);
+              if (norm && norm.code && !blacklist.includes(norm.code) && !blacklist.includes(norm.id)) {
+                mergedMap.set(norm.code, norm);
+              }
             });
           }
         }
@@ -469,12 +476,41 @@
       modal.show();
     }
 
+    function getDeletedBlacklist() {
+      try {
+        const raw = localStorage.getItem('hn_deleted_coupons');
+        return raw ? JSON.parse(raw) : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function addToDeletedBlacklist(code, id) {
+      try {
+        const list = getDeletedBlacklist();
+        if (code && !list.includes(code.toUpperCase())) list.push(code.toUpperCase());
+        if (id && !list.includes(id)) list.push(id);
+        localStorage.setItem('hn_deleted_coupons', JSON.stringify(list));
+      } catch (_) {}
+    }
+
+    function removeFromDeletedBlacklist(code, id) {
+      try {
+        let list = getDeletedBlacklist();
+        if (code) list = list.filter(item => item !== code.toUpperCase());
+        if (id) list = list.filter(item => item !== id);
+        localStorage.setItem('hn_deleted_coupons', JSON.stringify(list));
+      } catch (_) {}
+    }
+
     async function saveCoupon(e) {
       e.preventDefault();
       const saveBtn = document.getElementById('save-coupon-btn');
-      const origBtnHtml = saveBtn.innerHTML;
-      saveBtn.disabled = true;
-      saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+      const origBtnHtml = saveBtn ? saveBtn.innerHTML : 'Save Coupon';
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+      }
 
       const id = document.getElementById('edit-coup-id').value.trim();
       const code = document.getElementById('coup-code').value.trim().toUpperCase();
@@ -489,12 +525,23 @@
 
       if (!code || isNaN(discount_value) || discount_value <= 0) {
         showToast('Please enter a valid coupon code and discount value.', 'warning');
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = origBtnHtml;
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = origBtnHtml;
+        }
         return;
       }
 
-      // Remove from blacklist if user created or un-deleted this coupon
+      if (discount_type === 'percentage' && discount_value > 100) {
+        showToast('Percentage discount cannot exceed 100%.', 'warning');
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = origBtnHtml;
+        }
+        return;
+      }
+
+      // Remove from blacklist if user created or updated this coupon
       removeFromDeletedBlacklist(code, id);
 
       const payload = {
@@ -510,11 +557,14 @@
 
       const isUuid = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
       let assignedId = id || ('coup-' + Date.now());
+      let savedSuccessfully = false;
+      let errorMessage = null;
 
       // 1. Try Express API
       try {
-        const endpoint = isUuid ? getApiUrl(`/api/coupons/${id}`) : getApiUrl('/api/coupons');
-        const method = isUuid ? 'PUT' : 'POST';
+        const isUpdate = Boolean(id);
+        const endpoint = isUpdate ? getApiUrl(`/api/coupons/${id}`) : getApiUrl('/api/coupons');
+        const method = isUpdate ? 'PUT' : 'POST';
 
         const res = await fetch(endpoint, {
           method,
@@ -524,31 +574,43 @@
 
         if (res.ok) {
           const json = await res.json();
-          if (json.success && json.data && json.data.id) {
-            assignedId = json.data.id;
+          if (json.success) {
+            savedSuccessfully = true;
+            if (json.data && json.data.id) assignedId = json.data.id;
+          } else {
+            errorMessage = json.message;
           }
+        } else {
+          const errJson = await res.json().catch(() => null);
+          errorMessage = errJson?.message || `Server status ${res.status}`;
         }
       } catch (err) {
         console.warn('[AdminCoupons] Express API save notice:', err);
       }
 
       // 2. Direct Supabase fallback
-      try {
-        const client = initSupabase();
-        if (client) {
-          const { data: sbData, error: sbError } = await client
-            .from('coupons')
-            .upsert({ ...payload }, { onConflict: 'code' })
-            .select();
-          if (!sbError && sbData && sbData.length > 0 && sbData[0].id) {
-            assignedId = sbData[0].id;
+      if (!savedSuccessfully) {
+        try {
+          const client = initSupabase();
+          if (client) {
+            const { data: sbData, error: sbError } = await client
+              .from('coupons')
+              .upsert({ ...payload }, { onConflict: 'code' })
+              .select();
+            if (!sbError && sbData && sbData.length > 0) {
+              savedSuccessfully = true;
+              if (sbData[0].id) assignedId = sbData[0].id;
+            } else if (sbError) {
+              errorMessage = sbError.message;
+            }
           }
+        } catch (sbErr) {
+          console.warn('[AdminCoupons] Direct Supabase save notice:', sbErr);
+          errorMessage = sbErr.message;
         }
-      } catch (sbErr) {
-        console.warn('[AdminCoupons] Direct Supabase save notice:', sbErr);
       }
 
-      // 3. Update local state immediately
+      // 3. Update local state
       const updatedItem = {
         id: assignedId,
         code,
@@ -569,17 +631,20 @@
       }
 
       localStorage.setItem('hn_admin_coupons', JSON.stringify(databaseCoupons));
-      localStorage.setItem('hn_admin_coupons_initialized', 'true');
       renderCouponsTable();
 
-      saveBtn.disabled = false;
-      saveBtn.innerHTML = origBtnHtml;
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = origBtnHtml;
+      }
 
-      showToast(id ? `Coupon "${code}" updated successfully! 🌸` : `New coupon "${code}" created successfully! 🌸`);
+      showToast(id ? `Coupon "${code}" updated successfully! 🌸` : `New coupon "${code}" created successfully! 🌸`, 'success');
       
       const modalEl = document.getElementById('couponModal');
       const modal = bootstrap.Modal.getInstance(modalEl);
       if (modal) modal.hide();
+
+      await loadCouponsFromDatabase();
     }
 
     async function deleteCoupon(idOrCode) {
@@ -593,10 +658,9 @@
       addToDeletedBlacklist(codeName, targetId);
       databaseCoupons = databaseCoupons.filter(item => item.id !== targetId && (item.code || '').toUpperCase() !== codeName);
       localStorage.setItem('hn_admin_coupons', JSON.stringify(databaseCoupons));
-      localStorage.setItem('hn_admin_coupons_initialized', 'true');
       renderCouponsTable();
 
-      showToast(`Coupon "${codeName}" deleted successfully.`);
+      showToast(`Coupon "${codeName}" deleted successfully.`, 'info');
 
       // 2. Perform backend API delete
       try {

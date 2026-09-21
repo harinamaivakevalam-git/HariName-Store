@@ -951,8 +951,8 @@
 
       // 1. Primary: Save through Express Backend API (uses server-side service role & Anycast connection)
       try {
-        const isUpdate = Boolean(id && isIdUuid);
-        const endpoint = getApiUrl(isUpdate ? `/api/products/${id}` : '/api/products');
+        const isUpdate = Boolean(id);
+        const endpoint = getApiUrl(isUpdate ? `/api/products/${encodeURIComponent(id)}` : '/api/products');
         const method = isUpdate ? 'PUT' : 'POST';
 
         const apiRes = await fetch(endpoint, {
@@ -1001,7 +1001,7 @@
           try {
             let targetId = isIdUuid ? id : null;
             if (!targetId && id) {
-              const { data: rec } = await sb.from('products').select('id').eq('slug', id).maybeSingle();
+              const { data: rec } = await sb.from('products').select('id').or(`slug.eq.${id},name.eq.${name}`).maybeSingle();
               if (rec) targetId = rec.id;
             }
 

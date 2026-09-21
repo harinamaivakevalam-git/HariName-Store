@@ -815,6 +815,35 @@ exports.adminUpdateOrderStatus = async (req, res, next) => {
     if (shiprocket_shipment_id) updates.shiprocket_shipment_id = shiprocket_shipment_id;
     if (shipping_label_url) updates.shipping_label_url = shipping_label_url;
     if (pickup_status) updates.pickup_status = pickup_status;
+
+    // Customer & Shipping Updates
+    if (req.body.customer || req.body.guest_name) {
+      updates.guest_name = req.body.customer || req.body.guest_name;
+    }
+    if (req.body.phone || req.body.guest_phone) {
+      updates.guest_phone = req.body.phone || req.body.guest_phone;
+    }
+    if (req.body.email || req.body.guest_email) {
+      updates.guest_email = req.body.email || req.body.guest_email;
+    }
+    if (req.body.payment_method) {
+      updates.payment_method = req.body.payment_method;
+    }
+    if (req.body.address || req.body.shipping_address) {
+      if (typeof req.body.shipping_address === 'object' && req.body.shipping_address !== null) {
+        updates.shipping_address = req.body.shipping_address;
+      } else {
+        const addrText = req.body.address || (typeof req.body.shipping_address === 'string' ? req.body.shipping_address : '');
+        updates.shipping_address = {
+          name: updates.guest_name || req.body.customer || 'Customer',
+          phone: updates.guest_phone || req.body.phone || '',
+          email: updates.guest_email || req.body.email || '',
+          address_line_1: addrText,
+          address: addrText
+        };
+      }
+    }
+
     updates.shipping_updated_at = new Date().toISOString();
     updates.updated_at = new Date().toISOString();
 

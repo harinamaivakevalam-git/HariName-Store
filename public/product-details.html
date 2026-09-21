@@ -266,10 +266,25 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/assets/js/product-image-service.js"></script>
   <script src="/assets/js/data.js?v=5"></script>
   <script src="/assets/js/components.js?v=5"></script>
   <script>
+    const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+    let sbClient = null;
+    function initSupabase() {
+      if (!sbClient && window.supabase && typeof window.supabase.createClient === 'function') {
+        try {
+          sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (e) {
+          console.warn('[ProductDetails] Supabase init note:', e);
+        }
+      }
+      return sbClient;
+    }
+
     let currentProduct = null;
     let selectedRating = 5;
 
@@ -491,6 +506,7 @@
         }
 
         // Direct Supabase fallback
+        const sb = initSupabase();
         if (!success && sb) {
           const { error } = await sb.from('reviews').insert([{
             product_id: currentProduct.id,
@@ -542,6 +558,7 @@
         } catch (_) {}
 
         // 2. Try direct Supabase
+        const sb = initSupabase();
         if ((!reviews || reviews.length === 0) && sb) {
           const { data, error } = await sb.from('reviews')
             .select('*, profiles:user_id(name, avatar_url)')
@@ -718,7 +735,7 @@
 
     async function loadLiveProduct() {
       const urlParams = new URLSearchParams(window.location.search);
-      const prodId = urlParams.get('id') || urlParams.get('slug');
+      const prodId = urlParams.get('id') || urlParams.get('slug') || urlParams.get('product');
 
       if (!prodId) {
         showNotFound();
@@ -726,6 +743,7 @@
       }
 
       const cleanId = prodId.trim();
+      const hyphenSlug = cleanId.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
       // 1. Primary: Fetch fresh product data from live Backend Express API
       try {
@@ -740,73 +758,157 @@
             populateDetails(json.data);
             return;
           }
-        } else if (res.status === 404) {
-          showNotFound();
-          return;
         }
       } catch (apiErr) {
-        console.warn('[product-details] Live API notice:', apiErr);
+        console.warn('[product-details] Live API notice:', apiErr.message);
       }
 
-      // 2. Query direct Supabase
-      if (sb) {
-        try {
-          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
-          let query = sb.from('products').select(`
-              *,
-              product_images (*),
-              categories (name, slug)
-            `).neq('status', 'archived').neq('status', 'deleted');
+      // 2. Direct Supabase REST API Fetch (100% resilient across custom deployed domains)
+      try {
+        const sbHeaders = {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Accept': 'application/json'
+        };
 
-          if (isUuid) {
-            query = query.or(`id.eq.${cleanId},slug.eq.${cleanId}`);
-          } else {
-            query = query.eq('slug', cleanId);
-          }
-          const { data, error } = await query.maybeSingle();
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+        let restUrl = `${SUPABASE_URL}/rest/v1/products?select=*,product_images(*),categories(id,name,slug)&status=neq.archived`;
+        if (isUuid) {
+          restUrl += `&or=(id.eq.${cleanId},slug.eq.${encodeURIComponent(cleanId)})`;
+        } else {
+          restUrl += `&or=(slug.eq.${encodeURIComponent(cleanId)},slug.eq.${encodeURIComponent(hyphenSlug)})`;
+        }
 
-          if (!error && data) {
-            const rawImages = (data.product_images || []).sort((a,b) => {
-              if (a.is_primary && !b.is_primary) return -1;
-              if (!a.is_primary && b.is_primary) return 1;
-              return (a.sort_order || a.display_order || 0) - (b.sort_order || b.display_order || 0);
+        const restRes = await fetch(restUrl, { headers: sbHeaders }).then(r => r.ok ? r.json() : null).catch(() => null);
+        let productRow = (Array.isArray(restRes) && restRes.length > 0) ? restRes[0] : null;
+
+        // If not found by exact slug, try fuzzy / SKU search
+        if (!productRow) {
+          const fuzzyRes = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*,product_images(*),categories(id,name,slug)&status=neq.archived&or=(sku.eq.${encodeURIComponent(cleanId)},slug.ilike.*${encodeURIComponent(hyphenSlug)}*,name.ilike.*${encodeURIComponent(cleanId)}*)&limit=1`, { headers: sbHeaders })
+            .then(r => r.ok ? r.json() : null).catch(() => null);
+          productRow = (Array.isArray(fuzzyRes) && fuzzyRes.length > 0) ? fuzzyRes[0] : null;
+        }
+
+        // If still not found, fetch latest active catalog to update memory and match
+        if (!productRow) {
+          const allRes = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*,product_images(*),categories(id,name,slug)&status=neq.archived&order=created_at.desc&limit=100`, { headers: sbHeaders })
+            .then(r => r.ok ? r.json() : null).catch(() => null);
+          if (Array.isArray(allRes) && allRes.length > 0) {
+            HARINAMA_DATA.products = allRes.map(p => {
+              const rawImgs = (p.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+              const imgs = rawImgs.map(img => img.image_url || img.url).filter(Boolean);
+              const primaryImg = imgs[0] || p.image_url || p.image || '/assets/images/krishna_hero_keychain.jpg';
+              return {
+                id: p.id,
+                sku: p.sku || `HN-${(p.id || '').slice(0, 6)}`,
+                name: p.name || p.title,
+                title: p.title || p.name,
+                slug: p.slug,
+                category: p.categories?.name || p.category_name || p.category || 'General',
+                category_id: p.category_id || null,
+                category_slug: p.categories?.slug || '',
+                material: (p.specifications && p.specifications.material) || p.material || 'Standard',
+                price: parseFloat(p.price) || 0,
+                old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+                compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
+                stock: p.stock !== undefined ? p.stock : 25,
+                rating: parseFloat(p.rating) || 5.0,
+                reviews_count: p.reviews_count || 0,
+                image: primaryImg,
+                primary_image: primaryImg,
+                images: imgs.length > 0 ? imgs : [primaryImg],
+                gallery: imgs.length > 0 ? imgs : [primaryImg],
+                description: p.description || '',
+                featured: Boolean(p.featured),
+                trending: Boolean(p.trending)
+              };
             });
-            const galleryUrls = rawImages.map(i => i.image_url).filter(Boolean);
-            const primaryImg = galleryUrls[0] || data.primary_image || data.image;
+            HARINAMA_DATA.isLoaded = true;
+            const matched = typeof findCatalogProduct === 'function' ? findCatalogProduct(cleanId) : null;
+            if (matched) {
+              populateDetails(matched);
+              return;
+            }
+          }
+        }
 
-            const resolvedProd = {
-              id: data.id,
-              name: data.name,
-              title: data.name,
-              slug: data.slug,
-              price: Number(data.price),
-              old_price: data.compare_price ? Number(data.compare_price) : null,
-              category: data.categories?.name || 'Devotional Items',
-              material: data.material || (data.specifications && data.specifications.material) || 'Devotional Finish',
-              description: data.description || '',
-              image: primaryImg,
-              gallery: galleryUrls.length > 0 ? galleryUrls : (primaryImg ? [primaryImg] : []),
-              stock: data.stock !== undefined ? data.stock : (data.stock_quantity ?? 10)
-            };
-            populateDetails(resolvedProd);
+        if (productRow) {
+          const rawImages = (productRow.product_images || []).sort((a,b) => {
+            if (a.is_primary && !b.is_primary) return -1;
+            if (!a.is_primary && b.is_primary) return 1;
+            return (a.sort_order || a.display_order || 0) - (b.sort_order || b.display_order || 0);
+          });
+          const galleryUrls = rawImages.map(i => i.image_url || i.url).filter(Boolean);
+          const primaryImg = galleryUrls[0] || productRow.primary_image || productRow.image || '/assets/images/krishna_hero_keychain.jpg';
+
+          const resolvedProd = {
+            id: productRow.id,
+            name: productRow.name || productRow.title,
+            title: productRow.name || productRow.title,
+            slug: productRow.slug,
+            price: Number(productRow.price) || 0,
+            old_price: productRow.compare_price ? Number(productRow.compare_price) : null,
+            category: productRow.categories?.name || productRow.category || 'Devotional Items',
+            material: productRow.material || (productRow.specifications && productRow.specifications.material) || 'Devotional Finish',
+            description: productRow.description || '',
+            image: primaryImg,
+            gallery: galleryUrls.length > 0 ? galleryUrls : [primaryImg],
+            stock: productRow.stock !== undefined ? productRow.stock : (productRow.stock_quantity ?? 10)
+          };
+          populateDetails(resolvedProd);
+          return;
+        }
+      } catch (sbError) {
+        console.warn('[product-details] Supabase REST API fallback notice:', sbError.message);
+      }
+
+      // 3. Fallback to in-memory catalog
+      const found = typeof findCatalogProduct === 'function' ? findCatalogProduct(cleanId) : null;
+      if (found) {
+        populateDetails(found);
+        return;
+      }
+
+      // 4. Try via HARINAMA_DATA helper
+      if (typeof HARINAMA_DATA !== 'undefined' && typeof HARINAMA_DATA.fetchProductBySlug === 'function') {
+        try {
+          const fetched = await HARINAMA_DATA.fetchProductBySlug(cleanId);
+          if (fetched) {
+            populateDetails(fetched);
             return;
           }
         } catch (_) {}
       }
 
-      // 3. Fallback to in-memory lookup if available
-      const found = typeof findCatalogProduct === 'function' ? findCatalogProduct(cleanId) : null;
-      if (found) {
-        populateDetails(found);
-      } else {
-        showNotFound();
+      // 5. If catalog is still loading, listen for ready event
+      if (typeof HARINAMA_DATA !== 'undefined' && !HARINAMA_DATA.isLoaded) {
+        const onLoaded = () => {
+          const deferredFound = typeof findCatalogProduct === 'function' ? findCatalogProduct(cleanId) : null;
+          if (deferredFound) {
+            populateDetails(deferredFound);
+          } else {
+            showNotFound();
+          }
+        };
+        window.addEventListener('hn:catalog-loaded', onLoaded, { once: true });
+        setTimeout(() => {
+          if (!currentProduct) showNotFound();
+        }, 3000);
+        return;
       }
+
+      showNotFound();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      initSupabase();
       renderHeader('shop');
       renderFooter();
       loadLiveProduct();
+
+      window.addEventListener('hn:catalog-loaded', () => {
+        if (!currentProduct) loadLiveProduct();
+      });
 
       window.addEventListener('hn:catalog-changed', () => {
         loadLiveProduct();

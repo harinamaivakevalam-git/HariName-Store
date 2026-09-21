@@ -139,52 +139,69 @@ HARINAMA_DATA.fetchProductBySlug = async function(slugOrId) {
     console.warn('[data.js] fetchProductBySlug backend notice:', e);
   }
 
-  // 2. Direct Supabase Fallback
+  // 2. Direct Supabase REST API Fallback (Works on any deployed domain without Express server)
   try {
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
-    const sb = window.supabaseClient || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null);
-    if (sb) {
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean);
-      let query = sb.from('products').select('*, product_images(*), categories(id, name, slug)').neq('status', 'archived').neq('status', 'deleted');
-      if (isUuid) query = query.or(`id.eq.${clean},slug.eq.${clean}`);
-      else query = query.eq('slug', clean);
-      const { data, error } = await query.maybeSingle();
-      if (!error && data) {
-        const rawImgs = (data.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-        const imgs = rawImgs.map(img => resolveSafeAssetUrl(img.image_url || img.url)).filter(Boolean);
-        const primaryImg = imgs[0] || resolveSafeAssetUrl(data.image_url || data.image || '');
-        return {
-          id: data.id,
-          sku: data.sku || `HN-${data.id.slice(0, 6)}`,
-          name: data.name || data.title,
-          title: data.title || data.name,
-          slug: data.slug,
-          category: data.categories?.name || data.category || 'General',
-          category_id: data.category_id || null,
-          category_slug: data.categories?.slug || '',
-          material: data.material || (data.specifications && data.specifications.material) || 'Standard',
-          price: parseFloat(data.price) || 0,
-          old_price: data.compare_price ? parseFloat(data.compare_price) : null,
-          compare_price: data.compare_price ? parseFloat(data.compare_price) : null,
-          stock: data.stock !== undefined ? data.stock : 25,
-          rating: parseFloat(data.rating) || 5.0,
-          reviews_count: data.reviews_count || 0,
-          image: primaryImg,
-          primary_image: primaryImg,
-          images: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
-          gallery: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
-          description: data.description || '',
-          featured: Boolean(data.featured),
-          trending: Boolean(data.trending)
-        };
-      }
+    const sbHeaders = {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Accept': 'application/json'
+    };
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean);
+    const hyphenSlug = clean.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+
+    let restUrl = `${SUPABASE_URL}/rest/v1/products?select=*,product_images(*),categories(id,name,slug)&status=neq.archived`;
+    if (isUuid) {
+      restUrl += `&or=(id.eq.${clean},slug.eq.${encodeURIComponent(clean)})`;
+    } else {
+      restUrl += `&or=(slug.eq.${encodeURIComponent(clean)},slug.eq.${encodeURIComponent(hyphenSlug)})`;
+    }
+
+    const restRes = await fetch(restUrl, { headers: sbHeaders }).then(r => r.ok ? r.json() : null).catch(() => null);
+    let data = (Array.isArray(restRes) && restRes.length > 0) ? restRes[0] : null;
+
+    if (!data) {
+      const fuzzyRes = await fetch(`${SUPABASE_URL}/rest/v1/products?select=*,product_images(*),categories(id,name,slug)&status=neq.archived&or=(sku.eq.${encodeURIComponent(clean)},slug.ilike.*${encodeURIComponent(hyphenSlug)}*,name.ilike.*${encodeURIComponent(clean)}*)&limit=1`, { headers: sbHeaders })
+        .then(r => r.ok ? r.json() : null).catch(() => null);
+      data = (Array.isArray(fuzzyRes) && fuzzyRes.length > 0) ? fuzzyRes[0] : null;
+    }
+
+    if (data) {
+      const rawImgs = (data.product_images || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      const imgs = rawImgs.map(img => resolveSafeAssetUrl(img.image_url || img.url)).filter(Boolean);
+      const primaryImg = imgs[0] || resolveSafeAssetUrl(data.image_url || data.image || '');
+      return {
+        id: data.id,
+        sku: data.sku || `HN-${(data.id || '').slice(0, 6)}`,
+        name: data.name || data.title,
+        title: data.title || data.name,
+        slug: data.slug,
+        category: data.categories?.name || data.category || 'General',
+        category_id: data.category_id || null,
+        category_slug: data.categories?.slug || '',
+        material: (data.specifications && data.specifications.material) || data.material || 'Standard',
+        price: parseFloat(data.price) || 0,
+        old_price: data.compare_price ? parseFloat(data.compare_price) : null,
+        compare_price: data.compare_price ? parseFloat(data.compare_price) : null,
+        stock: data.stock !== undefined ? data.stock : 25,
+        rating: parseFloat(data.rating) || 5.0,
+        reviews_count: data.reviews_count || 0,
+        image: primaryImg,
+        primary_image: primaryImg,
+        images: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
+        gallery: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
+        description: data.description || '',
+        featured: Boolean(data.featured),
+        trending: Boolean(data.trending)
+      };
     }
   } catch (sbErr) {
     console.warn('[data.js] fetchProductBySlug Supabase notice:', sbErr);
   }
 
-  return HARINAMA_DATA.getProductBySlug(clean) || HARINAMA_DATA.getProductById(clean);
+  return (typeof findCatalogProduct === 'function' ? findCatalogProduct(clean) : null) || HARINAMA_DATA.getProductBySlug(clean) || HARINAMA_DATA.getProductById(clean);
 };
 
 // Dynamic Sync with Live Database (Backend Express API & Direct Supabase Fallback)

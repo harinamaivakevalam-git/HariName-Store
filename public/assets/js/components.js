@@ -1642,7 +1642,7 @@ const renderFooter = () => {
   `;
 };
 
-// Universal Product Catalog Resolver (Handles UUID, legacy prod-XXX, slug, or title)
+// Universal Product Catalog Resolver (Handles UUID, slug with/without hyphens, title, or SKU)
 const findCatalogProduct = (idOrSlug) => {
   if (!idOrSlug) return null;
   const str = String(idOrSlug).trim();
@@ -1650,24 +1650,46 @@ const findCatalogProduct = (idOrSlug) => {
   const staticList = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA._staticProducts)) ? HARINAMA_DATA._staticProducts : [];
   const allProds = [...list, ...staticList];
 
+  if (allProds.length === 0) return null;
+
   // 1. Direct match on id, legacy_id, sku, or slug
   let found = allProds.find(p =>
     p && (p.id === str || p.legacy_id === str || p.sku === str || p.slug === str)
   );
   if (found) return found;
 
-  // 2. Case-insensitive slug / title match
+  // 2. Case-insensitive exact slug / title / name match
   const lower = str.toLowerCase();
   found = allProds.find(p =>
     p && (
       (p.slug && p.slug.toLowerCase() === lower) ||
       (p.name && p.name.toLowerCase() === lower) ||
-      (p.title && p.title.toLowerCase() === lower)
+      (p.title && p.title.toLowerCase() === lower) ||
+      (p.sku && p.sku.toLowerCase() === lower)
     )
   );
   if (found) return found;
 
-  // 3. Numeric ID match (e.g. prod-003 or index 3 or uuid ending in 003)
+  // 3. Hyphenated / Normalized alphanumeric match (handles spaces vs hyphens)
+  const normInput = lower.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+  const alphaInput = lower.replace(/[^a-z0-9]/g, '');
+
+  found = allProds.find(p => {
+    if (!p) return false;
+    const pSlug = (p.slug || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    const pName = (p.name || p.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    if (pSlug && (pSlug === normInput || pSlug.includes(normInput) || normInput.includes(pSlug))) return true;
+    if (pName && (pName === normInput || pName.includes(normInput) || normInput.includes(pName))) return true;
+
+    if (alphaInput && alphaInput.length >= 4) {
+      const pAlpha = (p.name || p.title || p.slug || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (pAlpha && (pAlpha.includes(alphaInput) || alphaInput.includes(pAlpha))) return true;
+    }
+    return false;
+  });
+  if (found) return found;
+
+  // 4. Numeric ID match (e.g. prod-003 or index 3 or uuid ending in 003)
   const numMatch = str.match(/\d+/);
   if (numMatch) {
     const num = parseInt(numMatch[0], 10);

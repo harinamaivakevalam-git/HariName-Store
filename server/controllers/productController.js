@@ -312,22 +312,38 @@ exports.getProductBySlug = async (req, res, next) => {
   try {
     const { slug } = req.params;
 
-    if (isSupabaseConfigured && supabase) {
+    if (isSupabaseConfigured && (supabaseAdmin || supabase)) {
       try {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
-        let query = supabase
-          .from('products')
-          .select('*, product_images(*), product_variants(*), categories(id, name, slug), brands(id, name, slug), reviews(*, profiles(id, name, avatar_url))');
+        const client = supabaseAdmin || supabase;
+        const cleanSlug = String(slug).trim();
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanSlug);
+        const hyphenSlug = cleanSlug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+        const selectFields = '*, product_images(*), product_variants(*), categories(id, name, slug), brands(id, name, slug), reviews(*, profiles(id, name, avatar_url))';
 
+        let data = null;
+
+        // 1. Direct UUID or exact slug
         if (isUuid) {
-          query = query.or(`slug.eq.${slug},id.eq.${slug}`);
+          const res = await client.from('products').select(selectFields).or(`id.eq.${cleanSlug},slug.eq.${cleanSlug}`).maybeSingle();
+          data = res.data;
         } else {
-          query = query.eq('slug', slug);
+          const res = await client.from('products').select(selectFields).eq('slug', cleanSlug).maybeSingle();
+          data = res.data;
         }
 
-        const { data, error } = await query.single();
+        // 2. Hyphenated slug match
+        if (!data && hyphenSlug) {
+          const res = await client.from('products').select(selectFields).eq('slug', hyphenSlug).maybeSingle();
+          data = res.data;
+        }
 
-        if (!error && data) {
+        // 3. SKU or fuzzy slug/name match
+        if (!data) {
+          const res = await client.from('products').select(selectFields).or(`sku.eq.${cleanSlug},slug.ilike.%${hyphenSlug}%,name.ilike.%${cleanSlug}%`).limit(1).maybeSingle();
+          data = res.data;
+        }
+
+        if (data) {
           const normalized = normalizeSupabaseProduct(data);
           const reviews = (data.reviews || [])
             .filter(r => r.status === 'approved' || !r.status)

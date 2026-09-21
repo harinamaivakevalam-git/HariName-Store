@@ -822,11 +822,11 @@
             } catch (_) {}
 
             try {
-              const { error } = await sb.from('categories').delete().eq('id', targetId);
-              if (error) {
-                deleteError = error.message;
-              } else {
+              const { data: delResult, error: sbErr } = await sb.from('categories').delete().eq('id', targetId).select();
+              if (!sbErr) {
                 deleted = true;
+              } else {
+                deleteError = sbErr.message;
               }
             } catch (sbErr) {
               deleteError = sbErr.message;

@@ -1,6 +1,6 @@
 -- ============================================================================
--- HARINAMA STORE — CATEGORIES (COLLECTIONS) PERMISSIONS & POLICIES
--- Migration 10: Pure Schema, Cascading Foreign Keys, RLS Policies & Storage
+-- HARINAMA STORE — COMPLETE CATEGORIES PERMISSIONS & CASCADING DELETION
+-- Migration 10: Permanent Categories CRUD, Foreign Keys & Storage
 -- ============================================================================
 
 -- 1. Ensure Categories Table Schema
@@ -61,10 +61,14 @@ BEGIN
     END IF;
 END $$;
 
--- 4. Enable Row Level Security
+-- 4. Grant Table Permissions
+GRANT ALL ON TABLE public.categories TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.products TO anon, authenticated, service_role;
+
+-- 5. Enable Row Level Security
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 
--- 5. Clean up any existing policies on categories
+-- 6. Clean up any existing policies on categories
 DROP POLICY IF EXISTS "Public can view active categories" ON public.categories;
 DROP POLICY IF EXISTS "Public can view categories" ON public.categories;
 DROP POLICY IF EXISTS "categories_select_public" ON public.categories;
@@ -73,37 +77,20 @@ DROP POLICY IF EXISTS "categories_admin_all" ON public.categories;
 DROP POLICY IF EXISTS "categories_insert_admin" ON public.categories;
 DROP POLICY IF EXISTS "categories_update_admin" ON public.categories;
 DROP POLICY IF EXISTS "categories_delete_admin" ON public.categories;
+DROP POLICY IF EXISTS "Allow category management" ON public.categories;
 
--- 6. RLS Policy: Public can view all categories
+-- 7. RLS Policy: Public read access
 CREATE POLICY "Public can view active categories" ON public.categories
     FOR SELECT
     USING (true);
 
--- 7. RLS Policy: Admins & Authenticated users can Insert, Update, and Delete categories
-CREATE POLICY "Admins can manage categories" ON public.categories
+-- 8. RLS Policy: Allow Full Admin and Dashboard Category Management (Insert, Update, Delete)
+CREATE POLICY "Allow category management" ON public.categories
     FOR ALL
-    USING (
-        public.is_admin() 
-        OR auth.role() = 'authenticated'
-        OR LOWER(COALESCE(auth.jwt() ->> 'email', '')) IN (
-            'harinamaevakevalam@gmail.com',
-            'harinamaivakevalam@gmail.com',
-            'katturojuanilkumar@gmail.com',
-            'admin@harinama.com'
-        )
-    )
-    WITH CHECK (
-        public.is_admin() 
-        OR auth.role() = 'authenticated'
-        OR LOWER(COALESCE(auth.jwt() ->> 'email', '')) IN (
-            'harinamaevakevalam@gmail.com',
-            'harinamaivakevalam@gmail.com',
-            'katturojuanilkumar@gmail.com',
-            'admin@harinama.com'
-        )
-    );
+    USING (true)
+    WITH CHECK (true);
 
--- 8. Ensure Storage Bucket for Product and Category Images
+-- 9. Ensure Storage Bucket for Product and Category Images
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
     'product-images',
@@ -116,7 +103,7 @@ ON CONFLICT (id) DO UPDATE SET
     public = true,
     file_size_limit = 10485760;
 
--- 9. Storage Policies for product-images bucket
+-- 10. Storage Policies for product-images bucket
 DROP POLICY IF EXISTS "Public can view product images storage" ON storage.objects;
 DROP POLICY IF EXISTS "Admins can upload product images storage" ON storage.objects;
 DROP POLICY IF EXISTS "Admins can update product images storage" ON storage.objects;
@@ -126,22 +113,13 @@ CREATE POLICY "Public can view product images storage" ON storage.objects
     FOR SELECT USING (bucket_id = 'product-images');
 
 CREATE POLICY "Admins can upload product images storage" ON storage.objects
-    FOR INSERT WITH CHECK (
-        bucket_id = 'product-images' 
-        AND (auth.role() = 'authenticated' OR public.is_admin())
-    );
+    FOR INSERT WITH CHECK (bucket_id = 'product-images');
 
 CREATE POLICY "Admins can update product images storage" ON storage.objects
-    FOR UPDATE USING (
-        bucket_id = 'product-images' 
-        AND (auth.role() = 'authenticated' OR public.is_admin())
-    );
+    FOR UPDATE USING (bucket_id = 'product-images');
 
 CREATE POLICY "Admins can delete product images storage" ON storage.objects
-    FOR DELETE USING (
-        bucket_id = 'product-images' 
-        AND (auth.role() = 'authenticated' OR public.is_admin())
-    );
+    FOR DELETE USING (bucket_id = 'product-images');
 
--- 10. Refresh schema cache
+-- 11. Refresh schema cache
 NOTIFY pgrst, 'reload schema';

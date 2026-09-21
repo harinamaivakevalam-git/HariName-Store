@@ -1,6 +1,6 @@
 -- ============================================================================
 -- HARINAMA STORE — CATEGORIES (COLLECTIONS) PERMISSIONS & POLICIES
--- Migration 10: Pure Schema, RLS Policies & Storage (No Seed Data)
+-- Migration 10: Pure Schema, Cascading Foreign Keys, RLS Policies & Storage
 -- ============================================================================
 
 -- 1. Ensure Categories Table Schema
@@ -46,10 +46,25 @@ CREATE INDEX IF NOT EXISTS idx_categories_slug ON public.categories (slug);
 CREATE INDEX IF NOT EXISTS idx_categories_status ON public.categories (status);
 CREATE INDEX IF NOT EXISTS idx_categories_sort_order ON public.categories (sort_order);
 
--- 3. Enable Row Level Security
+-- 3. Ensure Products Foreign Key unlinks smoothly on delete (ON DELETE SET NULL)
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'products'
+    ) THEN
+        ALTER TABLE public.products DROP CONSTRAINT IF EXISTS products_category_id_fkey;
+        ALTER TABLE public.products DROP CONSTRAINT IF EXISTS fk_products_category;
+        ALTER TABLE public.products 
+            ADD CONSTRAINT products_category_id_fkey 
+            FOREIGN KEY (category_id) REFERENCES public.categories(id) ON DELETE SET NULL;
+    END IF;
+END $$;
+
+-- 4. Enable Row Level Security
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 
--- 4. Clean up any existing policies on categories
+-- 5. Clean up any existing policies on categories
 DROP POLICY IF EXISTS "Public can view active categories" ON public.categories;
 DROP POLICY IF EXISTS "Public can view categories" ON public.categories;
 DROP POLICY IF EXISTS "categories_select_public" ON public.categories;
@@ -59,12 +74,12 @@ DROP POLICY IF EXISTS "categories_insert_admin" ON public.categories;
 DROP POLICY IF EXISTS "categories_update_admin" ON public.categories;
 DROP POLICY IF EXISTS "categories_delete_admin" ON public.categories;
 
--- 5. RLS Policy: Public can view all categories
+-- 6. RLS Policy: Public can view all categories
 CREATE POLICY "Public can view active categories" ON public.categories
     FOR SELECT
     USING (true);
 
--- 6. RLS Policy: Admins & Authenticated users can Insert, Update, and Delete categories
+-- 7. RLS Policy: Admins & Authenticated users can Insert, Update, and Delete categories
 CREATE POLICY "Admins can manage categories" ON public.categories
     FOR ALL
     USING (
@@ -88,7 +103,7 @@ CREATE POLICY "Admins can manage categories" ON public.categories
         )
     );
 
--- 7. Ensure Storage Bucket for Product and Category Images
+-- 8. Ensure Storage Bucket for Product and Category Images
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
     'product-images',
@@ -101,7 +116,7 @@ ON CONFLICT (id) DO UPDATE SET
     public = true,
     file_size_limit = 10485760;
 
--- 8. Storage Policies for product-images bucket
+-- 9. Storage Policies for product-images bucket
 DROP POLICY IF EXISTS "Public can view product images storage" ON storage.objects;
 DROP POLICY IF EXISTS "Admins can upload product images storage" ON storage.objects;
 DROP POLICY IF EXISTS "Admins can update product images storage" ON storage.objects;
@@ -128,5 +143,5 @@ CREATE POLICY "Admins can delete product images storage" ON storage.objects
         AND (auth.role() = 'authenticated' OR public.is_admin())
     );
 
--- 9. Refresh schema cache
+-- 10. Refresh schema cache
 NOTIFY pgrst, 'reload schema';

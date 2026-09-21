@@ -229,9 +229,22 @@ exports.deleteCategory = async (req, res, next) => {
       }
 
       if (targetId) {
+        // 1. Unlink any products currently referencing this category to prevent foreign key errors
+        try {
+          await client.from('products').update({ category_id: null }).eq('category_id', targetId);
+        } catch (unlinkErr) {
+          console.warn('[categoryController] Product unlinking notice:', unlinkErr);
+        }
+
+        // 2. Delete the category record
         const { error } = await client.from('categories').delete().eq('id', targetId);
         if (!error) {
-          return res.json({ success: true, message: 'Category deleted from Supabase.' });
+          db.delete('categories', targetId);
+          db.delete('categories', id);
+          return res.json({ success: true, message: 'Category deleted successfully from database.' });
+        } else {
+          console.error('[categoryController] Supabase delete error:', error);
+          return res.status(400).json({ success: false, message: error.message });
         }
       }
     }

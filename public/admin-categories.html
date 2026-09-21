@@ -777,33 +777,13 @@
     }
 
     async function deleteCategory(id) {
-      if (!confirm('Are you sure you want to remove this devotional collection?')) return;
+      if (!confirm('Are you sure you want to remove this devotional collection? Any products inside will remain safe.')) return;
       let deleted = false;
       let deleteError = null;
 
-      // Check linked products safety guard
+      // 1. Primary: Delete via Backend API (which auto-unlinks products)
       try {
-        const sb = initSupabase();
-        if (sb) {
-          const isUuid = id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-          let targetId = isUuid ? id : null;
-          if (!targetId) {
-            const { data: rec } = await sb.from('categories').select('id').eq('slug', id).maybeSingle();
-            if (rec) targetId = rec.id;
-          }
-          if (targetId) {
-            const { data: prods } = await sb.from('products').select('id').eq('category_id', targetId);
-            if (Array.isArray(prods) && prods.length > 0) {
-              showToast(`Cannot delete: ${prods.length} product(s) are currently in this collection. Reassign or delete those products first.`, 'warning');
-              return;
-            }
-          }
-        }
-      } catch (_) {}
-
-      // 1. Primary: Delete via Backend API
-      try {
-        const res = await fetch(getApiUrl(`/api/categories/${id}`), {
+        const res = await fetch(getApiUrl(`/api/categories/${encodeURIComponent(id)}`), {
           method: 'DELETE',
           headers: getAuthHeaders(),
           cache: 'no-store'
@@ -812,6 +792,13 @@
           const json = await res.json();
           if (json.success) deleted = true;
           else deleteError = json.message;
+        } else {
+          try {
+            const errJson = await res.json();
+            deleteError = errJson.message || `Server error ${res.status}`;
+          } catch (_) {
+            deleteError = `Server error ${res.status}`;
+          }
         }
       } catch (apiErr) {
         console.warn('[AdminCategories] Backend delete error:', apiErr);
@@ -829,6 +816,11 @@
           }
 
           if (targetId) {
+            // First unlink products so foreign key never blocks deletion
+            try {
+              await sb.from('products').update({ category_id: null }).eq('category_id', targetId);
+            } catch (_) {}
+
             try {
               const { error } = await sb.from('categories').delete().eq('id', targetId);
               if (error) {
@@ -845,6 +837,9 @@
 
       if (deleted) {
         showToast('Collection deleted successfully. 🌸', 'info');
+        // Instantly remove from local array for zero-latency UI response
+        databaseCategories = databaseCategories.filter(c => c.id !== id && c.slug !== id);
+        filterCategories();
         if (window.HARINAMA_DATA && typeof window.HARINAMA_DATA.broadcastCatalogChange === 'function') {
           window.HARINAMA_DATA.broadcastCatalogChange();
         }

@@ -503,9 +503,7 @@
   document.addEventListener('click', (e) => {
     const toggleBtn = e.target.closest('#hnMobileNavToggle') || e.target.closest('.hn-hamburger-btn');
     if (toggleBtn) {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleMobileNav(e);
+      // Handled directly by toggleMobileNav on click/touch
       return;
     }
 

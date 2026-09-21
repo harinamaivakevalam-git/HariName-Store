@@ -237,8 +237,8 @@ HARINAMA_DATA.getProductBySlug = function(slug) {
   return HARINAMA_DATA.products.find(p => String(p.slug).toLowerCase() === cleanSlug) || null;
 };
 
-// Dynamic Sync with Live Supabase & Admin API
-HARINAMA_DATA.syncWithApi = async function() {
+// Dynamic Sync with Live Database (Backend Express API & Direct Supabase Fallback)
+HARINAMA_DATA.syncWithApi = async function(forceRefresh = false) {
   const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
 
@@ -274,7 +274,7 @@ HARINAMA_DATA.syncWithApi = async function() {
   };
 
   // Fast fetch helper with timeout to avoid browser hangs
-  function fetchWithTimeout(url, options = {}, timeoutMs = 2000) {
+  function fetchWithTimeout(url, options = {}, timeoutMs = 2500) {
     if (typeof AbortController === 'undefined') return fetch(url, options);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -282,120 +282,58 @@ HARINAMA_DATA.syncWithApi = async function() {
       .finally(() => clearTimeout(timer));
   }
 
-  // 1. FAST LOCAL STATIC JSON SYNC (Instant: 10-30ms, 100% reliable on static hosting & CDN)
+  // 1. LIVE BACKEND EXPRESS API (Primary Live Database Source)
   try {
-    const [prodJsonRes, catJsonRes] = await Promise.allSettled([
-      fetchWithTimeout('/assets/data/products.json', {}, 1500).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetchWithTimeout('/assets/data/categories.json', {}, 1500).then(r => r.ok ? r.json() : null).catch(() => null)
+    const [prodRes, catRes] = await Promise.allSettled([
+      fetchWithTimeout(getBackendUrl('/api/products?limit=200'), {}, 2500).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetchWithTimeout(getBackendUrl('/api/categories'), {}, 2500).then(r => r.ok ? r.json() : null).catch(() => null)
     ]);
 
-    if (catJsonRes.status === 'fulfilled' && Array.isArray(catJsonRes.value) && catJsonRes.value.length > 0) {
-      fetchedCategories = catJsonRes.value.map(c => ({
+    if (catRes.status === 'fulfilled' && catRes.value && catRes.value.success && Array.isArray(catRes.value.data) && catRes.value.data.length > 0) {
+      fetchedCategories = catRes.value.data.map(c => ({
         id: c.id,
         name: c.name,
         slug: c.slug,
         desc: c.description || 'Sacred collection',
         image: resolveSafeAssetUrl(resolveCategoryImage(c)),
         image_url: resolveSafeAssetUrl(resolveCategoryImage(c)),
-        product_count: 0
+        product_count: c.product_count || 0
       }));
       categoriesLoaded = true;
     }
 
-    if (prodJsonRes.status === 'fulfilled' && Array.isArray(prodJsonRes.value) && prodJsonRes.value.length > 0) {
-      fetchedProducts = prodJsonRes.value.map(p => {
-        const rawImgs = (p.product_images || []).sort((a, b) => {
-          if (a.is_primary && !b.is_primary) return -1;
-          if (!a.is_primary && b.is_primary) return 1;
-          return (a.sort_order || 0) - (b.sort_order || 0);
-        });
-        const imgs = rawImgs.map(img => resolveSafeAssetUrl(img.image_url || img.url)).filter(Boolean);
-        const primaryImg = resolveSafeAssetUrl(imgs[0] || p.primary_image || p.image_url || p.image || '');
-        return {
-          id: p.id,
-          sku: p.sku || `HN-${(p.id || '').slice(0, 6)}`,
-          name: p.name || p.title,
-          title: p.title || p.name,
-          slug: p.slug,
-          category: p.categories?.name || p.category_name || p.category || 'Krishna Keychains',
-          category_id: p.category_id,
-          category_slug: p.categories?.slug || p.category_slug || '',
-          material: (p.specifications && p.specifications.material) || p.material || 'Artwork',
-          price: parseFloat(p.price) || 0,
-          old_price: p.compare_price ? parseFloat(p.compare_price) : null,
-          compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
-          stock: p.stock !== undefined ? p.stock : 25,
-          rating: parseFloat(p.rating) || 5.0,
-          reviews_count: p.reviews_count || 0,
-          image: primaryImg,
-          primary_image: primaryImg,
-          images: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
-          gallery: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
-          description: p.description || '',
-          featured: Boolean(p.featured),
-          trending: Boolean(p.trending)
-        };
-      });
+    if (prodRes.status === 'fulfilled' && prodRes.value && prodRes.value.success && Array.isArray(prodRes.value.data) && prodRes.value.data.length > 0) {
+      fetchedProducts = prodRes.value.data.map(p => ({
+        id: p.id,
+        sku: p.sku || `HN-${(p.id || '').slice(0, 6)}`,
+        name: p.name || p.title,
+        title: p.title || p.name,
+        slug: p.slug,
+        category: p.category_name || p.category || 'Devotional Items',
+        category_id: p.category_id,
+        category_slug: p.category_slug || '',
+        material: p.material || (p.specifications && p.specifications.material) || 'Standard',
+        price: parseFloat(p.price) || 0,
+        old_price: p.compare_price ? parseFloat(p.compare_price) : null,
+        compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
+        stock: p.stock !== undefined ? p.stock : 25,
+        rating: parseFloat(p.rating) || 5.0,
+        reviews_count: p.reviews_count || 0,
+        image: resolveSafeAssetUrl(p.primary_image || p.image || (p.images && p.images[0]) || ''),
+        primary_image: resolveSafeAssetUrl(p.primary_image || p.image || (p.images && p.images[0]) || ''),
+        images: (p.images && p.images.length > 0) ? p.images.map(img => resolveSafeAssetUrl(typeof img === 'string' ? img : (img.image_url || img.url))) : (p.primary_image ? [resolveSafeAssetUrl(p.primary_image)] : []),
+        gallery: (p.images && p.images.length > 0) ? p.images.map(img => resolveSafeAssetUrl(typeof img === 'string' ? img : (img.image_url || img.url))) : (p.primary_image ? [resolveSafeAssetUrl(p.primary_image)] : []),
+        description: p.description || '',
+        featured: Boolean(p.featured),
+        trending: Boolean(p.trending)
+      }));
       productsLoaded = true;
     }
-  } catch (jsonErr) {
-    console.warn('[data.js] Static JSON fallback notice:', jsonErr);
+  } catch (e) {
+    console.warn('[data.js] Live Express API notice:', e);
   }
 
-  // 2. Try Backend Express API (If running and responsive within 2s)
-  if (!productsLoaded || !categoriesLoaded) {
-    try {
-      const [prodRes, catRes] = await Promise.allSettled([
-        fetchWithTimeout(getBackendUrl('/api/products?limit=100'), {}, 2000).then(r => r.ok ? r.json() : null).catch(() => null),
-        fetchWithTimeout(getBackendUrl('/api/categories'), {}, 2000).then(r => r.ok ? r.json() : null).catch(() => null)
-      ]);
-
-      if (catRes.status === 'fulfilled' && catRes.value && catRes.value.success && Array.isArray(catRes.value.data) && catRes.value.data.length > 0) {
-        fetchedCategories = catRes.value.data.map(c => ({
-          id: c.id,
-          name: c.name,
-          slug: c.slug,
-          desc: c.description || 'Sacred collection',
-          image: resolveSafeAssetUrl(resolveCategoryImage(c)),
-          image_url: resolveSafeAssetUrl(resolveCategoryImage(c)),
-          product_count: c.product_count || 0
-        }));
-        categoriesLoaded = true;
-      }
-
-      if (prodRes.status === 'fulfilled' && prodRes.value && prodRes.value.success && Array.isArray(prodRes.value.data) && prodRes.value.data.length > 0) {
-        fetchedProducts = prodRes.value.data.map(p => ({
-          id: p.id,
-          sku: p.sku,
-          name: p.name,
-          title: p.title || p.name,
-          slug: p.slug,
-          category: p.category_name || p.category || 'Devotional Items',
-          category_id: p.category_id,
-          category_slug: p.category_slug || '',
-          material: p.material || 'Standard',
-          price: parseFloat(p.price) || 0,
-          old_price: p.compare_price ? parseFloat(p.compare_price) : null,
-          compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
-          stock: p.stock !== undefined ? p.stock : 25,
-          rating: parseFloat(p.rating) || 5.0,
-          reviews_count: p.reviews_count || 0,
-          image: resolveSafeAssetUrl(p.primary_image || p.image || (p.images && p.images[0]) || ''),
-          primary_image: resolveSafeAssetUrl(p.primary_image || p.image || (p.images && p.images[0]) || ''),
-          images: (p.images && p.images.length > 0) ? p.images.map(img => resolveSafeAssetUrl(typeof img === 'string' ? img : (img.image_url || img.url))) : (p.primary_image ? [resolveSafeAssetUrl(p.primary_image)] : []),
-          gallery: (p.images && p.images.length > 0) ? p.images.map(img => resolveSafeAssetUrl(typeof img === 'string' ? img : (img.image_url || img.url))) : (p.primary_image ? [resolveSafeAssetUrl(p.primary_image)] : []),
-          description: p.description || '',
-          featured: Boolean(p.featured),
-          trending: Boolean(p.trending)
-        }));
-        productsLoaded = true;
-      }
-    } catch (e) {
-      console.warn('[data.js] API fetch notice:', e);
-    }
-  }
-
-  // 3. Direct Supabase REST API Fallback (Only if both static & backend failed, with strict 2.5s timeout)
+  // 2. LIVE SUPABASE DIRECT REST API FALLBACK (If Express is unreachable)
   if (!productsLoaded || !categoriesLoaded) {
     const sbHeaders = {
       'apikey': SUPABASE_ANON_KEY,
@@ -417,8 +355,8 @@ HARINAMA_DATA.syncWithApi = async function() {
             name: c.name,
             slug: c.slug,
             desc: c.description || 'Sacred collection',
-            image: resolveCategoryImage(c),
-            image_url: resolveCategoryImage(c),
+            image: resolveSafeAssetUrl(resolveCategoryImage(c)),
+            image_url: resolveSafeAssetUrl(resolveCategoryImage(c)),
             product_count: 0
           }));
           categoriesLoaded = true;
@@ -470,22 +408,17 @@ HARINAMA_DATA.syncWithApi = async function() {
         }
       }
     } catch (restErr) {
-      console.warn('[data.js] Supabase REST fallback notice:', restErr);
+      console.warn('[data.js] Supabase direct fallback notice:', restErr);
     }
   }
 
-  // 3. Cache fallback for categories if still empty
+  // 3. Keep existing products if network was completely offline
+  if (!productsLoaded || fetchedProducts.length === 0) {
+    fetchedProducts = (HARINAMA_DATA.products && HARINAMA_DATA.products.length > 0) ? HARINAMA_DATA.products : [...HARINAMA_AUTHENTIC_PRODUCTS];
+  }
+
   if (!categoriesLoaded || fetchedCategories.length === 0) {
-    try {
-      const cached = localStorage.getItem('hn_admin_categories') || localStorage.getItem('hn_live_categories');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          fetchedCategories = parsed;
-          categoriesLoaded = true;
-        }
-      }
-    } catch (_) {}
+    fetchedCategories = (HARINAMA_DATA.categories && HARINAMA_DATA.categories.length > 0) ? HARINAMA_DATA.categories : [...HARINAMA_BASE_AUTHENTIC_COLLECTIONS];
   }
 
   // Apply to global state
@@ -493,7 +426,7 @@ HARINAMA_DATA.syncWithApi = async function() {
   HARINAMA_DATA.categories = computeCategoryCounts(fetchedProducts, fetchedCategories);
   HARINAMA_DATA.isLoaded = true;
 
-  // Persist live categories and products
+  // Persist live products & categories to cache for instant sub-millisecond next load
   if (typeof window !== 'undefined') {
     try {
       if (typeof localStorage !== 'undefined') {
@@ -502,12 +435,36 @@ HARINAMA_DATA.syncWithApi = async function() {
       }
     } catch (e) {}
 
-    // Notify all storefront listeners
+    // Notify all storefront listeners in real time
     try {
       window.dispatchEvent(new CustomEvent('hn:catalog-loaded', {
         detail: { products: HARINAMA_DATA.products, categories: HARINAMA_DATA.categories }
       }));
     } catch (_) {}
+  }
+};
+
+// Safe Catalog Cache Refresh: Refetches live products without ever touching Auth Tokens or User Sessions
+HARINAMA_DATA.refreshCatalog = async function() {
+  try {
+    await HARINAMA_DATA.syncWithApi(true);
+    return { success: true, count: HARINAMA_DATA.products.length };
+  } catch (err) {
+    console.warn('[data.js] Catalog refresh notice:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+// Safe Cache Clear: Clears ONLY the product/category cache without logging the devotee out
+HARINAMA_DATA.clearStorefrontCatalogCache = function() {
+  try {
+    localStorage.removeItem('hn_live_products');
+    localStorage.removeItem('hn_live_categories');
+    localStorage.removeItem('hn_admin_categories');
+    HARINAMA_DATA.syncWithApi(true);
+    return true;
+  } catch (_) {
+    return false;
   }
 };
 

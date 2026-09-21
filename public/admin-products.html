@@ -325,24 +325,9 @@
       const filterCatSelect = document.getElementById('category-filter');
       if (!catSelect) return;
 
-      // 1. Fast static JSON fallback (10-30ms)
+      // 1. Fast Backend API
       try {
-        const localRes = await fetchWithTimeout('/assets/data/categories.json', {}, 1500);
-        if (localRes.ok) {
-          const catJson = await localRes.json();
-          if (Array.isArray(catJson) && catJson.length > 0) {
-            databaseCategories = catJson;
-            catSelect.innerHTML = databaseCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-            if (filterCatSelect) {
-              filterCatSelect.innerHTML = `<option value="all">All Categories</option>` + databaseCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-            }
-          }
-        }
-      } catch (_) {}
-
-      // 2. Fast Backend API
-      try {
-        const res = await fetchWithTimeout(getApiUrl('/api/categories'), {}, 2000);
+        const res = await fetchWithTimeout(getApiUrl('/api/categories'), {}, 2500);
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data) && json.data.length > 0) {
@@ -351,11 +336,27 @@
             if (filterCatSelect) {
               filterCatSelect.innerHTML = `<option value="all">All Categories</option>` + databaseCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
             }
+            return;
           }
         }
       } catch (err) {
         console.warn('[AdminProducts] Backend API categories notice:', err);
       }
+
+      // 2. Direct Supabase Fallback
+      try {
+        const sb = initSupabase();
+        if (sb) {
+          const { data: sbCats } = await sb.from('categories').select('*').neq('status', 'archived').order('name');
+          if (Array.isArray(sbCats) && sbCats.length > 0) {
+            databaseCategories = sbCats;
+            catSelect.innerHTML = databaseCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            if (filterCatSelect) {
+              filterCatSelect.innerHTML = `<option value="all">All Categories</option>` + databaseCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            }
+          }
+        }
+      } catch (_) {}
     }
 
     async function loadProductsFromDatabase() {
@@ -374,57 +375,17 @@
         } catch (_) {}
       }
 
-      // 1. Instant local static JSON catalog (10-30ms)
+      // 1. Live Backend Express API
       try {
-        const staticRes = await fetchWithTimeout('/assets/data/products.json', {}, 1500);
-        if (staticRes.ok) {
-          const staticJson = await staticRes.json();
-          if (Array.isArray(staticJson) && staticJson.length > 0) {
-            remoteProducts = staticJson.map(p => {
-              const imgs = (p.product_images || []).map(img => resolveSafeAssetUrl(img.image_url || img.url));
-              const primaryImg = resolveSafeAssetUrl(imgs[0] || p.primary_image || p.image_url || p.image || '');
-              return {
-                id: p.id,
-                sku: p.sku || `HN-${(p.id || '').slice(0, 6)}`,
-                name: p.name || p.title,
-                title: p.title || p.name,
-                slug: p.slug,
-                category: p.categories?.name || p.category_name || p.category || 'General',
-                category_id: p.category_id || null,
-                category_slug: p.categories?.slug || '',
-                material: (p.specifications && p.specifications.material) || p.material || 'Standard',
-                price: parseFloat(p.price) || 0,
-                old_price: p.compare_price ? parseFloat(p.compare_price) : null,
-                compare_price: p.compare_price ? parseFloat(p.compare_price) : null,
-                stock: p.stock !== undefined ? p.stock : 25,
-                rating: parseFloat(p.rating) || 5.0,
-                reviews_count: p.reviews_count || 0,
-                image: primaryImg,
-                primary_image: primaryImg,
-                images: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
-                gallery: imgs.length > 0 ? imgs : (primaryImg ? [primaryImg] : []),
-                description: p.description || ''
-              };
-            });
-            remoteLoaded = true;
-            databaseProducts = remoteProducts;
-            renderProductsTable(databaseProducts);
-            localStorage.setItem('hn_live_products', JSON.stringify(databaseProducts));
-          }
-        }
-      } catch (_) {}
-
-      // 2. Backend Express API
-      try {
-        const res = await fetchWithTimeout(getApiUrl('/api/products?limit=100'), {
+        const res = await fetchWithTimeout(getApiUrl('/api/products?limit=200'), {
           headers: getAuthHeaders()
-        }, 2000);
+        }, 2500);
         if (res.ok) {
           const json = await res.json();
-          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          if (json.success && Array.isArray(json.data)) {
             remoteProducts = json.data.map(p => ({
               id: p.id,
-              sku: p.sku || `HN-${p.id.slice(0, 6)}`,
+              sku: p.sku || `HN-${(p.id || '').slice(0, 6)}`,
               name: p.name || p.title,
               title: p.title || p.name,
               slug: p.slug,

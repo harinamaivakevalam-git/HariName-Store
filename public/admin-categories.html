@@ -300,33 +300,19 @@
       let loaded = false;
       let remoteCategories = [];
 
-      // 1. Instant local static JSON (10-30ms)
+      // 1. Live Backend API
       try {
-        const localRes = await fetchWithTimeout('/assets/data/categories.json', {}, 1500);
-        if (localRes.ok) {
-          const catJson = await localRes.json();
-          if (Array.isArray(catJson) && catJson.length > 0) {
-            remoteCategories = catJson;
+        const res = await fetchWithTimeout(getApiUrl('/api/categories'), {}, 2500);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            remoteCategories = json.data;
             loaded = true;
           }
         }
       } catch (_) {}
 
-      // 2. Backend API (Anycast resilient)
-      if (!loaded) {
-        try {
-          const res = await fetchWithTimeout(getApiUrl('/api/categories'), {}, 2000);
-          if (res.ok) {
-            const json = await res.json();
-            if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-              remoteCategories = json.data;
-              loaded = true;
-            }
-          }
-        } catch (_) {}
-      }
-
-      // 3. Direct Supabase Fallback (with 2.5s timeout)
+      // 2. Direct Supabase Fallback (with 2.5s timeout)
       if (!loaded) {
         try {
           const sb = initSupabase();

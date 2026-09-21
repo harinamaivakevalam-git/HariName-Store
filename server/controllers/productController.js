@@ -175,6 +175,21 @@ exports.getProducts = async (req, res, next) => {
         if (featured === 'true') query = query.eq('featured', true);
         if (trending === 'true') query = query.eq('trending', true);
 
+        // Curated Featured Filter Tabs (New Arrivals, Best Sellers, Festival, Under 299, Specials)
+        const filterType = req.query.filter;
+        let activeSort = sort;
+        if (filterType === 'new-arrivals') {
+          activeSort = 'newest';
+        } else if (filterType === 'best-sellers') {
+          query = query.or('trending.eq.true,reviews_count.gt.0');
+        } else if (filterType === 'festival' || filterType === 'festival-collection') {
+          query = query.or('featured.eq.true,description.ilike.%divine%,description.ilike.%festival%');
+        } else if (filterType === 'under-299') {
+          query = query.lte('price', 299);
+        } else if (filterType === 'specials') {
+          query = query.eq('featured', true);
+        }
+
         // Search
         if (search) {
           const term = search.trim();
@@ -182,7 +197,7 @@ exports.getProducts = async (req, res, next) => {
         }
 
         // Sorting
-        switch (sort) {
+        switch (activeSort) {
           case 'newest':
             query = query.order('created_at', { ascending: false });
             break;

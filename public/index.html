@@ -128,12 +128,36 @@
               <span class="hn-lotus-header-icon">🪷</span>
               <h2 class="hn-section-title mb-0">Featured Products</h2>
             </div>
-            <a href="/shop.html" class="hn-view-all-link">
+            <a href="/shop.html?filter=new-arrivals" class="hn-view-all-link">
               <span>View All</span>
               <i class="bi bi-arrow-right ms-1"></i>
             </a>
           </div>
           <div class="hn-section-subtitle mt-1">Handpicked with love for your devotional journey</div>
+        </div>
+
+        <!-- Curated Featured Tabs Strip -->
+        <div class="hn-featured-tabs-wrapper mb-4 hn-reveal">
+          <div class="hn-featured-tabs-scroll" id="hn-curated-tabs">
+            <button type="button" class="hn-curated-tab active" data-tab="new-arrivals" onclick="switchFeaturedTab('new-arrivals', this)">
+              <span>✨ New Arrivals</span>
+            </button>
+            <button type="button" class="hn-curated-tab" data-tab="best-sellers" onclick="switchFeaturedTab('best-sellers', this)">
+              <span>🔥 Best Sellers</span>
+            </button>
+            <button type="button" class="hn-curated-tab" data-tab="gift-sets" onclick="switchFeaturedTab('gift-sets', this)">
+              <span>🎁 Gift Sets</span>
+            </button>
+            <button type="button" class="hn-curated-tab" data-tab="festival" onclick="switchFeaturedTab('festival', this)">
+              <span>🌸 Festival Collection</span>
+            </button>
+            <button type="button" class="hn-curated-tab" data-tab="under-299" onclick="switchFeaturedTab('under-299', this)">
+              <span>💛 Under ₹299</span>
+            </button>
+            <button type="button" class="hn-curated-tab" data-tab="specials" onclick="switchFeaturedTab('specials', this)">
+              <span>🪷 HarinamaStore SPECIALS</span>
+            </button>
+          </div>
         </div>
 
         <div class="row g-2 g-md-3 hn-reveal-stagger" id="hn-featured-grid">
@@ -314,7 +338,26 @@
       }).join('');
     }
 
-    // Render Featured Products from Database with Daily Dynamic Rotation
+    let currentFeaturedTab = 'new-arrivals';
+
+    function switchFeaturedTab(tabKey, el) {
+      currentFeaturedTab = tabKey;
+      document.querySelectorAll('.hn-curated-tab').forEach(b => b.classList.remove('active'));
+      if (el) el.classList.add('active');
+
+      const viewAllEl = document.querySelector('.hn-featured-header-wrap .hn-view-all-link');
+      if (viewAllEl) {
+        if (tabKey === 'gift-sets') {
+          viewAllEl.href = '/shop.html?category=gift-sets';
+        } else {
+          viewAllEl.href = `/shop.html?filter=${tabKey}`;
+        }
+      }
+
+      renderFeaturedSection();
+    }
+
+    // Render Featured Products from Database with Curated Tabs
     function renderFeaturedSection() {
       const grid = document.getElementById('hn-featured-grid');
       if (!grid) return;
@@ -324,18 +367,43 @@
         prods = (typeof HARINAMA_AUTHENTIC_PRODUCTS !== 'undefined' && Array.isArray(HARINAMA_AUTHENTIC_PRODUCTS)) ? HARINAMA_AUTHENTIC_PRODUCTS : [];
       }
 
-      // Daily Dynamic Showcase: Rotate product showcase everyday based on current calendar date
-      const today = new Date();
-      const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+      let filtered = [...prods];
 
-      // Calculate dynamic daily offset
-      const offset = prods.length > 0 ? (dayOfYear % prods.length) : 0;
-      const dailyRotated = [...prods.slice(offset), ...prods.slice(0, offset)];
+      if (currentFeaturedTab === 'new-arrivals') {
+        filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      } else if (currentFeaturedTab === 'best-sellers') {
+        filtered = filtered.filter(p => p.trending || (p.reviews_count && p.reviews_count > 0) || (p.rating && p.rating >= 4.8));
+        if (filtered.length === 0) filtered = [...prods].sort((a, b) => (b.reviews_count || 0) - (a.reviews_count || 0));
+      } else if (currentFeaturedTab === 'gift-sets') {
+        filtered = filtered.filter(p => 
+          (p.category_slug && p.category_slug.includes('gift')) || 
+          (p.category && p.category.toLowerCase().includes('gift')) ||
+          (p.name && (p.name.toLowerCase().includes('gift') || p.name.toLowerCase().includes('set') || p.name.toLowerCase().includes('bundle')))
+        );
+      } else if (currentFeaturedTab === 'festival') {
+        filtered = filtered.filter(p => 
+          p.featured || 
+          (p.tags && p.tags.includes('festival')) ||
+          (p.name && (p.name.toLowerCase().includes('krishna') || p.name.toLowerCase().includes('radha') || p.name.toLowerCase().includes('jagannath') || p.name.toLowerCase().includes('gita')))
+        );
+      } else if (currentFeaturedTab === 'under-299') {
+        filtered = filtered.filter(p => (parseFloat(p.price) || 0) <= 299);
+      } else if (currentFeaturedTab === 'specials') {
+        filtered = filtered.filter(p => p.featured || (p.discount_percent && p.discount_percent > 10));
+        if (filtered.length === 0) filtered = [...prods];
+      }
 
-      // Featured products prioritized first, then remainder of catalog
-      const featured = dailyRotated.filter(p => p.featured);
-      const others = dailyRotated.filter(p => !p.featured);
-      const displayList = [...featured, ...others].slice(0, 12);
+      const displayList = filtered.slice(0, 8);
+
+      if (displayList.length === 0) {
+        grid.innerHTML = `
+          <div class="col-12 text-center py-5 text-muted">
+            <span class="fs-1 d-block mb-2">🪷</span>
+            No products in this collection at the moment.
+          </div>
+        `;
+        return;
+      }
 
       grid.innerHTML = displayList.map(p => renderProductCard(p)).join('');
       if (typeof initScrollAnimations === 'function') initScrollAnimations();

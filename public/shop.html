@@ -61,9 +61,24 @@
                 </div>
               </div>
 
+              <!-- Featured Curated Collections -->
+              <div class="mb-4">
+                <div class="hn-filter-title d-flex align-items-center gap-1">
+                  <span>Featured Collections</span>
+                </div>
+                <div class="d-flex flex-column gap-1" id="hn-featured-filter-links">
+                  <a href="#" class="hn-filter-link" data-filter="new-arrivals" onclick="filterByCurated('new-arrivals', this); return false;">✨ New Arrivals</a>
+                  <a href="#" class="hn-filter-link" data-filter="best-sellers" onclick="filterByCurated('best-sellers', this); return false;">🔥 Best Sellers</a>
+                  <a href="#" class="hn-filter-link" data-filter="gift-sets" onclick="filterByCurated('gift-sets', this); return false;">🎁 Gift Sets</a>
+                  <a href="#" class="hn-filter-link" data-filter="festival" onclick="filterByCurated('festival', this); return false;">🌸 Festival Collection</a>
+                  <a href="#" class="hn-filter-link" data-filter="under-299" onclick="filterByCurated('under-299', this); return false;">💛 Under ₹299</a>
+                  <a href="#" class="hn-filter-link" data-filter="specials" onclick="filterByCurated('specials', this); return false;">🪷 HarinamaStore SPECIALS</a>
+                </div>
+              </div>
+
               <!-- Collections Filter -->
               <div class="mb-4">
-                <div class="hn-filter-title">Collections & Categories</div>
+                <div class="hn-filter-title">Store Categories</div>
                 <div id="hn-shop-categories-list">
                   <a href="#" class="hn-filter-link active" onclick="filterByCollection('all', this); return false;">All Products</a>
                 </div>
@@ -245,8 +260,20 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    let activeCuratedFilter = '';
+
+    function filterByCurated(filterName, el) {
+      activeCuratedFilter = filterName;
+      activeCollection = 'all';
+      currentPage = 1;
+      document.querySelectorAll('.hn-filter-link').forEach(a => a.classList.remove('active'));
+      if (el) el.classList.add('active');
+      applyFilters(true);
+    }
+
     function filterByCollection(col, el) {
       activeCollection = col;
+      activeCuratedFilter = '';
       currentPage = 1;
       document.querySelectorAll('.hn-filter-link').forEach(a => a.classList.remove('active'));
       if (el) el.classList.add('active');
@@ -268,12 +295,13 @@
       if (!catListEl) return;
 
       const cats = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.categories)) ? HARINAMA_DATA.categories : [];
-      let markup = `<a href="#" class="hn-filter-link ${activeCollection === 'all' ? 'active' : ''}" onclick="filterByCollection('all', this); return false;">All Products</a>`;
+      const isAllActive = activeCollection === 'all' && !activeCuratedFilter;
+      let markup = `<a href="#" class="hn-filter-link ${isAllActive ? 'active' : ''}" onclick="filterByCollection('all', this); return false;">All Products</a>`;
 
       cats.forEach(c => {
         if (c.slug !== 'all-products' && c.id !== 'cat-all') {
           const key = c.slug || c.id;
-          const isActive = activeCollection === key || activeCollection === c.name || activeCollection === c.id;
+          const isActive = !activeCuratedFilter && (activeCollection === key || activeCollection === c.name || activeCollection === c.id);
           const countBadge = c.count !== undefined ? ` (${c.count})` : '';
           markup += `<a href="#" class="hn-filter-link ${isActive ? 'active' : ''}" onclick="filterByCollection('${key}', this); return false;">${c.name}${countBadge}</a>`;
         }
@@ -308,9 +336,12 @@
           sort: sortParam
         });
 
-        if (activeCollection && activeCollection !== 'all') {
+        if (activeCuratedFilter) {
+          queryParams.set('filter', activeCuratedFilter);
+        } else if (activeCollection && activeCollection !== 'all') {
           queryParams.set('category', activeCollection);
         }
+
         if (searchQuery) {
           queryParams.set('search', searchQuery);
         }
@@ -354,7 +385,31 @@
         });
       }
 
-      if (activeCollection && activeCollection !== 'all') {
+      if (activeCuratedFilter) {
+        if (activeCuratedFilter === 'new-arrivals') {
+          filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        } else if (activeCuratedFilter === 'best-sellers') {
+          filtered = filtered.filter(p => p.trending || (p.reviews_count && p.reviews_count > 0) || (p.rating && p.rating >= 4.8));
+          if (filtered.length === 0) filtered.sort((a, b) => (b.reviews_count || 0) - (a.reviews_count || 0));
+        } else if (activeCuratedFilter === 'gift-sets') {
+          filtered = filtered.filter(p => 
+            (p.category_slug && p.category_slug.includes('gift')) || 
+            (p.category && p.category.toLowerCase().includes('gift')) ||
+            (p.name && (p.name.toLowerCase().includes('gift') || p.name.toLowerCase().includes('set') || p.name.toLowerCase().includes('bundle')))
+          );
+        } else if (activeCuratedFilter === 'festival') {
+          filtered = filtered.filter(p => 
+            p.featured || 
+            (p.tags && p.tags.includes('festival')) ||
+            (p.name && (p.name.toLowerCase().includes('krishna') || p.name.toLowerCase().includes('radha') || p.name.toLowerCase().includes('jagannath') || p.name.toLowerCase().includes('gita')))
+          );
+        } else if (activeCuratedFilter === 'under-299') {
+          filtered = filtered.filter(p => (parseFloat(p.price) || 0) <= 299);
+        } else if (activeCuratedFilter === 'specials') {
+          filtered = filtered.filter(p => p.featured || (p.discount_percent && p.discount_percent > 10));
+          if (filtered.length === 0) filtered = [...HARINAMA_DATA.products];
+        }
+      } else if (activeCollection && activeCollection !== 'all') {
         const colLower = activeCollection.toLowerCase().trim();
         filtered = filtered.filter(p => {
           if (!p) return false;
@@ -377,7 +432,7 @@
       renderHeader('shop');
       renderFooter();
 
-      // Check URL parameters for search or category/collection
+      // Check URL parameters for search or category/collection/filter
       const urlParams = new URLSearchParams(window.location.search);
       const searchParam = urlParams.get('search') || urlParams.get('q');
       const searchInput = document.getElementById('hn-shop-search');
@@ -385,9 +440,28 @@
         searchInput.value = searchParam;
       }
 
+      const filterParam = urlParams.get('filter');
+      if (filterParam) {
+        activeCuratedFilter = filterParam;
+        const matchingLink = document.querySelector(`#hn-featured-filter-links a[data-filter="${filterParam}"]`);
+        if (matchingLink) {
+          document.querySelectorAll('.hn-filter-link').forEach(a => a.classList.remove('active'));
+          matchingLink.classList.add('active');
+        }
+      }
+
       const catParam = urlParams.get('category') || urlParams.get('collection');
       if (catParam) {
-        activeCollection = catParam;
+        if (catParam === 'gift-sets') {
+          activeCuratedFilter = 'gift-sets';
+          const matchingLink = document.querySelector(`#hn-featured-filter-links a[data-filter="gift-sets"]`);
+          if (matchingLink) {
+            document.querySelectorAll('.hn-filter-link').forEach(a => a.classList.remove('active'));
+            matchingLink.classList.add('active');
+          }
+        } else {
+          activeCollection = catParam;
+        }
       }
 
       renderShopCategories();

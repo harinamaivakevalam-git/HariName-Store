@@ -1246,7 +1246,8 @@
   window.handleHeaderCartClick = handleHeaderCartClick;
 
   // Global Header Component
-  const renderHeader = (activePage = '') => {
+  let _lastHeaderStateKey = '';
+  const renderHeader = (activePage = '', force = false) => {
     // Ensure favicon is present
     if (!document.querySelector("link[rel*='icon']")) {
       const favicon = document.createElement('link');
@@ -1277,6 +1278,14 @@
 
     const loggedIn = isUserLoggedIn();
     const user = getLoggedInUser();
+
+    // Prevent redundant innerHTML DOM wiping if header is already rendered with current state
+    const stateKey = `${active}_${loggedIn ? (user?.id || user?.email || 'logged') : 'guest'}_${user?.name || ''}_${user?.avatar || ''}`;
+    if (!force && container.querySelector('.hn-header') && _lastHeaderStateKey === stateKey) {
+      updateHeaderBadges();
+      return;
+    }
+    _lastHeaderStateKey = stateKey;
 
     // Show count ONLY when user is logged in AND has items
     const cart = loggedIn ? JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]') : [];
@@ -1478,7 +1487,7 @@
   `;
 
     // Ensure badge visibility is strictly updated (hidden without login or when count is 0)
-    setTimeout(updateHeaderBadges, 0);
+    updateHeaderBadges();
 
     // Initialize Sticky / Floating Pill Header on scroll
     initHeaderScrollEffect();
@@ -1519,23 +1528,6 @@
         } else {
           header.classList.remove('scrolled');
         }
-      }
-
-      const footer = document.querySelector('.hn-footer') ||
-        document.querySelector('.hn-footer-signoff') ||
-        document.getElementById('hn-footer-placeholder') ||
-        document.querySelector('footer');
-
-      if (footer && isScrolled) {
-        const footerRect = footer.getBoundingClientRect();
-        const headerHeight = header.offsetHeight || 60;
-        if (footerRect.top <= (headerHeight + 20)) {
-          header.classList.add('footer-reached');
-        } else {
-          header.classList.remove('footer-reached');
-        }
-      } else {
-        header.classList.remove('footer-reached');
       }
 
       _headerScrollTicking = false;

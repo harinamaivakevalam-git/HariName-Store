@@ -124,45 +124,31 @@ a:hover {
 @media (min-width: 992px) {
   .hn-header {
     padding: 12px 0;
-    will-change: width, max-width, top, padding, border-radius, background-color, box-shadow, border-color;
     transition: 
-      top 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-      width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-      max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-      padding 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-      border-radius 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-      background-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-      backdrop-filter 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-      -webkit-backdrop-filter 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-      box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-      border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-      opacity 0.35s ease,
-      transform 0.35s ease,
-      visibility 0.35s ease;
+      top 0.25s ease,
+      width 0.25s ease,
+      max-width 0.25s ease,
+      padding 0.25s ease,
+      border-radius 0.25s ease,
+      background-color 0.25s ease,
+      box-shadow 0.25s ease,
+      border-color 0.25s ease;
   }
 
   .hn-header.scrolled {
     top: 12px;
     width: min(1280px, calc(100% - 32px));
     max-width: 1280px;
-    background-color: rgba(255, 255, 255, 0.95);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    backdrop-filter: blur(20px) saturate(180%);
+    background-color: rgba(255, 255, 255, 0.96);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
     border-color: rgba(220, 205, 185, 0.85);
     border-radius: 9999px;
     box-shadow: 
-      0 14px 34px -4px rgba(28, 20, 10, 0.12),
-      0 4px 12px -2px rgba(28, 20, 10, 0.06),
+      0 10px 30px -4px rgba(28, 20, 10, 0.10),
+      0 2px 8px -2px rgba(28, 20, 10, 0.05),
       0 0 0 1px rgba(255, 255, 255, 0.8) inset;
     padding: 6px 18px;
-  }
-
-  /* Smoothly hide navbar when scrolled down to the footer */
-  .hn-header.footer-reached {
-    opacity: 0 !important;
-    visibility: hidden !important;
-    transform: translateY(-24px) !important;
-    pointer-events: none !important;
   }
 
   .hn-header .container {

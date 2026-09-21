@@ -792,8 +792,17 @@
     }
     window.switchProfileTab = switchProfileTab;
 
-    // Initialize the Account Page with all stored Devotee Profile details
+    // Initialize the Account Page with all stored Devotee Profile details (Debounced & Loop-Protected)
+    let _accountInitDebounce = null;
     function initAccountPage() {
+      clearTimeout(_accountInitDebounce);
+      _accountInitDebounce = setTimeout(() => {
+        _performInitAccountPage();
+      }, 50);
+    }
+    window.initAccountPage = initAccountPage;
+
+    function _performInitAccountPage() {
       const loggedIn = isUserLoggedIn();
       const user = getLoggedInUser();
 
@@ -872,7 +881,6 @@
       loadUserAddresses();
       loadUserOrders();
     }
-    window.initAccountPage = initAccountPage;
 
     // Save Devotee Profile Changes
     async function handleProfileUpdate(e) {
@@ -917,7 +925,7 @@
         } catch (_) {}
       }
 
-      renderHeader('account');
+      renderHeader('account', true);
       initAccountPage();
       showToast('Profile updated successfully! 🌸');
 
@@ -1007,56 +1015,63 @@
     }
     window.saveStoredAddresses = saveStoredAddresses;
 
+    let _isLoadingAddresses = false;
     async function loadUserAddresses() {
-      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-      let addresses = getStoredAddresses();
+      if (_isLoadingAddresses) return;
+      _isLoadingAddresses = true;
+      try {
+        const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+        let addresses = getStoredAddresses();
 
-      // Check Supabase session metadata for saved addresses
-      if (sbClient && sbClient.auth) {
-        try {
-          const { data: { session } } = await sbClient.auth.getSession();
-          if (session?.user?.user_metadata?.addresses && Array.isArray(session.user.user_metadata.addresses) && session.user.user_metadata.addresses.length > 0) {
-            addresses = session.user.user_metadata.addresses;
-            saveStoredAddresses(addresses);
-          }
-        } catch (_) {}
-      }
-
-      if (token) {
-        try {
-          const res = await fetch('/api/addresses', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const json = await res.json();
-          if (json && json.success && Array.isArray(json.data) && json.data.length > 0) {
-            addresses = json.data;
-            saveStoredAddresses(addresses);
-          }
-        } catch (err) {
-          console.warn('Addresses network fetch issue:', err);
+        // Check Supabase session metadata for saved addresses
+        if (sbClient && sbClient.auth) {
+          try {
+            const { data: { session } } = await sbClient.auth.getSession();
+            if (session?.user?.user_metadata?.addresses && Array.isArray(session.user.user_metadata.addresses) && session.user.user_metadata.addresses.length > 0) {
+              addresses = session.user.user_metadata.addresses;
+              saveStoredAddresses(addresses);
+            }
+          } catch (_) {}
         }
-      }
 
-      // If devotee has no saved address yet, pre-populate default from profile if available
-      const user = getLoggedInUser();
-      if (addresses.length === 0 && user && (user.address_line1 || user.address)) {
-        addresses.push({
-          id: 'addr_' + Date.now(),
-          name: user.name || 'Devotee',
-          phone: user.phone || '+91 98765 43210',
-          address_line_1: user.address_line1 || user.address || 'Gokul Enclave',
-          address_line_2: user.address_line2 || '',
-          city: user.city || 'Mathura',
-          state: user.state || 'Uttar Pradesh',
-          postal_code: user.pincode || '281001',
-          country: user.country || 'India',
-          address_type: 'Home',
-          is_default: true
-        });
-        saveStoredAddresses(addresses);
-      }
+        if (token) {
+          try {
+            const res = await fetch('/api/addresses', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const json = await res.json();
+            if (json && json.success && Array.isArray(json.data) && json.data.length > 0) {
+              addresses = json.data;
+              saveStoredAddresses(addresses);
+            }
+          } catch (err) {
+            console.warn('Addresses network fetch issue:', err);
+          }
+        }
 
-      renderAddressesGrid(addresses);
+        // If devotee has no saved address yet, pre-populate default from profile if available
+        const user = getLoggedInUser();
+        if (addresses.length === 0 && user && (user.address_line1 || user.address)) {
+          addresses.push({
+            id: 'addr_' + Date.now(),
+            name: user.name || 'Devotee',
+            phone: user.phone || '+91 98765 43210',
+            address_line_1: user.address_line1 || user.address || 'Gokul Enclave',
+            address_line_2: user.address_line2 || '',
+            city: user.city || 'Mathura',
+            state: user.state || 'Uttar Pradesh',
+            postal_code: user.pincode || '281001',
+            country: user.country || 'India',
+            address_type: 'Home',
+            is_default: true
+          });
+          saveStoredAddresses(addresses);
+        }
+
+        renderAddressesGrid(addresses);
+      } finally {
+        _isLoadingAddresses = false;
+      }
     }
     window.loadUserAddresses = loadUserAddresses;
 
@@ -1420,99 +1435,107 @@
     // =========================================================================
     // ORDERS TAB MANAGEMENT
     // =========================================================================
+    // =========================================================================
+    // ORDERS TAB MANAGEMENT
+    // =========================================================================
+    let _isLoadingOrders = false;
     async function loadUserOrders() {
-      const container = document.getElementById('hn-user-orders-container');
-      const statOrders = document.getElementById('stat-orders-count');
-      if (!container) return;
-
-      const orderMap = new Map();
-
-      // 1. Check localStorage first
+      if (_isLoadingOrders) return;
+      _isLoadingOrders = true;
       try {
-        const localOrders = JSON.parse(localStorage.getItem('hn_orders') || '[]');
-        if (Array.isArray(localOrders) && localOrders.length > 0) {
-          localOrders.forEach(o => {
-            const ordNum = o.orderId || o.order_number || o.id;
-            if (ordNum) {
-              orderMap.set(ordNum, {
-                order_number: ordNum,
-                id: ordNum,
-                created_at: o.created_at || o.date || new Date().toISOString(),
-                order_status: o.status || 'Confirmed',
-                total: o.total || 0,
-                items: (o.items || []).map(it => ({
-                  product_name: it.name || it.product_name || 'Devotional Item',
-                  product_image: it.image || it.product_image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=200&q=80',
-                  price: it.price || 0,
-                  quantity: it.qty || it.quantity || 1
-                }))
-              });
-            }
-          });
-        }
-      } catch (_) {}
+        const container = document.getElementById('hn-user-orders-container');
+        const statOrders = document.getElementById('stat-orders-count');
+        if (!container) return;
 
-      // 2. Fetch from Backend API
-      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
-      if (token) {
+        const orderMap = new Map();
+
+        // 1. Check localStorage first
         try {
-          const res = await fetch(getApiUrl ? getApiUrl('/api/orders/my-orders') : '/api/orders/my-orders', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (res.ok) {
-            const json = await res.json();
-            if (json && json.success && Array.isArray(json.data)) {
-              json.data.forEach(o => {
-                const ordNum = o.order_number || o.id;
-                if (ordNum) {
-                  orderMap.set(ordNum, {
-                    order_number: ordNum,
-                    id: ordNum,
-                    created_at: o.created_at || new Date().toISOString(),
-                    order_status: o.order_status || o.status || 'Confirmed',
-                    total: o.total || 0,
-                    items: (o.items || o.order_items || []).map(it => ({
-                      product_name: it.product_name || it.name || 'Devotional Item',
-                      product_image: it.product_image || it.image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=200&q=80',
-                      price: it.price || 0,
-                      quantity: it.quantity || it.qty || 1
-                    }))
-                  });
-                }
-              });
-            }
+          const localOrders = JSON.parse(localStorage.getItem('hn_orders') || '[]');
+          if (Array.isArray(localOrders) && localOrders.length > 0) {
+            localOrders.forEach(o => {
+              const ordNum = o.orderId || o.order_number || o.id;
+              if (ordNum) {
+                orderMap.set(ordNum, {
+                  order_number: ordNum,
+                  id: ordNum,
+                  created_at: o.created_at || o.date || new Date().toISOString(),
+                  order_status: o.status || 'Confirmed',
+                  total: o.total || 0,
+                  items: (o.items || []).map(it => ({
+                    product_name: it.name || it.product_name || 'Devotional Item',
+                    product_image: it.image || it.product_image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=200&q=80',
+                    price: it.price || 0,
+                    quantity: it.qty || it.quantity || 1
+                  }))
+                });
+              }
+            });
           }
-        } catch (err) {
-          console.warn('Orders network lookup issue:', err);
+        } catch (_) {}
+
+        // 2. Fetch from Backend API
+        const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+        if (token) {
+          try {
+            const apiPath = typeof getApiUrl === 'function' ? getApiUrl('/api/orders/my-orders') : '/api/orders/my-orders';
+            const res = await fetch(apiPath, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              const json = await res.json();
+              if (json && json.success && Array.isArray(json.data)) {
+                json.data.forEach(o => {
+                  const ordNum = o.order_number || o.id;
+                  if (ordNum) {
+                    orderMap.set(ordNum, {
+                      order_number: ordNum,
+                      id: ordNum,
+                      created_at: o.created_at || new Date().toISOString(),
+                      order_status: o.order_status || o.status || 'Confirmed',
+                      total: o.total || 0,
+                      items: (o.items || o.order_items || []).map(it => ({
+                        product_name: it.product_name || it.name || 'Devotional Item',
+                        product_image: it.product_image || it.image || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=200&q=80',
+                        price: it.price || 0,
+                        quantity: it.quantity || it.qty || 1
+                      }))
+                    });
+                  }
+                });
+              }
+            }
+          } catch (err) {
+            console.warn('Orders network lookup issue:', err);
+          }
         }
-      }
 
-      // 3. Direct Supabase Database Fallback
-      try {
-        if (window.supabase && typeof window.supabase.createClient === 'function') {
-          const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
-          const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
-          const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          let u = null;
-          try { u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}'); } catch (_) {}
-          
-          const adminEmails = ['harinamaivakevalam@gmail.com', 'katturojuanilkumar@gmail.com', 'admin@harinama.com'];
-          const userEmail = u && u.email ? String(u.email).toLowerCase().trim() : '';
-          const isAdmin = u && (u.role === 'admin' || u.is_admin || adminEmails.includes(userEmail));
+        // 3. Direct Supabase Database Fallback
+        try {
+          if (window.supabase && typeof window.supabase.createClient === 'function') {
+            const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+            const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            let u = null;
+            try { u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}'); } catch (_) {}
+            
+            const adminEmails = ['harinamaivakevalam@gmail.com', 'katturojuanilkumar@gmail.com', 'admin@harinama.com'];
+            const userEmail = u && u.email ? String(u.email).toLowerCase().trim() : '';
+            const isAdmin = u && (u.role === 'admin' || u.is_admin || adminEmails.includes(userEmail));
 
-          let q = sb.from('orders').select('*, order_items(*)').order('created_at', { ascending: false });
-          if (!isAdmin) {
-            const cachedOrderIds = Array.from(orderMap.keys()).filter(Boolean);
-            if (userEmail && u.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u.id)) {
-              q = q.or(`guest_email.eq.${userEmail},user_id.eq.${u.id}`);
-            } else if (userEmail) {
-              q = q.eq('guest_email', userEmail);
-            } else if (u && u.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u.id)) {
-              q = q.eq('user_id', u.id);
-            } else if (cachedOrderIds.length > 0) {
-              q = q.in('order_number', cachedOrderIds);
+            let q = sb.from('orders').select('*, order_items(*)').order('created_at', { ascending: false });
+            if (!isAdmin) {
+              const cachedOrderIds = Array.from(orderMap.keys()).filter(Boolean);
+              if (userEmail && u.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u.id)) {
+                q = q.or(`guest_email.eq.${userEmail},user_id.eq.${u.id}`);
+              } else if (userEmail) {
+                q = q.eq('guest_email', userEmail);
+              } else if (u && u.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u.id)) {
+                q = q.eq('user_id', u.id);
+              } else if (cachedOrderIds.length > 0) {
+                q = q.in('order_number', cachedOrderIds);
+              }
             }
-          }
             const { data: sbOrders } = await q;
             if (Array.isArray(sbOrders) && sbOrders.length > 0) {
               sbOrders.forEach(o => {
@@ -1535,71 +1558,74 @@
               });
             }
           }
-      } catch (_) {}
+        } catch (_) {}
 
-      const orders = Array.from(orderMap.values());
+        const orders = Array.from(orderMap.values());
 
-      if (statOrders) statOrders.innerText = orders.length;
+        if (statOrders) statOrders.innerText = orders.length;
 
-      if (orders.length === 0) {
-        container.innerHTML = `
-          <div class="text-center py-5 bg-light rounded-3 border">
-            <i class="bi bi-box-seam fs-1 text-gold d-block mb-3"></i>
-            <h5 class="fw-bold text-navy">No Orders Found</h5>
-            <p class="text-secondary small mb-4">You haven't placed any devotional orders yet.</p>
-            <a href="/shop.html" class="btn hn-btn-gold px-4 py-2">
-              <i class="bi bi-bag-plus me-1"></i> Browse Store
-            </a>
-          </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = orders.map(ord => {
-        const isDelivered = (ord.order_status || '').toLowerCase().includes('deliver');
-        const badgeClass = isDelivered ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-primary-subtle text-primary border border-primary-subtle';
-        const badgeIcon = isDelivered ? 'bi-check-circle-fill' : 'bi-truck';
-        const dateStr = ord.created_at ? new Date(ord.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recent';
-
-        return `
-          <div class="hn-order-card">
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
-              <div>
-                <span class="fw-bold text-navy me-2">Order #${ord.order_number || ord.id}</span>
-                <span class="text-muted small">Placed on ${dateStr}</span>
-              </div>
-              <span class="hn-order-badge-status ${badgeClass}">
-                <i class="bi ${badgeIcon}"></i> ${ord.order_status || 'Confirmed'}
-              </span>
+        if (orders.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-5 bg-light rounded-3 border">
+              <i class="bi bi-box-seam fs-1 text-gold d-block mb-3"></i>
+              <h5 class="fw-bold text-navy">No Orders Found</h5>
+              <p class="text-secondary small mb-4">You haven't placed any devotional orders yet.</p>
+              <a href="/shop.html" class="btn hn-btn-gold px-4 py-2">
+                <i class="bi bi-bag-plus me-1"></i> Browse Store
+              </a>
             </div>
-            ${(ord.items || []).map(item => `
-              <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="d-flex align-items-center gap-3">
-                  <img src="${item.product_image || item.image || 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=150&q=80'}" class="rounded border" style="width: 52px; height: 52px; object-fit: cover;" alt="${item.product_name || item.name || 'Product'}">
-                  <div>
-                    <div class="fw-semibold text-navy small">${item.product_name || item.name || 'Sacred Item'}</div>
-                    <div class="text-muted small">Qty: ${item.quantity || item.qty || 1} • ₹${Number(item.price || 0).toLocaleString('en-IN')}</div>
+          `;
+          return;
+        }
+
+        container.innerHTML = orders.map(ord => {
+          const isDelivered = (ord.order_status || '').toLowerCase().includes('deliver');
+          const badgeClass = isDelivered ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-primary-subtle text-primary border border-primary-subtle';
+          const badgeIcon = isDelivered ? 'bi-check-circle-fill' : 'bi-truck';
+          const dateStr = ord.created_at ? new Date(ord.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recent';
+
+          return `
+            <div class="hn-order-card">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
+                <div>
+                  <span class="fw-bold text-navy me-2">Order #${ord.order_number || ord.id}</span>
+                  <span class="text-muted small">Placed on ${dateStr}</span>
+                </div>
+                <span class="hn-order-badge-status ${badgeClass}">
+                  <i class="bi ${badgeIcon}"></i> ${ord.order_status || 'Confirmed'}
+                </span>
+              </div>
+              ${(ord.items || []).map(item => `
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <div class="d-flex align-items-center gap-3">
+                    <img src="${item.product_image || item.image || 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=150&q=80'}" class="rounded border" style="width: 52px; height: 52px; object-fit: cover;" alt="${item.product_name || item.name || 'Product'}">
+                    <div>
+                      <div class="fw-semibold text-navy small">${item.product_name || item.name || 'Sacred Item'}</div>
+                      <div class="text-muted small">Qty: ${item.quantity || item.qty || 1} • ₹${Number(item.price || 0).toLocaleString('en-IN')}</div>
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    <div class="fw-bold text-navy">₹${(Number(item.price || 0) * Number(item.quantity || item.qty || 1)).toLocaleString('en-IN')}</div>
                   </div>
                 </div>
-                <div class="text-end">
-                  <div class="fw-bold text-navy">₹${(Number(item.price || 0) * Number(item.quantity || item.qty || 1)).toLocaleString('en-IN')}</div>
+              `).join('')}
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-2 mt-2 border-top">
+                <div class="small text-muted">Total: <span class="fw-bold text-navy">₹${Number(ord.total || 0).toLocaleString('en-IN')}</span></div>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-sm btn-outline-primary" onclick="downloadOrderInvoice('${ord.order_number || ord.id}')">
+                    <i class="bi bi-file-earmark-arrow-down me-1"></i> Invoice
+                  </button>
+                  <a href="/order-tracking.html?order=${ord.order_number || ord.id}" class="btn btn-sm btn-outline-dark">
+                    <i class="bi bi-geo-alt me-1"></i> Track Order
+                  </a>
                 </div>
               </div>
-            `).join('')}
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-2 mt-2 border-top">
-              <div class="small text-muted">Total: <span class="fw-bold text-navy">₹${Number(ord.total || 0).toLocaleString('en-IN')}</span></div>
-              <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-primary" onclick="downloadOrderInvoice('${ord.order_number || ord.id}')">
-                  <i class="bi bi-file-earmark-arrow-down me-1"></i> Invoice
-                </button>
-                <a href="/order-tracking.html?order=${ord.order_number || ord.id}" class="btn btn-sm btn-outline-dark">
-                  <i class="bi bi-geo-alt me-1"></i> Track Order
-                </a>
-              </div>
             </div>
-          </div>
-        `;
-      }).join('');
+          `;
+        }).join('');
+      } finally {
+        _isLoadingOrders = false;
+      }
     }
     window.loadUserOrders = loadUserOrders;
 
@@ -1670,48 +1696,6 @@
 
     // DOM Ready Lifecycle Setup
     document.addEventListener('DOMContentLoaded', () => {
-      // Check if redirected back from Google OAuth
-      if (sbClient && sbClient.auth) {
-        sbClient.auth.getSession().then(({ data: { session } }) => {
-          if (session && session.user) {
-            const user = {
-              id: session.user.id,
-              email: session.user.email,
-              name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email.split('@')[0],
-              avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
-              role: 'customer'
-            };
-            localStorage.setItem('hn_auth_token', session.access_token);
-            localStorage.setItem('hn_user_profile', JSON.stringify(user));
-            localStorage.setItem('hn_user', JSON.stringify(user));
-            localStorage.setItem('token', session.access_token);
-            localStorage.setItem('user', JSON.stringify(user));
-            showToast(`Welcome back, ${user.name}! 🌸`);
-            renderHeader('account');
-            initAccountPage();
-          }
-        }).catch(err => console.warn('Supabase session lookup:', err));
-
-        sbClient.auth.onAuthStateChange((event, session) => {
-          if (session && session.user) {
-            const user = {
-              id: session.user.id,
-              email: session.user.email,
-              name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email.split('@')[0],
-              avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
-              role: 'customer'
-            };
-            localStorage.setItem('hn_auth_token', session.access_token);
-            localStorage.setItem('hn_user_profile', JSON.stringify(user));
-            localStorage.setItem('hn_user', JSON.stringify(user));
-            localStorage.setItem('token', session.access_token);
-            localStorage.setItem('user', JSON.stringify(user));
-            renderHeader('account');
-            initAccountPage();
-          }
-        });
-      }
-
       // Tab Navigation & Quick Stat Button Handlers
       document.querySelectorAll('.hn-profile-tab-link[data-tab]').forEach(btn => {
         btn.onclick = (e) => {
@@ -1761,7 +1745,11 @@
         switchProfileTab(t, false);
       });
 
-      window.addEventListener('hn:auth-changed', initAccountPage);
+      window.addEventListener('hn:auth-changed', () => {
+        renderHeader('account', true);
+        initAccountPage();
+      });
+
       window.addEventListener('hn_wishlist_updated', () => {
         const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
         const wishCountEl = document.getElementById('stat-wishlist-count');

@@ -125,7 +125,7 @@
         <div class="hn-kpi-card">
           <div>
             <div class="hn-kpi-label">All Orders</div>
-            <div class="hn-kpi-num" id="count-all">148</div>
+            <div class="hn-kpi-num" id="count-all">0</div>
             <div class="hn-kpi-trend text-muted">Total devotional orders</div>
           </div>
           <div class="hn-kpi-icon-box"><i class="bi bi-bag-check"></i></div>
@@ -135,7 +135,7 @@
         <div class="hn-kpi-card">
           <div>
             <div class="hn-kpi-label">Pending Packing</div>
-            <div class="hn-kpi-num text-warning-emphasis" id="count-pending">8</div>
+            <div class="hn-kpi-num text-warning-emphasis" id="count-pending">0</div>
             <div class="hn-kpi-trend text-warning-emphasis">Needs courier pickup</div>
           </div>
           <div class="hn-kpi-icon-box" style="background-color: #FEF3C7; color: #D97706;"><i class="bi bi-box-seam"></i></div>
@@ -145,7 +145,7 @@
         <div class="hn-kpi-card">
           <div>
             <div class="hn-kpi-label">In Transit</div>
-            <div class="hn-kpi-num text-primary" id="count-dispatched">14</div>
+            <div class="hn-kpi-num text-primary" id="count-dispatched">0</div>
             <div class="hn-kpi-trend text-primary">Speed Post / Express</div>
           </div>
           <div class="hn-kpi-icon-box" style="background-color: #EFF6FF; color: #2563EB;"><i class="bi bi-truck"></i></div>
@@ -155,8 +155,8 @@
         <div class="hn-kpi-card">
           <div>
             <div class="hn-kpi-label">Delivered</div>
-            <div class="hn-kpi-num text-success" id="count-delivered">126</div>
-            <div class="hn-kpi-trend text-success"><i class="bi bi-check-circle me-1"></i> 98.4% success rate</div>
+            <div class="hn-kpi-num text-success" id="count-delivered">0</div>
+            <div class="hn-kpi-trend text-success"><i class="bi bi-check-circle me-1"></i> Live Fulfillment</div>
           </div>
           <div class="hn-kpi-icon-box" style="background-color: #DEF7EC; color: #0E9F6E;"><i class="bi bi-gift"></i></div>
         </div>
@@ -182,6 +182,7 @@
       </div>
 
       <div class="d-flex gap-2">
+        <button class="btn btn-outline-danger btn-sm" onclick="clearAllOrdersDirect()"><i class="bi bi-trash3 me-1"></i> Clear All Test Orders</button>
         <button class="btn btn-outline-dark btn-sm" onclick="exportOrdersCSV()"><i class="bi bi-download me-1"></i> Export Orders CSV</button>
       </div>
     </div>
@@ -511,103 +512,67 @@
     }
 
     async function loadOrdersFromAllSources() {
-      // Clear legacy dummy orders from localStorage
+      // Purge stale local/test order caches from browser storage
       try {
-        const dummyOrderIds = ['HN-2026-98124', 'HN-2026-88219', 'HN-2026-77312', 'HN-2026-66415', 'HN-2026-55102', 'HN-2026-44298'];
-        const storedAdmin = localStorage.getItem('harinama_admin_orders');
-        if (storedAdmin) {
-          const parsed = JSON.parse(storedAdmin);
-          if (Array.isArray(parsed)) {
-            const cleaned = parsed.filter(o => o && !dummyOrderIds.includes(o.id) && !dummyOrderIds.includes(o.order_number));
-            if (cleaned.length !== parsed.length) {
-              if (cleaned.length > 0) localStorage.setItem('harinama_admin_orders', JSON.stringify(cleaned));
-              else localStorage.removeItem('harinama_admin_orders');
-            }
-          }
-        }
-        const storedCustomer = localStorage.getItem('hn_orders');
-        if (storedCustomer) {
-          const parsedCust = JSON.parse(storedCustomer);
-          if (Array.isArray(parsedCust)) {
-            const cleanedCust = parsedCust.filter(o => o && !dummyOrderIds.includes(o.id) && !dummyOrderIds.includes(o.order_number));
-            if (cleanedCust.length !== parsedCust.length) {
-              if (cleanedCust.length > 0) localStorage.setItem('hn_orders', JSON.stringify(cleanedCust));
-              else localStorage.removeItem('hn_orders');
-            }
-          }
-        }
+        localStorage.removeItem('harinama_admin_orders');
+        localStorage.removeItem('hn_admin_orders');
+        localStorage.removeItem('hn_orders');
+        localStorage.removeItem('hn_recent_orders');
       } catch (e) {}
 
       const mergedMap = new Map();
 
-      // 1. Initial cached browser storage (admin + customer placed orders)
-      try {
-        const storedAdmin = localStorage.getItem('harinama_admin_orders');
-        if (storedAdmin) {
-          const parsed = JSON.parse(storedAdmin);
-          if (Array.isArray(parsed)) {
-            parsed.forEach(o => {
-              const norm = normalizeOrder(o);
-              if (norm) mergedMap.set(norm.id, norm);
-            });
-          }
-        }
-      } catch (e) {}
+      // Show loading state initially
+      const tbody = document.getElementById('orders-table-body');
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center py-5 text-muted">
+              <span class="spinner-border spinner-border-sm me-2 text-gold"></span> Loading live orders from database...
+            </td>
+          </tr>
+        `;
+      }
 
-      try {
-        const storedCustomer = localStorage.getItem('hn_orders');
-        if (storedCustomer) {
-          const parsedCust = JSON.parse(storedCustomer);
-          if (Array.isArray(parsedCust)) {
-            parsedCust.forEach(o => {
-              const norm = normalizeOrder(o);
-              if (norm) mergedMap.set(norm.id, norm);
-            });
-          }
-        }
-      } catch (e) {}
-
-      // Render fast initial cached view
-      localOrders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
-      updateMetricCounters();
-      renderOrdersTable(localOrders);
-
-      // 2. Fetch from Live Backend Server API (/api/orders/admin/all)
+      // 1. Fetch from Live Backend Server API (/api/orders/admin/all)
+      let backendLoaded = false;
       try {
         const apiRes = await fetchJsonSafe('/api/orders/admin/all?limit=100');
-        if (apiRes.ok && apiRes.data?.success && Array.isArray(apiRes.data?.data) && apiRes.data.data.length > 0) {
+        if (apiRes.ok && apiRes.data?.success && Array.isArray(apiRes.data?.data)) {
           apiRes.data.data.forEach(apiOrder => {
             const norm = normalizeOrder(apiOrder);
             if (norm) mergedMap.set(norm.id, norm);
           });
+          backendLoaded = true;
         }
       } catch (apiErr) {
         console.warn('[AdminOrders] Backend API sync note:', apiErr.message);
       }
 
-      // 3. Fetch directly from Supabase Database
-      try {
-        const sb = initSupabase();
-        if (sb) {
-          const { data: sbData, error: sbErr } = await sb
-            .from('orders')
-            .select('*, order_items(*)')
-            .order('created_at', { ascending: false });
+      // 2. Fetch directly from Supabase Database if backend API not reached or for real-time fallback
+      if (!backendLoaded || mergedMap.size === 0) {
+        try {
+          const sb = initSupabase();
+          if (sb) {
+            const { data: sbData, error: sbErr } = await sb
+              .from('orders')
+              .select('*, order_items(*)')
+              .order('created_at', { ascending: false });
 
-          if (!sbErr && Array.isArray(sbData) && sbData.length > 0) {
-            sbData.forEach(sbOrder => {
-              const norm = normalizeOrder(sbOrder);
-              if (norm) mergedMap.set(norm.id, norm);
-            });
+            if (!sbErr && Array.isArray(sbData)) {
+              sbData.forEach(sbOrder => {
+                const norm = normalizeOrder(sbOrder);
+                if (norm) mergedMap.set(norm.id, norm);
+              });
+            }
           }
+        } catch (sbError) {
+          console.warn('[AdminOrders] Supabase database sync note:', sbError.message);
         }
-      } catch (sbError) {
-        console.warn('[AdminOrders] Supabase database sync note:', sbError.message);
       }
 
-      // Update final synced list
+      // Final synced live list
       localOrders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
-      localStorage.setItem('harinama_admin_orders', JSON.stringify(localOrders));
 
       updateMetricCounters();
       filterOrders();
@@ -713,8 +678,11 @@
             <button class="btn btn-sm btn-outline-dark me-1" onclick="viewOrderDetails('${o.id}')" title="View Order Details">
               <i class="bi bi-eye"></i> View
             </button>
-            <button class="btn btn-sm btn-gold" onclick="editOrderDetails('${o.id}')" title="Edit Order Details">
+            <button class="btn btn-sm btn-gold me-1" onclick="editOrderDetails('${o.id}')" title="Edit Order Details">
               <i class="bi bi-pencil-square"></i> Edit
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteOrderDirect('${o.id}')" title="Delete Order">
+              <i class="bi bi-trash"></i>
             </button>
           </td>
         </tr>
@@ -1163,6 +1131,62 @@
         }
       } catch (err) {
         alert(`Failed to cancel shipment: ${err.message}`);
+      }
+    }
+
+    async function deleteOrderDirect(orderId) {
+      if (!confirm(`Are you sure you want to delete order ${orderId}? This cannot be undone.`)) return;
+      try {
+        const res = await fetchJsonSafe(`/api/orders/admin/${encodeURIComponent(orderId)}`, { method: 'DELETE' });
+        if (res.ok && res.data?.success) {
+          showToast(`Order ${orderId} deleted successfully.`);
+          await loadOrdersFromAllSources();
+        } else {
+          // If server API route is not mounted, attempt direct Supabase delete fallback
+          try {
+            const sb = initSupabase();
+            if (sb) {
+              await sb.from('order_items').delete().eq('order_id', orderId);
+              await sb.from('orders').delete().or(`order_number.eq.${orderId},id.eq.${orderId}`);
+              showToast(`Order ${orderId} deleted from Supabase.`);
+              await loadOrdersFromAllSources();
+              return;
+            }
+          } catch(sbErr) {
+            console.warn('[AdminOrders] Supabase delete fallback error:', sbErr);
+          }
+          alert(res.data?.message || 'Failed to delete order from server');
+        }
+      } catch (err) {
+        alert(`Error deleting order: ${err.message}`);
+      }
+    }
+
+    async function clearAllOrdersDirect() {
+      if (!confirm('Are you sure you want to permanently DELETE ALL orders from the database? This cannot be undone.')) return;
+      try {
+        const res = await fetchJsonSafe('/api/orders/admin/all/clear-test-orders', { method: 'DELETE' });
+        if (res.ok && res.data?.success) {
+          showToast('All orders cleared successfully!');
+          await loadOrdersFromAllSources();
+        } else {
+          // If server route not available, attempt direct Supabase delete fallback
+          try {
+            const sb = initSupabase();
+            if (sb) {
+              await sb.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+              await sb.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+              showToast('All orders cleared from Supabase!');
+              await loadOrdersFromAllSources();
+              return;
+            }
+          } catch(sbErr) {
+            console.warn('[AdminOrders] Supabase clear fallback error:', sbErr);
+          }
+          alert(res.data?.message || 'Failed to clear orders from server');
+        }
+      } catch (err) {
+        alert(`Error clearing orders: ${err.message}`);
       }
     }
   </script>

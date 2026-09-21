@@ -407,61 +407,15 @@
     }
 
     async function loadAdminDashboardOrders() {
-      // Clear legacy dummy orders from localStorage
+      // Purge stale local/test order caches from browser storage
       try {
-        const dummyOrderIds = ['HN-2026-98124', 'HN-2026-88219', 'HN-2026-77312', 'HN-2026-66415', 'HN-2026-55102', 'HN-2026-44298'];
-        const storedAdmin = localStorage.getItem('harinama_admin_orders');
-        if (storedAdmin) {
-          const parsed = JSON.parse(storedAdmin);
-          if (Array.isArray(parsed)) {
-            const cleaned = parsed.filter(o => o && !dummyOrderIds.includes(o.id) && !dummyOrderIds.includes(o.order_number));
-            if (cleaned.length !== parsed.length) {
-              if (cleaned.length > 0) localStorage.setItem('harinama_admin_orders', JSON.stringify(cleaned));
-              else localStorage.removeItem('harinama_admin_orders');
-            }
-          }
-        }
-        const storedCustomer = localStorage.getItem('hn_orders');
-        if (storedCustomer) {
-          const parsedCust = JSON.parse(storedCustomer);
-          if (Array.isArray(parsedCust)) {
-            const cleanedCust = parsedCust.filter(o => o && !dummyOrderIds.includes(o.id) && !dummyOrderIds.includes(o.order_number));
-            if (cleanedCust.length !== parsedCust.length) {
-              if (cleanedCust.length > 0) localStorage.setItem('hn_orders', JSON.stringify(cleanedCust));
-              else localStorage.removeItem('hn_orders');
-            }
-          }
-        }
+        localStorage.removeItem('harinama_admin_orders');
+        localStorage.removeItem('hn_admin_orders');
+        localStorage.removeItem('hn_orders');
+        localStorage.removeItem('hn_recent_orders');
       } catch (e) {}
 
       const mergedMap = new Map();
-
-      // 1. Initial cached browser storage (admin + customer placed orders)
-      try {
-        const storedAdmin = localStorage.getItem('harinama_admin_orders');
-        if (storedAdmin) {
-          const parsed = JSON.parse(storedAdmin);
-          if (Array.isArray(parsed)) {
-            parsed.forEach(o => {
-              const norm = normalizeOrder(o);
-              if (norm) mergedMap.set(norm.id, norm);
-            });
-          }
-        }
-      } catch (e) {}
-
-      try {
-        const storedCustomer = localStorage.getItem('hn_orders');
-        if (storedCustomer) {
-          const parsedCust = JSON.parse(storedCustomer);
-          if (Array.isArray(parsedCust)) {
-            parsedCust.forEach(o => {
-              const norm = normalizeOrder(o);
-              if (norm) mergedMap.set(norm.id, norm);
-            });
-          }
-        }
-      } catch (e) {}
 
       function renderDashboard(ordersList) {
         const tbody = document.getElementById('admin-recent-orders-tbody');
@@ -508,45 +462,44 @@
         if (kpiAwaiting) kpiAwaiting.innerText = `${awaitingCount} awaiting dispatch`;
       }
 
-      // Initial fast render
-      let allOrders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      renderDashboard(allOrders);
-
-      // 2. Fetch live from Backend API
+      // 1. Fetch live from Backend API
+      let backendLoaded = false;
       try {
         const apiRes = await fetch('/api/orders/admin/all?limit=50', { headers: getAuthHeaders() });
         if (apiRes.ok && (apiRes.headers.get('content-type') || '').includes('application/json')) {
           const json = await apiRes.json();
-          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          if (json.success && Array.isArray(json.data)) {
             json.data.forEach(o => {
               const norm = normalizeOrder(o);
               if (norm) mergedMap.set(norm.id, norm);
             });
-            allOrders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            renderDashboard(allOrders);
+            backendLoaded = true;
           }
         }
       } catch (e) {}
 
-      // 3. Fetch live from Supabase Database
-      try {
-        if (window.supabase && typeof window.supabase.createClient === 'function') {
-          const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          const { data: sbOrders, error } = await sb
-            .from('orders')
-            .select('*, order_items(*)')
-            .order('created_at', { ascending: false });
+      // 2. Fetch live from Supabase Database if backend API returned nothing or offline
+      if (!backendLoaded || mergedMap.size === 0) {
+        try {
+          if (window.supabase && typeof window.supabase.createClient === 'function') {
+            const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            const { data: sbOrders, error } = await sb
+              .from('orders')
+              .select('*, order_items(*)')
+              .order('created_at', { ascending: false });
 
-          if (!error && Array.isArray(sbOrders) && sbOrders.length > 0) {
-            sbOrders.forEach(o => {
-              const norm = normalizeOrder(o);
-              if (norm) mergedMap.set(norm.id, norm);
-            });
-            allOrders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            renderDashboard(allOrders);
+            if (!error && Array.isArray(sbOrders)) {
+              sbOrders.forEach(o => {
+                const norm = normalizeOrder(o);
+                if (norm) mergedMap.set(norm.id, norm);
+              });
+            }
           }
-        }
-      } catch (sbErr) {}
+        } catch (sbErr) {}
+      }
+
+      const allOrders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      renderDashboard(allOrders);
     }
 
     async function loadAdminDashboardProducts() {

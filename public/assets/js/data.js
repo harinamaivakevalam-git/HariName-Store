@@ -73,21 +73,8 @@ function computeCategoryCounts(productsList = [], dbCategories = null) {
       try { localStorage.removeItem(k); } catch (_) {}
     });
 
-    const dummyIds = ['HN-2026-98124', 'HN-2026-88219', 'HN-2026-77312', 'HN-2026-66415', 'HN-2026-55102', 'HN-2026-44298'];
     ['harinama_admin_orders', 'hn_orders', 'hn_admin_orders', 'hn_recent_orders'].forEach(key => {
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            const valid = parsed.filter(o => o && !dummyIds.includes(o.id) && !dummyIds.includes(o.order_number));
-            if (valid.length > 0) localStorage.setItem(key, JSON.stringify(valid));
-            else localStorage.removeItem(key);
-          }
-        } catch (_) {
-          localStorage.removeItem(key);
-        }
-      }
+      try { localStorage.removeItem(key); } catch (_) {}
     });
   } catch (_) {}
 })();

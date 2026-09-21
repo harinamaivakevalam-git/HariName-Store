@@ -1346,3 +1346,75 @@ exports.getOrderInvoice = async (req, res, next) => {
     next(err);
   }
 };
+
+// Admin Delete Single Order (Deletes from Supabase and local store)
+exports.adminDeleteOrder = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'Order ID is required' });
+    }
+
+    // 1. Delete from Supabase if configured
+    if (isSupabaseConfigured && supabaseAdmin) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        let q = supabaseAdmin.from('orders');
+        if (isUuid) {
+          await supabaseAdmin.from('order_items').delete().eq('order_id', id);
+          await supabaseAdmin.from('payments').delete().eq('order_id', id);
+          await q.delete().eq('id', id);
+        } else {
+          const { data: found } = await supabaseAdmin.from('orders').select('id').eq('order_number', id).maybeSingle();
+          if (found && found.id) {
+            await supabaseAdmin.from('order_items').delete().eq('order_id', found.id);
+            await supabaseAdmin.from('payments').delete().eq('order_id', found.id);
+            await q.delete().eq('id', found.id);
+          }
+        }
+      } catch (err) {
+        console.warn('[adminDeleteOrder] Supabase delete notice:', err.message);
+      }
+    }
+
+    // 2. Delete from local database
+    const localOrder = db.findById('orders', id) || db.findOne('orders', o => o.order_number === id);
+    if (localOrder) {
+      db.delete('orders', localOrder.id);
+      const items = db.find('order_items', i => i.order_id === localOrder.id);
+      items.forEach(i => db.delete('order_items', i.id));
+      const payments = db.find('payments', p => p.order_id === localOrder.id);
+      payments.forEach(p => db.delete('payments', p.id));
+    }
+
+    res.json({ success: true, message: `Order ${id} deleted successfully.` });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Admin Clear All Test Orders (Wipes all orders from Supabase and local database)
+exports.adminClearAllOrders = async (req, res, next) => {
+  try {
+    // 1. Clear Supabase orders if configured
+    if (isSupabaseConfigured && supabaseAdmin) {
+      try {
+        await supabaseAdmin.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabaseAdmin.from('payments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabaseAdmin.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (err) {
+        console.warn('[adminClearAllOrders] Supabase clear notice:', err.message);
+      }
+    }
+
+    // 2. Clear local store
+    db.data.orders = [];
+    db.data.order_items = [];
+    db.data.payments = [];
+    db.save();
+
+    res.json({ success: true, message: 'All orders cleared successfully from database.' });
+  } catch (err) {
+    next(err);
+  }
+};

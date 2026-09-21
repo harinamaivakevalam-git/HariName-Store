@@ -12,6 +12,8 @@ router.post('/:id/cancel', authenticate, orderController.cancelOrder);
 
 // Admin Order Management
 router.get('/admin/all', authenticate, requireAdmin, orderController.adminGetOrders);
+router.delete('/admin/all/clear-test-orders', authenticate, requireAdmin, orderController.adminClearAllOrders);
 router.put('/admin/:id/status', authenticate, requireAdmin, orderController.adminUpdateOrderStatus);
+router.delete('/admin/:id', authenticate, requireAdmin, orderController.adminDeleteOrder);
 
 module.exports = router;

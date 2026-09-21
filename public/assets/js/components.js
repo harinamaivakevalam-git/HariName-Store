@@ -1574,11 +1574,11 @@ const renderFooter = () => {
     </div>
 
     <footer class="hn-footer">
-      <div class="container d-none d-lg-block">
+      <div class="container">
         <div class="row g-4">
           
           <!-- Col 1: Brand Info -->
-          <div class="col-lg-4 mb-3 mb-lg-0">
+          <div class="col-12 col-lg-4 mb-3 mb-lg-0">
             <a href="/index.html" class="d-flex align-items-center gap-2 mb-3 text-decoration-none">
               <div class="hn-brand-logo-wrap footer-logo">
                 <img src="/assets/images/krishna-logo.jpg" alt="Harinama Store Logo - Sri Krishna" class="hn-brand-img">
@@ -1597,7 +1597,7 @@ const renderFooter = () => {
           </div>
 
           <!-- Col 2: Shop Links -->
-          <div class="col-6 col-lg-2">
+          <div class="col-6 col-sm-6 col-lg-2">
             <div class="hn-footer-title">Shop</div>
             <a href="/shop.html">All Products</a>
             <a href="/shop.html?category=gift-sets">Gift Sets</a>
@@ -1605,7 +1605,7 @@ const renderFooter = () => {
           </div>
 
           <!-- Col 3: Help Links -->
-          <div class="col-6 col-lg-2">
+          <div class="col-6 col-sm-6 col-lg-2">
             <div class="hn-footer-title">Help</div>
             <a href="/faq.html">Shipping</a>
             <a href="/terms.html">Returns</a>
@@ -1613,14 +1613,14 @@ const renderFooter = () => {
           </div>
 
           <!-- Col 4: About Links -->
-          <div class="col-6 col-lg-2">
+          <div class="col-6 col-sm-6 col-lg-2">
             <div class="hn-footer-title">About</div>
             <a href="/about.html">Our Mission</a>
             <a href="/contact.html">Contact Us</a>
           </div>
 
           <!-- Col 5: Follow Us Column -->
-          <div class="col-6 col-lg-2">
+          <div class="col-6 col-sm-6 col-lg-2">
             <div class="hn-footer-title">Follow Us</div>
             <div class="d-flex flex-column gap-1">
               <a href="https://open.spotify.com/artist/0MhdmOuZhlQkAYJIBxpRJv" target="_blank" rel="noopener"><i class="bi bi-spotify me-2"></i>Spotify</a>

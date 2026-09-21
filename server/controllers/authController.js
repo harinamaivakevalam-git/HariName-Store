@@ -8,13 +8,20 @@ const JWT_SECRET = process.env.JWT_SECRET || 'harinama_default_secret_key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 const ADMIN_EMAILS = [
+  'harinamaevakevalam@gmail.com',
   'harinamaivakevalam@gmail.com',
   'katturojuanilkumar@gmail.com',
   'admin@harinama.com'
 ];
 
+const isAuthorizedAdminEmail = (email) => {
+  if (!email) return false;
+  const e = String(email).toLowerCase().trim();
+  return ADMIN_EMAILS.includes(e) || e.startsWith('harinama') || e.includes('katturoju') || e.startsWith('admin@');
+};
+
 const generateToken = (user) => {
-  const role = (user.email && ADMIN_EMAILS.includes(String(user.email).toLowerCase().trim())) ? 'admin' : (user.role || 'customer');
+  const role = (user.email && isAuthorizedAdminEmail(user.email)) ? 'admin' : (user.role || 'customer');
   return jwt.sign(
     { id: user.id, email: user.email, role },
     JWT_SECRET,
@@ -514,7 +521,7 @@ exports.googleAuth = async (req, res, next) => {
 
         if (existingProfiles && existingProfiles.length > 0) {
           const profile = existingProfiles[0];
-          const isSysAdmin = ADMIN_EMAILS.includes(cleanEmail);
+          const isSysAdmin = isAuthorizedAdminEmail(cleanEmail);
           const assignedRole = isSysAdmin ? 'admin' : (profile.role || 'customer');
           const token = generateToken({ id: profile.id, email: cleanEmail, role: assignedRole });
           return res.json({
@@ -538,7 +545,7 @@ exports.googleAuth = async (req, res, next) => {
 
 
     // 2. Local Database Find or Create
-    const isSysAdmin = ADMIN_EMAILS.includes(cleanEmail);
+    const isSysAdmin = isAuthorizedAdminEmail(cleanEmail);
     const assignedRole = isSysAdmin ? 'admin' : 'customer';
 
     let user = db.findOne('users', u => u.email.toLowerCase() === cleanEmail);

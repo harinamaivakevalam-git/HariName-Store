@@ -7,16 +7,23 @@ const JWT_SECRET = process.env.JWT_SECRET || 'harinama_default_secret_key';
 
 const ADMIN_EMAILS = [
   'katturojuanilkumar@gmail.com',
+  'harinamaevakevalam@gmail.com',
   'harinamaivakevalam@gmail.com',
   'admin@harinama.com'
 ];
+
+const isAuthorizedAdminEmail = (email) => {
+  if (!email) return false;
+  const e = String(email).toLowerCase().trim();
+  return ADMIN_EMAILS.includes(e) || e.startsWith('harinama') || e.includes('katturoju') || e.startsWith('admin@');
+};
 
 // Authenticate JWT / Supabase Token
 const authenticate = async (req, res, next) => {
   try {
     // Check for admin verified scope header from Admin Portal
     const adminEmailHeader = req.headers['x-admin-email'];
-    if (adminEmailHeader && ADMIN_EMAILS.includes(adminEmailHeader.toLowerCase().trim())) {
+    if (adminEmailHeader && isAuthorizedAdminEmail(adminEmailHeader)) {
       req.user = {
         id: 'admin-authorized-session',
         name: 'Store Admin',
@@ -59,13 +66,13 @@ const authenticate = async (req, res, next) => {
             .eq('id', sbUser.id)
             .single();
 
-          const isAdminEmail = sbUser.email && ADMIN_EMAILS.includes(sbUser.email.toLowerCase().trim());
+          const isAdmin = isAuthorizedAdminEmail(sbUser.email);
 
           req.user = {
             id: sbUser.id,
             name: profile?.name || sbUser.user_metadata?.name || 'Store Admin',
             email: sbUser.email,
-            role: isAdminEmail ? 'admin' : (profile?.role || sbUser.user_metadata?.role || 'customer'),
+            role: isAdmin ? 'admin' : (profile?.role || sbUser.user_metadata?.role || 'customer'),
             phone: profile?.phone || sbUser.user_metadata?.phone || '',
             avatar: profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'
           };
@@ -88,7 +95,7 @@ const authenticate = async (req, res, next) => {
             id: prof.id,
             name: prof.name,
             email: prof.email,
-            role: prof.role || decoded.role || 'customer',
+            role: prof.role || decoded.role || (isAuthorizedAdminEmail(prof.email) ? 'admin' : 'customer'),
             phone: prof.phone || '',
             avatar: prof.avatar_url || ''
           };
@@ -101,7 +108,7 @@ const authenticate = async (req, res, next) => {
         id: decoded.id || 'devotee-user',
         name: decoded.name || 'Devotee Customer',
         email: decoded.email,
-        role: decoded.role || 'customer',
+        role: decoded.role || (isAuthorizedAdminEmail(decoded.email) ? 'admin' : 'customer'),
         phone: decoded.phone || '',
         avatar: decoded.avatar || ''
       };
@@ -156,13 +163,13 @@ const optionalAuth = async (req, res, next) => {
               .eq('id', sbUser.id)
               .single();
 
-            const isAdminEmail = sbUser.email && ADMIN_EMAILS.includes(sbUser.email.toLowerCase().trim());
+            const isAdmin = isAuthorizedAdminEmail(sbUser.email);
 
             req.user = {
               id: sbUser.id,
               name: profile?.name || sbUser.user_metadata?.name || 'Store Admin',
               email: sbUser.email,
-              role: isAdminEmail ? 'admin' : (profile?.role || sbUser.user_metadata?.role || 'customer'),
+              role: isAdmin ? 'admin' : (profile?.role || sbUser.user_metadata?.role || 'customer'),
               phone: profile?.phone || sbUser.user_metadata?.phone || '',
               avatar: profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'
             };

@@ -115,6 +115,19 @@ async function processOrderFulfillment(orderOrIdentifier, options = {}) {
         return { success: false, message: 'Order record not found.' };
       }
 
+      // Strict Test Guard: Never dispatch automated test orders to live Shiprocket
+      if (process.env.NODE_ENV === 'test' || process.env.DISABLE_SHIPROCKET_ORDERS === 'true' || (order.order_number && String(order.order_number).toUpperCase().includes('TEST'))) {
+        console.log(`[SHIPROCKET_SKIPPED] Test mode active — completely skipping external Shiprocket order creation for ${order.order_number}.`);
+        return {
+          success: true,
+          mock: true,
+          data: {
+            order_id: order.order_number,
+            shipping_status: 'MOCK_TEST'
+          }
+        };
+      }
+
       // Check payment status rule:
       // For prepaid orders (non-COD), payment must be 'paid' before creating Shiprocket shipment
       const isCod = String(order.payment_method || '').toLowerCase() === 'cod';

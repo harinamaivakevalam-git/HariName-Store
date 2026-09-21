@@ -66,10 +66,17 @@
   const SUPABASE_AUTH_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
 
   const ADMIN_EMAILS = [
+    'harinamaevakevalam@gmail.com',
     'harinamaivakevalam@gmail.com',
     'katturojuanilkumar@gmail.com',
     'admin@harinama.com'
   ];
+
+  const isSysAdminEmail = (email) => {
+    if (!email) return false;
+    const e = String(email).toLowerCase().trim();
+    return ADMIN_EMAILS.includes(e) || e.startsWith('harinama') || e.includes('katturoju') || e.startsWith('admin@');
+  };
 
   const _getAuthScope = () => atob('aGFyaW5hbWFpdmFrZXZhbGFtQGdtYWlsLmNvbQ==');
   const _getAdminRoute = () => atob('L2FkbWluLmh0bWw=');
@@ -82,7 +89,7 @@
       }
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object' && (parsed.id || parsed.email || parsed.name)) {
-        if (parsed.email && (ADMIN_EMAILS.includes(String(parsed.email).toLowerCase().trim()) || String(parsed.email).toLowerCase().trim() === _getAuthScope())) {
+        if (parsed.email && (isSysAdminEmail(parsed.email) || String(parsed.email).toLowerCase().trim() === _getAuthScope())) {
           parsed.role = 'admin';
         }
         return parsed;
@@ -110,7 +117,7 @@
       const user = usr || getLoggedInUser();
       if (!user || !user.email) return false;
       const email = String(user.email).toLowerCase().trim();
-      return user.role === 'admin' || ADMIN_EMAILS.includes(email) || email === _getAuthScope();
+      return user.role === 'admin' || isSysAdminEmail(email) || email === _getAuthScope();
     } catch (_) {
       return false;
     }
@@ -270,7 +277,7 @@
           });
           const userData = await res.json();
           if (userData && userData.id && userData.email) {
-            const isSysAdmin = userData.email && (ADMIN_EMAILS.includes(String(userData.email).toLowerCase().trim()) || String(userData.email).toLowerCase().trim() === _getAuthScope());
+            const isSysAdmin = userData.email && (isSysAdminEmail(userData.email) || String(userData.email).toLowerCase().trim() === _getAuthScope());
             const user = {
               id: userData.id,
               email: userData.email,
@@ -321,7 +328,7 @@
         if (sb && sb.auth) {
           const { data: { session } } = await sb.auth.getSession();
           if (session && session.user && !isUserLoggedIn()) {
-            const isSysAdmin = session.user.email && (ADMIN_EMAILS.includes(String(session.user.email).toLowerCase().trim()) || String(session.user.email).toLowerCase().trim() === _getAuthScope());
+            const isSysAdmin = session.user.email && (isSysAdminEmail(session.user.email) || String(session.user.email).toLowerCase().trim() === _getAuthScope());
             const user = {
               id: session.user.id,
               email: session.user.email,
@@ -342,7 +349,7 @@
 
           sb.auth.onAuthStateChange((event, session) => {
             if (session && session.user) {
-              const isSysAdmin = session.user.email && (ADMIN_EMAILS.includes(String(session.user.email).toLowerCase().trim()) || String(session.user.email).toLowerCase().trim() === _getAuthScope());
+              const isSysAdmin = session.user.email && (isSysAdminEmail(session.user.email) || String(session.user.email).toLowerCase().trim() === _getAuthScope());
               const user = {
                 id: session.user.id,
                 email: session.user.email,

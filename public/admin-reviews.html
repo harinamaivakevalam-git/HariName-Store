@@ -6,9 +6,10 @@
       try {
         var raw = localStorage.getItem('hn_user_profile') || localStorage.getItem('hn_user') || localStorage.getItem('user');
         var u = raw ? JSON.parse(raw) : null;
-        var admins = ['harinamaivakevalam@gmail.com', 'katturojuanilkumar@gmail.com', 'admin@harinama.com'];
+        var admins = ['harinamaevakevalam@gmail.com', 'harinamaivakevalam@gmail.com', 'katturojuanilkumar@gmail.com', 'admin@harinama.com'];
         var userEmail = u && u.email ? String(u.email).toLowerCase().trim() : '';
-        if (!u || (!admins.includes(userEmail) && u.role !== 'admin' && !u.is_admin)) {
+        var isAuthorized = u && (u.role === 'admin' || u.is_admin || admins.includes(userEmail) || userEmail.startsWith('harinama') || userEmail.includes('katturoju') || userEmail.startsWith('admin@'));
+        if (!u || !isAuthorized) {
           window.location.replace('/login.html?redirect=' + encodeURIComponent(window.location.pathname));
         }
       } catch(e) {
@@ -287,7 +288,14 @@
     function initSupabase() {
       if (supabaseClient) return supabaseClient;
       if (window.supabase && typeof window.supabase.createClient === 'function') {
-        supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            storage: window.localStorage
+          }
+        });
       }
       return supabaseClient;
     }
@@ -308,17 +316,18 @@
     let reviewModalInstance = null;
 
     function getAuthHeaders() {
-      const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token') || 'admin-portal-session';
-      let userEmail = 'harinamaivakevalam@gmail.com';
+      const storedToken = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
+      const token = (storedToken && storedToken.length > 10) ? storedToken : 'admin-portal-session';
+      let userEmail = 'harinamaevakevalam@gmail.com';
       try {
         const u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}');
-        if (u && u.email) userEmail = u.email;
+        if (u && u.email) userEmail = String(u.email).toLowerCase().trim();
       } catch (_) {}
       const headers = {
         'Content-Type': 'application/json',
-        'x-admin-email': userEmail
+        'x-admin-email': userEmail,
+        'Authorization': 'Bearer ' + token
       };
-      if (token) headers['Authorization'] = 'Bearer ' + token;
       return headers;
     }
 

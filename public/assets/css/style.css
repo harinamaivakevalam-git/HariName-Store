@@ -387,6 +387,10 @@ a:hover {
   position: relative;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  user-select: none !important;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .hn-hamburger-btn:hover {
@@ -411,6 +415,7 @@ a:hover {
   justify-content: space-between;
   align-items: flex-end;
   position: relative;
+  pointer-events: none !important;
 }
 
 .hn-hamburger-line {
@@ -420,6 +425,7 @@ a:hover {
   border-radius: 4px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: center;
+  pointer-events: none !important;
 }
 
 .hn-hamburger-line.line-1 {
@@ -2370,7 +2376,8 @@ a.hn-btn-gold:active,
   background: rgba(14, 11, 10, 0.72) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
-  display: none;
+  display: none !important;
+  pointer-events: none !important;
   align-items: center !important;
   justify-content: center !important;
   padding: 16px !important;
@@ -2379,6 +2386,7 @@ a.hn-btn-gold:active,
 
 .hn-auth-overlay-exact.active {
   display: flex !important;
+  pointer-events: auto !important;
 }
 
 .hn-auth-card-exact {
@@ -2997,36 +3005,23 @@ a.hn-btn-gold:active,
 
 .hn-profile-hero {
   position: relative;
-  background: linear-gradient(135deg, #0B2545 0%, #133E68 60%, #1B4D7E 100%);
+  background-color: #0B2545;
+  background: #0B2545;
   border-radius: 20px;
   padding: 36px 32px;
   color: #FFFFFF;
   margin-bottom: 28px;
-  border: 1px solid rgba(197, 155, 39, 0.35);
-  box-shadow: 0 16px 40px rgba(11, 37, 69, 0.22);
+  border: none;
+  box-shadow: none;
   overflow: hidden;
 }
 
 .hn-profile-hero::before {
-  content: '';
-  position: absolute;
-  top: -50px;
-  right: -50px;
-  width: 220px;
-  height: 220px;
-  background: radial-gradient(circle, rgba(197, 155, 39, 0.22) 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
+  display: none;
 }
 
 .hn-profile-hero::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #7A1C1C, #C59B27, #F3D279, #C59B27, #7A1C1C);
+  display: none;
 }
 
 .hn-profile-avatar-large {
@@ -3314,7 +3309,8 @@ img, video, iframe, object {
   background: rgba(15, 23, 42, 0.72) !important;
   backdrop-filter: blur(14px) !important;
   -webkit-backdrop-filter: blur(14px) !important;
-  display: none;
+  display: none !important;
+  pointer-events: none !important;
   align-items: center !important;
   justify-content: center !important;
   padding: 20px !important;
@@ -3325,6 +3321,7 @@ img, video, iframe, object {
 
 .hn-review-modal-overlay.active {
   display: flex !important;
+  pointer-events: auto !important;
   opacity: 1 !important;
 }
 
@@ -4244,9 +4241,26 @@ img, video, iframe, object {
   .hn-header.scrolled .hn-brand-logo-wrap {
     width: 36px !important;
     height: 36px !important;
-    flex-shrink: 0;
-    border-radius: 50%;
-    border: 1.5px solid var(--hn-gold);
+    min-width: 36px !important;
+    min-height: 36px !important;
+    max-width: 36px !important;
+    max-height: 36px !important;
+    flex-shrink: 0 !important;
+    border-radius: 50% !important;
+    border: 1.5px solid var(--hn-gold) !important;
+    transition: none !important;
+    transform: none !important;
+    will-change: auto !important;
+    background: #FFFFFF !important;
+  }
+
+  .hn-brand-img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+    transform: none !important;
+    transition: none !important;
   }
 
   .hn-brand-text {
@@ -4260,7 +4274,8 @@ img, video, iframe, object {
   .hn-header.scrolled .hn-brand-title {
     font-size: 1.15rem !important;
     line-height: 1.1 !important;
-    white-space: nowrap;
+    white-space: nowrap !important;
+    transition: none !important;
   }
 
   .hn-brand-tagline,
@@ -4270,6 +4285,7 @@ img, video, iframe, object {
     color: #8A640D !important;
     display: block !important;
     white-space: nowrap !important;
+    transition: none !important;
   }
 
   .hn-header-actions {
@@ -4338,6 +4354,18 @@ img, video, iframe, object {
     right: 0 !important;
     width: 100% !important;
     z-index: 1060 !important;
+    display: none;
+    animation: hnMobileDrawerFade 0.2s ease-out;
+  }
+
+  #hnMobileNav.show,
+  #hnMobileNav.active {
+    display: block !important;
+  }
+
+  @keyframes hnMobileDrawerFade {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .hn-mobile-drawer,
@@ -4625,15 +4653,22 @@ img, video, iframe, object {
     color: #1E293B !important;
   }
 
-  .hn-card-price {
-    font-size: 0.98rem !important;
-    font-weight: 700 !important;
-    color: #0B2545 !important;
+  .hn-product-card .hn-card-rating {
+    display: none !important;
   }
 
-  .hn-product-card .hn-card-rating,
   .hn-product-card .hn-btn-card-add {
-    display: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    padding: 7px 10px !important;
+    border-radius: 8px !important;
+    margin-top: 8px !important;
+    width: 100% !important;
+    background-color: var(--hn-gold) !important;
+    color: #FFFFFF !important;
   }
 
   /* Mobile Lifestyle Grid ("Take Krishna With You") */

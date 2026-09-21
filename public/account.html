@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   
   <!-- Harinama Store Master Stylesheet -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=18">
+  <link rel="stylesheet" href="/assets/css/style.css?v=23">
   <!-- Brand Favicon -->
   <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
   <link rel="shortcut icon" href="/favicon.ico">
@@ -26,28 +26,33 @@
 
   <style>
     .hn-profile-hero {
-      background-color: #FFA500;
-      background: #FFA500;
+      background-color: #0B2545 !important;
+      background: #0B2545 !important;
       border-radius: 20px;
       padding: 32px 36px;
       color: #FFFFFF;
       position: relative;
       overflow: hidden;
-      box-shadow: 0 12px 36px rgba(255, 165, 0, 0.28);
-      border-bottom: none;
+      box-shadow: none !important;
+      border: none !important;
+      border-bottom: none !important;
       margin-bottom: 24px;
     }
+    .hn-profile-hero::before,
+    .hn-profile-hero::after {
+      display: none !important;
+    }
     .hn-profile-hero .text-white-50 {
-      color: rgba(255, 255, 255, 0.92) !important;
+      color: rgba(255, 255, 255, 0.78) !important;
     }
     .hn-profile-hero .btn-outline-light {
-      background: rgba(0, 0, 0, 0.15);
-      border: 1.5px solid rgba(255, 255, 255, 0.8);
+      background: transparent;
+      border: 1.5px solid rgba(255, 255, 255, 0.6);
       color: #FFFFFF !important;
     }
     .hn-profile-hero .btn-outline-light:hover {
       background: #FFFFFF;
-      color: #EA7A00 !important;
+      color: #0B2545 !important;
     }
     .hn-profile-avatar-large {
       width: 78px;
@@ -109,16 +114,20 @@
       align-items: center;
       justify-content: space-between;
       width: 100%;
-      padding: 12px 16px;
+      padding: 13px 16px;
       border-radius: 12px;
       background: transparent;
       border: none;
-      font-size: 0.92rem;
+      font-size: 0.93rem;
       font-weight: 600;
       color: #4A5568;
       text-align: left;
       transition: all 0.2s ease;
       margin-bottom: 4px;
+      cursor: pointer !important;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     .hn-profile-tab-link .tab-icon {
       font-size: 1.1rem;
@@ -133,14 +142,18 @@
     .hn-profile-tab-link:hover .tab-icon {
       color: #C59B27;
     }
+    .hn-profile-tab-link:active {
+      transform: scale(0.98);
+    }
     .hn-profile-tab-link.active {
-      background: #FAF4E6;
-      color: #8C6D1F;
-      border-left: 4px solid #C59B27;
+      background: #FAF4E6 !important;
+      color: #8C6D1F !important;
+      border-left: 4px solid #C59B27 !important;
       font-weight: 700;
+      box-shadow: 0 2px 8px rgba(197, 155, 39, 0.12);
     }
     .hn-profile-tab-link.active .tab-icon {
-      color: #C59B27;
+      color: #C59B27 !important;
     }
     .hn-profile-content-card {
       background: #FFFFFF;
@@ -329,19 +342,19 @@
         <!-- 3 Quick Stat Summary Cards -->
         <div class="row g-3 mb-4">
           <div class="col-4">
-            <div class="hn-profile-stat-box" onclick="switchProfileTab('orders')" style="cursor: pointer;">
+            <div class="hn-profile-stat-box" id="stat-card-orders" data-tab="orders" onclick="switchProfileTab('orders')" style="cursor: pointer;">
               <div class="hn-profile-stat-num" id="stat-orders-count">0</div>
               <div class="hn-profile-stat-label">Orders</div>
             </div>
           </div>
           <div class="col-4">
-            <div class="hn-profile-stat-box" onclick="switchProfileTab('addresses')" style="cursor: pointer;">
+            <div class="hn-profile-stat-box" id="stat-card-addresses" data-tab="addresses" onclick="switchProfileTab('addresses')" style="cursor: pointer;">
               <div class="hn-profile-stat-num" id="stat-addresses-count">0 / 5</div>
               <div class="hn-profile-stat-label">Saved Addresses</div>
             </div>
           </div>
           <div class="col-4">
-            <div class="hn-profile-stat-box" onclick="switchProfileTab('wishlist')" style="cursor: pointer;">
+            <div class="hn-profile-stat-box" id="stat-card-wishlist" data-tab="wishlist" onclick="switchProfileTab('wishlist')" style="cursor: pointer;">
               <div class="hn-profile-stat-num" id="stat-wishlist-count">0</div>
               <div class="hn-profile-stat-label">Sacred Wishlist</div>
             </div>
@@ -355,24 +368,24 @@
           <div class="col-lg-3">
             <div class="hn-profile-nav-card">
               <div class="d-flex flex-column">
-                <button type="button" class="hn-profile-tab-link active" id="tab-btn-overview" onclick="switchProfileTab('overview')">
+                <button type="button" class="hn-profile-tab-link active" id="tab-btn-overview" data-tab="overview" onclick="switchProfileTab('overview')">
                   <span><i class="bi bi-person-badge tab-icon"></i> Devotee Profile</span>
                   <i class="bi bi-chevron-right small text-muted"></i>
                 </button>
-                <button type="button" class="hn-profile-tab-link" id="tab-btn-orders" onclick="switchProfileTab('orders')">
+                <button type="button" class="hn-profile-tab-link" id="tab-btn-orders" data-tab="orders" onclick="switchProfileTab('orders')">
                   <span><i class="bi bi-box-seam tab-icon"></i> Orders</span>
                   <i class="bi bi-chevron-right small text-muted"></i>
                 </button>
-                <button type="button" class="hn-profile-tab-link" id="tab-btn-addresses" onclick="switchProfileTab('addresses')">
+                <button type="button" class="hn-profile-tab-link" id="tab-btn-addresses" data-tab="addresses" onclick="switchProfileTab('addresses')">
                   <span><i class="bi bi-geo-alt tab-icon"></i> Saved Addresses</span>
                   <span class="badge bg-light text-secondary border px-2 py-0" id="sidebar-addr-badge" style="font-size: 0.72rem;">0/5</span>
                 </button>
-                <button type="button" class="hn-profile-tab-link" id="tab-btn-wishlist" onclick="switchProfileTab('wishlist')">
+                <button type="button" class="hn-profile-tab-link" id="tab-btn-wishlist" data-tab="wishlist" onclick="switchProfileTab('wishlist')">
                   <span><i class="bi bi-heart tab-icon"></i> Sacred Wishlist</span>
                   <i class="bi bi-chevron-right small text-muted"></i>
                 </button>
                 <hr class="my-2 text-muted">
-                <button type="button" class="hn-profile-tab-link text-danger" onclick="logoutUser(event)">
+                <button type="button" class="hn-profile-tab-link text-danger" id="tab-btn-logout" onclick="logoutUser(event)">
                   <span><i class="bi bi-box-arrow-right tab-icon text-danger"></i> Sign Out Safely</span>
                   <i class="bi bi-arrow-right small text-danger"></i>
                 </button>
@@ -627,7 +640,7 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/data.js"></script>
-  <script src="/assets/js/components.js?v=21"></script>
+  <script src="/assets/js/components.js?v=23"></script>
   <script>
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
@@ -715,19 +728,29 @@
     }
     window.lookupSavedAddrPincode = lookupSavedAddrPincode;
 
-    // Switch between Profile Tabs
-    function switchProfileTab(tab) {
+    // Switch between Profile Tabs with robust scrolling, URL history update, and safety
+    function switchProfileTab(tab, shouldScroll = true) {
+      if (!tab) tab = 'overview';
+      
+      // Update active state on sidebar buttons
       document.querySelectorAll('.hn-profile-tab-link').forEach(btn => btn.classList.remove('active'));
-      document.getElementById('tab-panel-overview')?.classList.add('d-none');
-      document.getElementById('tab-panel-orders')?.classList.add('d-none');
-      document.getElementById('tab-panel-addresses')?.classList.add('d-none');
-      document.getElementById('tab-panel-wishlist')?.classList.add('d-none');
+      const activeBtn = document.getElementById(`tab-btn-${tab}`);
+      if (activeBtn) activeBtn.classList.add('active');
 
-      const btn = document.getElementById(`tab-btn-${tab}`);
-      const panel = document.getElementById(`tab-panel-${tab}`);
-      if (btn) btn.classList.add('active');
-      if (panel) panel.classList.remove('d-none');
+      // Hide all panels
+      const panels = ['overview', 'orders', 'addresses', 'wishlist'];
+      panels.forEach(p => {
+        const el = document.getElementById(`tab-panel-${p}`);
+        if (el) el.classList.add('d-none');
+      });
 
+      // Show selected panel
+      const targetPanel = document.getElementById(`tab-panel-${tab}`);
+      if (targetPanel) {
+        targetPanel.classList.remove('d-none');
+      }
+
+      // Load specific tab data
       if (tab === 'orders') {
         loadUserOrders();
       } else if (tab === 'addresses') {
@@ -735,6 +758,25 @@
       } else if (tab === 'wishlist') {
         const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
         renderWishlistMiniGrid(wishlist);
+      }
+
+      // Sync URL without reloading page
+      try {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('tab', tab);
+        window.history.replaceState({ tab }, '', currentUrl.toString());
+      } catch (_) {}
+
+      // Scroll smoothly to panel on mobile and tablet devices
+      if (shouldScroll && targetPanel) {
+        const isMobile = window.innerWidth < 992;
+        if (isMobile) {
+          setTimeout(() => {
+            const yOffset = -90; // Header clearance
+            const y = targetPanel.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+          }, 60);
+        }
       }
     }
     window.switchProfileTab = switchProfileTab;
@@ -1659,11 +1701,32 @@
         });
       }
 
-      // Attach direct event listeners to sidebar tab buttons and address actions
-      document.getElementById('tab-btn-overview')?.addEventListener('click', () => switchProfileTab('overview'));
-      document.getElementById('tab-btn-orders')?.addEventListener('click', () => switchProfileTab('orders'));
-      document.getElementById('tab-btn-addresses')?.addEventListener('click', () => switchProfileTab('addresses'));
-      document.getElementById('tab-btn-wishlist')?.addEventListener('click', () => switchProfileTab('wishlist'));
+      // Direct Event Listeners for Tab Navigation Buttons
+      document.querySelectorAll('.hn-profile-tab-link[data-tab]').forEach(btn => {
+        const handler = (e) => {
+          e.preventDefault();
+          const tabName = btn.getAttribute('data-tab');
+          if (tabName) switchProfileTab(tabName);
+        };
+        btn.addEventListener('click', handler);
+      });
+
+      // Direct Event Listeners for Quick Stat Cards
+      document.querySelectorAll('.hn-profile-stat-box[data-tab]').forEach(box => {
+        box.addEventListener('click', (e) => {
+          e.preventDefault();
+          const tabName = box.getAttribute('data-tab');
+          if (tabName) switchProfileTab(tabName);
+        });
+      });
+
+      // Direct Event Listener for Sidebar Sign Out Button
+      document.getElementById('tab-btn-logout')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        logoutUser(e);
+      });
+
+      // Attach address action handlers
       document.getElementById('btn-show-add-addr')?.addEventListener('click', () => toggleAddressForm('toggle'));
       document.getElementById('btn-close-address-form')?.addEventListener('click', (e) => {
         e.preventDefault();
@@ -1678,8 +1741,15 @@
       const urlParams = new URLSearchParams(window.location.search);
       const tabParam = urlParams.get('tab');
       if (tabParam && ['overview', 'orders', 'addresses', 'wishlist'].includes(tabParam)) {
-        switchProfileTab(tabParam);
+        switchProfileTab(tabParam, false);
       }
+
+      // Handle Browser Back / Forward Button navigation
+      window.addEventListener('popstate', (e) => {
+        const params = new URLSearchParams(window.location.search);
+        const t = params.get('tab') || 'overview';
+        switchProfileTab(t, false);
+      });
 
       window.addEventListener('hn:auth-changed', initAccountPage);
       window.addEventListener('hn_wishlist_updated', () => {

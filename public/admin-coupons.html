@@ -381,21 +381,6 @@
         console.warn('[AdminCoupons] Supabase direct notice:', sbErr);
       }
 
-      // 4. Initial Seed Fallback only if no coupons exist anywhere
-      if (mergedMap.size === 0) {
-        const defaultSeeds = [
-          { id: '604b1f2e-73d8-4d3f-ab72-279b4a68d8c2', code: 'WELCOME10', discount_type: 'percentage', discount_value: 10, minimum_order: 1000, times_used: 14, usage_limit: 500, expiry_date: '2027-12-31', status: 'active' },
-          { id: 'fc0ba854-a092-4f75-88a3-1097cb7d4ede', code: 'KRISHNA50', discount_type: 'fixed', discount_value: 50, minimum_order: 249, times_used: 28, usage_limit: 200, expiry_date: '2027-12-31', status: 'active' },
-          { id: 'b648d19d-c135-464b-b974-896aff0ddcf3', code: 'RADHA100', discount_type: 'fixed', discount_value: 100, minimum_order: 499, times_used: 9, usage_limit: 100, expiry_date: '2027-12-31', status: 'active' },
-          { id: '06a2bf59-39b6-4120-878d-cb65b149bee3', code: 'VRINDAVAN', discount_type: 'fixed', discount_value: 150, minimum_order: 1499, times_used: 5, usage_limit: 100, expiry_date: '2027-12-31', status: 'active' },
-          { id: '47e30a43-d4c8-40f6-8372-2246f69507eb', code: 'MAHAMANTRA', discount_type: 'percentage', discount_value: 15, minimum_order: 1999, times_used: 18, usage_limit: 300, expiry_date: '2027-12-31', status: 'active' }
-        ];
-        defaultSeeds.forEach(c => {
-          const norm = normalizeCoupon(c);
-          if (norm && norm.code) mergedMap.set(norm.code, norm);
-        });
-      }
-
       databaseCoupons = Array.from(mergedMap.values());
       localStorage.setItem('hn_admin_coupons', JSON.stringify(databaseCoupons));
       renderCouponsTable();

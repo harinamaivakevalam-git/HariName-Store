@@ -44,15 +44,15 @@
             <div class="p-3 bg-light rounded border mb-4 text-start small">
               <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted">Order Number:</span>
-                <span class="fw-bold text-navy" id="hn-success-order-num">#HN-2026-98124</span>
+                <span class="fw-bold text-navy" id="hn-success-order-num">—</span>
               </div>
               <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted">Customer Name:</span>
-                <span class="fw-semibold text-dark" id="hn-success-name">Gauranga Das</span>
+                <span class="fw-semibold text-dark" id="hn-success-name">—</span>
               </div>
               <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted">Total Paid:</span>
-                <span class="fw-bold text-navy" id="hn-success-total">₹526</span>
+                <span class="fw-bold text-navy" id="hn-success-total">—</span>
               </div>
               <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted">Estimated Delivery:</span>
@@ -89,7 +89,7 @@
 
             <div class="d-flex flex-wrap gap-2 justify-content-center">
               <a href="/shop.html" class="btn hn-btn-gold">Continue Shopping</a>
-              <button onclick="downloadOrderInvoice(new URLSearchParams(window.location.search).get('order') || 'HN-2026-98124')" class="btn btn-outline-primary">
+              <button onclick="const o = new URLSearchParams(window.location.search).get('order'); if (o) downloadOrderInvoice(o);" class="btn btn-outline-primary">
                 <i class="bi bi-file-earmark-arrow-down me-1"></i> Download Invoice
               </button>
               <a href="#" id="hn-btn-track-order" class="btn btn-outline-dark">Track Shipment</a>
@@ -116,7 +116,7 @@
       renderFooter();
 
       const params = new URLSearchParams(window.location.search);
-      const order = params.get('order') || 'HN-2026-98124';
+      const order = params.get('order');
       const name = params.get('name');
       const total = params.get('total');
 

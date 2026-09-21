@@ -16,93 +16,9 @@ function resolveSafeAssetUrl(url) {
   return url;
 }
 
-const HARINAMA_AUTHENTIC_PRODUCTS = [
-  {
-    id: "8ff21c2a-e054-43b8-abad-0bd414e39a88",
-    name: "Lord Jagannath Devotional Keychain | Spiritual Blessings & Protection | Harinamastore",
-    title: "Lord Jagannath Devotional Keychain | Spiritual Blessings & Protection | Harinamastore",
-    slug: "lord-jagannath-devotional-keychain-spiritual-blessings-protection-harinamastore-2476",
-    description: "Carry a reminder of devotion wherever you go. This beautifully crafted Lord Jagannath-inspired keychain features vibrant traditional colors, expressive eyes, and detailed devotional artwork. A meaningful accessory for your keys, bags, backpacks, or as a spiritual gift for someone special.",
-    short_description: "Carry a reminder of devotion wherever you go. This beautifully crafted Lord Jagannath-inspired keychain features vibrant traditional colors, expressive eyes, an",
-    price: 99,
-    compare_price: 149,
-    old_price: 149,
-    sku: "HN-PROD-252476",
-    stock: 5,
-    category: "Krishna Keychains",
-    category_name: "Krishna Keychains",
-    category_id: "5f5c9b9e-ef4e-4d7f-ada8-b6548116fa32",
-    category_slug: "krishna-keychains",
-    brand_name: "HariNama Crafts",
-    brand_slug: "",
-    material: "Artwork",
-    status: "active",
-    featured: false,
-    trending: false,
-    rating: 5,
-    reviews_count: 1,
-    primary_image: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769234495-jly30m9.jpeg",
-    image: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769234495-jly30m9.jpeg",
-    secondary_image: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769243396-lr00hkq.jpeg",
-    gallery: [
-      "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769234495-jly30m9.jpeg",
-      "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769243396-lr00hkq.jpeg",
-      "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769217722-5uwrf3c.jpeg",
-      "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769219922-3ckakqi.jpeg"
-    ],
-    images: [
-      "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769234495-jly30m9.jpeg",
-      "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769243396-lr00hkq.jpeg",
-      "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769217722-5uwrf3c.jpeg",
-      "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/products/1789769219922-3ckakqi.jpeg"
-    ],
-    in_stock: true,
-    created_at: "2026-09-18T22:07:33.571172+00:00"
-  }
-];
+const HARINAMA_AUTHENTIC_PRODUCTS = [];
 
-const HARINAMA_BASE_AUTHENTIC_COLLECTIONS = [
-  {
-    id: "5f5c9b9e-ef4e-4d7f-ada8-b6548116fa32",
-    name: "Krishna Keychains",
-    slug: "krishna-keychains",
-    desc: "Sacred handcrafted Krishna, Jagannath & Mahamantra keychains.",
-    image: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1789768086568-hlj4uh3.png",
-    image_url: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1789768086568-hlj4uh3.png"
-  },
-  {
-    id: "a8686346-2099-4f6f-9214-0ec187c2e632",
-    name: "Devotional Keychains",
-    slug: "devotional-keychains",
-    desc: "Handcrafted acrylic, enamel, and brass devotional keychains.",
-    image: "/assets/images/cat_keychains.jpg",
-    image_url: "/assets/images/cat_keychains.jpg"
-  },
-  {
-    id: "bff75ab7-217f-4bf2-95a1-9e8d2d850279",
-    name: "Japa Mala & Prayer Beads",
-    slug: "japa-mala-prayer-beads",
-    desc: "Authentic Vrindavan Tulasi & Neem meditation prayer beads.",
-    image: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1789749775631-xv9hxvd.png",
-    image_url: "https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1789749775631-xv9hxvd.png"
-  },
-  {
-    id: "bdfb6c50-8436-4546-96f7-007577b855ba",
-    name: "Japa & Chanting",
-    slug: "japa-chanting",
-    desc: "Authentic meditation prayer beads and japa accessories.",
-    image: "/assets/images/cat_japa_malas.jpg",
-    image_url: "/assets/images/cat_japa_malas.jpg"
-  },
-  {
-    id: "585c4ce8-3722-4070-bd8d-61076436c946",
-    name: "Gift Sets & Bundles",
-    slug: "gift-sets",
-    desc: "Curated spiritual gift hampers, unboxing collections & puja sets.",
-    image: "/assets/images/cat_spiritual_gifts.jpg",
-    image_url: "/assets/images/cat_spiritual_gifts.jpg"
-  }
-];
+const HARINAMA_BASE_AUTHENTIC_COLLECTIONS = [];
 
 // Dynamic Category Counts based on Database Categories & Products
 function computeCategoryCounts(productsList = [], dbCategories = null) {
@@ -119,7 +35,7 @@ function computeCategoryCounts(productsList = [], dbCategories = null) {
     } catch (_) {}
   }
   if (catList.length === 0) {
-    catList = [...HARINAMA_BASE_AUTHENTIC_COLLECTIONS];
+    return [];
   }
 
   // Ensure "All Products" is at the start if categories exist
@@ -654,21 +570,6 @@ HARINAMA_DATA.validateCoupon = async function(rawCode, subtotal = 0) {
       }
     }
   } catch (_) {}
-
-  // 4. Default baseline fallback
-  if (code === 'WELCOME10') {
-    if (orderSubtotal < 1000) {
-      return { valid: false, message: 'Minimum order amount of ₹1000 required for coupon WELCOME10.' };
-    }
-    const discount = Math.round(orderSubtotal * 0.10);
-    return { valid: true, code: 'WELCOME10', discount, discountType: 'percentage', discountValue: 10, message: `Coupon WELCOME10 applied! Saved ₹${discount}.` };
-  }
-  if (code === 'KRISHNA50') {
-    if (orderSubtotal < 249) {
-      return { valid: false, message: 'Minimum order amount of ₹249 required for coupon KRISHNA50.' };
-    }
-    return { valid: true, code: 'KRISHNA50', discount: 50, discountType: 'fixed', discountValue: 50, message: 'Coupon KRISHNA50 applied! Saved ₹50.' };
-  }
 
   return { valid: false, message: 'Invalid or expired coupon code.' };
 };

@@ -57,7 +57,7 @@ async function sendOrderConfirmationEmail(order) {
     const orderNumber = order.order_number || order.id;
     const clientUrl = (process.env.CLIENT_URL || process.env.API_BASE_URL || 'https://www.harinamastore.com').replace(/\/$/, '');
     const trackingUrl = `${clientUrl}/order-tracking.html?order=${encodeURIComponent(orderNumber)}`;
-    const invoiceUrl = `${clientUrl}/api/orders/${encodeURIComponent(orderNumber)}/invoice?print=true`;
+    const invoiceUrl = `${clientUrl}/invoice.html?order=${encodeURIComponent(orderNumber)}&print=true`;
 
     const items = Array.isArray(order.items) ? order.items : [];
     const itemsHtml = items.map(item => {

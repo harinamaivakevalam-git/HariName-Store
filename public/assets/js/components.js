@@ -2101,7 +2101,7 @@ const getApiUrl = (path) => {
 };
 window.getApiUrl = getApiUrl;
 
-// Global Tax Invoice Generator & Downloader (Universal & Zero Localhost Error)
+// Global Tax Invoice Generator & Downloader (Universal & Zero Server Dependency)
 const downloadOrderInvoice = async (orderIdentifier) => {
   if (!orderIdentifier) {
     showToast('Order number is required to generate invoice.', 'danger');
@@ -2115,10 +2115,10 @@ const downloadOrderInvoice = async (orderIdentifier) => {
 
   showToast(`Preparing official tax invoice for #${orderNum}... 🌸`);
 
-  // Build the invoice URL using getApiUrl for correct resolution
-  const invoiceUrl = getApiUrl(`/api/orders/${encodeURIComponent(orderNum)}/invoice?print=true`);
+  // Build the invoice URL pointing to client invoice renderer (works on any deployed domain + localhost)
+  const invoiceUrl = `/invoice.html?order=${encodeURIComponent(orderNum)}&print=true`;
 
-  // Open invoice in new tab directly (no HEAD pre-check which can fail on some servers)
+  // Open invoice in new tab
   const win = window.open(invoiceUrl, '_blank');
   if (!win) {
     // Popup blocked — navigate directly

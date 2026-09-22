@@ -3,6 +3,19 @@
  * Exact Match to Reference Specification
  */
 (function () {
+  // Seamless Client-side Clean URL Controller (.html -> pretty clean URL in address bar)
+  if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
+    try {
+      const pathname = window.location.pathname;
+      if (pathname.endsWith('.html')) {
+        let cleanPath = pathname.slice(0, -5);
+        if (cleanPath === '/index' || cleanPath === '') cleanPath = '/';
+        const newUrl = cleanPath + window.location.search + window.location.hash;
+        window.history.replaceState(null, '', newUrl);
+      }
+    } catch (_) {}
+  }
+
   const formatPrice = (num) => {
     const amount = Number(num) || 0;
     return `₹${amount.toLocaleString('en-IN')}`;
@@ -1317,11 +1330,11 @@
           </div>
         </div>
         <div class="hn-user-menu-links">
-          <a href="/account.html"><i class="bi bi-person-badge"></i>My Profile</a>
-          <a href="/account.html?tab=orders"><i class="bi bi-box-seam"></i>My Orders</a>
-          <a href="/account.html?tab=addresses"><i class="bi bi-geo-alt"></i>Saved Addresses</a>
-          <a href="/wishlist.html"><i class="bi bi-heart"></i>My Wishlist</a>
-          <a href="/cart.html"><i class="bi bi-bag"></i>Shopping Cart</a>
+          <a href="/account"><i class="bi bi-person-badge"></i>My Profile</a>
+          <a href="/account?tab=orders"><i class="bi bi-box-seam"></i>My Orders</a>
+          <a href="/account?tab=addresses"><i class="bi bi-geo-alt"></i>Saved Addresses</a>
+          <a href="/wishlist"><i class="bi bi-heart"></i>My Wishlist</a>
+          <a href="/cart"><i class="bi bi-bag"></i>Shopping Cart</a>
           ${isAdminUser(user) ? `<a href="${_getAdminRoute()}" class="text-danger fw-bold"><i class="bi bi-shield-lock text-danger"></i>Admin Portal</a>` : ''}
         </div>
         <div class="hn-user-menu-footer">
@@ -1333,7 +1346,7 @@
       </div>
     </div>
   ` : `
-    <a href="/login.html" class="hn-header-account-btn text-decoration-none" title="Sign In" id="hnUserAccountBtn">
+    <a href="/login" class="hn-header-account-btn text-decoration-none" title="Sign In" id="hnUserAccountBtn">
       <div class="hn-account-icon-wrap">
         <i class="bi bi-person-fill"></i>
       </div>
@@ -1365,7 +1378,7 @@
         <div class="d-flex align-items-center justify-content-between hn-header-inner">
           
           <!-- Logo (Left on Desktop & Mobile) -->
-          <a href="/index.html" class="hn-brand">
+          <a href="/" class="hn-brand">
             <div class="hn-brand-logo-wrap">
               <img src="/assets/images/krishna-logo.jpg" alt="Harinama Store Logo - Sri Krishna" class="hn-brand-img">
             </div>
@@ -1377,37 +1390,37 @@
 
           <!-- Centered Navigation (Desktop Only) -->
           <nav class="d-none d-lg-flex align-items-center gap-2">
-            <a href="/index.html" class="hn-nav-link ${active === 'home' ? 'active' : ''}">Home</a>
+            <a href="/" class="hn-nav-link ${active === 'home' ? 'active' : ''}">Home</a>
             
             <!-- Feature Dropdown -->
             <div class="hn-nav-dropdown-wrap">
-              <a href="/shop.html" class="hn-nav-link hn-nav-dropdown-toggle d-flex align-items-center gap-1 ${active === 'featured' || active === 'feature' ? 'active' : ''}">
+              <a href="/shop" class="hn-nav-link hn-nav-dropdown-toggle d-flex align-items-center gap-1 ${active === 'featured' || active === 'feature' ? 'active' : ''}">
                 <span>Feature</span>
                 <i class="bi bi-chevron-down ms-1" style="font-size: 0.72rem;"></i>
               </a>
               <div class="hn-nav-dropdown-menu">
-                <a href="/shop.html?filter=new-arrivals" class="hn-dropdown-item"><span class="me-2">✨</span>New Arrivals</a>
-                <a href="/shop.html?filter=best-sellers" class="hn-dropdown-item"><span class="me-2">🔥</span>Best Sellers</a>
-                <a href="/shop.html?category=gift-sets" class="hn-dropdown-item"><span class="me-2">🎁</span>Gift Sets</a>
-                <a href="/shop.html?filter=festival" class="hn-dropdown-item"><span class="me-2">🌸</span>Festival Collection</a>
-                <a href="/shop.html?filter=under-299" class="hn-dropdown-item"><span class="me-2">💛</span>Under ₹299</a>
-                <a href="/shop.html?filter=specials" class="hn-dropdown-item"><span class="me-2">🪷</span>HarinamaStore SPECIALS</a>
+                <a href="/shop?filter=new-arrivals" class="hn-dropdown-item"><span class="me-2">✨</span>New Arrivals</a>
+                <a href="/shop?filter=best-sellers" class="hn-dropdown-item"><span class="me-2">🔥</span>Best Sellers</a>
+                <a href="/shop?category=gift-sets" class="hn-dropdown-item"><span class="me-2">🎁</span>Gift Sets</a>
+                <a href="/shop?filter=festival" class="hn-dropdown-item"><span class="me-2">🌸</span>Festival Collection</a>
+                <a href="/shop?filter=under-299" class="hn-dropdown-item"><span class="me-2">💛</span>Under ₹299</a>
+                <a href="/shop?filter=specials" class="hn-dropdown-item"><span class="me-2">🪷</span>HarinamaStore SPECIALS</a>
               </div>
             </div>
 
-            <a href="/shop.html" class="hn-nav-link ${active === 'shop' ? 'active' : ''}">Shop</a>
-            <a href="/collections.html" class="hn-nav-link ${active === 'collections' ? 'active' : ''}">Collections</a>
-            <a href="/contact.html" class="hn-nav-link ${active === 'contact' ? 'active' : ''}">Contact</a>
+            <a href="/shop" class="hn-nav-link ${active === 'shop' ? 'active' : ''}">Shop</a>
+            <a href="/collections" class="hn-nav-link ${active === 'collections' ? 'active' : ''}">Collections</a>
+            <a href="/contact" class="hn-nav-link ${active === 'contact' ? 'active' : ''}">Contact</a>
           </nav>
 
           <!-- Right Action Icons: Favorites -> Cart -> Sign In / Profile -> Menu Toggle (Mobile) -->
           <div class="d-flex align-items-center gap-1 gap-sm-2 gap-md-3 hn-header-actions">
-            <a href="/wishlist.html" class="hn-icon-btn d-none d-md-inline-flex" title="Favorites & Wishlist" onclick="return handleHeaderWishlistClick(event)">
+            <a href="/wishlist" class="hn-icon-btn d-none d-md-inline-flex" title="Favorites & Wishlist" onclick="return handleHeaderWishlistClick(event)">
               <i class="bi bi-heart"></i>
               <span class="hn-badge-pill ${loggedIn && wishlistCount > 0 ? '' : 'd-none'}" id="hn-wishlist-badge">${wishlistCount}</span>
             </a>
 
-            <a href="/cart.html" class="hn-icon-btn" title="Shopping Cart" onclick="return handleHeaderCartClick(event)">
+            <a href="/cart" class="hn-icon-btn" title="Shopping Cart" onclick="return handleHeaderCartClick(event)">
               <i class="bi bi-cart3"></i>
               <span class="hn-badge-pill ${loggedIn && cartCount > 0 ? '' : 'd-none'}" id="hn-cart-badge">${cartCount}</span>
             </a>
@@ -1443,41 +1456,41 @@
                     </div>
                   </div>
                   <div class="d-flex gap-2">
-                    <a href="/account.html" class="btn btn-sm btn-outline-dark flex-grow-1"><i class="bi bi-person me-1"></i>Profile</a>
+                    <a href="/account" class="btn btn-sm btn-outline-dark flex-grow-1"><i class="bi bi-person me-1"></i>Profile</a>
                     <button type="button" class="btn btn-sm btn-danger px-3" onclick="logoutUser(event)">
                       <i class="bi bi-box-arrow-right me-1"></i>Sign Out
                     </button>
                   </div>
                 </div>
               ` : `
-                <a href="/login.html" class="btn hn-btn-gold w-100 py-2 mb-2 text-start d-flex align-items-center justify-content-between text-decoration-none">
+                <a href="/login" class="btn hn-btn-gold w-100 py-2 mb-2 text-start d-flex align-items-center justify-content-between text-decoration-none">
                   <span><i class="bi bi-person-circle me-2"></i>Sign In / Register</span>
                   <i class="bi bi-chevron-right small"></i>
                 </a>
               `}
-              <a href="/index.html" class="hn-mobile-nav-link ${active === 'home' ? 'active' : ''}">
+              <a href="/" class="hn-mobile-nav-link ${active === 'home' ? 'active' : ''}">
                 <span><i class="bi bi-house-door me-2"></i>Home</span>
                 <i class="bi bi-chevron-right small text-muted"></i>
               </a>
 
-              <a href="/shop.html" class="hn-mobile-nav-link ${active === 'shop' ? 'active' : ''}">
+              <a href="/shop" class="hn-mobile-nav-link ${active === 'shop' ? 'active' : ''}">
                 <span><i class="bi bi-shop me-2"></i>Shop All Products</span>
                 <i class="bi bi-chevron-right small text-muted"></i>
               </a>
-              <a href="/collections.html" class="hn-mobile-nav-link ${active === 'collections' ? 'active' : ''}">
+              <a href="/collections" class="hn-mobile-nav-link ${active === 'collections' ? 'active' : ''}">
                 <span><i class="bi bi-grid me-2"></i>Collections</span>
                 <i class="bi bi-chevron-right small text-muted"></i>
               </a>
-              <a href="/contact.html" class="hn-mobile-nav-link ${active === 'contact' ? 'active' : ''}">
+              <a href="/contact" class="hn-mobile-nav-link ${active === 'contact' ? 'active' : ''}">
                 <span><i class="bi bi-envelope me-2"></i>Contact</span>
                 <i class="bi bi-chevron-right small text-muted"></i>
               </a>
               <hr class="my-2">
-              <a href="/cart.html" class="hn-mobile-nav-link" onclick="return handleHeaderCartClick(event)">
+              <a href="/cart" class="hn-mobile-nav-link" onclick="return handleHeaderCartClick(event)">
                 <span><i class="bi bi-bag me-2"></i>Shopping Cart</span>
                 ${cartCount > 0 ? `<span class="badge text-white rounded-pill px-2" style="background-color: var(--hn-gold);">${cartCount}</span>` : ''}
               </a>
-              <a href="/wishlist.html" class="hn-mobile-nav-link" onclick="return handleHeaderWishlistClick(event)">
+              <a href="/wishlist" class="hn-mobile-nav-link" onclick="return handleHeaderWishlistClick(event)">
                 <span><i class="bi bi-heart me-2"></i>My Wishlist</span>
                 ${wishlistCount > 0 ? `<span class="badge text-white rounded-pill px-2" style="background-color: var(--hn-gold);">${wishlistCount}</span>` : ''}
               </a>
@@ -1587,7 +1600,7 @@ const renderFooter = () => {
           
           <!-- Col 1: Brand Info -->
           <div class="col-12 col-lg-4 mb-3 mb-lg-0">
-            <a href="/index.html" class="d-flex align-items-center gap-2 mb-3 text-decoration-none">
+            <a href="/" class="d-flex align-items-center gap-2 mb-3 text-decoration-none">
               <div class="hn-brand-logo-wrap footer-logo">
                 <img src="/assets/images/krishna-logo.jpg" alt="Harinama Store Logo - Sri Krishna" class="hn-brand-img">
               </div>
@@ -1607,24 +1620,24 @@ const renderFooter = () => {
           <!-- Col 2: Shop Links -->
           <div class="col-6 col-sm-6 col-lg-2">
             <div class="hn-footer-title">Shop</div>
-            <a href="/shop.html">All Products</a>
-            <a href="/shop.html?category=gift-sets">Gift Sets</a>
-            <a href="/shop.html">New Arrivals</a>
+            <a href="/shop">All Products</a>
+            <a href="/shop?category=gift-sets">Gift Sets</a>
+            <a href="/shop">New Arrivals</a>
           </div>
 
           <!-- Col 3: Help Links -->
           <div class="col-6 col-sm-6 col-lg-2">
             <div class="hn-footer-title">Help</div>
-            <a href="/faq.html">Shipping</a>
-            <a href="/terms.html">Returns</a>
-            <a href="/faq.html">FAQs</a>
+            <a href="/faq">Shipping</a>
+            <a href="/terms">Returns</a>
+            <a href="/faq">FAQs</a>
           </div>
 
           <!-- Col 4: About Links -->
           <div class="col-6 col-sm-6 col-lg-2">
             <div class="hn-footer-title">About</div>
-            <a href="/about.html">Our Mission</a>
-            <a href="/contact.html">Contact Us</a>
+            <a href="/about">Our Mission</a>
+            <a href="/contact">Contact Us</a>
           </div>
 
           <!-- Col 5: Follow Us Column -->
@@ -1724,7 +1737,7 @@ const renderProductCard = (p) => {
   const rawImg = p.image || p.primary_image || (p.images && p.images[0]) || '';
   const imgSrc = window.getProductImageUrl ? window.getProductImageUrl(rawImg, { width: 360, quality: 80, format: 'webp' }) : (rawImg || '/assets/images/krishna-logo.jpg');
   const prodTitle = p.name || p.title || 'Sacred Devotional Item';
-  const prodLink = `/product-details.html?id=${encodeURIComponent(p.slug || p.id)}`;
+  const prodLink = `/product-details?id=${encodeURIComponent(p.slug || p.id)}`;
 
   return `
     <div class="col-6 col-md-4 col-lg-2">

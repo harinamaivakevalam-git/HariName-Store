@@ -68,7 +68,7 @@
 
             <!-- Action Button -->
             <div class="d-flex flex-wrap align-items-center gap-3 mb-2 hn-hero-btn-wrap">
-              <a href="/shop.html" class="btn hn-hero-cta-btn">
+              <a href="/shop" class="btn hn-hero-cta-btn">
                 <span>Shop Now</span>
                 <i class="bi bi-arrow-right ms-1"></i>
               </a>
@@ -103,7 +103,7 @@
           <div class="hn-bhakti-banner-content">
             <h3 class="hn-bhakti-banner-title">Bring Bhakti<br>into Daily Life</h3>
             <p class="hn-bhakti-banner-sub">Simple items. Eternal connection.</p>
-            <a href="/shop.html" class="btn hn-btn-gold hn-bhakti-btn">
+            <a href="/shop" class="btn hn-btn-gold hn-bhakti-btn">
               <span>Explore Collection</span>
               <i class="bi bi-arrow-right ms-1"></i>
             </a>
@@ -128,7 +128,7 @@
               <span class="hn-lotus-header-icon">🪷</span>
               <h2 class="hn-section-title mb-0">Featured Products</h2>
             </div>
-            <a href="/shop.html?filter=new-arrivals" class="hn-view-all-link">
+            <a href="/shop?filter=new-arrivals" class="hn-view-all-link">
               <span>View All</span>
               <i class="bi bi-arrow-right ms-1"></i>
             </a>
@@ -298,7 +298,7 @@
       container.innerHTML = cats.map(c => {
         const rawCatImg = c.image || c.image_url || '/assets/images/cat_keychains.jpg';
         const catImg = window.getProductImageUrl ? window.getProductImageUrl(rawCatImg) : rawCatImg;
-        const linkUrl = `/shop.html?category=${encodeURIComponent(c.slug || c.id)}`;
+        const linkUrl = `/shop?category=${encodeURIComponent(c.slug || c.id)}`;
         return `
           <a href="${linkUrl}" class="hn-cat-circle-item" title="${c.name} Collection">
             <div class="hn-cat-circle-img-wrap">
@@ -320,9 +320,9 @@
       const viewAllEl = document.querySelector('.hn-featured-header-wrap .hn-view-all-link');
       if (viewAllEl) {
         if (tabKey === 'gift-sets') {
-          viewAllEl.href = '/shop.html?category=gift-sets';
+          viewAllEl.href = '/shop?category=gift-sets';
         } else {
-          viewAllEl.href = `/shop.html?filter=${tabKey}`;
+          viewAllEl.href = `/shop?filter=${tabKey}`;
         }
       }
 

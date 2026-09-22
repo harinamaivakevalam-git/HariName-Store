@@ -36,7 +36,20 @@ app.get([
   '/api/storage/*'
 ], proxyProductImage);
 
-app.use(express.static(path.join(__dirname, '../public')));
+// Clean URL Redirect Middleware (Redirects /page.html to /page seamlessly)
+app.use((req, res, next) => {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+  const urlPath = req.path;
+  if (urlPath.endsWith('.html')) {
+    const cleanPath = urlPath.slice(0, -5);
+    const target = (cleanPath === '/index' || cleanPath === '') ? '/' : cleanPath;
+    const query = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
+    return res.redirect(301, target + query);
+  }
+  next();
+});
+
+app.use(express.static(path.join(__dirname, '../public'), { extensions: ['html'] }));
 
 // Ensure all dynamic API responses are never cached by intermediate proxies or browsers
 app.use('/api', (req, res, next) => {
@@ -112,23 +125,23 @@ app.post('/api/internal/seed-products', async (req, res) => {
 });
 
 // Fallback for HTML page routes (clean URLs without .html extension)
-const htmlPages = [
-  '', 'index', 'shop', 'product', 'product-details', 'products', 'collections',
-  'cart', 'checkout', 'order-success', 'order-tracking', 'orders',
-  'account', 'auth', 'login', 'register', 'forgot-password', 'wishlist', 'addresses',
-  'about', 'contact', 'faq', 'terms',
-  'admin', 'admin-products', 'admin-orders', 'admin-categories', 'admin-coupons',
-  'admin-customers', 'admin-reviews', 'admin-analytics', 'admin-settings', 'admin-homepage'
-];
+const fs = require('fs');
 
-htmlPages.forEach(page => {
-  const route = page === '' || page === 'index' ? '/' : `/${page}`;
-  const file = page === '' ? 'index' : page;
-  if (route !== '/') {
-    app.get(route, (req, res) => res.sendFile(path.join(__dirname, `../public/${file}.html`)));
-  } else {
-    app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));
+app.get(['/', '/home'], (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+app.get('/:page', (req, res, next) => {
+  const page = req.params.page;
+  if (!page || page.includes('.')) return next(); // Ignore assets with dots (.css, .js, .png, etc.)
+  
+  const targetFile = (page === 'home' || page === 'index') ? 'index.html' : `${page}.html`;
+  const filePath = path.join(__dirname, `../public/${targetFile}`);
+  
+  if (fs.existsSync(filePath)) {
+    return res.sendFile(filePath);
   }
+  next();
 });
 
 // Catch 404 & Global Error Handling

@@ -3665,15 +3665,24 @@ img, video, iframe, object {
   text-align: center;
   font-weight: 600;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .hn-topbar-content {
   color: #2F3E2E;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}
+
+.hn-topbar-item {
+  white-space: nowrap;
+  display: inline-block;
 }
 
 .hn-topbar-leaf {
   font-size: 0.85rem;
   color: #2D6A4F;
+  flex-shrink: 0;
 }
 
 .hn-topbar-divider {
@@ -3681,6 +3690,25 @@ img, video, iframe, object {
   opacity: 0.6;
   font-weight: 300;
   margin: 0 4px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 767.98px) {
+  .hn-topbar-desktop-only {
+    display: none !important;
+  }
+  .hn-topbar {
+    font-size: 0.75rem;
+    padding: 5px 8px;
+    letter-spacing: 0.02em;
+  }
+  .hn-topbar-content {
+    gap: 6px !important;
+    justify-content: center !important;
+  }
+  .hn-topbar-item {
+    white-space: nowrap !important;
+  }
 }
 
 /* Brand Accent */

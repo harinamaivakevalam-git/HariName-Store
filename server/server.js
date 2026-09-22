@@ -124,6 +124,136 @@ app.post('/api/internal/seed-products', async (req, res) => {
   }
 });
 
+// Dynamic SEO Sitemap (Real-time product, category, and clean page indexing)
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+    const host = req.get('host') || 'localhost:5000';
+    const baseUrl = process.env.SITE_URL || `${protocol}://${host}`;
+
+    const staticRoutes = [
+      { path: '/', priority: '1.0', freq: 'daily' },
+      { path: '/shop', priority: '0.9', freq: 'daily' },
+      { path: '/collections', priority: '0.8', freq: 'weekly' },
+      { path: '/about', priority: '0.7', freq: 'monthly' },
+      { path: '/contact', priority: '0.7', freq: 'monthly' },
+      { path: '/faq', priority: '0.6', freq: 'monthly' },
+      { path: '/terms', priority: '0.5', freq: 'monthly' },
+      { path: '/privacy', priority: '0.5', freq: 'monthly' }
+    ];
+
+    let productEntries = [];
+    let categoryEntries = [];
+
+    // 1. Fetch dynamic products
+    try {
+      if (isSupabaseConfigured && supabaseAdmin) {
+        const { data: prods } = await supabaseAdmin
+          .from('products')
+          .select('id, slug, updated_at, created_at')
+          .eq('status', 'active');
+        if (prods && prods.length > 0) {
+          productEntries = prods.map(p => ({
+            loc: `${baseUrl}/product-details?id=${encodeURIComponent(p.slug || p.id)}`,
+            lastmod: (p.updated_at || p.created_at || new Date().toISOString()).split('T')[0],
+            priority: '0.9',
+            freq: 'daily'
+          }));
+        }
+
+        const { data: cats } = await supabaseAdmin
+          .from('categories')
+          .select('id, slug, updated_at, created_at')
+          .eq('status', 'active');
+        if (cats && cats.length > 0) {
+          categoryEntries = cats.map(c => ({
+            loc: `${baseUrl}/shop?category=${encodeURIComponent(c.slug || c.id)}`,
+            lastmod: (c.updated_at || c.created_at || new Date().toISOString()).split('T')[0],
+            priority: '0.8',
+            freq: 'weekly'
+          }));
+        }
+      }
+    } catch (_) {}
+
+    // Fallback to local db if Supabase returned nothing
+    if (productEntries.length === 0) {
+      try {
+        const localProds = db.filter('products', p => p.status !== 'archived');
+        productEntries = localProds.map(p => ({
+          loc: `${baseUrl}/product-details?id=${encodeURIComponent(p.slug || p.id)}`,
+          lastmod: new Date().toISOString().split('T')[0],
+          priority: '0.9',
+          freq: 'daily'
+        }));
+      } catch (_) {}
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+${staticRoutes.map(r => `  <url>
+    <loc>${baseUrl}${r.path}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${r.freq}</changefreq>
+    <priority>${r.priority}</priority>
+  </url>`).join('\n')}
+${categoryEntries.map(c => `  <url>
+    <loc>${c.loc}</loc>
+    <lastmod>${c.lastmod}</lastmod>
+    <changefreq>${c.freq}</changefreq>
+    <priority>${c.priority}</priority>
+  </url>`).join('\n')}
+${productEntries.map(p => `  <url>
+    <loc>${p.loc}</loc>
+    <lastmod>${p.lastmod}</lastmod>
+    <changefreq>${p.freq}</changefreq>
+    <priority>${p.priority}</priority>
+  </url>`).join('\n')}
+</urlset>`;
+
+    res.setHeader('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (err) {
+    res.status(500).send('Error generating sitemap');
+  }
+});
+
+// Dynamic robots.txt
+app.get('/robots.txt', (req, res) => {
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+  const host = req.get('host') || 'localhost:5000';
+  const baseUrl = process.env.SITE_URL || `${protocol}://${host}`;
+
+  const robots = `# Harinama Store Robots.txt
+User-agent: *
+Allow: /
+Allow: /shop
+Allow: /collections
+Allow: /product-details
+Allow: /about
+Allow: /contact
+Allow: /faq
+Allow: /terms
+Allow: /privacy
+Allow: /assets/
+
+Disallow: /admin
+Disallow: /admin-*
+Disallow: /api/admin
+Disallow: /account
+Disallow: /checkout
+Disallow: /cart
+Disallow: /invoice
+
+Sitemap: ${baseUrl}/sitemap.xml
+`;
+  res.setHeader('Content-Type', 'text/plain');
+  res.send(robots);
+});
+
 // Fallback for HTML page routes (clean URLs without .html extension)
 const fs = require('fs');
 

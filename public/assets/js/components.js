@@ -1365,8 +1365,8 @@
           <span class="hn-topbar-item">Hare Krishna</span>
           <span class="hn-topbar-divider">|</span>
           <span class="hn-topbar-item">Spread Love</span>
-          <span class="hn-topbar-divider">|</span>
-          <span class="hn-topbar-item">Be Remembered</span>
+          <span class="hn-topbar-divider hn-topbar-desktop-only">|</span>
+          <span class="hn-topbar-item hn-topbar-desktop-only">Be Remembered</span>
           <span class="hn-topbar-leaf">🌿</span>
         </div>
       </div>

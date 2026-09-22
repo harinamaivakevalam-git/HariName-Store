@@ -1,7 +1,22 @@
+# Harinama Store Robots.txt
 User-agent: *
 Allow: /
+Allow: /shop
+Allow: /collections
+Allow: /product-details
+Allow: /about
+Allow: /contact
+Allow: /faq
+Allow: /terms
+Allow: /privacy
+Allow: /assets/
+
 Disallow: /admin
+Disallow: /admin-*
 Disallow: /api/admin
 Disallow: /account
+Disallow: /checkout
+Disallow: /cart
+Disallow: /invoice
 
-Sitemap: http://localhost:5000/sitemap.xml
+Sitemap: https://harinamastore.com/sitemap.xml

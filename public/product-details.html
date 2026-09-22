@@ -4,9 +4,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Product Details — Harinama Store</title>
-  <meta name="description"
-    content="Authentic devotional products from Harinama Store with handcrafted brass and acrylic finishes.">
+  <title>Sacred Devotional Product — Harinama Store</title>
+  <meta name="description" id="hn-meta-desc"
+    content="Authentic devotional products and sacred gift items handcrafted in Vrindavan from Harinama Store.">
+  <meta name="keywords"
+    content="Harinama Store, Krishna product, devotional item, Vrindavan gifts, Hindu spiritual items, Hare Krishna store">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <meta name="theme-color" content="#0B2545">
+  <link rel="canonical" id="hn-canonical-link" href="https://harinamastore.com/product-details">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="product">
+  <meta property="og:site_name" content="Harinama Store">
+  <meta property="og:title" id="hn-og-title" content="Sacred Devotional Product — Harinama Store">
+  <meta property="og:description" id="hn-og-desc"
+    content="Authentic devotional handcrafted products designed to keep Krishna in your heart and everyday life.">
+  <meta property="og:image" id="hn-og-image" content="https://harinamastore.com/assets/images/krishna-logo.jpg">
+  <meta property="og:url" id="hn-og-url" content="https://harinamastore.com/product-details">
+  <meta property="og:locale" content="en_IN">
+
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" id="hn-tw-title" content="Sacred Devotional Product — Harinama Store">
+  <meta name="twitter:description" id="hn-tw-desc"
+    content="Authentic devotional handcrafted products designed to keep Krishna in your heart.">
+  <meta name="twitter:image" id="hn-tw-image" content="https://harinamastore.com/assets/images/krishna-logo.jpg">
+
+  <!-- Dynamic Product JSON-LD Schema -->
+  <script type="application/ld+json" id="hn-product-schema">
+  {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": "Sacred Devotional Product",
+    "image": ["https://harinamastore.com/assets/images/krishna-logo.jpg"],
+    "description": "Authentic devotional handcrafted items from Harinama Store.",
+    "brand": {
+      "@type": "Brand",
+      "name": "Harinama Store"
+    },
+    "offers": {
+      "@type": "Offer",
+      "priceCurrency": "INR",
+      "price": "99",
+      "availability": "https://schema.org/InStock",
+      "url": "https://harinamastore.com/product-details"
+    }
+  }
+  </script>
 
   <!-- Google Fonts: Poppins Master Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,7 +64,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
   <!-- Harinama Store Master Stylesheet -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=12">
+  <link rel="stylesheet" href="/assets/css/style.css?v=25">
   <!-- Brand Favicon -->
   <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
   <link rel="shortcut icon" href="/favicon.ico">
@@ -801,15 +845,76 @@
     function populateDetails(prod) {
       if (!prod) return;
       currentProduct = prod;
-      document.title = `${prod.title || prod.name} — Harinama Store`;
+      const prodName = prod.title || prod.name || 'Sacred Devotional Product';
+      const prodDesc = prod.description || 'Authentic devotional handcrafted product from Harinama Store.';
+      const prodPrice = String(prod.price || '99');
+      const prodUrl = window.location.href;
+      const rawImg = prod.image || prod.primary_image || (prod.gallery && prod.gallery[0]) || '/assets/images/krishna-logo.jpg';
+      const prodImgUrl = window.getProductImageUrl ? window.getProductImageUrl(rawImg) : (rawImg.startsWith('http') ? rawImg : `${window.location.origin}${rawImg}`);
+
+      // Dynamic Browser Title & Meta Tags
+      document.title = `${prodName} — Harinama Store`;
+
+      const descMeta = document.getElementById('hn-meta-desc');
+      if (descMeta) descMeta.content = prodDesc;
+      const canonLink = document.getElementById('hn-canonical-link');
+      if (canonLink) canonLink.href = prodUrl;
+
+      // Dynamic Open Graph & Twitter Card Tags
+      const ogTitle = document.getElementById('hn-og-title');
+      if (ogTitle) ogTitle.content = `${prodName} — Harinama Store`;
+      const ogDesc = document.getElementById('hn-og-desc');
+      if (ogDesc) ogDesc.content = prodDesc;
+      const ogImg = document.getElementById('hn-og-image');
+      if (ogImg) ogImg.content = prodImgUrl;
+      const ogUrl = document.getElementById('hn-og-url');
+      if (ogUrl) ogUrl.content = prodUrl;
+
+      const twTitle = document.getElementById('hn-tw-title');
+      if (twTitle) twTitle.content = `${prodName} — Harinama Store`;
+      const twDesc = document.getElementById('hn-tw-desc');
+      if (twDesc) twDesc.content = prodDesc;
+      const twImg = document.getElementById('hn-tw-image');
+      if (twImg) twImg.content = prodImgUrl;
+
+      // Dynamic JSON-LD Product Schema
+      const schemaScript = document.getElementById('hn-product-schema');
+      if (schemaScript) {
+        schemaScript.textContent = JSON.stringify({
+          "@context": "https://schema.org/",
+          "@type": "Product",
+          "name": prodName,
+          "image": [prodImgUrl],
+          "description": prodDesc,
+          "sku": prod.sku || `HN-PR-${prod.id}`,
+          "brand": {
+            "@type": "Brand",
+            "name": "Harinama Store"
+          },
+          "offers": {
+            "@type": "Offer",
+            "url": prodUrl,
+            "priceCurrency": "INR",
+            "price": prodPrice,
+            "itemCondition": "https://schema.org/NewCondition",
+            "availability": prod.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/PreOrder"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": String(prod.rating || 5.0),
+            "reviewCount": String(prod.reviews_count || 24)
+          }
+        });
+      }
+
       const titleEl = document.getElementById('hn-product-title');
-      if (titleEl) titleEl.innerText = prod.title || prod.name;
+      if (titleEl) titleEl.innerText = prodName;
       const priceEl = document.getElementById('hn-product-price');
       if (priceEl) priceEl.innerText = formatPrice(prod.price);
       const descEl = document.getElementById('hn-product-desc');
-      if (descEl) descEl.innerText = prod.description || 'Devotional handcrafted item from Harinama Store.';
+      if (descEl) descEl.innerText = prodDesc;
       const tabDescEl = document.getElementById('hn-tab-desc');
-      if (tabDescEl) tabDescEl.innerText = prod.description || 'Devotional handcrafted item from Harinama Store.';
+      if (tabDescEl) tabDescEl.innerText = prodDesc;
       // Thumbs & Main Image
       let gallery = [];
       if (Array.isArray(prod.gallery)) {

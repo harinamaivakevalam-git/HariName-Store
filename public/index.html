@@ -746,7 +746,7 @@
         if (bannerSub && promo.subtitle) bannerSub.innerText = promo.subtitle;
 
         const bannerDesc = document.querySelector('.hn-promo-desc');
-        if (bannerDesc && promo.description) bannerDesc.innerText = promo.description;
+        if (bannerDesc && promo.description) bannerDesc.innerHTML = promo.description.replace(/\n/g, '<br>');
 
         const mantraVerse = document.querySelector('.hn-mantra-verse');
         if (mantraVerse && promo.mantra_verse) mantraVerse.innerHTML = promo.mantra_verse.replace(/\n/g, '<br>');

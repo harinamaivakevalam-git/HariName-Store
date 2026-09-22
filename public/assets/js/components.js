@@ -1400,12 +1400,8 @@
             <a href="/contact.html" class="hn-nav-link ${active === 'contact' ? 'active' : ''}">Contact</a>
           </nav>
 
-          <!-- Right Action Icons: Search -> Favorites -> Cart -> Sign In / Profile -> Menu Toggle (Mobile) -->
+          <!-- Right Action Icons: Favorites -> Cart -> Sign In / Profile -> Menu Toggle (Mobile) -->
           <div class="d-flex align-items-center gap-1 gap-sm-2 gap-md-3 hn-header-actions">
-            <a href="/shop.html" class="hn-icon-btn" title="Search Products">
-              <i class="bi bi-search"></i>
-            </a>
-
             <a href="/wishlist.html" class="hn-icon-btn d-none d-md-inline-flex" title="Favorites & Wishlist" onclick="return handleHeaderWishlistClick(event)">
               <i class="bi bi-heart"></i>
               <span class="hn-badge-pill ${loggedIn && wishlistCount > 0 ? '' : 'd-none'}" id="hn-wishlist-badge">${wishlistCount}</span>

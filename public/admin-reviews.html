@@ -322,15 +322,17 @@
       try {
         const res = await fetch(primaryUrl, options);
         if (res.ok) return res;
-        // If 404 or 502 on relative URL, try Render backend directly
-        if ((res.status === 404 || res.status >= 500) && !primaryUrl.startsWith('http://localhost') && !primaryUrl.startsWith(RENDER_BACKEND_URL)) {
-          return await fetch(`${RENDER_BACKEND_URL}${path}`, options);
+        if (primaryUrl !== path) {
+          const alt = await fetch(path, options).catch(() => null);
+          if (alt && alt.ok) return alt;
         }
         return res;
       } catch (err) {
-        if (!primaryUrl.startsWith('http://localhost') && !primaryUrl.startsWith(RENDER_BACKEND_URL)) {
-          return await fetch(`${RENDER_BACKEND_URL}${path}`, options);
-        }
+        try {
+          const altUrl = (primaryUrl === path) ? `${RENDER_BACKEND_URL}${path}` : path;
+          const altRes = await fetch(altUrl, options);
+          if (altRes.ok) return altRes;
+        } catch (_) {}
         throw err;
       }
     }

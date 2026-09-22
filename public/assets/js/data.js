@@ -38,17 +38,25 @@ function computeCategoryCounts(productsList = [], dbCategories = null) {
     return [];
   }
 
-  // Ensure "All Products" is at the start if categories exist
-  if (catList.length > 0 && !catList.some(c => c.slug === 'all-products' || c.id === 'cat-all')) {
-    catList = [
-      { id: 'cat-all', name: 'All Products', slug: 'all-products', desc: 'Browse all divine items.', image: '/assets/images/cat_keychains.jpg' },
-      ...catList
-    ];
-  }
+  // Separate "All Products" from custom categories so we can sort by sort_order
+  const nonAllCats = catList.filter(c => c.slug !== 'all-products' && c.id !== 'cat-all');
+  
+  // Sort categories strictly by sort_order ascending (1, 2, 3...)
+  nonAllCats.sort((a, b) => {
+    const orderA = a.sort_order !== undefined && a.sort_order !== null && !isNaN(Number(a.sort_order)) ? Number(a.sort_order) : 9999;
+    const orderB = b.sort_order !== undefined && b.sort_order !== null && !isNaN(Number(b.sort_order)) ? Number(b.sort_order) : 9999;
+    if (orderA !== orderB) return orderA - orderB;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  catList = [
+    { id: 'cat-all', name: 'All Products', slug: 'all-products', desc: 'Browse all divine items.', image: '/assets/images/cat_keychains.jpg', sort_order: -1 },
+    ...nonAllCats
+  ];
 
   return catList.map(c => {
     if (c.slug === 'all-products' || c.id === 'cat-all') {
-      return { ...c, count: productsList.length };
+      return { ...c, count: productsList.length, product_count: productsList.length };
     }
     const count = productsList.filter(p => 
       (p.category_id && p.category_id === c.id) ||
@@ -56,7 +64,7 @@ function computeCategoryCounts(productsList = [], dbCategories = null) {
       (p.category_slug && p.category_slug.toLowerCase() === (c.slug || '').toLowerCase()) ||
       (p.category && (c.name || '').length > 3 && p.category.toLowerCase().includes(c.name.toLowerCase().split(' ')[0]))
     ).length;
-    return { ...c, count };
+    return { ...c, count, product_count: count, sort_order: c.sort_order !== undefined && c.sort_order !== null ? Number(c.sort_order) : 0 };
   });
 }
 
@@ -279,6 +287,8 @@ HARINAMA_DATA.syncWithApi = async function(forceRefresh = false) {
         desc: c.description || 'Sacred collection',
         image: resolveSafeAssetUrl(resolveCategoryImage(c)),
         image_url: resolveSafeAssetUrl(resolveCategoryImage(c)),
+        sort_order: c.sort_order !== undefined && c.sort_order !== null && !isNaN(Number(c.sort_order)) ? Number(c.sort_order) : 0,
+        status: c.status,
         product_count: c.product_count || 0
       }));
       categoriesLoaded = true;
@@ -326,7 +336,7 @@ HARINAMA_DATA.syncWithApi = async function(forceRefresh = false) {
     try {
       if (!categoriesLoaded) {
         const catRes = await fetchWithTimeout(
-          SUPABASE_URL + '/rest/v1/categories?status=neq.archived&order=name',
+          SUPABASE_URL + '/rest/v1/categories?status=neq.archived&order=sort_order.asc,name.asc',
           { headers: sbHeaders },
           8000
         ).then(r => r.ok ? r.json() : null).catch(() => null);
@@ -339,6 +349,8 @@ HARINAMA_DATA.syncWithApi = async function(forceRefresh = false) {
             desc: c.description || 'Sacred collection',
             image: resolveSafeAssetUrl(resolveCategoryImage(c)),
             image_url: resolveSafeAssetUrl(resolveCategoryImage(c)),
+            sort_order: c.sort_order !== undefined && c.sort_order !== null && !isNaN(Number(c.sort_order)) ? Number(c.sort_order) : 0,
+            status: c.status,
             product_count: 0
           }));
           categoriesLoaded = true;

@@ -311,14 +311,22 @@
         cats = (typeof HARINAMA_BASE_AUTHENTIC_COLLECTIONS !== 'undefined' && Array.isArray(HARINAMA_BASE_AUTHENTIC_COLLECTIONS))
           ? HARINAMA_BASE_AUTHENTIC_COLLECTIONS
           : [
-            { id: '1', name: 'Japa Malas', slug: 'japa-malas', image: '/assets/images/cat_japa_malas.jpg' },
-            { id: '2', name: 'Keychains', slug: 'keychains', image: '/assets/images/cat_keychains.jpg' },
-            { id: '3', name: 'Books', slug: 'books', image: '/assets/images/cat_books.jpg' },
-            { id: '4', name: 'Deity Statues', slug: 'deity-statues', image: '/assets/images/cat_deity_statues.jpg' },
-            { id: '5', name: 'Japa Bags', slug: 'japa-bags', image: '/assets/images/cat_japa_bags.jpg' },
-            { id: '6', name: 'Spiritual Gifts', slug: 'spiritual-gifts', image: '/assets/images/cat_spiritual_gifts.jpg' }
+            { id: '1', name: 'Japa Malas', slug: 'japa-malas', image: '/assets/images/cat_japa_malas.jpg', sort_order: 1 },
+            { id: '2', name: 'Keychains', slug: 'keychains', image: '/assets/images/cat_keychains.jpg', sort_order: 2 },
+            { id: '3', name: 'Books', slug: 'books', image: '/assets/images/cat_books.jpg', sort_order: 3 },
+            { id: '4', name: 'Deity Statues', slug: 'deity-statues', image: '/assets/images/cat_deity_statues.jpg', sort_order: 4 },
+            { id: '5', name: 'Japa Bags', slug: 'japa-bags', image: '/assets/images/cat_japa_bags.jpg', sort_order: 5 },
+            { id: '6', name: 'Spiritual Gifts', slug: 'spiritual-gifts', image: '/assets/images/cat_spiritual_gifts.jpg', sort_order: 6 }
           ];
       }
+
+      // Sort strictly based on Admin Display Sort Order (#1, #2, #3...)
+      cats = cats.slice().sort((a, b) => {
+        const orderA = a.sort_order !== undefined && a.sort_order !== null && !isNaN(Number(a.sort_order)) ? Number(a.sort_order) : 9999;
+        const orderB = b.sort_order !== undefined && b.sort_order !== null && !isNaN(Number(b.sort_order)) ? Number(b.sort_order) : 9999;
+        if (orderA !== orderB) return orderA - orderB;
+        return (a.name || '').localeCompare(b.name || '');
+      });
 
       const section = container.closest('.hn-categories-circles-section');
       if (section) section.style.display = 'block';

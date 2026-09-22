@@ -442,10 +442,18 @@
           image_url: resolvedImg,
           count: count,
           product_count: count,
-          sort_order: c.sort_order || 0,
+          sort_order: c.sort_order !== undefined && c.sort_order !== null && !isNaN(Number(c.sort_order)) ? Number(c.sort_order) : 0,
           desc: c.description || c.desc || 'Sacred devotional collection',
           status: (c.status || 'active').toLowerCase()
         };
+      });
+
+      // Sort strictly by display sort order (#1, #2, #3...)
+      databaseCategories.sort((a, b) => {
+        const orderA = a.sort_order !== undefined && a.sort_order !== null && !isNaN(Number(a.sort_order)) ? Number(a.sort_order) : 9999;
+        const orderB = b.sort_order !== undefined && b.sort_order !== null && !isNaN(Number(b.sort_order)) ? Number(b.sort_order) : 9999;
+        if (orderA !== orderB) return orderA - orderB;
+        return (a.name || '').localeCompare(b.name || '');
       });
 
       filterCategories();
@@ -464,6 +472,13 @@
         const matchStatus = statusFilter === 'all' || (c.status === statusFilter);
 
         return matchSearch && matchStatus;
+      });
+
+      displayedCategories.sort((a, b) => {
+        const orderA = a.sort_order !== undefined && a.sort_order !== null && !isNaN(Number(a.sort_order)) ? Number(a.sort_order) : 9999;
+        const orderB = b.sort_order !== undefined && b.sort_order !== null && !isNaN(Number(b.sort_order)) ? Number(b.sort_order) : 9999;
+        if (orderA !== orderB) return orderA - orderB;
+        return (a.name || '').localeCompare(b.name || '');
       });
 
       renderCategoriesTable();

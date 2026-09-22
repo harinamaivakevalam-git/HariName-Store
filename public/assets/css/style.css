@@ -1351,38 +1351,28 @@ a.hn-btn-gold:active,
 }
 
 .hn-promo-content {
-  padding: 36px 30px;
+  padding: 32px 28px;
 }
 
-.hn-promo-title {
-  font-family: var(--hn-font-serif);
-  font-size: 1.8rem;
-  font-weight: 600;
-  color: var(--hn-navy);
-  margin-bottom: 6px;
+.hn-promo-sloka-wrap {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
 }
 
-.hn-promo-subtitle {
-  font-size: 1.05rem;
-  color: var(--hn-text-secondary);
-  font-weight: 600;
-  margin-bottom: 12px;
-}
-
+.hn-promo-title,
+.hn-promo-subtitle,
 .hn-promo-desc {
-  font-size: 0.92rem;
-  color: var(--hn-text-secondary);
-  margin-bottom: 18px;
-  line-height: 1.5;
-}
-
-.hn-promo-price {
-  font-family: var(--hn-font-numbers);
-  font-size: 1.7rem;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.35rem;
   font-weight: 700;
-  color: var(--hn-navy);
-  margin-bottom: 18px;
-  font-variant-numeric: tabular-nums;
+  color: #0B2545;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+  font-style: italic;
+  letter-spacing: 0.01em;
 }
 
 .hn-mantra-box {
@@ -2011,8 +2001,10 @@ a.hn-btn-gold:active,
     padding: 24px 20px;
   }
 
-  .hn-promo-title {
-    font-size: 1.5rem;
+  .hn-promo-title,
+  .hn-promo-subtitle,
+  .hn-promo-desc {
+    font-size: 1.25rem;
   }
 
   .hn-story-section,
@@ -3832,11 +3824,11 @@ img, video, iframe, object {
   font-style: normal;
 }
 
-/* Circular Categories Strip */
+/* Circular Categories Strip (Soft Blurred Divider) */
 .hn-categories-circles-section {
   background: #FFFFFF;
-  border-top: 1px solid #F5EFE6;
-  border-bottom: 1px solid #F5EFE6;
+  border: none !important;
+  position: relative;
 }
 
 /* --------------------------------------------------------------------------
@@ -3949,23 +3941,52 @@ img, video, iframe, object {
 
 .hn-categories-circles-section {
   background: #FFFFFF;
-  border-top: 1px solid rgba(230, 213, 188, 0.4);
-  border-bottom: 1px solid rgba(230, 213, 188, 0.4);
+  border: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
   padding: 26px 0 22px;
+  position: relative;
+}
+
+.hn-categories-circles-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, rgba(217, 119, 6, 0.1) 15%, rgba(217, 119, 6, 0.28) 50%, rgba(217, 119, 6, 0.1) 85%, transparent 100%);
+  filter: blur(0.6px);
+  pointer-events: none;
+}
+
+.hn-categories-circles-section::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, rgba(217, 119, 6, 0.1) 15%, rgba(217, 119, 6, 0.28) 50%, rgba(217, 119, 6, 0.1) 85%, transparent 100%);
+  filter: blur(0.6px);
+  pointer-events: none;
 }
 
 .hn-cat-circles-scroll {
   display: flex;
   align-items: flex-start;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 32px;
   overflow-x: auto;
-  padding: 4px 12px 10px;
+  padding: 6px 36px 12px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   width: 100%;
-  max-width: 1140px;
+  max-width: 1200px;
   margin: 0 auto;
+  /* Smooth blur/fade mask on left and right edges */
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%);
 }
 
 .hn-cat-circles-scroll::-webkit-scrollbar {
@@ -4563,28 +4584,31 @@ img, video, iframe, object {
     display: none !important;
   }
 
-  /* Mobile Category Circle Spacing */
+  /* Mobile Category Circle Spacing & Blurred Edges */
   .hn-categories-circles-section {
     padding: 16px 0 12px !important;
     background: #FFFFFF;
+    border: none !important;
   }
 
   .hn-cat-circles-scroll {
     display: flex;
-    justify-content: center;
-    gap: 20px;
-    padding: 4px 16px 10px;
+    justify-content: flex-start;
+    gap: 18px;
+    padding: 4px 20px 10px;
     overflow-x: auto;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x proximity;
     width: 100%;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 24px, black calc(100% - 24px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 24px, black calc(100% - 24px), transparent 100%);
   }
 
   .hn-cat-circle-item {
     flex: 0 0 auto;
     min-width: 78px;
-    scroll-snap-align: center;
+    scroll-snap-align: start;
   }
 
   .hn-cat-circle-img-wrap {

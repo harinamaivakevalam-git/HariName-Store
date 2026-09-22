@@ -72,13 +72,13 @@ const DEFAULT_HOMEPAGE_SECTIONS = [
   },
   {
     id: 'promo_banner',
-    title: 'Sacred Devotional Reminder',
-    subtitle: 'Carry Krishna with you everywhere.',
+    title: 'harer nāma harer nāma',
+    subtitle: 'harer nāmaiva kevalam',
     is_active: true,
     content: {
-      title: 'Sacred Devotional Reminder',
-      subtitle: 'Carry Krishna with you everywhere.',
-      description: 'A simple everyday reminder to pause, remember Krishna, and chant.',
+      title: 'harer nāma harer nāma',
+      subtitle: 'harer nāmaiva kevalam',
+      description: 'kalau nāsty eva nāsty eva\nnāsty eva gatir anyathā',
       mantra_verse: 'Hare Krishna Hare Krishna\nKrishna Krishna Hare Hare\nHare Rama Hare Rama\nRama Rama Hare Hare',
       mantra_chant: 'Chant & Be Happy.',
       price: '',
@@ -122,7 +122,7 @@ const DEFAULT_HOMEPAGE_SECTIONS = [
     id: 'lifestyle_gallery',
     title: 'Take Krishna With You',
     subtitle: 'From your morning commute to your next journey.',
-    is_active: true,
+    is_active: false,
     content: {
       title: 'Take Krishna With You',
       subtitle: 'From your morning commute to your next journey.',

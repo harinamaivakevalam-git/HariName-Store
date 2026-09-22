@@ -1460,19 +1460,6 @@
                 <i class="bi bi-chevron-right small text-muted"></i>
               </a>
 
-              <!-- Feature Curated Links in Mobile Menu -->
-              <div class="p-2 rounded bg-light-subtle my-1 border">
-                <div class="small fw-bold text-muted text-uppercase mb-2 px-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Feature Collections</div>
-                <div class="d-flex flex-column gap-1">
-                  <a href="/shop.html?filter=new-arrivals" class="text-decoration-none py-1 px-2 text-dark small d-flex align-items-center"><span class="me-2">✨</span>New Arrivals</a>
-                  <a href="/shop.html?filter=best-sellers" class="text-decoration-none py-1 px-2 text-dark small d-flex align-items-center"><span class="me-2">🔥</span>Best Sellers</a>
-                  <a href="/shop.html?category=gift-sets" class="text-decoration-none py-1 px-2 text-dark small d-flex align-items-center"><span class="me-2">🎁</span>Gift Sets</a>
-                  <a href="/shop.html?filter=festival" class="text-decoration-none py-1 px-2 text-dark small d-flex align-items-center"><span class="me-2">🌸</span>Festival Collection</a>
-                  <a href="/shop.html?filter=under-299" class="text-decoration-none py-1 px-2 text-dark small d-flex align-items-center"><span class="me-2">💛</span>Under ₹299</a>
-                  <a href="/shop.html?filter=specials" class="text-decoration-none py-1 px-2 text-dark small d-flex align-items-center"><span class="me-2">🪷</span>HarinamaStore SPECIALS</a>
-                </div>
-              </div>
-
               <a href="/shop.html" class="hn-mobile-nav-link ${active === 'shop' ? 'active' : ''}">
                 <span><i class="bi bi-shop me-2"></i>Shop All Products</span>
                 <i class="bi bi-chevron-right small text-muted"></i>

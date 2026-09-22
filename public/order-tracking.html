@@ -234,7 +234,7 @@
                     <i class="bi bi-shield-check fs-5"></i>
                   </div>
                   <div>
-                    <div class="small fw-bold text-navy" id="hn-carrier-title">Courier Partner: <span id="hn-track-carrier" class="text-dark">India Post Speed Post</span></div>
+                    <div class="small fw-bold text-navy" id="hn-carrier-title">Courier Partner: <span id="hn-track-carrier" class="text-dark">Assigned Delivery Partner</span></div>
                     <div class="small text-secondary">
                       AWB / Tracking Number: <code id="hn-track-awb" class="fw-bold text-navy bg-white px-2 py-0.5 rounded border">Processing</code>
                     </div>
@@ -399,7 +399,7 @@
       setStepperState(shipStatus);
 
       // Carrier & AWB
-      const carrier = order.courier_name || order.courier || 'India Post Speed Post';
+      const carrier = order.courier_name || order.courier || (order.awb_code ? 'Shiprocket Express Partner' : (order.shiprocket_order_id ? 'Shiprocket / Delivery Partner' : 'Assigned Delivery Partner'));
       const awb = order.awb_code || order.tracking_number;
       document.getElementById('hn-track-carrier').textContent = carrier;
       

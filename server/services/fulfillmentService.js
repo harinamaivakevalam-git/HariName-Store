@@ -179,7 +179,7 @@ async function processOrderFulfillment(orderOrIdentifier, options = {}) {
           shipping_status: remoteExisting.awb_code ? 'AWB_ASSIGNED' : 'ORDER_CREATED',
           shipping_status_code: String(remoteExisting.status_code || '1'),
           awb_code: remoteExisting.awb_code || order.awb_code || null,
-          courier_name: remoteExisting.courier_name || order.courier_name || 'India Post Speed Post',
+          courier_name: remoteExisting.courier_name || order.courier_name || (remoteExisting.awb_code ? 'Shiprocket Express Partner' : 'Shiprocket / Delivery Partner'),
           tracking_history: currentHistory
         };
 
@@ -229,7 +229,7 @@ async function processOrderFulfillment(orderOrIdentifier, options = {}) {
         shipping_status: 'ORDER_CREATED',
         shipping_status_code: String(srRes.data.status_code || '1'),
         awb_code: srRes.data.awb_code || null,
-        courier_name: srRes.data.courier_name || 'India Post Speed Post',
+        courier_name: srRes.data.courier_name || order.courier_name || (srRes.data.awb_code ? 'Shiprocket Express Partner' : 'Shiprocket / Delivery Partner'),
         tracking_history: currentHistory
       };
 

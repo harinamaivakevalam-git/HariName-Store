@@ -100,18 +100,7 @@ class DatabaseStore {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       },
-      {
-        id: customerId,
-        name: 'Gauranga Das',
-        email: 'user@harinama.com',
-        password_hash: userPassword,
-        phone: '+91 91234 56789',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
-        role: 'customer',
-        status: 'active',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+
     ];
 
     // Empty initial arrays - live items are managed via Supabase Database and Admin Portal

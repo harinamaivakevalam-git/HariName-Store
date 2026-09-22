@@ -303,7 +303,7 @@
             <div class="row g-3 mb-3">
               <div class="col-md-6">
                 <label class="form-label fw-bold text-navy">Courier / Shipping Partner</label>
-                <input type="text" id="edit-order-courier" class="form-control" placeholder="e.g. India Post Speed Post, BlueDart">
+                <input type="text" id="edit-order-courier" class="form-control" placeholder="e.g. Delhivery Surface, BlueDart, DTDC, Shadowfax">
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-bold text-navy">AWB / Courier Tracking Number</label>
@@ -501,7 +501,7 @@
         payment_method: o.payment_method || o.paymentMethod || 'UPI (Online)',
         payment_status: o.payment_status || (/cod/i.test(o.payment_method || '') ? 'Pending (COD)' : 'Paid'),
         status: statusNorm,
-        courier: o.courier || 'India Post Speed Post',
+        courier: o.courier_name || o.courier || (o.awb_code ? 'Shiprocket Express Partner' : (o.shiprocket_order_id ? 'Shiprocket / Delivery Partner' : 'Assigned Delivery Partner')),
         tracking_number: o.tracking_number || '',
         notes: o.notes || '',
         // Shiprocket fulfillment fields

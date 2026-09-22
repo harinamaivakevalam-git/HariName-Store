@@ -303,12 +303,42 @@
     function getApiUrl(path) {
       if (typeof window !== 'undefined') {
         if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-          if (window.location.port === '5000') return path;
-          return 'http://localhost:5000' + path;
+        const { hostname, port } = window.location;
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+          if (port === '5000') return path;
+          return `http://${hostname}:5000${path}`;
         }
       }
       return path;
+    }
+
+    function notifyToast(message, type = 'success') {
+      if (typeof window.showToast === 'function') {
+        window.showToast(message, type);
+        return;
+      }
+      // Built-in fallback toast
+      let toastContainer = document.getElementById('hn-admin-toast-container');
+      if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'hn-admin-toast-container';
+        toastContainer.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:8px;max-width:380px;';
+        document.body.appendChild(toastContainer);
+      }
+      const toast = document.createElement('div');
+      const bg = type === 'danger' || type === 'error' ? '#dc3545' : (type === 'warning' ? '#fd7e14' : '#198754');
+      toast.style.cssText = `background:${bg};color:#fff;padding:12px 18px;border-radius:8px;font-size:0.88rem;box-shadow:0 8px 24px rgba(0,0,0,0.18);transition:all 0.3s ease;display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(10px);`;
+      toast.innerHTML = `<i class="bi ${type === 'danger' ? 'bi-exclamation-circle' : 'bi-check-circle'}"></i> <span>${message}</span>`;
+      toastContainer.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+      });
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
     }
 
     let databaseReviews = [];
@@ -323,12 +353,11 @@
         const u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}');
         if (u && u.email) userEmail = String(u.email).toLowerCase().trim();
       } catch (_) {}
-      const headers = {
+      return {
         'Content-Type': 'application/json',
         'x-admin-email': userEmail,
         'Authorization': 'Bearer ' + token
       };
-      return headers;
     }
 
     async function loadProductsList() {
@@ -359,7 +388,7 @@
       const select = document.getElementById('modal-product-select');
       if (select) {
         select.innerHTML = availableProducts.map(p => `
-          <option value="${p.id}">${escapeHtml(p.name || 'Devotional Item')}</option>
+          <option value="${p.id}">${escapeHtml(p.name || p.title || 'Devotional Item')}</option>
         `).join('');
       }
     }
@@ -372,11 +401,11 @@
         const res = await fetch(getApiUrl('/api/reviews/admin/all'), { headers: getAuthHeaders() });
         if (res.ok) {
           const json = await res.json();
-          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          if (json.success && Array.isArray(json.data)) {
             databaseReviews = json.data.map(r => ({
               id: r.id,
               product_id: r.product_id,
-              name: r.user_name || 'Devotee Customer',
+              name: r.user_name || r.title || 'Devotee Customer',
               product: r.product_name || 'Devotional Product',
               rating: parseInt(r.rating, 10) || 5,
               text: r.comment || r.title || 'Sacred product review',
@@ -400,11 +429,11 @@
             .select('*, products(name), profiles:user_id(name, email)')
             .order('created_at', { ascending: false });
 
-          if (!error && Array.isArray(data) && data.length > 0) {
+          if (!error && Array.isArray(data)) {
             databaseReviews = data.map(r => ({
               id: r.id,
               product_id: r.product_id,
-              name: r.profiles?.name || r.user_name || 'Devotee Customer',
+              name: r.profiles?.name || r.title || r.user_name || 'Devotee Customer',
               product: r.products?.name || r.product_name || 'Devotional Item',
               rating: parseInt(r.rating, 10) || 5,
               text: r.comment || r.title || 'Sacred review',
@@ -416,10 +445,10 @@
           }
         }
       } catch (sbErr) {
-        console.warn('[AdminReviews] Supabase query error:', sbErr);
+        console.warn('[AdminReviews] Supabase query notice:', sbErr);
       }
 
-      // If empty
+      // Fallback
       databaseReviews = [];
       renderReviewsTable(databaseReviews);
     }
@@ -507,9 +536,20 @@
             </span>
           </td>
           <td class="text-end text-nowrap pe-3">
-            <button class="btn btn-sm btn-outline-success review-action-btn me-1" onclick="toggleReviewStatus('${r.id}', '${r.status}')" title="${isApproved ? 'Set to Pending' : 'Approve Review'}">
-              <i class="bi ${isApproved ? 'bi-check2-circle' : 'bi-check-lg'}"></i>
+            ${!isApproved ? `
+            <button class="btn btn-sm btn-outline-success review-action-btn me-1" onclick="setReviewStatus('${r.id}', 'approved')" title="Approve Review">
+              <i class="bi bi-check-lg"></i>
             </button>
+            ` : `
+            <button class="btn btn-sm btn-outline-warning review-action-btn me-1" onclick="setReviewStatus('${r.id}', 'pending')" title="Mark as Pending">
+              <i class="bi bi-hourglass-split"></i>
+            </button>
+            `}
+            ${!isRejected ? `
+            <button class="btn btn-sm btn-outline-danger review-action-btn me-1" onclick="setReviewStatus('${r.id}', 'rejected')" title="Reject Review">
+              <i class="bi bi-x-circle"></i>
+            </button>
+            ` : ''}
             <button class="btn btn-sm btn-outline-primary review-action-btn me-1" onclick="openEditReviewModal('${r.id}')" title="Edit Review">
               <i class="bi bi-pencil"></i>
             </button>
@@ -538,8 +578,8 @@
       renderReviewsTable(filtered);
     }
 
-    async function toggleReviewStatus(id, currentStatus) {
-      const newStatus = currentStatus.toLowerCase() === 'approved' ? 'pending' : 'approved';
+    async function setReviewStatus(id, targetStatus) {
+      const cleanStatus = targetStatus.toLowerCase();
       let updated = false;
 
       // 1. Try Express API
@@ -547,14 +587,14 @@
         const res = await fetch(getApiUrl(`/api/reviews/admin/${id}/status`), {
           method: 'PUT',
           headers: getAuthHeaders(),
-          body: JSON.stringify({ status: newStatus })
+          body: JSON.stringify({ status: cleanStatus })
         });
         if (res.ok) {
           const json = await res.json();
           if (json.success) updated = true;
         }
       } catch (e) {
-        console.warn('[AdminReviews] API toggle error, attempting Supabase direct update...');
+        console.warn('[AdminReviews] API status error, attempting Supabase direct update...');
       }
 
       // 2. Supabase direct fallback
@@ -564,7 +604,7 @@
           if (client) {
             const { error } = await client
               .from('reviews')
-              .update({ status: newStatus, updated_at: new Date().toISOString() })
+              .update({ status: cleanStatus, updated_at: new Date().toISOString() })
               .eq('id', id);
             if (!error) updated = true;
           }
@@ -574,11 +614,16 @@
       }
 
       if (updated) {
-        showToast(`Review status updated to ${newStatus.toUpperCase()}! 🌸`);
+        notifyToast(`Review status updated to ${cleanStatus.toUpperCase()}! 🌸`);
         await loadReviewsFromDatabase();
       } else {
-        showToast('Error updating review in database.', 'danger');
+        notifyToast('Error updating review status in database.', 'danger');
       }
+    }
+
+    async function toggleReviewStatus(id, currentStatus) {
+      const newStatus = currentStatus.toLowerCase() === 'approved' ? 'pending' : 'approved';
+      await setReviewStatus(id, newStatus);
     }
 
     async function deleteReview(id) {
@@ -599,7 +644,7 @@
         console.warn('[AdminReviews] API delete failed, attempting Supabase direct delete...');
       }
 
-      // 2. Supabase direct delete
+      // 2. Supabase direct delete fallback
       if (!deleted) {
         try {
           const client = initSupabase();
@@ -616,10 +661,10 @@
       }
 
       if (deleted) {
-        showToast('Review permanently deleted from database.');
+        notifyToast('Review permanently deleted from database.');
         await loadReviewsFromDatabase();
       } else {
-        showToast('Failed to delete review.', 'danger');
+        notifyToast('Failed to delete review.', 'danger');
       }
     }
 
@@ -647,7 +692,7 @@
     }
 
     function openEditReviewModal(id) {
-      const rev = databaseReviews.find(r => r.id === id);
+      const rev = databaseReviews.find(r => String(r.id) === String(id));
       if (!rev) return;
 
       document.getElementById('modal-review-id').value = rev.id;
@@ -675,53 +720,84 @@
       const comment = document.getElementById('modal-review-text').value.trim();
       const status = document.getElementById('modal-status-select').value;
 
+      let saved = false;
+
+      // 1. Try Express API
       try {
-        if (id) {
-          // Update existing review
-          const res = await fetch(getApiUrl(`/api/reviews/admin/${id}`), {
-            method: 'PUT',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ rating, comment, title: name, status })
-          });
+        const url = id ? `/api/reviews/admin/${id}` : '/api/reviews/admin/create';
+        const method = id ? 'PUT' : 'POST';
+        const payload = {
+          product_id: productId,
+          user_name: name,
+          title: name,
+          rating,
+          comment,
+          status
+        };
+
+        const res = await fetch(getApiUrl(url), {
+          method,
+          headers: getAuthHeaders(),
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
           const json = await res.json();
-          if (json.success) {
-            showToast('Review updated successfully in database! 🌸');
-            if (reviewModalInstance) reviewModalInstance.hide();
-            await loadReviewsFromDatabase();
-          } else {
-            showToast(json.message || 'Error updating review.', 'danger');
-          }
-        } else {
-          // Create new review
-          const res = await fetch(getApiUrl('/api/reviews/admin/create'), {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({
-              product_id: productId,
-              user_name: name,
-              rating,
-              comment,
-              title: name,
-              status
-            })
-          });
-          const json = await res.json();
-          if (json.success) {
-            showToast('Devotee review published to database! 🌸');
-            if (reviewModalInstance) reviewModalInstance.hide();
-            await loadReviewsFromDatabase();
-          } else {
-            showToast(json.message || 'Error creating review.', 'danger');
-          }
+          if (json.success) saved = true;
         }
       } catch (err) {
-        console.error('Error saving review:', err);
-        showToast('Network error while saving review.', 'danger');
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<i class="bi bi-cloud-arrow-up me-1"></i> Save to Database';
+        console.warn('[AdminReviews] API save notice, trying Supabase direct fallback:', err);
       }
+
+      // 2. Direct Supabase Fallback
+      if (!saved) {
+        try {
+          const client = initSupabase();
+          if (client) {
+            if (id) {
+              const { error } = await client
+                .from('reviews')
+                .update({
+                  rating,
+                  comment,
+                  title: name,
+                  status,
+                  product_id: productId,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', id);
+              if (!error) saved = true;
+            } else {
+              const { error } = await client
+                .from('reviews')
+                .insert({
+                  product_id: productId,
+                  rating,
+                  comment,
+                  title: name,
+                  status,
+                  is_verified_purchase: true
+                });
+              if (!error) saved = true;
+            }
+          }
+        } catch (sbErr) {
+          console.error('[AdminReviews] Supabase save error:', sbErr);
+        }
+      }
+
+      if (saved) {
+        notifyToast(id ? 'Review updated successfully! 🌸' : 'Devotee review published! 🌸');
+        if (reviewModalInstance) reviewModalInstance.hide();
+        await loadReviewsFromDatabase();
+      } else {
+        notifyToast('Failed to save review to database.', 'danger');
+      }
+
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '<i class="bi bi-cloud-arrow-up me-1"></i> Save to Database';
     }
   </script>
 </body>
 </html>
+

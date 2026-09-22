@@ -1,5 +1,6 @@
 const db = require('../models/db');
 const { supabaseAdmin, isSupabaseConfigured } = require('../config/supabase');
+const { v4: uuidv4 } = require('uuid');
 
 // Helper to resolve product ID (handles Supabase UUID, prod-xxx IDs, and slugs)
 const resolveProductId = async (identifier) => {
@@ -53,7 +54,7 @@ exports.getRecentReviews = async (req, res, next) => {
           is_verified_purchase: r.is_verified_purchase,
           created_at: r.created_at,
           product_name: r.products?.name || 'Devotional Product',
-          user_name: r.profiles?.name || 'Devotee Customer',
+          user_name: r.profiles?.name || r.title || 'Devotee Customer',
           user_avatar: r.profiles?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'
         }));
         return res.json({ success: true, data: formatted });
@@ -68,7 +69,7 @@ exports.getRecentReviews = async (req, res, next) => {
         return {
           ...r,
           product_name: product ? product.name : 'Devotional Product',
-          user_name: user ? user.name : 'Devotee Customer',
+          user_name: r.user_name || (user ? user.name : (r.title || 'Devotee Customer')),
           user_avatar: user ? user.avatar : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'
         };
       })
@@ -107,7 +108,7 @@ exports.getProductReviews = async (req, res, next) => {
           comment: r.comment,
           is_verified_purchase: r.is_verified_purchase,
           created_at: r.created_at,
-          user_name: r.profiles?.name || 'Devotee Customer',
+          user_name: r.profiles?.name || r.title || 'Devotee Customer',
           user_avatar: r.profiles?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'
         }));
         return res.json({ success: true, data: formatted });
@@ -120,7 +121,7 @@ exports.getProductReviews = async (req, res, next) => {
         const user = db.findById('users', r.user_id);
         return {
           ...r,
-          user_name: user ? user.name : 'Devotee Customer',
+          user_name: r.user_name || (user ? user.name : (r.title || 'Devotee Customer')),
           user_avatar: user ? user.avatar : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'
         };
       })
@@ -132,7 +133,7 @@ exports.getProductReviews = async (req, res, next) => {
   }
 };
 
-// Create Product Review
+// Create Product Review (Storefront)
 exports.createReview = async (req, res, next) => {
   try {
     const { product_id, rating, title, comment, user_name, user_email } = req.body;
@@ -200,7 +201,7 @@ exports.createReview = async (req, res, next) => {
             .from('reviews')
             .update({
               rating: ratingNum,
-              title: (title || '').trim(),
+              title: (title || reviewerName || '').trim(),
               comment: comment.trim(),
               status: 'approved',
               updated_at: new Date().toISOString()
@@ -217,7 +218,7 @@ exports.createReview = async (req, res, next) => {
               product_id: prod.id,
               user_id: validUserId,
               rating: ratingNum,
-              title: (title || '').trim(),
+              title: (title || reviewerName || '').trim(),
               comment: comment.trim(),
               is_verified_purchase: true,
               status: 'approved'
@@ -256,10 +257,12 @@ exports.createReview = async (req, res, next) => {
         product_id: prod.id,
         user_id: validUserId || 'devotee-customer',
         rating: ratingNum,
-        title: (title || '').trim(),
+        title: (title || reviewerName || '').trim(),
         comment: comment.trim(),
         is_verified_purchase: true,
-        status: 'approved'
+        status: 'approved',
+        user_name: reviewerName,
+        user_email: reviewerEmail
       });
 
       return res.status(201).json({
@@ -279,22 +282,16 @@ exports.createReview = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Product not found.' });
     }
 
-    const existing = db.findOne('reviews', r => r.user_id === userId && r.product_id === product_id);
-    if (existing) {
-      return res.status(400).json({
-        success: false,
-        message: 'You have already submitted a review for this product.'
-      });
-    }
-
     const newReview = db.insert('reviews', {
       product_id,
-      user_id: userId,
+      user_id: 'devotee-customer',
       rating: ratingNum,
-      title: (title || '').trim(),
+      title: (title || reviewerName || '').trim(),
       comment: comment.trim(),
       is_verified_purchase: true,
-      status: 'approved'
+      status: 'approved',
+      user_name: reviewerName,
+      user_email: reviewerEmail
     });
 
     const allApproved = db.filter('reviews', r => r.product_id === product_id && r.status === 'approved');
@@ -324,7 +321,7 @@ exports.adminGetReviews = async (req, res, next) => {
         .select('id, product_id, user_id, rating, title, comment, is_verified_purchase, status, created_at, products(name), profiles:user_id(name, email)')
         .order('created_at', { ascending: false });
 
-      if (!error && reviews) {
+      if (!error && Array.isArray(reviews) && reviews.length > 0) {
         const formatted = reviews.map(r => ({
           id: r.id,
           product_id: r.product_id,
@@ -335,10 +332,27 @@ exports.adminGetReviews = async (req, res, next) => {
           status: r.status,
           created_at: r.created_at,
           product_name: r.products?.name || 'Devotional Product',
-          user_name: r.profiles?.name || 'Customer',
+          user_name: r.profiles?.name || r.title || 'Devotee Customer',
           user_email: r.profiles?.email || ''
         }));
         return res.json({ success: true, data: formatted });
+      } else if (!error && Array.isArray(reviews) && reviews.length === 0) {
+        // If Supabase reviews table is empty, check local DB
+        const localReviews = db.findAll('reviews');
+        if (localReviews.length > 0) {
+          const formattedLocal = localReviews.map(r => {
+            const product = db.findById('products', r.product_id);
+            const user = db.findById('users', r.user_id);
+            return {
+              ...r,
+              product_name: product ? product.name : (r.product_name || 'Devotional Product'),
+              user_name: r.user_name || (user ? user.name : (r.title || 'Devotee Customer')),
+              user_email: r.user_email || (user ? user.email : '')
+            };
+          }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          return res.json({ success: true, data: formattedLocal });
+        }
+        return res.json({ success: true, data: [] });
       }
     }
 
@@ -347,9 +361,9 @@ exports.adminGetReviews = async (req, res, next) => {
       const user = db.findById('users', r.user_id);
       return {
         ...r,
-        product_name: product ? product.name : 'Unknown Product',
-        user_name: user ? user.name : 'Customer',
-        user_email: user ? user.email : ''
+        product_name: product ? product.name : (r.product_name || 'Devotional Product'),
+        user_name: r.user_name || (user ? user.name : (r.title || 'Devotee Customer')),
+        user_email: r.user_email || (user ? user.email : '')
       };
     }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
@@ -369,8 +383,11 @@ exports.adminCreateReview = async (req, res, next) => {
     }
 
     const ratingNum = Math.min(5, Math.max(1, parseInt(rating, 10) || 5));
-    const revStatus = ['approved', 'rejected', 'pending'].includes(status) ? status : 'approved';
+    const cleanStatus = ['approved', 'rejected', 'pending'].includes(String(status).toLowerCase()) ? String(status).toLowerCase() : 'approved';
     const isVerified = is_verified_purchase !== false;
+    const revTitle = (title || user_name || 'Heartfelt Review').trim();
+    const reviewerName = (user_name || 'Devotee Customer').trim();
+    const reviewerEmail = (user_email || 'devotee@harinama.com').trim().toLowerCase();
 
     if (isSupabaseConfigured && supabaseAdmin) {
       // Find or pick a product
@@ -380,15 +397,27 @@ exports.adminCreateReview = async (req, res, next) => {
         targetProductId = anyProd ? anyProd.id : null;
       }
 
-      // Find or pick a user profile
+      // Find or create user profile
       let targetUserId = null;
-      if (user_email) {
-        const { data: userByEmail } = await supabaseAdmin.from('profiles').select('id').eq('email', user_email.trim().toLowerCase()).maybeSingle();
+      if (reviewerEmail) {
+        const { data: userByEmail } = await supabaseAdmin.from('profiles').select('id').eq('email', reviewerEmail).maybeSingle();
         if (userByEmail) targetUserId = userByEmail.id;
       }
       if (!targetUserId) {
         const { data: anyUser } = await supabaseAdmin.from('profiles').select('id').limit(1).maybeSingle();
-        targetUserId = anyUser ? anyUser.id : 'bd9001e6-f87f-4087-a17a-d7453e7f1b05';
+        targetUserId = anyUser ? anyUser.id : null;
+      }
+
+      // If still no user profile exists, create a profile
+      if (!targetUserId) {
+        const newProfId = uuidv4();
+        const { data: createdProf } = await supabaseAdmin.from('profiles').insert({
+          id: newProfId,
+          name: reviewerName,
+          email: reviewerEmail,
+          role: 'customer'
+        }).select('id').maybeSingle();
+        if (createdProf) targetUserId = createdProf.id;
       }
 
       if (targetProductId && targetUserId) {
@@ -398,13 +427,13 @@ exports.adminCreateReview = async (req, res, next) => {
             product_id: targetProductId,
             user_id: targetUserId,
             rating: ratingNum,
-            title: (title || user_name || 'Heartfelt Review').trim(),
+            title: revTitle,
             comment: comment.trim(),
-            status: revStatus,
+            status: cleanStatus,
             is_verified_purchase: isVerified
           })
-          .select('*, products(name), profiles:user_id(name, email)')
-          .single();
+          .select('*, products(name)')
+          .maybeSingle();
 
         if (!insertErr && newRev) {
           // Recalculate product rating
@@ -424,6 +453,22 @@ exports.adminCreateReview = async (req, res, next) => {
             }
           } catch (recalcErr) {}
 
+          // Also mirror in local db
+          try {
+            db.insert('reviews', {
+              id: newRev.id,
+              product_id: targetProductId,
+              user_id: targetUserId,
+              rating: ratingNum,
+              title: revTitle,
+              comment: comment.trim(),
+              status: cleanStatus,
+              is_verified_purchase: isVerified,
+              user_name: reviewerName,
+              user_email: reviewerEmail
+            });
+          } catch (_) {}
+
           return res.status(201).json({
             success: true,
             message: 'Devotee review added successfully.',
@@ -437,8 +482,8 @@ exports.adminCreateReview = async (req, res, next) => {
               status: newRev.status,
               created_at: newRev.created_at,
               product_name: newRev.products?.name || 'Devotional Product',
-              user_name: user_name || newRev.profiles?.name || 'Devotee Customer',
-              user_email: user_email || newRev.profiles?.email || ''
+              user_name: reviewerName,
+              user_email: reviewerEmail
             }
           });
         }
@@ -450,10 +495,12 @@ exports.adminCreateReview = async (req, res, next) => {
       product_id: product_id || 'prod-001',
       user_id: 'admin-authorized-session',
       rating: ratingNum,
-      title: (title || user_name || 'Devotee Review').trim(),
+      title: revTitle,
       comment: comment.trim(),
-      status: revStatus,
-      is_verified_purchase: isVerified
+      status: cleanStatus,
+      is_verified_purchase: isVerified,
+      user_name: reviewerName,
+      user_email: reviewerEmail
     });
 
     res.status(201).json({
@@ -462,8 +509,8 @@ exports.adminCreateReview = async (req, res, next) => {
       data: {
         ...localReview,
         product_name: 'Devotional Product',
-        user_name: user_name || 'Devotee Customer',
-        user_email: user_email || ''
+        user_name: reviewerName,
+        user_email: reviewerEmail
       }
     });
   } catch (err) {
@@ -475,48 +522,100 @@ exports.adminCreateReview = async (req, res, next) => {
 exports.adminUpdateReview = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { rating, title, comment, status } = req.body;
+    const { rating, title, comment, status, product_id, user_name, user_email } = req.body;
 
     const updates = {};
     if (rating !== undefined) updates.rating = Math.min(5, Math.max(1, parseInt(rating, 10) || 5));
-    if (title !== undefined) updates.title = title.trim();
-    if (comment !== undefined) updates.comment = comment.trim();
-    if (status !== undefined && ['approved', 'rejected', 'pending'].includes(status)) updates.status = status;
+    if (title !== undefined) updates.title = String(title).trim();
+    if (comment !== undefined) updates.comment = String(comment).trim();
+    if (status !== undefined && ['approved', 'rejected', 'pending'].includes(String(status).toLowerCase())) {
+      updates.status = String(status).toLowerCase();
+    }
+    if (product_id !== undefined && product_id) updates.product_id = product_id;
     updates.updated_at = new Date().toISOString();
 
+    let updatedResult = null;
+
     if (isSupabaseConfigured && supabaseAdmin) {
+      // If user_name/user_email provided, update reviewer profile if linked
+      const { data: revRow } = await supabaseAdmin.from('reviews').select('user_id, product_id').eq('id', id).maybeSingle();
+      if (revRow && revRow.user_id && (user_name || user_email)) {
+        try {
+          const profUp = {};
+          if (user_name) profUp.name = user_name;
+          if (user_email) profUp.email = user_email;
+          await supabaseAdmin.from('profiles').update(profUp).eq('id', revRow.user_id);
+        } catch (_) {}
+      }
+
       const { data: updated, error } = await supabaseAdmin
         .from('reviews')
         .update(updates)
         .eq('id', id)
-        .select('*, products(name), profiles:user_id(name, email)')
-        .single();
+        .select('*, products(name)')
+        .maybeSingle();
 
       if (!error && updated) {
-        return res.json({
-          success: true,
-          message: 'Review updated successfully.',
-          data: {
-            id: updated.id,
-            product_id: updated.product_id,
-            user_id: updated.user_id,
-            rating: updated.rating,
-            title: updated.title,
-            comment: updated.comment,
-            status: updated.status,
-            created_at: updated.created_at,
-            product_name: updated.products?.name || 'Devotional Product',
-            user_name: updated.profiles?.name || 'Devotee Customer',
-            user_email: updated.profiles?.email || ''
-          }
-        });
+        updatedResult = {
+          id: updated.id,
+          product_id: updated.product_id,
+          user_id: updated.user_id,
+          rating: updated.rating,
+          title: updated.title,
+          comment: updated.comment,
+          status: updated.status,
+          created_at: updated.created_at,
+          product_name: updated.products?.name || 'Devotional Product',
+          user_name: user_name || updated.title || 'Devotee Customer',
+          user_email: user_email || ''
+        };
+
+        // Recalculate product rating
+        const targetProdId = updated.product_id || revRow?.product_id;
+        if (targetProdId) {
+          try {
+            const { data: allApproved } = await supabaseAdmin
+              .from('reviews')
+              .select('rating')
+              .eq('product_id', targetProdId)
+              .eq('status', 'approved');
+
+            if (allApproved && allApproved.length > 0) {
+              const avg = allApproved.reduce((acc, r) => acc + r.rating, 0) / allApproved.length;
+              await supabaseAdmin.from('products').update({
+                rating: Math.round(avg * 10) / 10,
+                reviews_count: allApproved.length
+              }).eq('id', targetProdId);
+            }
+          } catch (_) {}
+        }
       }
     }
 
-    const localUpdated = db.update('reviews', id, updates);
-    if (!localUpdated) return res.status(404).json({ success: false, message: 'Review not found.' });
+    // Always mirror in local DB if found
+    const localUpdated = db.update('reviews', id, { ...updates, user_name: user_name || updates.title, user_email });
+    if (localUpdated && !updatedResult) {
+      const product = db.findById('products', localUpdated.product_id);
+      updatedResult = {
+        ...localUpdated,
+        product_name: product ? product.name : 'Devotional Product',
+        user_name: user_name || localUpdated.title || 'Devotee Customer',
+        user_email: user_email || ''
+      };
+    }
 
-    res.json({ success: true, message: 'Review updated successfully.', data: localUpdated });
+    if (!updatedResult) {
+      // Direct attempt without schema join
+      if (isSupabaseConfigured && supabaseAdmin) {
+        const { error: rawErr } = await supabaseAdmin.from('reviews').update(updates).eq('id', id);
+        if (!rawErr) {
+          return res.json({ success: true, message: 'Review updated successfully.', data: { id, ...updates } });
+        }
+      }
+      return res.status(404).json({ success: false, message: 'Review not found.' });
+    }
+
+    res.json({ success: true, message: 'Review updated successfully.', data: updatedResult });
   } catch (err) {
     next(err);
   }
@@ -528,19 +627,23 @@ exports.adminModerateReview = async (req, res, next) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!['approved', 'rejected', 'pending'].includes(status)) {
-      return res.status(400).json({ success: false, message: 'Invalid review status.' });
+    if (!status || !['approved', 'rejected', 'pending'].includes(String(status).toLowerCase())) {
+      return res.status(400).json({ success: false, message: 'Invalid review status. Must be approved, pending, or rejected.' });
     }
+
+    const cleanStatus = String(status).toLowerCase();
+    let updatedReview = null;
 
     if (isSupabaseConfigured && supabaseAdmin) {
       const { data: updated, error } = await supabaseAdmin
         .from('reviews')
-        .update({ status, updated_at: new Date().toISOString() })
+        .update({ status: cleanStatus, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (!error && updated) {
+        updatedReview = updated;
         // Recalculate product rating
         if (updated.product_id) {
           try {
@@ -556,18 +659,37 @@ exports.adminModerateReview = async (req, res, next) => {
                 rating: Math.round(avg * 10) / 10,
                 reviews_count: allApproved.length
               }).eq('id', updated.product_id);
+            } else {
+              await supabaseAdmin.from('products').update({
+                rating: 5.0,
+                reviews_count: 0
+              }).eq('id', updated.product_id);
             }
           } catch (e) {}
         }
-
-        return res.json({ success: true, message: `Review status updated to ${status}.`, data: updated });
       }
     }
 
-    const updated = db.update('reviews', id, { status });
-    if (!updated) return res.status(404).json({ success: false, message: 'Review not found.' });
+    // Always synchronize with local DB if entry exists
+    const localUpdated = db.update('reviews', id, { status: cleanStatus });
+    if (localUpdated && !updatedReview) {
+      updatedReview = localUpdated;
+    }
 
-    res.json({ success: true, message: `Review status updated to ${status}.`, data: updated });
+    if (!updatedReview && !localUpdated) {
+      if (isSupabaseConfigured && supabaseAdmin) {
+        const { error } = await supabaseAdmin
+          .from('reviews')
+          .update({ status: cleanStatus, updated_at: new Date().toISOString() })
+          .eq('id', id);
+        if (!error) {
+          return res.json({ success: true, message: `Review status updated to ${cleanStatus}.`, data: { id, status: cleanStatus } });
+        }
+      }
+      return res.status(404).json({ success: false, message: 'Review not found.' });
+    }
+
+    res.json({ success: true, message: `Review status updated to ${cleanStatus}.`, data: updatedReview || localUpdated });
   } catch (err) {
     next(err);
   }
@@ -577,41 +699,55 @@ exports.adminModerateReview = async (req, res, next) => {
 exports.adminDeleteReview = async (req, res, next) => {
   try {
     const { id } = req.params;
+    let deleted = false;
+    let targetProductId = null;
 
     if (isSupabaseConfigured && supabaseAdmin) {
       const { data: existing } = await supabaseAdmin.from('reviews').select('product_id').eq('id', id).maybeSingle();
+      if (existing) {
+        targetProductId = existing.product_id;
+      }
       const { error } = await supabaseAdmin.from('reviews').delete().eq('id', id);
       if (!error) {
-        if (existing?.product_id) {
-          try {
-            const { data: allApproved } = await supabaseAdmin
-              .from('reviews')
-              .select('rating')
-              .eq('product_id', existing.product_id)
-              .eq('status', 'approved');
-
-            const avg = allApproved && allApproved.length > 0
-              ? allApproved.reduce((acc, r) => acc + r.rating, 0) / allApproved.length
-              : 5.0;
-            const count = allApproved ? allApproved.length : 0;
-
-            await supabaseAdmin.from('products').update({
-              rating: Math.round(avg * 10) / 10,
-              reviews_count: count
-            }).eq('id', existing.product_id);
-          } catch (e) {}
-        }
-        return res.json({ success: true, message: 'Review deleted successfully.' });
+        deleted = true;
       }
     }
 
-    const review = db.findById('reviews', id);
-    if (!review) return res.status(404).json({ success: false, message: 'Review not found.' });
+    const localReview = db.findById('reviews', id);
+    if (localReview) {
+      if (!targetProductId) targetProductId = localReview.product_id;
+      db.delete('reviews', id);
+      deleted = true;
+    }
 
-    db.delete('reviews', id);
-    res.json({ success: true, message: 'Review deleted successfully.' });
+    if (targetProductId && isSupabaseConfigured && supabaseAdmin) {
+      try {
+        const { data: allApproved } = await supabaseAdmin
+          .from('reviews')
+          .select('rating')
+          .eq('product_id', targetProductId)
+          .eq('status', 'approved');
+
+        const avg = allApproved && allApproved.length > 0
+          ? allApproved.reduce((acc, r) => acc + r.rating, 0) / allApproved.length
+          : 5.0;
+        const count = allApproved ? allApproved.length : 0;
+
+        await supabaseAdmin.from('products').update({
+          rating: Math.round(avg * 10) / 10,
+          reviews_count: count
+        }).eq('id', targetProductId);
+      } catch (e) {}
+    }
+
+    if (deleted) {
+      return res.json({ success: true, message: 'Review deleted successfully.' });
+    }
+
+    return res.status(404).json({ success: false, message: 'Review not found.' });
   } catch (err) {
     next(err);
   }
 };
+
 

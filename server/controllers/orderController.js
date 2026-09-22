@@ -245,7 +245,7 @@ exports.createOrder = async (req, res, next) => {
           shiprocket_order_id: null,
           shiprocket_shipment_id: null,
           awb_code: null,
-          courier_name: 'India Post Speed Post',
+          courier_name: null,
           shipping_status: 'NOT_CREATED',
           shipping_status_code: null,
           shipping_label_url: null,
@@ -337,7 +337,7 @@ exports.createOrder = async (req, res, next) => {
       shiprocket_order_id: null,
       shiprocket_shipment_id: null,
       awb_code: null,
-      courier_name: 'India Post Speed Post',
+      courier_name: null,
       shipping_status: 'NOT_CREATED',
       shipping_status_code: null,
       shipping_label_url: null,
@@ -392,7 +392,7 @@ exports.createOrder = async (req, res, next) => {
     const finalShippingStatus = fulfillmentResult?.data?.shipping_status || (fulfillmentResult?.success ? 'ORDER_CREATED' : 'NOT_CREATED');
     const finalSrOrderId = fulfillmentResult?.data?.shiprocket_order_id || null;
     const finalAwb = fulfillmentResult?.data?.awb_code || null;
-    const finalCourier = fulfillmentResult?.data?.courier_name || 'India Post Speed Post';
+    const finalCourier = fulfillmentResult?.data?.courier_name || createdOrderRecord?.courier_name || (finalAwb ? 'Shiprocket Express Partner' : (finalSrOrderId ? 'Shiprocket / Delivery Partner' : 'Assigned Delivery Partner'));
 
     // 4. Asynchronous Devotional Order Confirmation Email
     try {
@@ -654,8 +654,8 @@ exports.adminGetOrders = async (req, res, next) => {
               payment_method: o.payment_method || 'UPI',
               payment_status: o.payment_status || 'Paid',
               status: (o.order_status ? o.order_status.charAt(0).toUpperCase() + o.order_status.slice(1) : 'Confirmed'),
-              courier: o.courier_name || o.courier || 'India Post Speed Post',
-              courier_name: o.courier_name || o.courier || 'India Post Speed Post',
+              courier: o.courier_name || o.courier || (o.awb_code ? 'Shiprocket Express Partner' : (o.shiprocket_order_id ? 'Shiprocket / Delivery Partner' : 'Assigned Delivery Partner')),
+              courier_name: o.courier_name || o.courier || (o.awb_code ? 'Shiprocket Express Partner' : (o.shiprocket_order_id ? 'Shiprocket / Delivery Partner' : 'Assigned Delivery Partner')),
               tracking_number: o.awb_code || o.tracking_number || '',
               awb_code: o.awb_code || '',
               shiprocket_order_id: o.shiprocket_order_id || '',
@@ -719,8 +719,8 @@ exports.adminGetOrders = async (req, res, next) => {
           payment_method: lo.payment_method || 'COD',
           payment_status: lo.payment_status || 'Pending',
           status: (lo.order_status ? lo.order_status.charAt(0).toUpperCase() + lo.order_status.slice(1) : 'Confirmed'),
-          courier: lo.courier_name || lo.courier || 'India Post Speed Post',
-          courier_name: lo.courier_name || lo.courier || 'India Post Speed Post',
+          courier: lo.courier_name || lo.courier || (lo.awb_code ? 'Shiprocket Express Partner' : (lo.shiprocket_order_id ? 'Shiprocket / Delivery Partner' : 'Assigned Delivery Partner')),
+          courier_name: lo.courier_name || lo.courier || (lo.awb_code ? 'Shiprocket Express Partner' : (lo.shiprocket_order_id ? 'Shiprocket / Delivery Partner' : 'Assigned Delivery Partner')),
           tracking_number: lo.awb_code || lo.tracking_number || '',
           awb_code: lo.awb_code || '',
           shiprocket_order_id: lo.shiprocket_order_id || '',
@@ -979,7 +979,7 @@ exports.getOrderInvoice = async (req, res, next) => {
           pricing: { subtotal, discount, shipping_fee: shippingFee, tax, total },
           shipping: {
             status: order.shipping_status || 'CONFIRMED',
-            courier: order.courier_name || 'India Post Speed Post',
+            courier: order.courier_name || (order.awb_code ? 'Shiprocket Express Partner' : (order.shiprocket_order_id ? 'Shiprocket / Delivery Partner' : 'Assigned Delivery Partner')),
             awb_code: order.awb_code || '—',
             tracking_number: order.tracking_number || '—'
           }
@@ -1266,7 +1266,7 @@ exports.getOrderInvoice = async (req, res, next) => {
       <div>
         <div class="section-heading">Shipping & Courier Details</div>
         <div class="section-content">
-          <strong>Courier:</strong> ${order.courier_name || 'India Post Speed Post'}<br>
+          <strong>Courier:</strong> ${order.courier_name || (order.awb_code ? 'Shiprocket Express Partner' : (order.shiprocket_order_id ? 'Shiprocket / Delivery Partner' : 'Assigned Delivery Partner'))}<br>
           <strong>AWB Code:</strong> ${order.awb_code || 'Assigned on Dispatch'}<br>
           <strong>Tracking No:</strong> ${order.tracking_number || order.order_number}<br>
           <strong>Payment Mode:</strong> ${(order.payment_method || 'Online').toUpperCase()}

@@ -101,7 +101,7 @@ async function runEndToEndTest() {
       shiprocket_order_id: String(srRes.data.order_id),
       shiprocket_shipment_id: String(srRes.data.shipment_id),
       shipping_status: 'ORDER_CREATED',
-      courier_name: 'India Post Speed Post',
+      courier_name: 'Shiprocket Express Partner',
       updated_at: new Date().toISOString()
     })
     .eq('id', newOrder.id)

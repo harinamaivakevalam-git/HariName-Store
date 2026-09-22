@@ -1379,10 +1379,10 @@
           <nav class="d-none d-lg-flex align-items-center gap-2">
             <a href="/index.html" class="hn-nav-link ${active === 'home' ? 'active' : ''}">Home</a>
             
-            <!-- Featured Dropdown -->
+            <!-- Feature Dropdown -->
             <div class="hn-nav-dropdown-wrap">
-              <a href="/shop.html" class="hn-nav-link hn-nav-dropdown-toggle d-flex align-items-center gap-1 ${active === 'featured' ? 'active' : ''}">
-                <span>FEATURED</span>
+              <a href="/shop.html" class="hn-nav-link hn-nav-dropdown-toggle d-flex align-items-center gap-1 ${active === 'featured' || active === 'feature' ? 'active' : ''}">
+                <span>Feature</span>
                 <i class="bi bi-chevron-down ms-1" style="font-size: 0.72rem;"></i>
               </a>
               <div class="hn-nav-dropdown-menu">
@@ -1397,7 +1397,6 @@
 
             <a href="/shop.html" class="hn-nav-link ${active === 'shop' ? 'active' : ''}">Shop</a>
             <a href="/collections.html" class="hn-nav-link ${active === 'collections' ? 'active' : ''}">Collections</a>
-            <a href="/about.html" class="hn-nav-link ${active === 'mission' || active === 'about' ? 'active' : ''}">Our Mission</a>
             <a href="/contact.html" class="hn-nav-link ${active === 'contact' ? 'active' : ''}">Contact</a>
           </nav>
 
@@ -1465,9 +1464,9 @@
                 <i class="bi bi-chevron-right small text-muted"></i>
               </a>
 
-              <!-- Featured Curated Links in Mobile Menu -->
+              <!-- Feature Curated Links in Mobile Menu -->
               <div class="p-2 rounded bg-light-subtle my-1 border">
-                <div class="small fw-bold text-muted text-uppercase mb-2 px-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Featured Collections</div>
+                <div class="small fw-bold text-muted text-uppercase mb-2 px-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Feature Collections</div>
                 <div class="d-flex flex-column gap-1">
                   <a href="/shop.html?filter=new-arrivals" class="text-decoration-none py-1 px-2 text-dark small d-flex align-items-center"><span class="me-2">✨</span>New Arrivals</a>
                   <a href="/shop.html?filter=best-sellers" class="text-decoration-none py-1 px-2 text-dark small d-flex align-items-center"><span class="me-2">🔥</span>Best Sellers</a>
@@ -1484,10 +1483,6 @@
               </a>
               <a href="/collections.html" class="hn-mobile-nav-link ${active === 'collections' ? 'active' : ''}">
                 <span><i class="bi bi-grid me-2"></i>Collections</span>
-                <i class="bi bi-chevron-right small text-muted"></i>
-              </a>
-              <a href="/about.html" class="hn-mobile-nav-link ${active === 'mission' || active === 'about' ? 'active' : ''}">
-                <span><i class="bi bi-heart me-2"></i>Our Mission</span>
                 <i class="bi bi-chevron-right small text-muted"></i>
               </a>
               <a href="/contact.html" class="hn-mobile-nav-link ${active === 'contact' ? 'active' : ''}">

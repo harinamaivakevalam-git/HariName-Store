@@ -430,7 +430,7 @@
       const total = Number(order.pricing?.total ?? (order.total || (subtotal - discount + shippingFee)));
 
       const invoiceNo = order.invoice_number || `INV-${orderNum.replace(/^HN-/, '')}`;
-      const courierName = order.shipping?.courier || order.courier_name || 'India Post Speed Post';
+      const courierName = order.shipping?.courier || order.courier_name || order.courier || (order.awb_code ? 'Shiprocket Express Partner' : (order.shiprocket_order_id ? 'Shiprocket / Delivery Partner' : 'Assigned Delivery Partner'));
       const awbCode = order.shipping?.awb_code || order.awb_code || 'Assigned on Dispatch';
       const trackingNumber = order.shipping?.tracking_number || order.tracking_number || orderNum;
       const paymentMethod = (order.payment_method || 'Online').toUpperCase();

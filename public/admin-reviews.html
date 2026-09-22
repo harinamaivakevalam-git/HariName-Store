@@ -300,6 +300,8 @@
       return supabaseClient;
     }
 
+    const RENDER_BACKEND_URL = 'https://harinama-store.onrender.com';
+
     function getApiUrl(path) {
       if (typeof window !== 'undefined') {
         if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
@@ -308,8 +310,29 @@
           if (port === '5000') return path;
           return `http://${hostname}:5000${path}`;
         }
+        if (hostname.includes('harinamastore.com') || hostname.includes('github.io') || hostname.includes('netlify') || hostname.includes('vercel') || hostname.includes('pages.dev')) {
+          return `${RENDER_BACKEND_URL}${path}`;
+        }
       }
       return path;
+    }
+
+    async function adminFetch(path, options = {}) {
+      const primaryUrl = getApiUrl(path);
+      try {
+        const res = await fetch(primaryUrl, options);
+        if (res.ok) return res;
+        // If 404 or 502 on relative URL, try Render backend directly
+        if ((res.status === 404 || res.status >= 500) && !primaryUrl.startsWith('http://localhost') && !primaryUrl.startsWith(RENDER_BACKEND_URL)) {
+          return await fetch(`${RENDER_BACKEND_URL}${path}`, options);
+        }
+        return res;
+      } catch (err) {
+        if (!primaryUrl.startsWith('http://localhost') && !primaryUrl.startsWith(RENDER_BACKEND_URL)) {
+          return await fetch(`${RENDER_BACKEND_URL}${path}`, options);
+        }
+        throw err;
+      }
     }
 
     function notifyToast(message, type = 'success') {
@@ -396,9 +419,9 @@
     async function loadReviewsFromDatabase() {
       const tbody = document.getElementById('reviews-table-body');
       
-      // 1. Try Express API
+      // 1. Try Express API via adminFetch
       try {
-        const res = await fetch(getApiUrl('/api/reviews/admin/all'), { headers: getAuthHeaders() });
+        const res = await adminFetch('/api/reviews/admin/all', { headers: getAuthHeaders() });
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data)) {
@@ -420,7 +443,7 @@
         console.warn('[AdminReviews] API unavailable, trying Supabase direct query...');
       }
 
-      // 2. Direct Supabase query
+      // 2. Direct Supabase query fallback
       try {
         const client = initSupabase();
         if (client) {
@@ -582,9 +605,9 @@
       const cleanStatus = targetStatus.toLowerCase();
       let updated = false;
 
-      // 1. Try Express API
+      // 1. Try Express API via adminFetch
       try {
-        const res = await fetch(getApiUrl(`/api/reviews/admin/${id}/status`), {
+        const res = await adminFetch(`/api/reviews/admin/${id}/status`, {
           method: 'PUT',
           headers: getAuthHeaders(),
           body: JSON.stringify({ status: cleanStatus })
@@ -597,16 +620,19 @@
         console.warn('[AdminReviews] API status error, attempting Supabase direct update...');
       }
 
-      // 2. Supabase direct fallback
+      // 2. Supabase direct fallback (must check returned data because RLS returns error: null with 0 modified rows on anon key)
       if (!updated) {
         try {
           const client = initSupabase();
           if (client) {
-            const { error } = await client
+            const { data, error } = await client
               .from('reviews')
               .update({ status: cleanStatus, updated_at: new Date().toISOString() })
-              .eq('id', id);
-            if (!error) updated = true;
+              .eq('id', id)
+              .select('id');
+            if (!error && Array.isArray(data) && data.length > 0) {
+              updated = true;
+            }
           }
         } catch (sbErr) {
           console.error('[AdminReviews] Supabase status update error:', sbErr);
@@ -614,10 +640,16 @@
       }
 
       if (updated) {
+        // Update in-memory and re-render instantly
+        const item = databaseReviews.find(r => String(r.id) === String(id));
+        if (item) {
+          item.status = cleanStatus.charAt(0).toUpperCase() + cleanStatus.slice(1);
+          filterReviews();
+        }
         notifyToast(`Review status updated to ${cleanStatus.toUpperCase()}! 🌸`);
-        await loadReviewsFromDatabase();
+        loadReviewsFromDatabase();
       } else {
-        notifyToast('Error updating review status in database.', 'danger');
+        notifyToast('Error updating review status in database. Please verify backend or permissions.', 'danger');
       }
     }
 
@@ -629,42 +661,56 @@
     async function deleteReview(id) {
       if (!confirm('Permanently delete this review from the database?')) return;
       let deleted = false;
+      let errorDetail = '';
 
-      // 1. Try API
+      // 1. Try API via adminFetch
       try {
-        const res = await fetch(getApiUrl(`/api/reviews/admin/${id}`), {
+        const res = await adminFetch(`/api/reviews/admin/${id}`, {
           method: 'DELETE',
           headers: getAuthHeaders()
         });
         if (res.ok) {
           const json = await res.json();
           if (json.success) deleted = true;
+        } else {
+          const json = await res.json().catch(() => ({}));
+          errorDetail = json.message || `Server status ${res.status}`;
         }
       } catch (e) {
         console.warn('[AdminReviews] API delete failed, attempting Supabase direct delete...');
+        errorDetail = e.message;
       }
 
-      // 2. Supabase direct delete fallback
+      // 2. Supabase direct delete fallback (must verify returned data from .select() because RLS returns error: null on blocked anon deletes)
       if (!deleted) {
         try {
           const client = initSupabase();
           if (client) {
-            const { error } = await client
+            const { data, error } = await client
               .from('reviews')
               .delete()
-              .eq('id', id);
-            if (!error) deleted = true;
+              .eq('id', id)
+              .select('id');
+            if (!error && Array.isArray(data) && data.length > 0) {
+              deleted = true;
+            } else if (error) {
+              errorDetail = error.message;
+            }
           }
         } catch (sbErr) {
           console.error('[AdminReviews] Supabase delete error:', sbErr);
+          errorDetail = sbErr.message;
         }
       }
 
       if (deleted) {
+        // Immediately remove from UI
+        databaseReviews = databaseReviews.filter(r => String(r.id) !== String(id));
+        filterReviews();
         notifyToast('Review permanently deleted from database.');
-        await loadReviewsFromDatabase();
+        loadReviewsFromDatabase();
       } else {
-        notifyToast('Failed to delete review.', 'danger');
+        notifyToast(`Failed to delete review: ${errorDetail || 'Unauthorized / RLS protected'}. Restart server if running locally.`, 'danger');
       }
     }
 
@@ -721,8 +767,9 @@
       const status = document.getElementById('modal-status-select').value;
 
       let saved = false;
+      let errorDetail = '';
 
-      // 1. Try Express API
+      // 1. Try Express API via adminFetch
       try {
         const url = id ? `/api/reviews/admin/${id}` : '/api/reviews/admin/create';
         const method = id ? 'PUT' : 'POST';
@@ -735,7 +782,7 @@
           status
         };
 
-        const res = await fetch(getApiUrl(url), {
+        const res = await adminFetch(url, {
           method,
           headers: getAuthHeaders(),
           body: JSON.stringify(payload)
@@ -744,18 +791,22 @@
         if (res.ok) {
           const json = await res.json();
           if (json.success) saved = true;
+        } else {
+          const json = await res.json().catch(() => ({}));
+          errorDetail = json.message;
         }
       } catch (err) {
         console.warn('[AdminReviews] API save notice, trying Supabase direct fallback:', err);
+        errorDetail = err.message;
       }
 
-      // 2. Direct Supabase Fallback
+      // 2. Direct Supabase Fallback (checking return values)
       if (!saved) {
         try {
           const client = initSupabase();
           if (client) {
             if (id) {
-              const { error } = await client
+              const { data, error } = await client
                 .from('reviews')
                 .update({
                   rating,
@@ -765,10 +816,11 @@
                   product_id: productId,
                   updated_at: new Date().toISOString()
                 })
-                .eq('id', id);
-              if (!error) saved = true;
+                .eq('id', id)
+                .select('id');
+              if (!error && Array.isArray(data) && data.length > 0) saved = true;
             } else {
-              const { error } = await client
+              const { data, error } = await client
                 .from('reviews')
                 .insert({
                   product_id: productId,
@@ -777,12 +829,14 @@
                   title: name,
                   status,
                   is_verified_purchase: true
-                });
-              if (!error) saved = true;
+                })
+                .select('id');
+              if (!error && Array.isArray(data) && data.length > 0) saved = true;
             }
           }
         } catch (sbErr) {
           console.error('[AdminReviews] Supabase save error:', sbErr);
+          errorDetail = sbErr.message;
         }
       }
 
@@ -791,7 +845,7 @@
         if (reviewModalInstance) reviewModalInstance.hide();
         await loadReviewsFromDatabase();
       } else {
-        notifyToast('Failed to save review to database.', 'danger');
+        notifyToast(`Failed to save review: ${errorDetail || 'Unauthorized or server unavailable.'}`, 'danger');
       }
 
       saveBtn.disabled = false;

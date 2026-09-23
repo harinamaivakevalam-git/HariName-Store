@@ -104,31 +104,49 @@ const { processOrderFulfillment } = require('../services/fulfillmentService');
  */
 exports.createOrder = async (req, res, next) => {
   try {
-    const { order_id, order_number } = req.body;
-    const identifier = order_id || order_number;
+    console.log("========== SHIPROCKET CREATE ORDER ==========");
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
 
-    if (!identifier) {
+    const { order_id, order_number } = req.body;
+    const identifier = order_id || order_number || req.body.id;
+
+    if (!identifier && !req.body.billing_customer_name) {
+      console.error("========== SHIPROCKET ERROR ==========");
+      console.error("Message: order_id or order_number is required.");
       return res.status(400).json({ success: false, message: 'order_id or order_number is required.' });
     }
 
-    const result = await processOrderFulfillment(identifier, { force: true });
+    const result = await processOrderFulfillment(identifier || req.body, { force: true });
 
     if (result.success) {
+      console.log("SHIPROCKET RESPONSE:", JSON.stringify(result.data, null, 2));
       return res.status(200).json({
         success: true,
         message: result.duplicated
           ? 'Shiprocket shipment already exists and has been synchronized.'
           : 'Shiprocket shipment created successfully.',
-        data: result.data
+        data: result.data,
+        shiprocket: result.data
       });
     }
 
+    console.error("========== SHIPROCKET ERROR ==========");
+    console.error("Message:", result.message);
     return res.status(400).json({
       success: false,
-      message: result.message || 'Failed to create shipment on Shiprocket.'
+      message: result.message || 'Failed to create shipment on Shiprocket.',
+      error: result.message
     });
   } catch (err) {
-    next(err);
+    console.error("========== SHIPROCKET ERROR ==========");
+    console.error("Status:", err.status || err.statusCode || 500);
+    console.error("Response:", JSON.stringify(err.shiprocketData || err.response?.data || {}, null, 2));
+    console.error("Message:", err.message);
+    return res.status(err.status || err.statusCode || 500).json({
+      success: false,
+      message: 'Shiprocket order creation failed',
+      error: err.shiprocketData || err.message
+    });
   }
 };
 

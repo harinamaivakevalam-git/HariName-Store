@@ -309,8 +309,6 @@
       return supabaseClient;
     }
 
-    const RENDER_BACKEND_URL = 'https://harinama-store.onrender.com';
-
     function getApiUrl(path) {
       if (typeof window !== 'undefined') {
         if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
@@ -318,9 +316,6 @@
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
           if (port === '5000') return path;
           return `http://${hostname}:5000${path}`;
-        }
-        if (hostname.includes('harinamastore.com') || hostname.includes('github.io') || hostname.includes('netlify') || hostname.includes('vercel') || hostname.includes('pages.dev')) {
-          return `${RENDER_BACKEND_URL}${path}`;
         }
       }
       return path;

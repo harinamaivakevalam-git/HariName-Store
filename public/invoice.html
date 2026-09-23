@@ -287,10 +287,8 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
 
     function getApiUrl(path) {
-      const hostname = window.location.hostname;
-      if (hostname === 'localhost' || hostname === '127.0.0.1') return path;
-      if (hostname.includes('harinamastore.com') || hostname.includes('harinama') || hostname.includes('vercel.app') || hostname.includes('netlify.app')) {
-        return `https://harinama-store-backend.onrender.com${path}`;
+      if (typeof window !== 'undefined' && typeof window.getApiUrl === 'function' && window.getApiUrl !== getApiUrl) {
+        return window.getApiUrl(path);
       }
       return path;
     }

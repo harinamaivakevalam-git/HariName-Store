@@ -2059,7 +2059,6 @@ if (document.readyState === 'loading') {
 }
 
 // Universal API URL Resolver
-const RENDER_BACKEND = 'https://harinama-store.onrender.com';
 const getApiUrl = (path) => {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
@@ -2082,12 +2081,7 @@ const getApiUrl = (path) => {
     return `http://${hostname}:5000${path}`;
   }
 
-  // Production: if hosted on a static domain, route API calls to Render backend
-  if (hostname.includes('harinamastore.com') || hostname.includes('harinama')) {
-    return `${RENDER_BACKEND}${path}`;
-  }
-
-  // Default to relative path for same-origin and Render deployments
+  // In production / deployed website, use same-origin relative path
   return path;
 };
 window.getApiUrl = getApiUrl;

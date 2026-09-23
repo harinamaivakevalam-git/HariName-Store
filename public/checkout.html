@@ -719,12 +719,8 @@
         }
         if (typeof window !== 'undefined') {
           if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
-          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            if (window.location.port === '5000') return path;
+          if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && window.location.port !== '5000') {
             return 'http://localhost:5000' + path;
-          }
-          if (window.location.hostname.includes('harinamastore.com') || window.location.hostname.includes('vercel.app') || window.location.hostname.includes('netlify.app') || window.location.hostname.includes('github.io')) {
-            return `https://harinama-store.onrender.com${path}`;
           }
         }
         return path;

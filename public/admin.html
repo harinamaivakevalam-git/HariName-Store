@@ -475,7 +475,8 @@
       // 1. Fetch live from Backend API
       let backendLoaded = false;
       try {
-        const apiRes = await fetch('/api/orders/admin/all?limit=50', { headers: getAuthHeaders() });
+        const apiUrl = typeof getApiUrl === 'function' ? getApiUrl('/api/orders/admin/all?limit=50') : '/api/orders/admin/all?limit=50';
+        const apiRes = await fetch(apiUrl, { headers: getAuthHeaders() });
         if (apiRes.ok && (apiRes.headers.get('content-type') || '').includes('application/json')) {
           const json = await apiRes.json();
           if (json.success && Array.isArray(json.data)) {
@@ -493,12 +494,25 @@
         try {
           if (window.supabase && typeof window.supabase.createClient === 'function') {
             const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            const { data: sbOrders, error } = await sb
+            let sbOrders = null;
+            const resWithItems = await sb
               .from('orders')
               .select('*, order_items(*)')
               .order('created_at', { ascending: false });
 
-            if (!error && Array.isArray(sbOrders)) {
+            if (!resWithItems.error && Array.isArray(resWithItems.data)) {
+              sbOrders = resWithItems.data;
+            } else {
+              const resSimple = await sb
+                .from('orders')
+                .select('*')
+                .order('created_at', { ascending: false });
+              if (!resSimple.error && Array.isArray(resSimple.data)) {
+                sbOrders = resSimple.data;
+              }
+            }
+
+            if (Array.isArray(sbOrders)) {
               sbOrders.forEach(o => {
                 const norm = normalizeOrder(o);
                 if (norm) mergedMap.set(norm.id, norm);

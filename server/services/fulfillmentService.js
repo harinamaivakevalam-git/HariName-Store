@@ -115,15 +115,21 @@ async function processOrderFulfillment(orderOrIdentifier, options = {}) {
         return { success: false, message: 'Order record not found.' };
       }
 
-      // Strict Test Guard: Never dispatch automated test orders to live Shiprocket
-      if (process.env.NODE_ENV === 'test' || process.env.DISABLE_SHIPROCKET_ORDERS === 'true' || (order.order_number && String(order.order_number).toUpperCase().includes('TEST'))) {
-        console.log(`[SHIPROCKET_SKIPPED] Test mode active — completely skipping external Shiprocket order creation for ${order.order_number}.`);
+      // Strict Test / Wallet Protection Guard:
+      // When SHIPROCKET_LIVE_DISPATCH is not 'true' (default: false), completely skip sending to Shiprocket
+      // to protect wallet money during testing while still giving immediate order confirmation.
+      const isLiveDispatchEnabled = process.env.SHIPROCKET_LIVE_DISPATCH === 'true' && process.env.DISABLE_SHIPROCKET_ORDERS !== 'true';
+      const isTestOrder = (order.order_number && String(order.order_number).toUpperCase().includes('TEST')) || process.env.NODE_ENV === 'test';
+
+      if ((!isLiveDispatchEnabled && !options.force) || isTestOrder) {
+        console.log(`[SHIPROCKET_WALLET_PROTECTION] Safe testing mode active (SHIPROCKET_LIVE_DISPATCH=${process.env.SHIPROCKET_LIVE_DISPATCH || 'false'}). Skipping Shiprocket order creation for ${order.order_number} to prevent wallet deduction. Order confirmed locally!`);
         return {
           success: true,
           mock: true,
           data: {
             order_id: order.order_number,
-            shipping_status: 'MOCK_TEST'
+            shipping_status: 'MOCK_TEST',
+            message: 'Order confirmed successfully. Shiprocket live dispatch disabled for testing to protect wallet balance.'
           }
         };
       }

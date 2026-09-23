@@ -568,12 +568,25 @@
         try {
           const sb = initSupabase();
           if (sb) {
-            const { data: sbData, error: sbErr } = await sb
+            let sbData = null;
+            const resWithItems = await sb
               .from('orders')
               .select('*, order_items(*)')
               .order('created_at', { ascending: false });
 
-            if (!sbErr && Array.isArray(sbData)) {
+            if (!resWithItems.error && Array.isArray(resWithItems.data)) {
+              sbData = resWithItems.data;
+            } else {
+              const resSimple = await sb
+                .from('orders')
+                .select('*')
+                .order('created_at', { ascending: false });
+              if (!resSimple.error && Array.isArray(resSimple.data)) {
+                sbData = resSimple.data;
+              }
+            }
+
+            if (Array.isArray(sbData)) {
               sbData.forEach(sbOrder => {
                 const norm = normalizeOrder(sbOrder);
                 if (norm) mergedMap.set(norm.id, norm);

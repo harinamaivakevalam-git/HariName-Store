@@ -1,11 +1,12 @@
 /**
  * Shiprocket Controller
- * Manages API endpoints for Shiprocket connectivity, fulfillment, tracking & webhooks
+ * Manages API endpoints for Shiprocket connectivity, rate calculation, fulfillment, tracking & webhooks
  */
 
 const shiprocketService = require('../services/shiprocketService');
 const db = require('../models/db');
 const { supabaseAdmin, isSupabaseConfigured } = require('../config/supabase');
+const { processOrderFulfillment } = require('../services/fulfillmentService');
 
 // Helper to find order by ID or order_number from Supabase or local store
 async function findOrder(identifier) {
@@ -96,16 +97,99 @@ exports.testConnection = async (req, res) => {
   }
 };
 
-const { processOrderFulfillment } = require('../services/fulfillmentService');
+/**
+ * 2. Live Shipping Rate Check Endpoint
+ * POST /api/shiprocket/check-rate
+ * Validates delivery pincode, calculates shipment weight/dimensions, fetches rates & couriers
+ */
+exports.checkRate = async (req, res, next) => {
+  try {
+    const {
+      deliveryPincode,
+      delivery_pincode,
+      pincode,
+      paymentMethod = 'Prepaid',
+      payment_method,
+      orderValue = 0,
+      order_value,
+      subtotal,
+      weight,
+      length,
+      breadth,
+      height,
+      items = []
+    } = req.body;
+
+    const rawPin = deliveryPincode || delivery_pincode || pincode;
+    const cleanPin = String(rawPin || '').replace(/\D/g, '').trim();
+
+    if (!cleanPin || cleanPin.length !== 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid 6-digit Indian PIN code.'
+      });
+    }
+
+    const payMode = paymentMethod || payment_method || 'Prepaid';
+    const declaredVal = parseFloat(orderValue || order_value || subtotal || 0);
+
+    // Validate cart items and hydrate product weights/dimensions from DB if items provided
+    const validatedItems = [];
+    if (Array.isArray(items) && items.length > 0) {
+      for (const it of items) {
+        let prodWeightGrams = null;
+        let prodPrice = parseFloat(it.price) || 0;
+        const qty = parseInt(it.quantity || it.qty || 1, 10) || 1;
+
+        if (it.id || it.product_id) {
+          const pId = it.id || it.product_id;
+          const localProd = db.findById('products', pId) || db.findOne('products', p => p.slug === pId || p.sku === pId);
+          if (localProd) {
+            prodWeightGrams = localProd.weight_grams || localProd.weight || null;
+            prodPrice = parseFloat(localProd.price) || prodPrice;
+          }
+        }
+
+        validatedItems.push({
+          ...it,
+          weight_grams: prodWeightGrams,
+          price: prodPrice,
+          quantity: qty
+        });
+      }
+    }
+
+    const rateResult = await shiprocketService.checkRates({
+      deliveryPincode: cleanPin,
+      paymentMethod: payMode,
+      orderValue: declaredVal,
+      weight,
+      length,
+      breadth,
+      height,
+      items: validatedItems
+    });
+
+    return res.status(200).json(rateResult);
+  } catch (err) {
+    console.error('[Shiprocket Rate Error]:', err.message);
+    return res.status(400).json({
+      success: false,
+      serviceable: false,
+      message: err.message || 'Unable to calculate shipping rate for this pincode.',
+      error: 'Rate calculation error'
+    });
+  }
+};
 
 /**
- * 2. Create Shipment for Order (Manual Admin Trigger or Retry)
+ * 3. Create Shipment for Order (Manual Admin Trigger or Retry)
  * POST /api/shiprocket/create-order
  */
 exports.createOrder = async (req, res, next) => {
   try {
     console.log("========== SHIPROCKET CREATE ORDER ==========");
-    console.log("Request body:", JSON.stringify(req.body, null, 2));
+    console.log("Request body identifier:", req.body?.order_id || req.body?.order_number || req.body?.id);
 
     const { order_id, order_number } = req.body;
     const identifier = order_id || order_number || req.body.id;
@@ -113,29 +197,38 @@ exports.createOrder = async (req, res, next) => {
     if (!identifier && !req.body.billing_customer_name) {
       console.error("========== SHIPROCKET ERROR ==========");
       console.error("Message: order_id or order_number is required.");
-      return res.status(400).json({ success: false, message: 'order_id or order_number is required.' });
+      return res.status(400).json({
+        success: false,
+        message: 'order_id or order_number is required to create a shipment.'
+      });
     }
 
     const result = await processOrderFulfillment(identifier || req.body, { force: true });
 
-    if (result.success) {
-      console.log("SHIPROCKET RESPONSE:", JSON.stringify(result.data, null, 2));
+    if (result && result.success) {
+      console.log("SHIPROCKET SUCCESS:", JSON.stringify(result.data, null, 2));
       return res.status(200).json({
         success: true,
         message: result.duplicated
           ? 'Shiprocket shipment already exists and has been synchronized.'
           : 'Shiprocket shipment created successfully.',
         data: result.data,
-        shiprocket: result.data
+        shiprocketOrderId: result.data?.shiprocket_order_id || result.data?.order_id,
+        shipmentId: result.data?.shiprocket_shipment_id || result.data?.shipment_id,
+        shippingCharge: result.data?.shipping_charge || 0,
+        chargeableWeight: result.data?.chargeable_weight || 0.05,
+        courierName: result.data?.courier_name || null,
+        awbCode: result.data?.awb_code || null,
+        status: result.data?.shipping_status || result.data?.status || 'NEW'
       });
     }
 
     console.error("========== SHIPROCKET ERROR ==========");
-    console.error("Message:", result.message);
+    console.error("Message:", result?.message || 'Shiprocket order creation failed');
     return res.status(400).json({
       success: false,
-      message: result.message || 'Failed to create shipment on Shiprocket.',
-      error: result.message
+      message: result?.message || 'Failed to create shipment on Shiprocket.',
+      error: result?.message || 'Shiprocket fulfillment error'
     });
   } catch (err) {
     console.error("========== SHIPROCKET ERROR ==========");
@@ -145,13 +238,13 @@ exports.createOrder = async (req, res, next) => {
     return res.status(err.status || err.statusCode || 500).json({
       success: false,
       message: 'Shiprocket order creation failed',
-      error: err.shiprocketData || err.message
+      error: err.shiprocketData?.message || err.message || 'Internal Shiprocket error'
     });
   }
 };
 
 /**
- * 2b. Public/Order Checkout Sync to Shiprocket
+ * 3b. Public/Order Checkout Sync to Shiprocket
  * POST /api/shiprocket/sync-order
  */
 exports.syncOrder = async (req, res, next) => {
@@ -160,12 +253,15 @@ exports.syncOrder = async (req, res, next) => {
     const identifier = order_id || order_number;
 
     if (!identifier) {
-      return res.status(400).json({ success: false, message: 'order_id or order_number is required.' });
+      return res.status(400).json({
+        success: false,
+        message: 'order_id or order_number is required.'
+      });
     }
 
     const result = await processOrderFulfillment(identifier);
 
-    if (result.success) {
+    if (result && result.success) {
       return res.status(200).json({
         success: true,
         message: 'Order synced to Shiprocket successfully.',
@@ -175,11 +271,12 @@ exports.syncOrder = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: result.message || 'Order received, processing fulfillment.',
-      data: result.data || null
+      message: result?.message || 'Order received, processing fulfillment.',
+      data: result?.data || null
     });
   } catch (err) {
-    res.status(200).json({
+    console.warn('[Shiprocket Sync Notice]:', err.message);
+    return res.status(200).json({
       success: false,
       message: err.message
     });
@@ -187,7 +284,7 @@ exports.syncOrder = async (req, res, next) => {
 };
 
 /**
- * 3. Assign Courier & AWB
+ * 4. Assign Courier & AWB
  * POST /api/shiprocket/assign-awb
  */
 exports.assignAwb = async (req, res, next) => {
@@ -250,7 +347,7 @@ exports.assignAwb = async (req, res, next) => {
 };
 
 /**
- * 4. Request Pickup
+ * 5. Request Pickup
  * POST /api/shiprocket/pickup
  */
 exports.requestPickup = async (req, res, next) => {
@@ -310,7 +407,7 @@ exports.requestPickup = async (req, res, next) => {
 };
 
 /**
- * 5. Generate Label
+ * 6. Generate Label
  * POST /api/shiprocket/label
  */
 exports.generateLabel = async (req, res, next) => {
@@ -345,7 +442,7 @@ exports.generateLabel = async (req, res, next) => {
 };
 
 /**
- * 6. Generate Manifest
+ * 7. Generate Manifest
  * POST /api/shiprocket/manifest
  */
 exports.generateManifest = async (req, res, next) => {
@@ -380,7 +477,7 @@ exports.generateManifest = async (req, res, next) => {
 };
 
 /**
- * 7. Track Shipment by AWB
+ * 8. Track Shipment by AWB
  * GET /api/shiprocket/track/:awb
  */
 exports.trackShipment = async (req, res, next) => {
@@ -413,7 +510,7 @@ exports.trackShipment = async (req, res, next) => {
 };
 
 /**
- * 8. Cancel Shipment
+ * 9. Cancel Shipment
  * POST /api/shiprocket/cancel
  */
 exports.cancelShipment = async (req, res, next) => {
@@ -456,7 +553,7 @@ exports.cancelShipment = async (req, res, next) => {
 };
 
 /**
- * 9. Shiprocket Webhook Receiver
+ * 10. Shiprocket Webhook Receiver
  * POST /api/shiprocket/webhook
  * Public endpoint for receiving real-time tracking events from Shiprocket
  */

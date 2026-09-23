@@ -153,7 +153,12 @@ exports.createOrder = async (req, res, next) => {
       }
     }
 
-    const shippingFee = subtotal >= 999 || subtotal === 0 ? 0 : 99;
+    const shippingFee = (req.body.shipping_fee !== undefined && req.body.shipping_fee !== null)
+      ? parseFloat(req.body.shipping_fee)
+      : (req.body.shipping !== undefined ? parseFloat(req.body.shipping) : (subtotal >= 999 || subtotal === 0 ? 0 : 0));
+    const chargeableWeight = req.body.chargeable_weight ? parseFloat(req.body.chargeable_weight) : 0.05;
+    const courierName = req.body.courier_name || req.body.courier || null;
+    const shippingRateResponse = req.body.shipping_rate_response || null;
     const taxableAmount = Math.max(0, subtotal - discountAmount);
     const tax = Math.round((taxableAmount * 0.05) * 100) / 100;
     const grandTotal = Math.round((taxableAmount + shippingFee + tax) * 100) / 100;
@@ -294,7 +299,10 @@ exports.createOrder = async (req, res, next) => {
           shiprocket_order_id: null,
           shiprocket_shipment_id: null,
           awb_code: null,
-          courier_name: null,
+          courier_name: courierName,
+          chargeable_weight: chargeableWeight,
+          shipping_provider: 'shiprocket',
+          shipping_rate_response: shippingRateResponse,
           shipping_status: 'NOT_CREATED',
           shipping_status_code: null,
           shipping_label_url: null,
@@ -305,11 +313,21 @@ exports.createOrder = async (req, res, next) => {
           shipping_updated_at: new Date().toISOString()
         };
 
-        const { data: dbOrder, error: orderErr } = await supabaseAdmin
+        let { data: dbOrder, error: orderErr } = await supabaseAdmin
           .from('orders')
           .insert(orderPayload)
           .select()
           .single();
+
+        if (orderErr && (orderErr.message.includes('column') || orderErr.message.includes('schema cache'))) {
+          // Retry insertion with core schema columns in case new migration is pending on remote DB
+          const { chargeable_weight, shipping_provider, shipping_rate_response, ...corePayload } = orderPayload;
+          const retryRes = await supabaseAdmin.from('orders').insert(corePayload).select().single();
+          if (!retryRes.error && retryRes.data) {
+            dbOrder = retryRes.data;
+            orderErr = null;
+          }
+        }
 
         if (orderErr) {
           console.warn('[Database] Supabase order insert error, saving to local store:', orderErr.message);
@@ -386,7 +404,10 @@ exports.createOrder = async (req, res, next) => {
       shiprocket_order_id: null,
       shiprocket_shipment_id: null,
       awb_code: null,
-      courier_name: null,
+      courier_name: courierName,
+      chargeable_weight: chargeableWeight,
+      shipping_provider: 'shiprocket',
+      shipping_rate_response: shippingRateResponse,
       shipping_status: 'NOT_CREATED',
       shipping_status_code: null,
       shipping_label_url: null,

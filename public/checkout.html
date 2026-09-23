@@ -77,6 +77,40 @@
       border: 1.5px solid #D97706;
       background: #FFFBEB;
     }
+    /* Delivery Charges Popover & Card */
+    .hn-charges-popover {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      z-index: 1050;
+      background: #FFFFFF;
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+      padding: 14px 16px;
+      min-width: 210px;
+      display: none;
+      animation: hnFadeIn 0.2s ease-in-out;
+    }
+    .hn-charges-popover.show {
+      display: block;
+    }
+    @keyframes hnFadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .hn-smart-order-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #4F46E5;
+      color: #FFFFFF;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
@@ -348,12 +382,37 @@
               </div>
 
               <!-- Delivery Charges Breakdown -->
-              <div class="d-flex justify-content-between mb-2 small text-secondary">
-                <span>
-                  Delivery Charges
-                  <span class="badge bg-success-subtle text-success border border-success-subtle ms-1" style="font-size: 0.68rem;">Sacred Express</span>
-                </span>
-                <span class="text-success fw-bold" id="hn-co-shipping">FREE (₹0)</span>
+              <div class="position-relative mb-2">
+                <div class="d-flex justify-content-between align-items-center small text-secondary">
+                  <span class="d-flex align-items-center gap-1">
+                    <span>Delivery Charges</span>
+                    <button type="button" class="btn btn-link p-0 text-decoration-none" id="hn-charges-info-trigger" onclick="toggleChargesPopover(event)" title="Click to view charges breakdown" style="line-height: 1;">
+                      <i class="bi bi-info-circle-fill text-warning fs-6"></i>
+                    </button>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;">Sacred Express</span>
+                  </span>
+                  <span class="text-success fw-bold" id="hn-co-shipping">FREE (₹0)</span>
+                </div>
+
+                <!-- Floating Charges Breakdown Popover (matching exact user reference UI) -->
+                <div id="hn-delivery-charges-popover" class="hn-charges-popover">
+                  <div class="d-flex flex-column gap-2">
+                    <div class="d-flex justify-content-between align-items-center text-dark" style="font-size: 0.88rem;">
+                      <span class="text-secondary fw-normal">Freight charges :</span>
+                      <span class="fw-semibold text-dark" id="hn-popover-freight">₹ 75.72</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center text-dark" style="font-size: 0.88rem;">
+                      <span class="text-secondary fw-normal">COD charges :</span>
+                      <span class="fw-semibold text-dark" id="hn-popover-cod">₹ 52</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 pt-2 mt-1 border-top" style="color: #4F46E5; border-color: #F1F5F9 !important;">
+                      <div class="hn-smart-order-badge">
+                        <i class="bi bi-box-seam-fill"></i>
+                      </div>
+                      <span class="fw-bold" style="font-size: 0.9rem; color: #4F46E5;">Smart Order : ₹ <span id="hn-popover-smart">5</span></span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <!-- Payment Mode Line Item -->
@@ -432,6 +491,9 @@
       }
     }
 
+    let hnLiveShippingRate = null;
+    let rateLookupTimeout = null;
+
     function handlePaymentMethodChange() {
       const selectedRadio = document.querySelector('input[name="payment_method"]:checked');
       const allCards = document.querySelectorAll('.hn-payment-card');
@@ -449,7 +511,93 @@
         }
       });
 
-      renderCheckoutSummary();
+      // Recalculate Shiprocket live rate if PIN code is already present
+      const pinInput = document.getElementById('hn-ship-pin');
+      const pin = (pinInput ? pinInput.value : '').replace(/\D/g, '');
+      if (pin.length === 6) {
+        checkShiprocketRate(pin);
+      } else {
+        renderCheckoutSummary();
+      }
+    }
+
+    async function checkShiprocketRate(pinValue) {
+      const pin = (pinValue || '').toString().trim().replace(/\D/g, '');
+      const feedback = document.getElementById('hn-pin-feedback');
+      const spinner = document.getElementById('hn-pin-spinner');
+
+      if (pin.length !== 6) {
+        hnLiveShippingRate = null;
+        renderCheckoutSummary();
+        return;
+      }
+
+      const cart = getCheckoutCart();
+      const subtotal = cart.reduce((acc, i) => acc + ((parseFloat(i.price) || 0) * (parseInt(i.qty, 10) || 1)), 0);
+      const selectedPaymentVal = document.querySelector('input[name="payment_method"]:checked')?.value || 'UPI';
+      const isCod = selectedPaymentVal.includes('Cash on Delivery') || selectedPaymentVal.includes('COD');
+
+      if (spinner) spinner.classList.remove('d-none');
+      if (feedback) {
+        feedback.innerHTML = '<span class="text-warning-emphasis"><i class="bi bi-arrow-repeat spin me-1"></i> Checking shipping availability...</span>';
+      }
+
+      clearTimeout(rateLookupTimeout);
+      rateLookupTimeout = setTimeout(async () => {
+        try {
+          const resp = await fetch(getApiUrl('/api/shiprocket/check-rate'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              deliveryPincode: pin,
+              paymentMethod: isCod ? 'COD' : 'Prepaid',
+              orderValue: subtotal,
+              subtotal: subtotal,
+              items: cart.map(i => ({
+                id: i.id,
+                name: i.name,
+                price: i.price,
+                quantity: i.qty || 1,
+                weight: i.weight || null
+              }))
+            })
+          });
+
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data.success && data.serviceable) {
+              hnLiveShippingRate = data;
+              if (feedback) {
+                feedback.innerHTML = `<span class="text-success fw-medium"><i class="bi bi-check-circle-fill me-1"></i> Delivery available via ${data.courierName} (Est. ${data.estimatedDelivery})</span>`;
+              }
+            } else if (data.success && !data.serviceable) {
+              hnLiveShippingRate = null;
+              if (feedback) {
+                feedback.innerHTML = `<span class="text-danger fw-medium"><i class="bi bi-x-circle-fill me-1"></i> Delivery unavailable for PIN ${pin}</span>`;
+              }
+            } else {
+              hnLiveShippingRate = null;
+              if (feedback) {
+                feedback.innerHTML = `<span class="text-danger small"><i class="bi bi-exclamation-triangle-fill me-1"></i> ${data.message || 'Unable to calculate shipping right now. Please try again.'}</span>`;
+              }
+            }
+          } else {
+            const errData = await resp.json().catch(() => ({}));
+            hnLiveShippingRate = null;
+            if (feedback) {
+              feedback.innerHTML = `<span class="text-danger small"><i class="bi bi-exclamation-triangle-fill me-1"></i> ${errData.message || 'Unable to calculate shipping right now. Please try again.'}</span>`;
+            }
+          }
+        } catch (err) {
+          console.warn('[Checkout Rate Check Notice]:', err.message);
+          if (feedback) {
+            feedback.innerHTML = '<span class="text-danger small"><i class="bi bi-exclamation-triangle-fill me-1"></i> Unable to calculate shipping right now. Please try again.</span>';
+          }
+        } finally {
+          if (spinner) spinner.classList.add('d-none');
+          renderCheckoutSummary();
+        }
+      }, 300);
     }
 
     function renderCheckoutSummary() {
@@ -520,10 +668,21 @@
         `;
       }).join('');
 
-      // Delivery Charges (Promotional Free)
+      // Shiprocket Live Rate Breakdown
+      const freightRate = hnLiveShippingRate ? (parseFloat(hnLiveShippingRate.freightCharge) || 75.72) : 75.72;
+      const codRate = hnLiveShippingRate ? (isCod ? (parseFloat(hnLiveShippingRate.codCharges) || 52.00) : 0.00) : (isCod ? 52.00 : 0.00);
+      const smartOrderFee = hnLiveShippingRate ? (parseFloat(hnLiveShippingRate.smartOrderCharge) || 5.00) : 5.00;
+
+      // Delivery Charges (Promotional Free Delivery on Harinama Store orders)
       const deliveryCharges = 0;
       const shippingEl = document.getElementById('hn-co-shipping');
-      if (shippingEl) shippingEl.innerText = 'FREE (₹0)';
+      if (shippingEl) {
+        if (hnLiveShippingRate && hnLiveShippingRate.courierName) {
+          shippingEl.innerHTML = `<span class="text-success fw-bold">FREE (₹0)</span> <span class="d-block text-muted" style="font-size: 0.68rem;">via ${hnLiveShippingRate.courierName}</span>`;
+        } else {
+          shippingEl.innerText = 'FREE (₹0)';
+        }
+      }
 
       // COD vs Normal (Prepaid) handling & labels
       if (isCod) {
@@ -583,6 +742,15 @@
       document.getElementById('hn-co-subtotal').innerText = `₹${subtotal.toLocaleString('en-IN')}`;
       document.getElementById('hn-co-total').innerText = `₹${finalTotal.toLocaleString('en-IN')}`;
 
+      // Update Delivery Charges Popover breakdown elements dynamically
+      const popoverFreight = document.getElementById('hn-popover-freight');
+      const popoverCod = document.getElementById('hn-popover-cod');
+      const popoverSmart = document.getElementById('hn-popover-smart');
+
+      if (popoverFreight) popoverFreight.innerText = `₹ ${freightRate.toFixed(2)}`;
+      if (popoverCod) popoverCod.innerText = isCod ? `₹ ${codRate.toFixed(0)}` : '₹ 0 (Waived)';
+      if (popoverSmart) popoverSmart.innerText = `${smartOrderFee.toFixed(0)}`;
+
       // Update Submit Button Label
       if (submitBtn) {
         if (isCod) {
@@ -592,6 +760,27 @@
         }
       }
     }
+
+    function toggleChargesPopover(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      const popover = document.getElementById('hn-delivery-charges-popover');
+      if (popover) {
+        popover.classList.toggle('show');
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      const popover = document.getElementById('hn-delivery-charges-popover');
+      const trigger = document.getElementById('hn-charges-info-trigger');
+      if (popover && popover.classList.contains('show')) {
+        if (!popover.contains(e.target) && (!trigger || !trigger.contains(e.target))) {
+          popover.classList.remove('show');
+        }
+      }
+    });
 
     async function applyCheckoutCoupon() {
       const input = document.getElementById('hn-checkout-coupon');
@@ -764,6 +953,9 @@
         if (!hasResolved && feedback) {
           feedback.innerHTML = '<span class="text-muted"><i class="bi bi-exclamation-circle me-1"></i> PIN not recognized. You can enter City & State manually.</span>';
         }
+
+        // Trigger Shiprocket live rate check
+        checkShiprocketRate(pin);
       }, 50);
     }
 
@@ -791,11 +983,12 @@
       const isCod = selectedPaymentText.includes('Cash on Delivery') || selectedPaymentText.includes('COD');
       const orderNumber = 'HN-2026-' + Math.floor(10000 + Math.random() * 90000);
       const subtotal = cart.reduce((acc, i) => acc + (i.price * (i.qty || 1)), 0);
-      const shipping = subtotal >= 499 ? 0 : 0;
+      const shipping = 0; // Promotional Free Delivery
       const total = Math.max(0, subtotal + shipping - checkoutDiscount);
       const formattedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const fullAddressStr = `${address}${village ? ', ' + village : ''}, ${city}, ${state} - ${pin}`;
       const trackingNum = 'HN-EXP-' + Math.floor(100000 + Math.random() * 900000);
+      const courierTitle = hnLiveShippingRate?.courierName || 'Shiprocket / Express Delivery';
 
       const orderData = {
         id: orderNumber,
@@ -821,15 +1014,20 @@
           price: i.price,
           total: i.price * (i.qty || 1),
           image: i.image,
-          material: i.material || 'Standard'
+          material: i.material || 'Standard',
+          weight: i.weight || null
         })),
         subtotal,
         shipping,
+        shipping_fee: shipping,
         discount: checkoutDiscount,
         total,
         status: isCod ? 'Confirmed' : 'Confirmed',
         order_status: 'confirmed',
-        courier: 'Shiprocket / Express Delivery',
+        courier: courierTitle,
+        courier_name: courierTitle,
+        chargeable_weight: hnLiveShippingRate?.chargeableWeight || 0.05,
+        shipping_rate_response: hnLiveShippingRate || null,
         tracking_number: trackingNum,
         notes: isCod ? 'Cash on Delivery devotional package.' : 'Prepaid online order.'
       };
@@ -877,7 +1075,8 @@
                 product_image: i.image,
                 quantity: i.qty || 1,
                 price: i.price,
-                material: i.material || 'Standard'
+                material: i.material || 'Standard',
+                weight: i.weight || null
               })),
               shipping_address: {
                 name,
@@ -889,6 +1088,10 @@
                 state,
                 pin
               },
+              shipping_fee: shipping,
+              courier_name: courierTitle,
+              chargeable_weight: hnLiveShippingRate?.chargeableWeight || 0.05,
+              shipping_rate_response: hnLiveShippingRate || null,
               payment_method: isCod ? 'cod' : 'razorpay',
               payment_status: isCod ? 'pending' : 'paid',
               is_paid: !isCod,

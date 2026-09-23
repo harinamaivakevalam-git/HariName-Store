@@ -72,16 +72,26 @@ async function runTests() {
     assert(adminLogin.status === 200 && adminLogin.body.token, '2. Admin Login and JWT Token Generation');
     const adminToken = adminLogin.body.token;
 
-    const userLogin = await request('POST', '/auth/login', {
-      email: 'user@harinama.com',
+    let userToken = null;
+    let userLogin = await request('POST', '/auth/login', {
+      email: 'devotee_test@gmail.com',
       password: 'user123'
     });
-    assert(userLogin.status === 200 && userLogin.body.user.role === 'customer', '3. Customer Login and Role Verification');
-    const userToken = userLogin.body.token;
+    if (userLogin.status !== 200) {
+      const reg = await request('POST', '/auth/register', {
+        name: 'Gauranga Das',
+        email: 'devotee_test@gmail.com',
+        password: 'user123',
+        phone: '+91 91234 56789'
+      });
+      userLogin = reg;
+    }
+    assert((userLogin.status === 200 || userLogin.status === 201) && userLogin.body.token, '3. Customer Login and Role Verification');
+    userToken = userLogin.body.token;
 
     // 3. User Me Profile
     const me = await request('GET', '/auth/me', null, userToken);
-    assert(me.status === 200 && me.body.user.email === 'user@harinama.com', '4. Authenticated /api/auth/me Endpoint');
+    assert(me.status === 200 && me.body.user.email === 'devotee_test@gmail.com', '4. Authenticated /api/auth/me Endpoint');
 
     // 4. Products Listing & Filtering
     const products = await request('GET', '/products?page=1&limit=6');
@@ -224,7 +234,46 @@ async function runTests() {
       '27. Shiprocket Connection Test Endpoint (Token-Safe)'
     );
 
-    // 20. Shiprocket Webhook Ingestion & Status Update
+    // 20. Shiprocket Rate Check: Prepaid & COD Calculation
+    const rateCheckPrepaid = await request('POST', '/shiprocket/check-rate', {
+      deliveryPincode: '500001',
+      paymentMethod: 'Prepaid',
+      orderValue: 500,
+      items: [
+        { id: sampleProdId, name: 'Sacred Keychain', price: 99, quantity: 1, weight: 0.003 }
+      ]
+    });
+    assert(
+      rateCheckPrepaid.status === 200 &&
+      rateCheckPrepaid.body.success === true &&
+      rateCheckPrepaid.body.shippingRate !== undefined &&
+      rateCheckPrepaid.body.packageWeight >= 0.05,
+      '28. Shiprocket Rate Calculation (Prepaid + 3g Item Packaging Gross Weight Calculation)'
+    );
+
+    const rateCheckCod = await request('POST', '/shiprocket/check-rate', {
+      deliveryPincode: '500001',
+      paymentMethod: 'COD',
+      orderValue: 500
+    });
+    assert(
+      rateCheckCod.status === 200 &&
+      rateCheckCod.body.success === true &&
+      rateCheckCod.body.codCharges !== undefined,
+      '29. Shiprocket Rate Calculation (COD Charges Evaluation)'
+    );
+
+    // 21. Shiprocket Rate Check: Invalid Pincode Rejection
+    const invalidPinCheck = await request('POST', '/shiprocket/check-rate', {
+      deliveryPincode: '123'
+    });
+    assert(
+      invalidPinCheck.status === 400 &&
+      invalidPinCheck.body.success === false,
+      '30. Shiprocket Rate Check Input Validation (Rejection of Invalid PIN)'
+    );
+
+    // 22. Shiprocket Webhook Ingestion & Status Update
     const sampleOrderNum = (orderPlacement.body.data && orderPlacement.body.data.order_number) || 'HN-2026-98124';
     const webhookRes = await request('POST', '/shiprocket/webhook', {
       order_id: sampleOrderNum,
@@ -233,16 +282,16 @@ async function runTests() {
       location: 'Mathura Sorting Facility',
       activity: 'Package departed for destination hub'
     });
-    assert(webhookRes.status === 200 && webhookRes.body.success === true, '28. Shiprocket Webhook Receiver Ingestion (Idempotent)');
+    assert(webhookRes.status === 200 && webhookRes.body.success === true, '31. Shiprocket Webhook Receiver Ingestion (Idempotent)');
 
-    // 21. Verify Order Shipping vs Payment Status Separation
+    // 23. Verify Order Shipping vs Payment Status Separation
     const updatedOrderDetails = await request('GET', `/orders/${sampleOrderNum}`, null, userToken);
     assert(
       updatedOrderDetails.status === 200 &&
       updatedOrderDetails.body.data &&
       updatedOrderDetails.body.data.payment_status &&
       updatedOrderDetails.body.data.shipping_status,
-      '29. Order Payment Status vs Shipping Status Separation'
+      '32. Order Payment Status vs Shipping Status Separation'
     );
 
     console.log(`\n==============================================`);

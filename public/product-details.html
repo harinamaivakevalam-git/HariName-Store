@@ -174,9 +174,18 @@
 
           <!-- Trust Badges Strip -->
           <div class="d-flex flex-wrap justify-content-between pt-3 border-top border-bottom py-3 small text-secondary">
-            <div><i class="bi bi-shield-check text-warning me-1"></i> Secure Checkout</div>
-            <div><i class="bi bi-truck text-warning me-1"></i> Fast Shipping</div>
-            <div><i class="bi bi-arrow-repeat text-warning me-1"></i> Easy Returns</div>
+            <div role="button" class="d-flex align-items-center gap-1 cursor-pointer text-decoration-none hover-gold" onclick="switchToTab('ship-tab')" style="cursor: pointer;" title="Click to view shipping details">
+              <i class="bi bi-truck text-warning fs-6"></i>
+              <span class="fw-semibold">Fast Shipping</span>
+            </div>
+            <div role="button" class="d-flex align-items-center gap-1 cursor-pointer text-decoration-none hover-gold" onclick="switchToTab('ret-tab')" style="cursor: pointer;" title="Click to view return policy">
+              <i class="bi bi-arrow-repeat text-warning fs-6"></i>
+              <span class="fw-semibold">Easy Returns</span>
+            </div>
+            <div role="button" class="d-flex align-items-center gap-1 cursor-pointer text-decoration-none hover-gold" onclick="showSecureModal()" style="cursor: pointer;" title="100% Authentic & Encrypted">
+              <i class="bi bi-shield-check text-warning fs-6"></i>
+              <span class="fw-semibold">Secure Checkout</span>
+            </div>
           </div>
 
         </div>
@@ -211,9 +220,9 @@
           </li>
         </ul>
 
-        <div class="tab-content py-4 bg-white p-4 border border-top-0 rounded-bottom" id="productTabsContent">
+        <div class="tab-content py-4 bg-white p-4 border border-top-0 rounded-bottom shadow-sm" id="productTabsContent">
           <div class="tab-pane fade show active" id="desc-content" role="tabpanel">
-            <p id="hn-tab-desc">
+            <p id="hn-tab-desc" style="line-height: 1.7; color: #334155;">
               Loading authentic devotional description...
             </p>
           </div>
@@ -223,14 +232,65 @@
             </ul>
           </div>
           <div class="tab-pane fade" id="ship-content" role="tabpanel">
-            <!-- <p>
-              Free standard shipping on all orders above ₹499 across India. Orders are packed with sacred care and dispatched within 24-48 hours. Delivery takes 3-5 business days.
-            </p> -->
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <i class="bi bi-truck text-warning fs-4"></i>
+              <h5 class="fw-bold mb-0 text-navy" style="font-family: var(--hn-font-serif);">Sacred Express Shipping &amp; Packaging</h5>
+            </div>
+            <p class="text-secondary mb-3" style="line-height: 1.6;">
+              Every devotional item from Harinama Store is packed with sacred reverence and dispatched directly from Sri Dham Vrindavan with auspicious blessings.
+            </p>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                  <div class="fw-bold text-navy mb-1"><i class="bi bi-gift text-warning me-1"></i> Free Sacred Packaging</div>
+                  <div class="small text-secondary">Every package includes holy unboxing cards and sacred protection packaging.</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                  <div class="fw-bold text-navy mb-1"><i class="bi bi-clock-history text-warning me-1"></i> Fast Dispatch</div>
+                  <div class="small text-secondary">Orders are prepared and dispatched within 24–48 hours across India.</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                  <div class="fw-bold text-navy mb-1"><i class="bi bi-geo-alt text-warning me-1"></i> 3–5 Business Days Delivery</div>
+                  <div class="small text-secondary">Express door delivery via Shiprocket, Bluedart, Delhivery &amp; Speed Post.</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                  <div class="fw-bold text-navy mb-1"><i class="bi bi-chat-dots text-warning me-1"></i> Live SMS &amp; WhatsApp Tracking</div>
+                  <div class="small text-secondary">Instant tracking link sent immediately upon order dispatch.</div>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="tab-pane fade" id="ret-content" role="tabpanel">
-            <!-- <p>
-              We offer a hassle-free 7-day return and replacement policy if your items arrive damaged or defective. Simply reach out via WhatsApp or email.
-            </p> -->
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <i class="bi bi-arrow-repeat text-warning fs-4"></i>
+              <h5 class="fw-bold mb-0 text-navy" style="font-family: var(--hn-font-serif);">Hassle-Free 7-Day Returns &amp; Replacements</h5>
+            </div>
+            <p class="text-secondary mb-3" style="line-height: 1.6;">
+              Your spiritual satisfaction is our divine duty. If any item arrives damaged or flawed during transit, we provide 100% free doorstep replacement.
+            </p>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                  <div class="fw-bold text-navy mb-1"><i class="bi bi-shield-check text-success me-1"></i> 7 Days Easy Returns</div>
+                  <div class="small text-secondary">Notify us within 7 days of receiving the package for instant resolution.</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                  <div class="fw-bold text-navy mb-1"><i class="bi bi-box-seam text-success me-1"></i> Free Doorstep Pickup</div>
+                  <div class="small text-secondary">Courier partner will pick up damaged items directly from your address.</div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 p-3 rounded-3" style="background: #FFFBEB; border: 1px solid #FDE68A;">
+              <span class="small text-dark"><i class="bi bi-whatsapp text-success me-1"></i> Need help? WhatsApp temple support at <strong>+91 79937 91014</strong> or email <strong>harinamaivakevalam@gmail.com</strong>.</span>
+            </div>
           </div>
 
           <!-- Devotee Reviews Pane -->
@@ -579,6 +639,8 @@
       if (e.target.id === 'hnReviewModalOverlay') closeReviewModal();
     }
 
+    const DEPLOYED_BACKEND_URL = 'https://hariname-storebackend.onrender.com';
+
     function getApiUrl(path) {
       if (typeof window !== 'undefined' && typeof window.getApiUrl === 'function') {
         return window.getApiUrl(path);
@@ -589,8 +651,29 @@
           if (window.location.port === '5000') return path;
           return `http://${window.location.hostname}:5000${path}`;
         }
+        if (window.location.hostname === 'hariname-storebackend.onrender.com') return path;
       }
-      return path;
+      return `${DEPLOYED_BACKEND_URL}${path}`;
+    }
+
+    function switchToTab(tabId) {
+      const tabEl = document.getElementById(tabId);
+      if (tabEl) {
+        const tab = new bootstrap.Tab(tabEl);
+        tab.show();
+        const tabsWrap = document.getElementById('hn-detail-tabs-wrap');
+        if (tabsWrap) {
+          tabsWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    }
+
+    function showSecureModal() {
+      if (typeof showToast === 'function') {
+        showToast('🔒 100% Safe & Encrypted: 256-Bit SSL protection & authentic items.');
+      } else {
+        alert('🔒 100% Secure Checkout Guaranteed\n\n• 256-Bit SSL Encryption\n• Trusted Payment Gateways (UPI, Razorpay, Net Banking)\n• Safe Cash on Delivery (COD) Available\n• Insured Devotional Packaging from Vrindavan');
+      }
     }
 
     async function handleReviewSubmit(e) {
@@ -990,6 +1073,31 @@
         }).join('');
       }
 
+      // Material / Type options
+      const matSelect = document.getElementById('hn-material-select');
+      if (matSelect) {
+        const prodMat = (prod.specifications && (prod.specifications.Material || prod.specifications.material)) || prod.material || '';
+        const prodTitle = (prod.title || prod.name || '').toLowerCase();
+        const prodCat = (prod.category || prod.category_name || '').toLowerCase();
+
+        let matOptions = [];
+        if (Array.isArray(prod.variants) && prod.variants.length > 0) {
+          matOptions = prod.variants.map(v => v.name || v.material || v.title).filter(Boolean);
+        } else if (prodTitle.includes('tulsi') || prodCat.includes('tulsi') || prodTitle.includes('kanthi') || prodTitle.includes('mala') || prodTitle.includes('japa')) {
+          matOptions = ['Natural Tulsi Wood (Standard)', 'Vrindavan Sacred Tulsi Wood', 'Premium Smooth Beads'];
+        } else if (prodTitle.includes('keychain') || prodCat.includes('keychain')) {
+          matOptions = ['Premium Gloss Acrylic', 'Metallic Brass Finish', 'Engraved Sacred Wood'];
+        } else if (prodMat) {
+          matOptions = [prodMat, 'Standard Sacred Quality'];
+        } else {
+          matOptions = ['Standard Devotional Quality', 'Premium Handcrafted Finish'];
+        }
+
+        matSelect.innerHTML = matOptions.map((opt, idx) => `
+          <option value="${opt}" ${idx === 0 ? 'selected' : ''}>${opt}</option>
+        `).join('');
+      }
+
       // Sync wishlist button state
       const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
       const isWish = wishlist.includes(prod.id) || (prod.legacy_id && wishlist.includes(prod.legacy_id)) || (prod.slug && wishlist.includes(prod.slug));
@@ -1036,7 +1144,7 @@
 
       // 1. Primary: Fetch fresh product data from live Backend Express API
       try {
-        const res = await fetch(`/api/products/${encodeURIComponent(cleanId)}`, {
+        const res = await fetch(getApiUrl(`/api/products/${encodeURIComponent(cleanId)}`), {
           cache: 'no-store',
           headers: { 'Accept': 'application/json' }
         });

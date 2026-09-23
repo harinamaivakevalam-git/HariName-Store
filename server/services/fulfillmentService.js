@@ -115,21 +115,15 @@ async function processOrderFulfillment(orderOrIdentifier, options = {}) {
         return { success: false, message: 'Order record not found.' };
       }
 
-      // Strict Test / Wallet Protection Guard:
-      // When SHIPROCKET_LIVE_DISPATCH is not 'true' (default: false), completely skip sending to Shiprocket
-      // to protect wallet money during testing while still giving immediate order confirmation.
-      const isLiveDispatchEnabled = process.env.SHIPROCKET_LIVE_DISPATCH === 'true' && process.env.DISABLE_SHIPROCKET_ORDERS !== 'true';
-      const isTestOrder = (order.order_number && String(order.order_number).toUpperCase().includes('TEST')) || process.env.NODE_ENV === 'test';
-
-      if ((!isLiveDispatchEnabled && !options.force) || isTestOrder) {
-        console.log(`[SHIPROCKET_WALLET_PROTECTION] Safe testing mode active (SHIPROCKET_LIVE_DISPATCH=${process.env.SHIPROCKET_LIVE_DISPATCH || 'false'}). Skipping Shiprocket order creation for ${order.order_number} to prevent wallet deduction. Order confirmed locally!`);
+      // Check if Shiprocket dispatch is completely disabled via environment
+      if (process.env.DISABLE_SHIPROCKET_ORDERS === 'true') {
+        console.log(`[SHIPROCKET_DISABLED] Shiprocket dispatch is disabled via DISABLE_SHIPROCKET_ORDERS.`);
         return {
           success: true,
           mock: true,
           data: {
             order_id: order.order_number,
-            shipping_status: 'MOCK_TEST',
-            message: 'Order confirmed successfully. Shiprocket live dispatch disabled for testing to protect wallet balance.'
+            shipping_status: 'MOCK_TEST'
           }
         };
       }
@@ -239,8 +233,9 @@ async function processOrderFulfillment(orderOrIdentifier, options = {}) {
         tracking_history: currentHistory
       };
 
-      // 6. Attempt Automatic AWB Assignment (Instant courier allocation)
-      if (!updates.awb_code && srRes.data.shipment_id) {
+      // 6. Optional Automatic AWB Assignment (only if explicitly enabled via AUTO_ASSIGN_AWB=true)
+      // By default, orders stay in 'NEW' status in Shiprocket with ₹0 wallet deduction until admin chooses to assign courier
+      if (!updates.awb_code && srRes.data.shipment_id && (process.env.AUTO_ASSIGN_AWB === 'true' || options.autoAssignAwb)) {
         try {
           console.log(`[Shiprocket Fulfillment] Attempting automatic AWB assignment for shipment ${srRes.data.shipment_id}...`);
           const awbRes = await shiprocketService.assignAwb(srRes.data.shipment_id);

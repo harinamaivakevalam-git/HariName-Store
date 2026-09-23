@@ -479,8 +479,9 @@
       });
 
       const isPaid = (order.payment_status || '').toLowerCase() === 'paid';
-      const paymentBadgeText = isPaid ? 'PAID (PREPAID)' : 'CASH ON DELIVERY (PENDING)';
-      const paymentBadgeColor = isPaid ? '#15803D' : '#D97706';
+      const isCod = (/cod/i.test(order.payment_method || '') || /cash on delivery/i.test(order.payment_method || '')) && !isPaid;
+      const paymentBadgeText = isPaid ? 'PAID ONLINE (PREPAID)' : (isCod ? 'CASH ON DELIVERY (PENDING)' : 'CONFIRMED');
+      const paymentBadgeColor = isPaid ? '#15803D' : (isCod ? '#D97706' : '#2563EB');
 
       const subtotal = Number(order.pricing?.subtotal ?? (order.subtotal || 0));
       const discount = Number(order.pricing?.discount ?? (order.discount || 0));
@@ -492,7 +493,8 @@
       const courierName = order.shipping?.courier || order.courier_name || order.courier || (order.awb_code ? 'Shiprocket Express Partner' : (order.shiprocket_order_id ? 'Shiprocket / Delivery Partner' : 'Assigned Delivery Partner'));
       const awbCode = order.shipping?.awb_code || order.awb_code || 'Assigned on Dispatch';
       const trackingNumber = order.shipping?.tracking_number || order.tracking_number || orderNum;
-      const paymentMethod = (order.payment_method || 'Online').toUpperCase();
+      const rawPaymentMethod = order.payment_method || order.paymentMethod || 'Online / UPI';
+      const paymentMethod = isCod ? 'Cash on Delivery (COD)' : `${rawPaymentMethod} (Prepaid / Normal)`;
 
       const html = `
         <div class="no-print">
@@ -608,15 +610,19 @@
                 <td>-₹${discount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
               </tr>` : ''}
               <tr>
-                <td>Sacred Packaging & Dispatch:</td>
-                <td>${shippingFee === 0 ? 'FREE' : '₹' + shippingFee.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                <td>Delivery Charges (Sacred Express):</td>
+                <td><strong style="color: #15803D;">${shippingFee === 0 ? 'FREE (₹0.00)' : '₹' + shippingFee.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong></td>
+              </tr>
+              <tr>
+                <td>Payment Method:</td>
+                <td><strong>${isCod ? 'Cash on Delivery' : 'Online / Prepaid'}</strong></td>
               </tr>
               <tr>
                 <td>GST (5% Inclusive):</td>
                 <td>₹${tax.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
               </tr>
               <tr class="total-row">
-                <td>Grand Total:</td>
+                <td>${isCod ? 'Total Payable on Delivery:' : 'Grand Total (Paid):'}</td>
                 <td>₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
               </tr>
             </table>

@@ -238,25 +238,33 @@
               </div>
 
               <!-- Payment Method Radios -->
-              <div class="d-flex flex-column gap-3 mb-4">
+              <div class="d-flex flex-column gap-3 mb-4" id="hn-payment-methods-group">
                 
-                <label class="border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer; background: #FAF9F5; border-color: var(--hn-gold-border) !important;">
+                <!-- Normal / Prepaid: UPI -->
+                <label class="hn-payment-card border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer; background: #FAF9F5; border-color: #D97706 !important; box-shadow: 0 0 0 1.5px #D97706;">
                   <div class="d-flex align-items-center gap-2">
-                    <input type="radio" name="payment_method" value="UPI Instant (Google Pay, PhonePe, Paytm)" checked class="form-check-input">
+                    <input type="radio" name="payment_method" value="UPI Instant (Google Pay, PhonePe, Paytm)" checked class="form-check-input" onchange="handlePaymentMethodChange()">
                     <div>
-                      <span class="fw-semibold small d-block">UPI (Google Pay, PhonePe, Paytm, BHIM)</span>
-                      <span class="text-muted" style="font-size: 0.75rem;">Fastest &amp; zero transaction charges</span>
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold small d-block text-navy">UPI (Google Pay, PhonePe, Paytm, BHIM)</span>
+                        <span class="badge bg-success text-white" style="font-size: 0.68rem;">Normal / Prepaid</span>
+                      </div>
+                      <span class="text-muted" style="font-size: 0.75rem;">Instant payment • 0 convenience charges</span>
                     </div>
                   </div>
                   <span class="badge bg-success-subtle text-success border border-success-subtle">Recommended</span>
                 </label>
 
-                <label class="border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer;">
+                <!-- Normal / Prepaid: Cards -->
+                <label class="hn-payment-card border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer;">
                   <div class="d-flex align-items-center gap-2">
-                    <input type="radio" name="payment_method" value="Credit / Debit Card" class="form-check-input">
+                    <input type="radio" name="payment_method" value="Credit / Debit Card" class="form-check-input" onchange="handlePaymentMethodChange()">
                     <div>
-                      <span class="fw-semibold small d-block">Credit / Debit Card</span>
-                      <span class="text-muted" style="font-size: 0.75rem;">Visa, Mastercard, RuPay</span>
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold small d-block text-navy">Credit / Debit Card</span>
+                        <span class="badge bg-success text-white" style="font-size: 0.68rem;">Normal / Prepaid</span>
+                      </div>
+                      <span class="text-muted" style="font-size: 0.75rem;">Visa, Mastercard, RuPay &amp; Corporate Cards</span>
                     </div>
                   </div>
                   <div class="d-flex gap-1">
@@ -266,22 +274,34 @@
                   </div>
                 </label>
 
-                <label class="border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer;">
+                <!-- Normal / Prepaid: Net Banking -->
+                <label class="hn-payment-card border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer;">
                   <div class="d-flex align-items-center gap-2">
-                    <input type="radio" name="payment_method" value="Net Banking" class="form-check-input">
-                    <span class="fw-semibold small">Net Banking (All Indian Banks)</span>
-                  </div>
-                </label>
-
-                <label class="border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer;">
-                  <div class="d-flex align-items-center gap-2">
-                    <input type="radio" name="payment_method" value="Cash on Delivery (COD)" class="form-check-input">
+                    <input type="radio" name="payment_method" value="Net Banking" class="form-check-input" onchange="handlePaymentMethodChange()">
                     <div>
-                      <span class="fw-semibold small d-block">Cash on Delivery (COD)</span>
-                      <span class="text-muted" style="font-size: 0.75rem;">Pay when blessed package arrives</span>
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold small d-block text-navy">Net Banking</span>
+                        <span class="badge bg-success text-white" style="font-size: 0.68rem;">Normal / Prepaid</span>
+                      </div>
+                      <span class="text-muted" style="font-size: 0.75rem;">All major Indian public &amp; private banks</span>
                     </div>
                   </div>
-                  <span class="badge bg-light text-dark border">COD Available</span>
+                  <span class="badge bg-light text-dark border">All Banks</span>
+                </label>
+
+                <!-- Cash on Delivery (COD) -->
+                <label class="hn-payment-card border rounded p-3 d-flex align-items-center justify-content-between cursor-pointer" style="cursor: pointer;">
+                  <div class="d-flex align-items-center gap-2">
+                    <input type="radio" name="payment_method" value="Cash on Delivery (COD)" class="form-check-input" onchange="handlePaymentMethodChange()">
+                    <div>
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold small d-block text-navy">Cash on Delivery (COD)</span>
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning" style="font-size: 0.68rem;">Pay on Delivery</span>
+                      </div>
+                      <span class="text-muted" style="font-size: 0.75rem;">Pay cash when sacred package arrives at doorstep</span>
+                    </div>
+                  </div>
+                  <span class="badge bg-warning-subtle text-dark border border-warning">COD Available</span>
                 </label>
 
               </div>
@@ -323,13 +343,29 @@
 
               <!-- Price Breakdown -->
               <div class="d-flex justify-content-between mb-2 small text-secondary">
-                <span>Subtotal</span>
+                <span>Items Subtotal</span>
                 <span class="fw-semibold text-dark" id="hn-co-subtotal">₹0</span>
               </div>
 
+              <!-- Delivery Charges Breakdown -->
               <div class="d-flex justify-content-between mb-2 small text-secondary">
-                <span>Shipping &amp; Sacred Packaging</span>
-                <span class="text-success fw-semibold" id="hn-co-shipping">FREE</span>
+                <span>
+                  Delivery Charges
+                  <span class="badge bg-success-subtle text-success border border-success-subtle ms-1" style="font-size: 0.68rem;">Sacred Express</span>
+                </span>
+                <span class="text-success fw-bold" id="hn-co-shipping">FREE (₹0)</span>
+              </div>
+
+              <!-- Payment Mode Line Item -->
+              <div class="d-flex justify-content-between mb-2 small text-secondary">
+                <span>Selected Payment Mode</span>
+                <span class="fw-semibold" id="hn-co-payment-mode-label" style="color: var(--hn-navy);">UPI (Normal / Prepaid)</span>
+              </div>
+
+              <!-- COD Handling / Convenience Charge -->
+              <div class="d-flex justify-content-between mb-2 small text-secondary" id="hn-co-cod-fee-row">
+                <span id="hn-co-cod-fee-label">Payment Convenience Fee</span>
+                <span class="text-success fw-bold" id="hn-co-cod-fee">FREE (₹0)</span>
               </div>
 
               <div class="d-flex justify-content-between mb-3 small text-secondary d-none" id="hn-co-discount-row">
@@ -337,12 +373,20 @@
                 <span class="text-success fw-semibold" id="hn-co-discount">-₹0</span>
               </div>
 
+              <!-- Dynamic Payment Notice Box (COD vs Normal Prepaid) -->
+              <div id="hn-co-payment-notice-box" class="p-2 rounded mb-3 small" style="background: #F0FDF4; border: 1px solid #BBF7D0; color: #166534;">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-shield-check fs-6 text-success"></i>
+                  <span><strong>Normal / Online Payment</strong>: Zero handling fee &amp; instant priority dispatch.</span>
+                </div>
+              </div>
+
               <hr class="my-3">
 
               <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                  <span class="fw-bold d-block">Total Amount</span>
-                  <span class="text-muted" style="font-size: 0.72rem;">(Inclusive of all taxes)</span>
+                  <span class="fw-bold d-block" id="hn-co-total-label">Total Payable Amount</span>
+                  <span class="text-muted" style="font-size: 0.72rem;" id="hn-co-total-subtext">(Inclusive of all taxes &amp; free delivery)</span>
                 </div>
                 <span class="fs-3 fw-bold" style="color: var(--hn-navy);" id="hn-co-total">₹0</span>
               </div>
@@ -354,7 +398,7 @@
 
               <!-- Security Badges -->
               <div class="text-center small text-muted" style="font-size: 0.75rem;">
-                <i class="bi bi-shield-check text-success me-1"></i> 256-Bit SSL Encryption • 100% Authentic Products
+                <i class="bi bi-shield-check text-success me-1"></i> 256-Bit SSL Encryption • 100% Authentic Devotional Items
               </div>
 
             </div>
@@ -388,6 +432,26 @@
       }
     }
 
+    function handlePaymentMethodChange() {
+      const selectedRadio = document.querySelector('input[name="payment_method"]:checked');
+      const allCards = document.querySelectorAll('.hn-payment-card');
+      
+      allCards.forEach(card => {
+        const radio = card.querySelector('input[type="radio"]');
+        if (radio && radio.checked) {
+          card.style.background = '#FAF9F5';
+          card.style.borderColor = '#D97706';
+          card.style.boxShadow = '0 0 0 1.5px #D97706, 0 4px 14px rgba(217, 119, 6, 0.12)';
+        } else {
+          card.style.background = '#FFFFFF';
+          card.style.borderColor = '#E5E7EB';
+          card.style.boxShadow = 'none';
+        }
+      });
+
+      renderCheckoutSummary();
+    }
+
     function renderCheckoutSummary() {
       const cart = getCheckoutCart();
       const listContainer = document.getElementById('hn-checkout-items-list');
@@ -396,6 +460,16 @@
       const discountRow = document.getElementById('hn-co-discount-row');
       const discountEl = document.getElementById('hn-co-discount');
       const msg = document.getElementById('hn-checkout-coupon-msg');
+
+      const selectedPaymentVal = document.querySelector('input[name="payment_method"]:checked')?.value || 'UPI';
+      const isCod = selectedPaymentVal.includes('Cash on Delivery') || selectedPaymentVal.includes('COD');
+
+      const paymentModeLabel = document.getElementById('hn-co-payment-mode-label');
+      const codFeeLabel = document.getElementById('hn-co-cod-fee-label');
+      const codFeeEl = document.getElementById('hn-co-cod-fee');
+      const noticeBox = document.getElementById('hn-co-payment-notice-box');
+      const totalLabel = document.getElementById('hn-co-total-label');
+      const totalSubtext = document.getElementById('hn-co-total-subtext');
 
       if (!cart || cart.length === 0) {
         if (countBadge) countBadge.innerText = '0 items';
@@ -415,7 +489,7 @@
         if (discountRow) discountRow.classList.add('d-none');
         if (msg) msg.innerHTML = '';
         document.getElementById('hn-co-subtotal').innerText = '₹0';
-        document.getElementById('hn-co-shipping').innerText = 'FREE';
+        document.getElementById('hn-co-shipping').innerText = 'FREE (₹0)';
         document.getElementById('hn-co-total').innerText = '₹0';
         return;
       }
@@ -441,24 +515,62 @@
                 <div class="text-muted" style="font-size: 0.75rem;">Qty: ${qty} &nbsp;|&nbsp; ${item.material || 'Standard'}</div>
               </div>
             </div>
-            <div class="fw-bold small text-navy">₹${itemTotal}</div>
+            <div class="fw-bold small text-navy">₹${itemTotal.toLocaleString('en-IN')}</div>
           </div>
         `;
       }).join('');
 
-      // Shipping is FREE promotional
-      const shipping = 0;
-      document.getElementById('hn-co-shipping').innerText = 'FREE';
+      // Delivery Charges (Promotional Free)
+      const deliveryCharges = 0;
+      const shippingEl = document.getElementById('hn-co-shipping');
+      if (shippingEl) shippingEl.innerText = 'FREE (₹0)';
+
+      // COD vs Normal (Prepaid) handling & labels
+      if (isCod) {
+        if (paymentModeLabel) paymentModeLabel.innerHTML = '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning">Cash on Delivery (COD)</span>';
+        if (codFeeLabel) codFeeLabel.innerText = 'COD Collection Charge';
+        if (codFeeEl) codFeeEl.innerHTML = '<span class="text-success fw-bold">FREE (₹0)</span>';
+        if (totalLabel) totalLabel.innerText = 'Cash Payable on Delivery:';
+        if (totalSubtext) totalSubtext.innerText = '(Pay exact cash when package arrives)';
+        if (noticeBox) {
+          noticeBox.style.background = '#FFFBEB';
+          noticeBox.style.border = '1px solid #FDE68A';
+          noticeBox.style.color = '#92400E';
+          noticeBox.innerHTML = `
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-cash-coin fs-5 text-warning-emphasis"></i>
+              <span><strong>Cash on Delivery (COD) Selected</strong>: Please keep cash ready for the delivery partner upon arrival.</span>
+            </div>
+          `;
+        }
+      } else {
+        if (paymentModeLabel) paymentModeLabel.innerHTML = '<span class="badge bg-success-subtle text-success border border-success-subtle">Online / Prepaid (Normal)</span>';
+        if (codFeeLabel) codFeeLabel.innerText = 'Payment Gateway Fee';
+        if (codFeeEl) codFeeEl.innerHTML = '<span class="text-success fw-bold">FREE (₹0)</span>';
+        if (totalLabel) totalLabel.innerText = 'Total Payable Amount (Online):';
+        if (totalSubtext) totalSubtext.innerText = '(Zero extra charges • Instant confirmation)';
+        if (noticeBox) {
+          noticeBox.style.background = '#F0FDF4';
+          noticeBox.style.border = '1px solid #BBF7D0';
+          noticeBox.style.color = '#166534';
+          noticeBox.innerHTML = `
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-shield-check fs-6 text-success"></i>
+              <span><strong>Normal / Online Payment</strong>: Zero convenience fee &amp; instant priority packing.</span>
+            </div>
+          `;
+        }
+      }
 
       if (checkoutCouponCode && checkoutDiscount > 0) {
         if (discountRow) discountRow.classList.remove('d-none');
-        if (discountEl) discountEl.innerText = `-₹${checkoutDiscount}`;
+        if (discountEl) discountEl.innerText = `-₹${checkoutDiscount.toLocaleString('en-IN')}`;
         const couponInput = document.getElementById('hn-checkout-coupon');
         if (couponInput && !couponInput.value) couponInput.value = checkoutCouponCode;
         if (msg) {
           msg.innerHTML = `
             <div class="d-flex align-items-center justify-content-between mt-1">
-              <span class="text-success small fw-semibold"><i class="bi bi-check-circle"></i> Applied: ${checkoutCouponCode} (-₹${checkoutDiscount})</span>
+              <span class="text-success small fw-semibold"><i class="bi bi-check-circle"></i> Applied: ${checkoutCouponCode} (-₹${checkoutDiscount.toLocaleString('en-IN')})</span>
               <button type="button" class="btn btn-link btn-sm text-danger p-0 text-decoration-none small" onclick="removeCheckoutCoupon()">Remove</button>
             </div>
           `;
@@ -467,9 +579,18 @@
         if (discountRow) discountRow.classList.add('d-none');
       }
 
-      const finalTotal = Math.max(0, subtotal + shipping - checkoutDiscount);
-      document.getElementById('hn-co-subtotal').innerText = `₹${subtotal}`;
-      document.getElementById('hn-co-total').innerText = `₹${finalTotal}`;
+      const finalTotal = Math.max(0, subtotal + deliveryCharges - checkoutDiscount);
+      document.getElementById('hn-co-subtotal').innerText = `₹${subtotal.toLocaleString('en-IN')}`;
+      document.getElementById('hn-co-total').innerText = `₹${finalTotal.toLocaleString('en-IN')}`;
+
+      // Update Submit Button Label
+      if (submitBtn) {
+        if (isCod) {
+          submitBtn.innerHTML = `<i class="bi bi-box-seam me-1"></i> Confirm COD Order • ₹${finalTotal.toLocaleString('en-IN')} on Delivery`;
+        } else {
+          submitBtn.innerHTML = `<i class="bi bi-shield-lock-fill me-1"></i> Pay ₹${finalTotal.toLocaleString('en-IN')} Online & Place Order`;
+        }
+      }
     }
 
     async function applyCheckoutCoupon() {

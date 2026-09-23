@@ -60,8 +60,16 @@
                 <span class="fw-semibold text-dark" id="hn-success-name">—</span>
               </div>
               <div class="d-flex justify-content-between mb-2">
-                <span class="text-muted">Total Paid:</span>
-                <span class="fw-bold text-navy" id="hn-success-total">—</span>
+                <span class="text-muted">Delivery Charges:</span>
+                <span class="text-success fw-bold" id="hn-success-shipping">FREE (₹0)</span>
+              </div>
+              <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted">Payment Mode:</span>
+                <span class="fw-semibold" id="hn-success-payment-mode">UPI / Online (Prepaid)</span>
+              </div>
+              <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted" id="hn-success-total-label">Total Amount:</span>
+                <span class="fw-bold text-navy fs-6" id="hn-success-total">—</span>
               </div>
               <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted">Estimated Delivery:</span>
@@ -75,6 +83,11 @@
                 <span class="text-muted">Transaction ID:</span>
                 <span class="font-monospace text-dark" style="font-size: 0.8rem;" id="hn-success-txn-id"></span>
               </div>
+            </div>
+
+            <!-- Dynamic COD Notice if applicable -->
+            <div id="hn-success-cod-banner" class="alert alert-warning p-2 small mb-4 text-start d-none" style="border-color: #FDE68A; background-color: #FFFBEB; color: #92400E;">
+              <i class="bi bi-cash-coin me-1 fs-5"></i> <strong>Cash on Delivery (COD)</strong>: Please keep the exact cash ready when the delivery partner arrives.
             </div>
 
             <!-- Ordered Items List -->
@@ -138,8 +151,38 @@
         document.getElementById('hn-success-name').innerText = decodeURIComponent(name);
       }
 
+      // Check stored orders for matching items & payment method
+      const orders = JSON.parse(localStorage.getItem('hn_orders') || '[]');
+      const currentOrder = orders.find(o => (o.orderId === order || o.order_number === order || o.id === order)) || orders[0];
+
+      const isCod = currentOrder ? (/cod/i.test(currentOrder.payment_method || currentOrder.paymentMethod || '') || /cash on delivery/i.test(currentOrder.payment_method || currentOrder.paymentMethod || '')) : false;
+
+      const paymentModeEl = document.getElementById('hn-success-payment-mode');
+      const paymentStatusEl = document.getElementById('hn-success-payment-status');
+      const totalLabelEl = document.getElementById('hn-success-total-label');
+      const codBanner = document.getElementById('hn-success-cod-banner');
+
+      if (isCod) {
+        if (paymentModeEl) paymentModeEl.innerHTML = '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning">Cash on Delivery (COD)</span>';
+        if (paymentStatusEl) {
+          paymentStatusEl.className = 'badge bg-warning-subtle text-warning-emphasis border border-warning';
+          paymentStatusEl.innerText = 'Pay on Delivery (Pending)';
+        }
+        if (totalLabelEl) totalLabelEl.innerText = 'Payable on Delivery:';
+        if (codBanner) codBanner.classList.remove('d-none');
+      } else {
+        if (paymentModeEl) paymentModeEl.innerHTML = '<span class="badge bg-success-subtle text-success border border-success-subtle">Online / Prepaid (Paid)</span>';
+        if (paymentStatusEl) {
+          paymentStatusEl.className = 'badge bg-success';
+          paymentStatusEl.innerText = 'Paid & Blessed';
+        }
+        if (totalLabelEl) totalLabelEl.innerText = 'Total Paid Online:';
+      }
+
       if (total) {
-        document.getElementById('hn-success-total').innerText = '₹' + total;
+        document.getElementById('hn-success-total').innerText = '₹' + Number(total).toLocaleString('en-IN');
+      } else if (currentOrder?.total) {
+        document.getElementById('hn-success-total').innerText = '₹' + Number(currentOrder.total).toLocaleString('en-IN');
       }
 
       const txn = params.get('txn');
@@ -152,9 +195,6 @@
         }
       }
 
-      // Check stored orders for matching items
-      const orders = JSON.parse(localStorage.getItem('hn_orders') || '[]');
-      const currentOrder = orders.find(o => o.orderId === order) || orders[0];
       if (currentOrder && currentOrder.items && currentOrder.items.length > 0) {
         const wrap = document.getElementById('hn-success-items-wrap');
         const list = document.getElementById('hn-success-items-list');
@@ -169,7 +209,7 @@
                   <img src="${itemImg}" data-original-src="${rawImg}" alt="${item.name}" class="rounded border" style="width: 32px; height: 32px; object-fit: cover;" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawImg}');}else{this.onerror=null;this.src='/assets/images/krishna-logo.jpg';}">
                   <span class="fw-semibold text-truncate" style="max-width: 180px;">${item.name}</span>
                 </div>
-                <span class="text-muted">Qty: ${item.qty || 1} &nbsp;|&nbsp; <strong>₹${item.price * (item.qty || 1)}</strong></span>
+                <span class="text-muted">Qty: ${item.qty || 1} &nbsp;|&nbsp; <strong>₹${(item.price * (item.qty || 1)).toLocaleString('en-IN')}</strong></span>
               </div>
             `;
           }).join('');

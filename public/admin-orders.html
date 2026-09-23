@@ -703,7 +703,10 @@
             ${(Array.isArray(o.items) && o.items.length > 0 ? o.items : [{ name: 'Sacred Devotional Item', qty: 1 }]).map(i => `<span class="badge bg-light text-dark border me-1">${i.name || 'Sacred Item'} × ${i.qty || 1}</span>`).join('')}
           </td>
           <td class="text-nowrap">
-            <span class="small fw-semibold text-success d-block"><i class="bi bi-shield-check me-1"></i>${o.payment_method}</span>
+            ${/cod/i.test(o.payment_method || '') || /cash on delivery/i.test(o.payment_method || '') 
+              ? `<span class="badge bg-warning-subtle text-warning-emphasis border border-warning d-inline-flex align-items-center gap-1"><i class="bi bi-cash-stack"></i> COD (Pay on Delivery)</span>`
+              : `<span class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1"><i class="bi bi-shield-check"></i> ${o.payment_method || 'Prepaid (Online)'}</span>`
+            }
             <div class="mt-1 d-flex align-items-center gap-1">
               ${getShippingBadge(o.shipping_status, o.awb_code, o.shiprocket_order_id)}
               ${!o.shiprocket_order_id ? `
@@ -713,7 +716,7 @@
               ` : ''}
             </div>
           </td>
-          <td class="fw-bold text-navy text-nowrap">₹${o.total}</td>
+          <td class="fw-bold text-navy text-nowrap">₹${Number(o.total || 0).toLocaleString('en-IN')}</td>
           <td class="text-nowrap">
             ${getStatusBadge(o.status)}
           </td>
@@ -766,6 +769,7 @@
       const isPickupRequested = o.pickup_status === 'PICKUP_REQUESTED' || o.pickup_status === 'PICKED_UP';
       const hasLabel = Boolean(o.shipping_label_url && o.shipping_label_url !== '');
       const isShippingFailed = String(o.shipping_status || '').toUpperCase() === 'FAILED';
+      const isCod = /cod/i.test(o.payment_method || '') || /cash on delivery/i.test(o.payment_method || '');
 
       const shipStatusBadge = getShippingBadge(o.shipping_status, o.awb_code, o.shiprocket_order_id);
 
@@ -782,8 +786,13 @@
             <p class="mb-3"><strong>Shipping Address:</strong><br><span class="text-muted">${o.address}</span></p>
 
             <h6 class="fw-bold text-navy mb-2"><i class="bi bi-credit-card me-2"></i>Payment Details</h6>
-            <p class="mb-1"><strong>Method:</strong> ${o.payment_method}</p>
-            <p class="mb-1"><strong>Payment Status:</strong> <span class="badge bg-success-subtle text-success">${o.payment_status}</span></p>
+            <p class="mb-1"><strong>Method:</strong> <span class="fw-semibold">${o.payment_method}</span></p>
+            <p class="mb-1"><strong>Payment Status:</strong> <span class="badge ${isCod ? 'bg-warning-subtle text-warning-emphasis border border-warning' : 'bg-success-subtle text-success'}">${o.payment_status}</span></p>
+            ${isCod ? `
+              <div class="alert alert-warning p-2 small mt-2 mb-2 border-warning-subtle">
+                <i class="bi bi-cash-coin me-1"></i> <strong>Cash Collection Required:</strong> Courier to collect <strong>₹${Number(o.total || 0).toLocaleString('en-IN')}</strong> upon delivery.
+              </div>
+            ` : ''}
             ${o.notes ? `<p class="mb-1 text-muted small"><strong>Notes:</strong> ${o.notes}</p>` : ''}
           </div>
 
@@ -792,18 +801,22 @@
             <h6 class="fw-bold text-navy mb-2"><i class="bi bi-cart me-2"></i>Ordered Items</h6>
             <div class="border rounded p-3 mb-3 bg-white">
               ${o.items.map(i => `
-                <div class="d-flex justify-content-between py-1 border-bottom">
+                <div class="d-flex justify-content-between py-1 border-bottom small">
                   <span>${i.name} (×${i.qty})</span>
-                  <span class="fw-bold">₹${i.price * i.qty}</span>
+                  <span class="fw-bold">₹${(i.price * i.qty).toLocaleString('en-IN')}</span>
                 </div>
               `).join('')}
-              <div class="d-flex justify-content-between pt-2">
-                <span>Shipping:</span>
-                <span>${o.shipping === 0 ? '<span class="text-success">FREE</span>' : '₹' + o.shipping}</span>
+              <div class="d-flex justify-content-between pt-2 small text-secondary">
+                <span>Delivery / Shipping Charges:</span>
+                <span>${o.shipping === 0 ? '<span class="text-success fw-bold">FREE (₹0)</span>' : '₹' + o.shipping}</span>
+              </div>
+              <div class="d-flex justify-content-between pt-2 small text-secondary">
+                <span>Payment Mode:</span>
+                <span>${isCod ? '<span class="text-warning-emphasis fw-bold">Cash on Delivery</span>' : '<span class="text-success fw-bold">Prepaid Online</span>'}</span>
               </div>
               <div class="d-flex justify-content-between pt-2 border-top fw-bold text-navy fs-6">
-                <span>Total:</span>
-                <span>₹${o.total}</span>
+                <span>${isCod ? 'Cash Payable on Delivery:' : 'Total Amount Paid:'}</span>
+                <span>₹${Number(o.total || 0).toLocaleString('en-IN')}</span>
               </div>
             </div>
 

@@ -713,17 +713,24 @@
         notes: isCod ? 'Cash on Delivery devotional package.' : 'Prepaid online order.'
       };
 
+      const DEPLOYED_BACKEND_URL = 'https://hariname-storebackend.onrender.com';
+
       function getApiUrl(path) {
         if (typeof window !== 'undefined' && typeof window.getApiUrl === 'function' && window.getApiUrl !== getApiUrl) {
           return window.getApiUrl(path);
+        }
+        const customBase = (typeof window !== 'undefined' && (window.HN_API_BASE_URL || localStorage.getItem('hn_api_base_url')));
+        if (customBase && customBase.startsWith('http')) {
+          return customBase.replace(/\/+$/, '') + path;
         }
         if (typeof window !== 'undefined') {
           if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
           if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && window.location.port !== '5000') {
             return 'http://localhost:5000' + path;
           }
+          if (window.location.hostname === 'hariname-storebackend.onrender.com') return path;
         }
-        return path;
+        return `${DEPLOYED_BACKEND_URL}${path}`;
       }
 
       // Helper to submit finalized order to backend and redirect

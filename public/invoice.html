@@ -286,11 +286,23 @@
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
 
+    const DEPLOYED_BACKEND_URL = 'https://hariname-storebackend.onrender.com';
+
     function getApiUrl(path) {
       if (typeof window !== 'undefined' && typeof window.getApiUrl === 'function' && window.getApiUrl !== getApiUrl) {
         return window.getApiUrl(path);
       }
-      return path;
+      const customBase = (typeof window !== 'undefined' && (window.HN_API_BASE_URL || localStorage.getItem('hn_api_base_url')));
+      if (customBase && customBase.startsWith('http')) {
+        return customBase.replace(/\/+$/, '') + path;
+      }
+      if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        if (window.location.port === '5000') return path;
+        return `http://${window.location.hostname}:5000${path}`;
+      }
+      if (window.location.hostname === 'hariname-storebackend.onrender.com') return path;
+      return `${DEPLOYED_BACKEND_URL}${path}`;
     }
 
     function sanitizeOrderId(raw) {

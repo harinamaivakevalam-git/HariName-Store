@@ -847,14 +847,11 @@
               }).select().maybeSingle();
 
               if (!orderErr && insertedOrder && insertedOrder.id) {
-                // Insert line items safely
-                const lineItems = [];
-                for (const i of cart) {
-                  const isValidUuid = i.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(i.id);
+                // Insert line items safely without schema mismatches
+                const lineItems = cart.map(i => {
                   const itemPrice = parseFloat(i.price) || 0;
                   const itemQty = parseInt(i.qty, 10) || 1;
-
-                  const itemObj = {
+                  return {
                     order_id: insertedOrder.id,
                     product_name: i.name || 'Sacred Devotional Item',
                     product_image: i.image || '',
@@ -863,12 +860,8 @@
                     price: itemPrice,
                     total: itemPrice * itemQty
                   };
-                  if (isValidUuid) {
-                    itemObj.product_id = i.id;
-                  }
+                });
 
-                  lineItems.push(itemObj);
-                }
                 if (lineItems.length > 0) {
                   try {
                     await sb.from('order_items').insert(lineItems);

@@ -448,48 +448,48 @@
       let filtered = [];
 
       if (currentFeaturedTab === 'new-arrivals') {
-        filtered = [...prods].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        // Pendants & latest neckwear additions first
+        filtered = [...prods].sort((a, b) => {
+          const aP = (a.name || '').toLowerCase().includes('pendant') ? 1 : 0;
+          const bP = (b.name || '').toLowerCase().includes('pendant') ? 1 : 0;
+          if (bP !== aP) return bP - aP;
+          return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        });
       } else if (currentFeaturedTab === 'best-sellers') {
-        filtered = prods.filter(p => p.trending || p.is_bestseller || p.is_trending || (p.reviews_count && p.reviews_count > 0) || (p.rating && parseFloat(p.rating) >= 4.5));
-        if (filtered.length === 0) {
-          filtered = [...prods].sort((a, b) => (parseFloat(b.rating || 5) - parseFloat(a.rating || 5)) || ((b.reviews_count || 0) - (a.reviews_count || 0)));
-        }
+        // Most popular authentic Kanthi Malas (1 round, 2 round, 3 round)
+        filtered = [...prods].sort((a, b) => {
+          const aK = (a.name || '').toLowerCase().includes('kanthi') ? 2 : ((a.name || '').toLowerCase().includes('japa') ? 1 : 0);
+          const bK = (b.name || '').toLowerCase().includes('kanthi') ? 2 : ((b.name || '').toLowerCase().includes('japa') ? 1 : 0);
+          if (bK !== aK) return bK - aK;
+          return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
+        });
       } else if (currentFeaturedTab === 'gift-sets') {
-        filtered = prods.filter(p => {
-          const cSlug = (p.category_slug || '').toLowerCase();
-          const cName = (p.category || '').toLowerCase();
-          const pName = (p.name || p.title || '').toLowerCase();
-          const pDesc = (p.description || '').toLowerCase();
-          const pTags = Array.isArray(p.tags) ? p.tags.join(' ').toLowerCase() : String(p.tags || '').toLowerCase();
-          return cSlug.includes('gift') || cName.includes('gift') || pName.includes('gift') || pName.includes('set') || pName.includes('combo') || pName.includes('kit') || pName.includes('mala') || pName.includes('bag') || pDesc.includes('gift') || pTags.includes('gift');
+        // Authentic 108 Japa Malas (Tulsi 108 & Neem 108) and high-value sacred sets
+        filtered = [...prods].sort((a, b) => {
+          const aJ = (a.name || '').toLowerCase().includes('108') || (a.name || '').toLowerCase().includes('japa') ? 2 : 0;
+          const bJ = (b.name || '').toLowerCase().includes('108') || (b.name || '').toLowerCase().includes('japa') ? 2 : 0;
+          if (bJ !== aJ) return bJ - aJ;
+          return (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0);
         });
-        if (filtered.length < 4) {
-          const additional = prods.filter(p => !filtered.some(f => f.id === p.id));
-          filtered = [...filtered, ...additional];
-        }
       } else if (currentFeaturedTab === 'festival') {
-        filtered = prods.filter(p => {
-          const pName = (p.name || p.title || '').toLowerCase();
-          const pDesc = (p.description || '').toLowerCase();
-          const pTags = Array.isArray(p.tags) ? p.tags.join(' ').toLowerCase() : String(p.tags || '').toLowerCase();
-          return p.featured || pTags.includes('festival') || pName.includes('tulsi') || pName.includes('radha') || pName.includes('krishna') || pName.includes('jagannath') || pName.includes('kanthi') || pName.includes('gita') || pDesc.includes('sacred') || pDesc.includes('divine');
+        // Divine Deities: Jagannath & Radhe Name pendants + Sacred neckwear
+        filtered = [...prods].sort((a, b) => {
+          const aF = (a.name || '').toLowerCase().includes('jagannath') ? 3 : ((a.name || '').toLowerCase().includes('radhe') ? 2 : ((a.name || '').toLowerCase().includes('2 round') ? 1 : 0));
+          const bF = (b.name || '').toLowerCase().includes('jagannath') ? 3 : ((b.name || '').toLowerCase().includes('radhe') ? 2 : ((b.name || '').toLowerCase().includes('2 round') ? 1 : 0));
+          return bF - aF;
         });
-        if (filtered.length < 4) {
-          const additional = prods.filter(p => !filtered.some(f => f.id === p.id));
-          filtered = [...filtered, ...additional];
-        }
       } else if (currentFeaturedTab === 'under-299') {
-        filtered = prods.filter(p => (parseFloat(p.price) || 0) <= 299).sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+        // Affordable sacred items sorted low to high (₹199 - ₹299)
+        filtered = [...prods]
+          .filter(p => (parseFloat(p.price) || 0) <= 299)
+          .sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
         if (filtered.length < 4) {
-          const additional = [...prods].sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0)).filter(p => !filtered.some(f => f.id === p.id));
-          filtered = [...filtered, ...additional];
+          const others = [...prods].sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+          filtered = [...filtered, ...others.filter(p => !filtered.some(f => f.id === p.id))];
         }
       } else if (currentFeaturedTab === 'specials') {
-        filtered = prods.filter(p => p.featured || p.is_special || (p.discount_percent && p.discount_percent > 10) || (p.original_price && p.price && parseFloat(p.original_price) > parseFloat(p.price)));
-        if (filtered.length < 4) {
-          const additional = prods.filter(p => !filtered.some(f => f.id === p.id));
-          filtered = [...filtered, ...additional];
-        }
+        // High-value signature items first (Tulsi 108 ₹699, 3 Round ₹399, etc.)
+        filtered = [...prods].sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
       }
 
       if (filtered.length === 0) {

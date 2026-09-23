@@ -335,21 +335,44 @@
         }
       } catch (_) {}
 
-      // 2. Direct Supabase REST API Query
+      // 2. Direct Supabase Query (Both JS client and REST with relations fallback)
       try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+        
+        // 2a. Using window.supabase client if initialized
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+          try {
+            const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            let q = sb.from('orders').select('*, order_items(*)');
+            if (isUuid) q = q.eq('id', cleanId);
+            else q = q.eq('order_number', cleanId);
+
+            const { data: sbData, error: sbErr } = await q.maybeSingle();
+            if (!sbErr && sbData) return sbData;
+
+            // Simple select without relation join if relation failed
+            let qSimple = sb.from('orders').select('*');
+            if (isUuid) qSimple = qSimple.eq('id', cleanId);
+            else qSimple = qSimple.eq('order_number', cleanId);
+
+            const { data: simpleOrd } = await qSimple.maybeSingle();
+            if (simpleOrd) {
+              const { data: items } = await sb.from('order_items').select('*').eq('order_id', simpleOrd.id);
+              return { ...simpleOrd, order_items: items || [] };
+            }
+          } catch (_) {}
+        }
+
+        // 2b. Direct Supabase REST fetch
         const sbHeaders = {
           'apikey': SUPABASE_ANON_KEY,
           'Authorization': 'Bearer ' + (token || SUPABASE_ANON_KEY),
           'Content-Type': 'application/json'
         };
 
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
-        let restUrl = `${SUPABASE_URL}/rest/v1/orders?select=*,order_items(*)`;
-        if (isUuid) {
-          restUrl += `&id=eq.${encodeURIComponent(cleanId)}`;
-        } else {
-          restUrl += `&order_number=eq.${encodeURIComponent(cleanId)}`;
-        }
+        // Try joined query
+        let restUrl = `${SUPABASE_URL}/rest/v1/orders?select=*,order_items(*)&order_number=eq.${encodeURIComponent(cleanId)}`;
+        if (isUuid) restUrl = `${SUPABASE_URL}/rest/v1/orders?select=*,order_items(*)&id=eq.${encodeURIComponent(cleanId)}`;
 
         const sbRes = await fetch(restUrl, { headers: sbHeaders });
         if (sbRes.ok) {
@@ -359,34 +382,51 @@
           }
         }
 
-        // Fuzzy search if prefix varied (e.g. without HN- prefix)
-        if (!isUuid) {
-          const stripped = cleanId.replace(/^HN-/, '');
-          const fallbackRes = await fetch(`${SUPABASE_URL}/rest/v1/orders?select=*,order_items(*)&order_number=ilike.*${encodeURIComponent(stripped)}*&limit=1`, { headers: sbHeaders });
+        // Try simple unjoined query
+        let simpleUrl = `${SUPABASE_URL}/rest/v1/orders?select=*&order_number=eq.${encodeURIComponent(cleanId)}`;
+        if (isUuid) simpleUrl = `${SUPABASE_URL}/rest/v1/orders?select=*&id=eq.${encodeURIComponent(cleanId)}`;
+
+        const simpleRes = await fetch(simpleUrl, { headers: sbHeaders });
+        if (simpleRes.ok) {
+          const simpleOrders = await simpleRes.json();
+          if (Array.isArray(simpleOrders) && simpleOrders.length > 0) {
+            const ord = simpleOrders[0];
+            try {
+              const itemsRes = await fetch(`${SUPABASE_URL}/rest/v1/order_items?select=*&order_id=eq.${encodeURIComponent(ord.id)}`, { headers: sbHeaders });
+              if (itemsRes.ok) {
+                ord.order_items = await itemsRes.json();
+              }
+            } catch (_) {}
+            return ord;
+          }
+        }
+
+        // Fuzzy search if prefix varied
+        const stripped = cleanId.replace(/^HN-/, '').replace(/\D/g, '');
+        if (stripped) {
+          const fallbackRes = await fetch(`${SUPABASE_URL}/rest/v1/orders?select=*&order_number=ilike.*${encodeURIComponent(stripped)}*&limit=1`, { headers: sbHeaders });
           if (fallbackRes.ok) {
             const fbOrders = await fallbackRes.json();
             if (Array.isArray(fbOrders) && fbOrders.length > 0) return fbOrders[0];
           }
         }
       } catch (sbErr) {
-        console.warn('[Invoice] Supabase direct query notice:', sbErr);
+        console.warn('[Invoice] Supabase query notice:', sbErr);
       }
 
-      // 3. Check LocalStorage / Local Orders Cache
+      // 3. Check LocalStorage / Local Orders Cache (All keys)
       try {
-        const userOrders = JSON.parse(localStorage.getItem('hn_user_orders') || '[]');
-        const found = userOrders.find(o => {
-          const ordNum = sanitizeOrderId(o.order_number || o.id || o.orderId);
-          return ordNum.toUpperCase() === cleanId.toUpperCase() || (o.id && o.id === cleanId);
-        });
-        if (found) return found;
-
-        const allOrders = JSON.parse(localStorage.getItem('hn_all_orders') || '[]');
-        const foundAdmin = allOrders.find(o => {
-          const ordNum = sanitizeOrderId(o.order_number || o.id || o.orderId);
-          return ordNum.toUpperCase() === cleanId.toUpperCase() || (o.id && o.id === cleanId);
-        });
-        if (foundAdmin) return foundAdmin;
+        const storageKeys = ['hn_orders', 'harinama_admin_orders', 'hn_user_orders', 'hn_all_orders'];
+        for (const key of storageKeys) {
+          const list = JSON.parse(localStorage.getItem(key) || '[]');
+          if (Array.isArray(list)) {
+            const found = list.find(o => {
+              const ordNum = sanitizeOrderId(o.order_number || o.id || o.orderId);
+              return ordNum.toUpperCase() === cleanId.toUpperCase() || (o.id && o.id === cleanId) || (ordNum.includes(cleanId.replace(/^HN-/, '')));
+            });
+            if (found) return found;
+          }
+        }
 
         const lastOrder = JSON.parse(localStorage.getItem('hn_last_order') || 'null');
         if (lastOrder) {

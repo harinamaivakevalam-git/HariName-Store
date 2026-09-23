@@ -55,7 +55,7 @@ async function fetchCompleteOrder(identifier) {
 /**
  * Helper to persist updates to Supabase & local DB
  */
-async function persistOrderUpdates(orderId, updates) {
+async function persistOrderUpdates(orderIdOrNumber, updates) {
   const finalUpdates = {
     ...updates,
     shipping_updated_at: new Date().toISOString(),
@@ -63,12 +63,19 @@ async function persistOrderUpdates(orderId, updates) {
   };
 
   // 1. Supabase
-  if (isSupabaseConfigured && supabaseAdmin) {
+  if (isSupabaseConfigured && supabaseAdmin && orderIdOrNumber) {
     try {
-      await supabaseAdmin
-        .from('orders')
-        .update(finalUpdates)
-        .eq('id', orderId);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(orderIdOrNumber));
+      let query = supabaseAdmin.from('orders').update(finalUpdates);
+      if (isUuid) {
+        query = query.eq('id', orderIdOrNumber);
+      } else {
+        query = query.eq('order_number', orderIdOrNumber);
+      }
+      const { error } = await query;
+      if (error) {
+        console.warn('[FulfillmentService] Supabase update warning:', error.message);
+      }
     } catch (sbErr) {
       console.warn('[FulfillmentService] Supabase update warning:', sbErr.message);
     }
@@ -76,7 +83,7 @@ async function persistOrderUpdates(orderId, updates) {
 
   // 2. Local DB
   try {
-    const localOrder = db.findById('orders', orderId) || db.findOne('orders', o => o.order_number === orderId);
+    const localOrder = db.findById('orders', orderIdOrNumber) || db.findOne('orders', o => o.order_number === orderIdOrNumber || o.id === orderIdOrNumber);
     if (localOrder) {
       db.update('orders', localOrder.id, finalUpdates);
     }

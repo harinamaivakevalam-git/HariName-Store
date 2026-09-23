@@ -448,7 +448,7 @@
       let filtered = [];
 
       if (currentFeaturedTab === 'new-arrivals') {
-        // Pendants & latest neckwear additions first
+        // ✨ New Arrivals: Latest additions & newly released pendants first
         filtered = [...prods].sort((a, b) => {
           const aP = (a.name || '').toLowerCase().includes('pendant') ? 1 : 0;
           const bP = (b.name || '').toLowerCase().includes('pendant') ? 1 : 0;
@@ -456,39 +456,36 @@
           return new Date(b.created_at || 0) - new Date(a.created_at || 0);
         });
       } else if (currentFeaturedTab === 'best-sellers') {
-        // Most popular authentic Kanthi Malas (1 round, 2 round, 3 round)
-        filtered = [...prods].sort((a, b) => {
-          const aK = (a.name || '').toLowerCase().includes('kanthi') ? 2 : ((a.name || '').toLowerCase().includes('japa') ? 1 : 0);
-          const bK = (b.name || '').toLowerCase().includes('kanthi') ? 2 : ((b.name || '').toLowerCase().includes('japa') ? 1 : 0);
-          if (bK !== aK) return bK - aK;
-          return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
-        });
+        // 🔥 Best Sellers: Authentic daily Vaishnava Kanthi Malas & popular neckwear
+        filtered = prods.filter(p => {
+          const name = (p.name || '').toLowerCase();
+          return name.includes('kanthi mala') || name.includes('traditional hare krishna');
+        }).sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
       } else if (currentFeaturedTab === 'gift-sets') {
-        // Authentic 108 Japa Malas (Tulsi 108 & Neem 108) and high-value sacred sets
-        filtered = [...prods].sort((a, b) => {
-          const aJ = (a.name || '').toLowerCase().includes('108') || (a.name || '').toLowerCase().includes('japa') ? 2 : 0;
-          const bJ = (b.name || '').toLowerCase().includes('108') || (b.name || '').toLowerCase().includes('japa') ? 2 : 0;
-          if (bJ !== aJ) return bJ - aJ;
-          return (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0);
-        });
+        // 🎁 Gift Sets: 108 Beads Traditional Japa Malas & Devotional Gift Sets
+        filtered = prods.filter(p => {
+          const name = (p.name || '').toLowerCase();
+          const desc = (p.description || '').toLowerCase();
+          const slug = (p.category_slug || '').toLowerCase();
+          return name.includes('108 beads') || name.includes('pendant') || name.includes('gift') || desc.includes('gift') || slug.includes('gift');
+        }).sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
       } else if (currentFeaturedTab === 'festival') {
-        // Divine Deities: Jagannath & Radhe Name pendants + Sacred neckwear
-        filtered = [...prods].sort((a, b) => {
-          const aF = (a.name || '').toLowerCase().includes('jagannath') ? 3 : ((a.name || '').toLowerCase().includes('radhe') ? 2 : ((a.name || '').toLowerCase().includes('2 round') ? 1 : 0));
-          const bF = (b.name || '').toLowerCase().includes('jagannath') ? 3 : ((b.name || '').toLowerCase().includes('radhe') ? 2 : ((b.name || '').toLowerCase().includes('2 round') ? 1 : 0));
-          return bF - aF;
+        // 🌸 Festival Collection: Deity pendants (Jagannath, Radhe) & Sacred multi-round festive neckwear
+        filtered = prods.filter(p => {
+          const name = (p.name || '').toLowerCase();
+          return name.includes('jagannath') || name.includes('radhe') || name.includes('3 round') || name.includes('2 round');
+        }).sort((a, b) => {
+          const aScore = (a.name.includes('Jagannath') ? 4 : (a.name.includes('Radhe') ? 3 : (a.name.includes('3 Round') ? 2 : 1)));
+          const bScore = (b.name.includes('Jagannath') ? 4 : (b.name.includes('Radhe') ? 3 : (b.name.includes('3 Round') ? 2 : 1)));
+          return bScore - aScore;
         });
       } else if (currentFeaturedTab === 'under-299') {
-        // Affordable sacred items sorted low to high (₹199 - ₹299)
-        filtered = [...prods]
+        // 💛 Under ₹299: Strictly products priced <= ₹299 (sorted low to high)
+        filtered = prods
           .filter(p => (parseFloat(p.price) || 0) <= 299)
           .sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
-        if (filtered.length < 4) {
-          const others = [...prods].sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
-          filtered = [...filtered, ...others.filter(p => !filtered.some(f => f.id === p.id))];
-        }
       } else if (currentFeaturedTab === 'specials') {
-        // High-value signature items first (Tulsi 108 ₹699, 3 Round ₹399, etc.)
+        // 🪷 HarinamaStore SPECIALS: Premium signature collections & high-value sacred items
         filtered = [...prods].sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
       }
 

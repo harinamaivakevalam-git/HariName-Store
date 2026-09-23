@@ -692,7 +692,14 @@
           </td>
           <td class="text-nowrap">
             <span class="small fw-semibold text-success d-block"><i class="bi bi-shield-check me-1"></i>${o.payment_method}</span>
-            <div class="mt-1">${getShippingBadge(o.shipping_status, o.awb_code, o.shiprocket_order_id)}</div>
+            <div class="mt-1 d-flex align-items-center gap-1">
+              ${getShippingBadge(o.shipping_status, o.awb_code, o.shiprocket_order_id)}
+              ${!o.shiprocket_order_id ? `
+                <button class="btn btn-xs btn-outline-primary py-0 px-2 fw-semibold" style="font-size: 11px; height: 22px; line-height: 20px;" onclick="event.stopPropagation(); adminCreateShiprocketOrder('${o.id}', this)" title="Send details to Shiprocket immediately">
+                  <i class="bi bi-box-arrow-up-right me-1"></i>Send to SR
+                </button>
+              ` : ''}
+            </div>
           </td>
           <td class="fw-bold text-navy text-nowrap">₹${o.total}</td>
           <td class="text-nowrap">
@@ -835,7 +842,7 @@
               <!-- Action Buttons Row -->
               <div class="d-flex flex-wrap gap-2 pt-2 border-top">
                 ${isShippingFailed ? `
-                  <button type="button" class="btn btn-sm btn-warning text-dark fw-semibold" onclick="adminCreateShiprocketOrder('${o.id}')">
+                  <button type="button" class="btn btn-sm btn-warning text-dark fw-semibold" onclick="adminCreateShiprocketOrder('${o.id}', this)">
                     <i class="bi bi-arrow-repeat me-1"></i> Retry Shiprocket
                   </button>
                 ` : (hasSrOrder ? `
@@ -843,20 +850,20 @@
                     <i class="bi bi-check-circle me-1"></i> Shiprocket Created
                   </button>
                 ` : `
-                  <button type="button" class="btn btn-sm btn-primary" onclick="adminCreateShiprocketOrder('${o.id}')">
+                  <button type="button" class="btn btn-sm btn-primary fw-semibold" onclick="adminCreateShiprocketOrder('${o.id}', this)">
                     <i class="bi bi-box-seam me-1"></i> Create Shipment
                   </button>
                 `)}
 
-                <button type="button" class="btn btn-sm btn-outline-dark" onclick="adminAssignShiprocketAwb('${o.id}', '${o.shiprocket_shipment_id}')" ${!hasSrShipment || hasAwb ? 'disabled title="Requires Shipment without AWB"' : ''}>
+                <button type="button" class="btn btn-sm btn-outline-dark" onclick="adminAssignShiprocketAwb('${o.id}', '${o.shiprocket_shipment_id}', this)" ${!hasSrShipment || hasAwb ? 'disabled title="Requires Shipment without AWB"' : ''}>
                   <i class="bi bi-person-badge me-1"></i> Assign Courier / AWB
                 </button>
 
-                <button type="button" class="btn btn-sm btn-outline-success" onclick="adminRequestShiprocketPickup('${o.id}', '${o.shiprocket_shipment_id}')" ${!hasAwb || isPickupRequested ? 'disabled title="Requires AWB and not yet picked up"' : ''}>
+                <button type="button" class="btn btn-sm btn-outline-success" onclick="adminRequestShiprocketPickup('${o.id}', '${o.shiprocket_shipment_id}', this)" ${!hasAwb || isPickupRequested ? 'disabled title="Requires AWB and not yet picked up"' : ''}>
                   <i class="bi bi-calendar-check me-1"></i> Request Pickup
                 </button>
 
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="adminGenerateShiprocketLabel('${o.id}', '${o.shiprocket_shipment_id}')" ${!hasSrShipment ? 'disabled' : ''}>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="adminGenerateShiprocketLabel('${o.id}', '${o.shiprocket_shipment_id}', this)" ${!hasSrShipment ? 'disabled' : ''}>
                   <i class="bi bi-printer me-1"></i> Generate Label
                 </button>
 
@@ -871,7 +878,7 @@
                 ` : ''}
 
                 ${hasSrOrder ? `
-                  <button type="button" class="btn btn-sm btn-outline-danger ms-auto" onclick="adminCancelShiprocket('${o.id}', '${o.shiprocket_order_id}')">
+                  <button type="button" class="btn btn-sm btn-outline-danger ms-auto" onclick="adminCancelShiprocket('${o.id}', '${o.shiprocket_order_id}', this)">
                     <i class="bi bi-x-circle me-1"></i> Cancel Shipment
                   </button>
                 ` : ''}
@@ -1062,30 +1069,63 @@
     // =========================================================================
     // SHIPROCKET FULFILLMENT ACTIONS
     // =========================================================================
-    async function adminCreateShiprocketOrder(orderId) {
+    async function adminCreateShiprocketOrder(orderId, btnEl = null) {
+      const originalHtml = btnEl ? btnEl.innerHTML : null;
+      if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Creating...';
+      }
       showToast(`Contacting Shiprocket to create shipment for ${orderId}...`);
       try {
         const res = await fetchJsonSafe('/api/shiprocket/create-order', {
           method: 'POST',
-          body: JSON.stringify({ order_id: orderId })
+          body: JSON.stringify({ order_id: orderId, order_number: orderId })
         });
 
         if (res.data && res.data.success) {
-          showToast(`Shiprocket shipment created! Shipment ID: ${res.data.data?.shiprocket_shipment_id || ''}`);
-          await loadOrdersFromAllSources();
-          const modalEl = document.getElementById('orderModal');
-          const modal = bootstrap.Modal.getInstance(modalEl);
-          if (modal) modal.hide();
-          setTimeout(() => viewOrderDetails(orderId), 300);
+          const srData = res.data.data || {};
+          showToast(`Shiprocket shipment created! Shipment ID: ${srData.shiprocket_shipment_id || ''}`);
+          
+          // 1. Update in localOrders immediately
+          const idx = (localOrders || []).findIndex(x => x.id === orderId || x.order_number === orderId);
+          if (idx > -1) {
+            localOrders[idx].shiprocket_order_id = String(srData.shiprocket_order_id || '');
+            localOrders[idx].shiprocket_shipment_id = String(srData.shiprocket_shipment_id || '');
+            localOrders[idx].shipping_status = srData.shipping_status || 'ORDER_CREATED';
+            if (srData.awb_code) localOrders[idx].awb_code = srData.awb_code;
+            if (srData.courier_name) localOrders[idx].courier_name = srData.courier_name;
+          }
+
+          // 2. Refresh UI in-place (both modal and table)
+          filterOrders();
+          if (currentSelectedOrderId === orderId) {
+            viewOrderDetails(orderId);
+          }
+
+          // 3. Background sync from database
+          loadOrdersFromAllSources();
         } else {
           alert(`Shiprocket error: ${res.data?.message || 'Failed to create shipment on Shiprocket'}`);
+          if (btnEl && originalHtml) {
+            btnEl.disabled = false;
+            btnEl.innerHTML = originalHtml;
+          }
         }
       } catch (err) {
         alert(`Failed to create Shiprocket shipment: ${err.message}`);
+        if (btnEl && originalHtml) {
+          btnEl.disabled = false;
+          btnEl.innerHTML = originalHtml;
+        }
       }
     }
 
-    async function adminAssignShiprocketAwb(orderId, shipmentId) {
+    async function adminAssignShiprocketAwb(orderId, shipmentId, btnEl = null) {
+      const originalHtml = btnEl ? btnEl.innerHTML : null;
+      if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Assigning...';
+      }
       showToast(`Assigning courier and AWB for ${orderId}...`);
       try {
         const res = await fetchJsonSafe('/api/shiprocket/assign-awb', {
@@ -1094,21 +1134,43 @@
         });
 
         if (res.data && res.data.success) {
-          showToast(`AWB ${res.data.data?.awb_code} assigned with ${res.data.data?.courier_name || 'Courier'}!`);
-          await loadOrdersFromAllSources();
-          const modalEl = document.getElementById('orderModal');
-          const modal = bootstrap.Modal.getInstance(modalEl);
-          if (modal) modal.hide();
-          setTimeout(() => viewOrderDetails(orderId), 300);
+          const awbData = res.data.data || {};
+          showToast(`AWB ${awbData.awb_code} assigned with ${awbData.courier_name || 'Courier'}!`);
+          
+          const idx = (localOrders || []).findIndex(x => x.id === orderId || x.order_number === orderId);
+          if (idx > -1) {
+            localOrders[idx].awb_code = awbData.awb_code;
+            localOrders[idx].courier_name = awbData.courier_name || localOrders[idx].courier_name;
+            localOrders[idx].shipping_status = 'AWB_ASSIGNED';
+          }
+
+          filterOrders();
+          if (currentSelectedOrderId === orderId) {
+            viewOrderDetails(orderId);
+          }
+          loadOrdersFromAllSources();
         } else {
           alert(`AWB assignment error: ${res.data?.message || 'Unable to assign AWB'}`);
+          if (btnEl && originalHtml) {
+            btnEl.disabled = false;
+            btnEl.innerHTML = originalHtml;
+          }
         }
       } catch (err) {
         alert(`Failed to assign AWB: ${err.message}`);
+        if (btnEl && originalHtml) {
+          btnEl.disabled = false;
+          btnEl.innerHTML = originalHtml;
+        }
       }
     }
 
-    async function adminRequestShiprocketPickup(orderId, shipmentId) {
+    async function adminRequestShiprocketPickup(orderId, shipmentId, btnEl = null) {
+      const originalHtml = btnEl ? btnEl.innerHTML : null;
+      if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Requesting...';
+      }
       showToast(`Requesting courier pickup for shipment ${shipmentId}...`);
       try {
         const res = await fetchJsonSafe('/api/shiprocket/pickup', {
@@ -1118,20 +1180,40 @@
 
         if (res.data && res.data.success) {
           showToast(`Pickup scheduled successfully!`);
-          await loadOrdersFromAllSources();
-          const modalEl = document.getElementById('orderModal');
-          const modal = bootstrap.Modal.getInstance(modalEl);
-          if (modal) modal.hide();
-          setTimeout(() => viewOrderDetails(orderId), 300);
+          
+          const idx = (localOrders || []).findIndex(x => x.id === orderId || x.order_number === orderId);
+          if (idx > -1) {
+            localOrders[idx].pickup_status = 'PICKUP_REQUESTED';
+            localOrders[idx].shipping_status = 'PICKUP_REQUESTED';
+          }
+
+          filterOrders();
+          if (currentSelectedOrderId === orderId) {
+            viewOrderDetails(orderId);
+          }
+          loadOrdersFromAllSources();
         } else {
           alert(`Pickup request error: ${res.data?.message || 'Unable to schedule pickup'}`);
+          if (btnEl && originalHtml) {
+            btnEl.disabled = false;
+            btnEl.innerHTML = originalHtml;
+          }
         }
       } catch (err) {
         alert(`Failed to request pickup: ${err.message}`);
+        if (btnEl && originalHtml) {
+          btnEl.disabled = false;
+          btnEl.innerHTML = originalHtml;
+        }
       }
     }
 
-    async function adminGenerateShiprocketLabel(orderId, shipmentId) {
+    async function adminGenerateShiprocketLabel(orderId, shipmentId, btnEl = null) {
+      const originalHtml = btnEl ? btnEl.innerHTML : null;
+      if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...';
+      }
       showToast(`Generating printable shipping label...`);
       try {
         const res = await fetchJsonSafe('/api/shiprocket/label', {
@@ -1142,22 +1224,37 @@
         if (res.data && res.data.success && res.data.label_url) {
           showToast(`Shipping label generated!`);
           window.open(res.data.label_url, '_blank');
-          await loadOrdersFromAllSources();
-          const modalEl = document.getElementById('orderModal');
-          const modal = bootstrap.Modal.getInstance(modalEl);
-          if (modal) modal.hide();
-          setTimeout(() => viewOrderDetails(orderId), 300);
+          
+          const idx = (localOrders || []).findIndex(x => x.id === orderId || x.order_number === orderId);
+          if (idx > -1) {
+            localOrders[idx].shipping_label_url = res.data.label_url;
+          }
+
+          filterOrders();
+          if (currentSelectedOrderId === orderId) {
+            viewOrderDetails(orderId);
+          }
+          loadOrdersFromAllSources();
         } else {
           alert(`Label generation notice: ${res.data?.message || 'Label not yet available from courier partner'}`);
         }
       } catch (err) {
         alert(`Failed to generate label: ${err.message}`);
+      } finally {
+        if (btnEl && originalHtml) {
+          btnEl.disabled = false;
+          btnEl.innerHTML = originalHtml;
+        }
       }
     }
 
-    async function adminCancelShiprocket(orderId, srOrderId) {
+    async function adminCancelShiprocket(orderId, srOrderId, btnEl = null) {
       if (!confirm(`Are you sure you want to cancel the Shiprocket shipment for ${orderId}?`)) return;
 
+      if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Cancelling...';
+      }
       showToast(`Cancelling Shiprocket shipment...`);
       try {
         const res = await fetchJsonSafe('/api/shiprocket/cancel', {
@@ -1167,16 +1264,30 @@
 
         if (res.data && res.data.success) {
           showToast(`Shipment cancelled successfully.`);
-          await loadOrdersFromAllSources();
-          const modalEl = document.getElementById('orderModal');
-          const modal = bootstrap.Modal.getInstance(modalEl);
-          if (modal) modal.hide();
-          setTimeout(() => viewOrderDetails(orderId), 300);
+          
+          const idx = (localOrders || []).findIndex(x => x.id === orderId || x.order_number === orderId);
+          if (idx > -1) {
+            localOrders[idx].shipping_status = 'CANCELLED';
+          }
+
+          filterOrders();
+          if (currentSelectedOrderId === orderId) {
+            viewOrderDetails(orderId);
+          }
+          loadOrdersFromAllSources();
         } else {
           alert(`Cancellation error: ${res.data?.message || 'Unable to cancel shipment'}`);
+          if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.innerHTML = '<i class="bi bi-x-circle me-1"></i> Cancel Shipment';
+          }
         }
       } catch (err) {
         alert(`Failed to cancel shipment: ${err.message}`);
+        if (btnEl) {
+          btnEl.disabled = false;
+          btnEl.innerHTML = '<i class="bi bi-x-circle me-1"></i> Cancel Shipment';
+        }
       }
     }
 

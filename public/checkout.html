@@ -391,7 +391,7 @@
                     </button>
                     <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;">Sacred Express</span>
                   </span>
-                  <span class="text-success fw-bold" id="hn-co-shipping">FREE (₹0)</span>
+                  <span class="fw-bold" style="color: var(--hn-navy);" id="hn-co-shipping">Enter PIN</span>
                 </div>
 
                 <!-- Floating Charges Breakdown Popover (matching exact user reference UI) -->
@@ -399,11 +399,11 @@
                   <div class="d-flex flex-column gap-2">
                     <div class="d-flex justify-content-between align-items-center text-dark" style="font-size: 0.88rem;">
                       <span class="text-secondary fw-normal">Freight charges :</span>
-                      <span class="fw-semibold text-dark" id="hn-popover-freight">₹ 75.72</span>
+                      <span class="fw-semibold text-dark" id="hn-popover-freight">₹ 0.00</span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center text-dark" style="font-size: 0.88rem;">
                       <span class="text-secondary fw-normal">COD charges :</span>
-                      <span class="fw-semibold text-dark" id="hn-popover-cod">₹ 52</span>
+                      <span class="fw-semibold text-dark" id="hn-popover-cod">₹ 0.00</span>
                     </div>
                     <div class="d-flex align-items-center gap-2 pt-2 mt-1 border-top" style="color: #4F46E5; border-color: #F1F5F9 !important;">
                       <div class="hn-smart-order-badge">
@@ -423,8 +423,8 @@
 
               <!-- COD Handling / Convenience Charge -->
               <div class="d-flex justify-content-between mb-2 small text-secondary" id="hn-co-cod-fee-row">
-                <span id="hn-co-cod-fee-label">Payment Convenience Fee</span>
-                <span class="text-success fw-bold" id="hn-co-cod-fee">FREE (₹0)</span>
+                <span id="hn-co-cod-fee-label">COD Collection Charge</span>
+                <span class="fw-bold" style="color: var(--hn-navy);" id="hn-co-cod-fee">₹0</span>
               </div>
 
               <div class="d-flex justify-content-between mb-3 small text-secondary d-none" id="hn-co-discount-row">
@@ -669,18 +669,20 @@
       }).join('');
 
       // Shiprocket Live Rate Breakdown
-      const freightRate = hnLiveShippingRate ? (parseFloat(hnLiveShippingRate.freightCharge) || 75.72) : 75.72;
-      const codRate = hnLiveShippingRate ? (isCod ? (parseFloat(hnLiveShippingRate.codCharges) || 52.00) : 0.00) : (isCod ? 52.00 : 0.00);
-      const smartOrderFee = hnLiveShippingRate ? (parseFloat(hnLiveShippingRate.smartOrderCharge) || 5.00) : 5.00;
+      const hasLiveRate = Boolean(hnLiveShippingRate && hnLiveShippingRate.serviceable);
+      const freightRate = hasLiveRate ? (parseFloat(hnLiveShippingRate.freightCharge || hnLiveShippingRate.shippingRate) || 0) : 0;
+      const codRate = isCod ? (hasLiveRate ? (parseFloat(hnLiveShippingRate.codCharges) || 52.00) : 52.00) : 0.00;
+      const smartOrderFee = hasLiveRate ? (parseFloat(hnLiveShippingRate.smartOrderCharge) || 5.00) : 5.00;
 
-      // Delivery Charges (Promotional Free Delivery on Harinama Store orders)
-      const deliveryCharges = 0;
+      // Delivery Charges (Freight charges from Shiprocket live rate)
+      const deliveryCharges = freightRate;
       const shippingEl = document.getElementById('hn-co-shipping');
       if (shippingEl) {
-        if (hnLiveShippingRate && hnLiveShippingRate.courierName) {
-          shippingEl.innerHTML = `<span class="text-success fw-bold">FREE (₹0)</span> <span class="d-block text-muted" style="font-size: 0.68rem;">via ${hnLiveShippingRate.courierName}</span>`;
+        if (hasLiveRate) {
+          shippingEl.innerHTML = `<span class="fw-bold" style="color: var(--hn-navy);">₹${freightRate.toFixed(2)}</span>` +
+            (hnLiveShippingRate.courierName ? ` <span class="d-block text-muted" style="font-size: 0.68rem;">via ${hnLiveShippingRate.courierName}</span>` : '');
         } else {
-          shippingEl.innerText = 'FREE (₹0)';
+          shippingEl.innerHTML = `<span class="text-muted" style="font-size: 0.8rem;">Enter PIN to calculate</span>`;
         }
       }
 
@@ -688,9 +690,13 @@
       if (isCod) {
         if (paymentModeLabel) paymentModeLabel.innerHTML = '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning">Cash on Delivery (COD)</span>';
         if (codFeeLabel) codFeeLabel.innerText = 'COD Collection Charge';
-        if (codFeeEl) codFeeEl.innerHTML = '<span class="text-success fw-bold">FREE (₹0)</span>';
+        if (codFeeEl) codFeeEl.innerHTML = `<span class="fw-bold" style="color: var(--hn-navy);">₹${codRate.toFixed(2)}</span>`;
         if (totalLabel) totalLabel.innerText = 'Cash Payable on Delivery:';
-        if (totalSubtext) totalSubtext.innerText = '(Pay exact cash when package arrives)';
+        if (totalSubtext) {
+          totalSubtext.innerText = hasLiveRate
+            ? `(Includes ₹${freightRate.toFixed(2)} delivery + ₹${codRate.toFixed(2)} COD fee)`
+            : `(Includes estimated COD collection fee)`;
+        }
         if (noticeBox) {
           noticeBox.style.background = '#FFFBEB';
           noticeBox.style.border = '1px solid #FDE68A';
@@ -698,16 +704,20 @@
           noticeBox.innerHTML = `
             <div class="d-flex align-items-center gap-2">
               <i class="bi bi-cash-coin fs-5 text-warning-emphasis"></i>
-              <span><strong>Cash on Delivery (COD) Selected</strong>: Please keep cash ready for the delivery partner upon arrival.</span>
+              <span><strong>Cash on Delivery (COD) Selected</strong>: Standard ₹${codRate.toFixed(0)} courier collection fee applies. Keep cash ready upon arrival.</span>
             </div>
           `;
         }
       } else {
         if (paymentModeLabel) paymentModeLabel.innerHTML = '<span class="badge bg-success-subtle text-success border border-success-subtle">Online / Prepaid (Normal)</span>';
-        if (codFeeLabel) codFeeLabel.innerText = 'Payment Gateway Fee';
-        if (codFeeEl) codFeeEl.innerHTML = '<span class="text-success fw-bold">FREE (₹0)</span>';
+        if (codFeeLabel) codFeeLabel.innerText = 'Payment Mode Benefit';
+        if (codFeeEl) codFeeEl.innerHTML = '<span class="text-success fw-bold">FREE (₹0 extra • Paid Online)</span>';
         if (totalLabel) totalLabel.innerText = 'Total Payable Amount (Online):';
-        if (totalSubtext) totalSubtext.innerText = '(Zero extra charges • Instant confirmation)';
+        if (totalSubtext) {
+          totalSubtext.innerText = hasLiveRate
+            ? `(Includes ₹${freightRate.toFixed(2)} delivery • Zero payment fees)`
+            : `(Zero extra payment fees • Instant confirmation)`;
+        }
         if (noticeBox) {
           noticeBox.style.background = '#F0FDF4';
           noticeBox.style.border = '1px solid #BBF7D0';
@@ -738,9 +748,10 @@
         if (discountRow) discountRow.classList.add('d-none');
       }
 
-      const finalTotal = Math.max(0, subtotal + deliveryCharges - checkoutDiscount);
+      const codFeeAmount = isCod ? codRate : 0;
+      const finalTotal = Math.max(0, subtotal + deliveryCharges + codFeeAmount - checkoutDiscount);
       document.getElementById('hn-co-subtotal').innerText = `₹${subtotal.toLocaleString('en-IN')}`;
-      document.getElementById('hn-co-total').innerText = `₹${finalTotal.toLocaleString('en-IN')}`;
+      document.getElementById('hn-co-total').innerText = `₹${Math.round(finalTotal).toLocaleString('en-IN')}`;
 
       // Update Delivery Charges Popover breakdown elements dynamically
       const popoverFreight = document.getElementById('hn-popover-freight');
@@ -748,15 +759,15 @@
       const popoverSmart = document.getElementById('hn-popover-smart');
 
       if (popoverFreight) popoverFreight.innerText = `₹ ${freightRate.toFixed(2)}`;
-      if (popoverCod) popoverCod.innerText = isCod ? `₹ ${codRate.toFixed(0)}` : '₹ 0 (Waived)';
+      if (popoverCod) popoverCod.innerText = isCod ? `₹ ${codRate.toFixed(2)}` : '₹ 0 (Online Payment)';
       if (popoverSmart) popoverSmart.innerText = `${smartOrderFee.toFixed(0)}`;
 
       // Update Submit Button Label
       if (submitBtn) {
         if (isCod) {
-          submitBtn.innerHTML = `<i class="bi bi-box-seam me-1"></i> Confirm COD Order • ₹${finalTotal.toLocaleString('en-IN')} on Delivery`;
+          submitBtn.innerHTML = `<i class="bi bi-box-seam me-1"></i> Confirm COD Order • ₹${Math.round(finalTotal).toLocaleString('en-IN')} on Delivery`;
         } else {
-          submitBtn.innerHTML = `<i class="bi bi-shield-lock-fill me-1"></i> Pay ₹${finalTotal.toLocaleString('en-IN')} Online & Place Order`;
+          submitBtn.innerHTML = `<i class="bi bi-shield-lock-fill me-1"></i> Pay ₹${Math.round(finalTotal).toLocaleString('en-IN')} Online & Place Order`;
         }
       }
     }
@@ -983,8 +994,10 @@
       const isCod = selectedPaymentText.includes('Cash on Delivery') || selectedPaymentText.includes('COD');
       const orderNumber = 'HN-2026-' + Math.floor(10000 + Math.random() * 90000);
       const subtotal = cart.reduce((acc, i) => acc + (i.price * (i.qty || 1)), 0);
-      const shipping = 0; // Promotional Free Delivery
-      const total = Math.max(0, subtotal + shipping - checkoutDiscount);
+      const freightFee = hnLiveShippingRate ? (parseFloat(hnLiveShippingRate.freightCharge || hnLiveShippingRate.shippingRate) || 0) : 0;
+      const codFee = isCod ? (hnLiveShippingRate ? (parseFloat(hnLiveShippingRate.codCharges) || 52.00) : 52.00) : 0;
+      const totalShippingFee = Math.round((freightFee + codFee) * 100) / 100;
+      const total = Math.max(0, Math.round((subtotal + totalShippingFee - checkoutDiscount) * 100) / 100);
       const formattedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const fullAddressStr = `${address}${village ? ', ' + village : ''}, ${city}, ${state} - ${pin}`;
       const trackingNum = 'HN-EXP-' + Math.floor(100000 + Math.random() * 900000);
@@ -1018,8 +1031,8 @@
           weight: i.weight || null
         })),
         subtotal,
-        shipping,
-        shipping_fee: shipping,
+        shipping: totalShippingFee,
+        shipping_fee: totalShippingFee,
         discount: checkoutDiscount,
         total,
         status: isCod ? 'Confirmed' : 'Confirmed',
@@ -1088,7 +1101,7 @@
                 state,
                 pin
               },
-              shipping_fee: shipping,
+              shipping_fee: totalShippingFee,
               courier_name: courierTitle,
               chargeable_weight: hnLiveShippingRate?.chargeableWeight || 0.05,
               shipping_rate_response: hnLiveShippingRate || null,
@@ -1707,6 +1720,11 @@
         }
       }
 
+      // If a PIN code is already present, fetch Shiprocket rates immediately
+      const initialPin = (document.getElementById('hn-ship-pin')?.value || '').replace(/\D/g, '');
+      if (initialPin.length === 6) {
+        checkShiprocketRate(initialPin);
+      }
     });
   </script>
 </body>

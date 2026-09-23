@@ -668,13 +668,16 @@
         `;
       }).join('');
 
-      // Shiprocket Live Rate Breakdown
+      // Shiprocket Live Rate Breakdown (Subsidized 50% Half-Rate for Customers)
       const hasLiveRate = Boolean(hnLiveShippingRate && hnLiveShippingRate.serviceable);
-      const freightRate = hasLiveRate ? (parseFloat(hnLiveShippingRate.freightCharge || hnLiveShippingRate.shippingRate) || 0) : 0;
-      const codRate = isCod ? (hasLiveRate ? (parseFloat(hnLiveShippingRate.codCharges) || 52.00) : 52.00) : 0.00;
+      const rawFreightRate = hasLiveRate ? (parseFloat(hnLiveShippingRate.freightCharge || hnLiveShippingRate.shippingRate) || 0) : 0;
+      const freightRate = Math.round((rawFreightRate * 0.5) * 100) / 100; // Half of freight charges
+      
+      const rawCodRate = isCod ? (hasLiveRate ? (parseFloat(hnLiveShippingRate.codCharges) || 50.00) : 50.00) : 0.00;
+      const codRate = Math.round((rawCodRate * 0.5) * 100) / 100; // Half of COD charges
       const smartOrderFee = hasLiveRate ? (parseFloat(hnLiveShippingRate.smartOrderCharge) || 5.00) : 5.00;
 
-      // Delivery Charges (Freight charges from Shiprocket live rate)
+      // Delivery Charges (50% Subsidized Delivery)
       const deliveryCharges = freightRate;
       const shippingEl = document.getElementById('hn-co-shipping');
       if (shippingEl) {
@@ -695,7 +698,7 @@
         if (totalSubtext) {
           totalSubtext.innerText = hasLiveRate
             ? `(Includes ₹${freightRate.toFixed(2)} delivery + ₹${codRate.toFixed(2)} COD fee)`
-            : `(Includes estimated COD collection fee)`;
+            : `(Includes ₹${codRate.toFixed(2)} COD fee)`;
         }
         if (noticeBox) {
           noticeBox.style.background = '#FFFBEB';
@@ -704,7 +707,7 @@
           noticeBox.innerHTML = `
             <div class="d-flex align-items-center gap-2">
               <i class="bi bi-cash-coin fs-5 text-warning-emphasis"></i>
-              <span><strong>Cash on Delivery (COD) Selected</strong>: Standard ₹${codRate.toFixed(0)} courier collection fee applies. Keep cash ready upon arrival.</span>
+              <span><strong>Cash on Delivery (COD) Selected</strong>: ₹${codRate.toFixed(0)} courier cash collection fee applies. Keep cash ready upon arrival.</span>
             </div>
           `;
         }
@@ -994,8 +997,10 @@
       const isCod = selectedPaymentText.includes('Cash on Delivery') || selectedPaymentText.includes('COD');
       const orderNumber = 'HN-2026-' + Math.floor(10000 + Math.random() * 90000);
       const subtotal = cart.reduce((acc, i) => acc + (i.price * (i.qty || 1)), 0);
-      const freightFee = hnLiveShippingRate ? (parseFloat(hnLiveShippingRate.freightCharge || hnLiveShippingRate.shippingRate) || 0) : 0;
-      const codFee = isCod ? (hnLiveShippingRate ? (parseFloat(hnLiveShippingRate.codCharges) || 52.00) : 52.00) : 0;
+      const rawFreight = hnLiveShippingRate ? (parseFloat(hnLiveShippingRate.freightCharge || hnLiveShippingRate.shippingRate) || 0) : 0;
+      const freightFee = Math.round((rawFreight * 0.5) * 100) / 100;
+      const rawCod = isCod ? (hnLiveShippingRate ? (parseFloat(hnLiveShippingRate.codCharges) || 50.00) : 50.00) : 0;
+      const codFee = Math.round((rawCod * 0.5) * 100) / 100;
       const totalShippingFee = Math.round((freightFee + codFee) * 100) / 100;
       const total = Math.max(0, Math.round((subtotal + totalShippingFee - checkoutDiscount) * 100) / 100);
       const formattedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

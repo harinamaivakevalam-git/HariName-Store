@@ -34,6 +34,26 @@
   `;
   };
 
+  const renderProductSkeletons = (count = 8, colClass = 'col-6 col-md-4 col-lg-3') => {
+    let skeletons = '';
+    for (let i = 0; i < count; i++) {
+      skeletons += `
+        <div class="${colClass}">
+          <div class="hn-skeleton-card">
+            <div class="hn-skeleton hn-skeleton-img"></div>
+            <div class="hn-skeleton hn-skeleton-title"></div>
+            <div class="hn-skeleton hn-skeleton-title-short"></div>
+            <div class="hn-skeleton hn-skeleton-price"></div>
+            <div class="hn-skeleton hn-skeleton-rating"></div>
+            <div class="hn-skeleton hn-skeleton-btn"></div>
+          </div>
+        </div>
+      `;
+    }
+    return skeletons;
+  };
+  window.renderProductSkeletons = renderProductSkeletons;
+
   const showToast = (message, type = 'success') => {
     let container = document.getElementById('hn-toast-container');
     if (!container) {

@@ -149,7 +149,14 @@
         <!-- Right Product Grid -->
         <div class="col-lg-9">
           <div class="row g-3" id="hn-shop-grid">
-            <!-- Dynamically populated from API / Database -->
+            <div class="col-6 col-md-4 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+            <div class="col-6 col-md-4 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+            <div class="col-6 col-md-4 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+            <div class="col-6 col-md-4 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+            <div class="col-6 col-md-4 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+            <div class="col-6 col-md-4 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+            <div class="col-6 col-md-4 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+            <div class="col-6 col-md-4 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
           </div>
 
           <!-- Pagination Controls -->
@@ -322,6 +329,11 @@
     async function applyFilters(resetPage = false) {
       if (resetPage) currentPage = 1;
       renderShopCategories();
+
+      const grid = document.getElementById('hn-shop-grid');
+      if (grid && typeof window.renderProductSkeletons === 'function') {
+        grid.innerHTML = window.renderProductSkeletons(8);
+      }
 
       const searchInput = document.getElementById('hn-shop-search');
       const searchQuery = (searchInput ? searchInput.value : '').trim();

@@ -239,7 +239,10 @@
         </div>
 
         <div class="row g-2 g-md-3 hn-reveal-stagger" id="hn-featured-grid">
-          <!-- Injected via JavaScript from HARINAMA_DATA: Cards -->
+          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
         </div>
 
       </div>
@@ -436,12 +439,9 @@
       }
 
       if (!prods || prods.length === 0) {
-        grid.innerHTML = `
-          <div class="col-12 text-center py-5 text-muted">
-            <span class="fs-1 d-block mb-2">🪷</span>
-            Loading sacred collection...
-          </div>
-        `;
+        grid.innerHTML = (typeof window.renderProductSkeletons === 'function') 
+          ? window.renderProductSkeletons(4, 'col-6 col-md-6 col-lg-3') 
+          : '<div class="col-12 text-center py-5 text-muted"><span class="fs-1 d-block mb-2">🪷</span>Loading sacred collection...</div>';
         return;
       }
 

@@ -1246,6 +1246,76 @@ a.hn-btn-gold:active,
   animation: hnHeartPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* --------------------------------------------------------------------------
+   SKELETON LOADING SHIMMER ANIMATION
+   -------------------------------------------------------------------------- */
+.hn-skeleton-card {
+  background: #FFFFFF;
+  border: 1px solid var(--hn-border, #EAE5D9);
+  border-radius: var(--hn-radius-sm, 8px);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.hn-skeleton {
+  background: linear-gradient(90deg, #F0ECE1 0%, #FAF7F0 50%, #F0ECE1 100%);
+  background-size: 200% 100%;
+  animation: hnSkeletonShimmer 1.5s infinite ease-in-out;
+  border-radius: 6px;
+}
+
+@keyframes hnSkeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.hn-skeleton-img {
+  height: 190px;
+  width: 100%;
+  border-radius: var(--hn-radius-sm, 8px);
+  margin-bottom: 12px;
+}
+
+.hn-skeleton-title {
+  height: 16px;
+  width: 85%;
+  margin-bottom: 8px;
+}
+
+.hn-skeleton-title-short {
+  height: 14px;
+  width: 60%;
+  margin-bottom: 10px;
+}
+
+.hn-skeleton-price {
+  height: 18px;
+  width: 45%;
+  margin-bottom: 10px;
+}
+
+.hn-skeleton-rating {
+  height: 12px;
+  width: 65%;
+  margin-bottom: 14px;
+}
+
+.hn-skeleton-btn {
+  height: 36px;
+  width: 100%;
+  border-radius: 6px;
+  margin-top: auto;
+}
+
 .hn-card-title {
   font-family: var(--hn-font-sans);
   font-size: 0.95rem;

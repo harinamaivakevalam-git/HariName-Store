@@ -475,8 +475,8 @@
       }
       if (!currentProduct) return;
       const qty = parseInt(document.getElementById('hn-qty-val').value || '1', 10);
-      const material = document.getElementById('hn-material-select').value || 'Acrylic';
-      handleAddToCart(currentProduct.id, qty, material);
+      const material = document.getElementById('hn-material-select').value || 'Standard';
+      handleAddToCart(currentProduct, qty, material);
     }
 
     function detailBuyNow() {
@@ -486,7 +486,7 @@
       }
       if (!currentProduct) return;
       const qty = parseInt(document.getElementById('hn-qty-val').value || '1', 10);
-      const material = document.getElementById('hn-material-select').value || 'Acrylic';
+      const material = document.getElementById('hn-material-select').value || 'Standard';
 
       const btn = document.getElementById('hn-detail-buynow-btn');
       if (btn) {
@@ -494,7 +494,7 @@
         btn.disabled = true;
       }
 
-      handleBuyNow(currentProduct.id, qty, material);
+      handleBuyNow(currentProduct, qty, material);
     }
 
     function handleDetailWishlist() {
@@ -503,16 +503,95 @@
         return;
       }
       const btn = document.getElementById('hn-detail-wishlist-btn');
-      toggleWishlist(currentProduct ? currentProduct.id : '', btn);
+      toggleWishlist(currentProduct || '', btn);
     }
 
-    function switchToReviewsTab() {
-      const tabEl = document.getElementById('reviews-tab');
+    function switchToTab(tabId) {
+      const tabEl = document.getElementById(tabId);
       if (tabEl) {
-        const tab = new bootstrap.Tab(tabEl);
-        tab.show();
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+          const tab = new bootstrap.Tab(tabEl);
+          tab.show();
+        } else {
+          tabEl.click();
+        }
         tabEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
+    }
+
+    function showSecureModal() {
+      let modal = document.getElementById('hnSecureCheckoutModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'hnSecureCheckoutModal';
+        modal.className = 'hn-review-modal-overlay active';
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('opacity', '1', 'important');
+        modal.style.setProperty('visibility', 'visible', 'important');
+        modal.style.setProperty('pointer-events', 'auto', 'important');
+        modal.innerHTML = `
+          <div class="hn-review-modal-card" style="max-width: 480px; text-align: center; border-top: 5px solid #C59B27;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-shield-check text-warning fs-3"></i>
+                <h5 class="fw-bold mb-0 text-navy" style="font-family: var(--hn-font-serif);">100% Sacred & Secure Checkout</h5>
+              </div>
+              <button type="button" class="hn-review-modal-close" onclick="closeSecureModal()" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="py-2 text-start">
+              <div class="d-flex align-items-start gap-3 mb-3 p-3 bg-light rounded-3">
+                <i class="bi bi-lock-fill text-success fs-4 mt-1"></i>
+                <div>
+                  <div class="fw-bold text-navy">256-Bit SSL Encrypted</div>
+                  <div class="small text-secondary">Bank-grade end-to-end encryption safeguarding every payment and personal detail.</div>
+                </div>
+              </div>
+              <div class="d-flex align-items-start gap-3 mb-3 p-3 bg-light rounded-3">
+                <i class="bi bi-patch-check-fill text-warning fs-4 mt-1"></i>
+                <div>
+                  <div class="fw-bold text-navy">Sri Dham Vrindavan Authenticity</div>
+                  <div class="small text-secondary">Direct sourcing with complete spiritual reverence and traditional blessing.</div>
+                </div>
+              </div>
+              <div class="d-flex align-items-start gap-3 p-3 bg-light rounded-3">
+                <i class="bi bi-wallet2 text-primary fs-4 mt-1"></i>
+                <div>
+                  <div class="fw-bold text-navy">Verified Cash on Delivery & UPI</div>
+                  <div class="small text-secondary">Pay securely upon doorstep delivery or via instant UPI with 0% risk.</div>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn hn-btn-gold w-100 mt-4 py-2" onclick="closeSecureModal()">
+              Jai Sri Radhe • Close
+            </button>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      } else {
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('opacity', '1', 'important');
+        modal.style.setProperty('visibility', 'visible', 'important');
+        modal.style.setProperty('pointer-events', 'auto', 'important');
+      }
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeSecureModal() {
+      const modal = document.getElementById('hnSecureCheckoutModal');
+      if (modal) {
+        modal.style.setProperty('display', 'none', 'important');
+        modal.style.setProperty('opacity', '0', 'important');
+        modal.style.setProperty('visibility', 'hidden', 'important');
+        modal.style.setProperty('pointer-events', 'none', 'important');
+      }
+      document.body.style.overflow = '';
+    }
+    window.closeSecureModal = closeSecureModal;
+    window.showSecureModal = showSecureModal;
+    window.switchToTab = switchToTab;
+
+    function switchToReviewsTab() {
+      switchToTab('reviews-tab');
     }
 
     // Review Stars & Modal Handlers

@@ -1686,7 +1686,18 @@ const renderFooter = () => {
 // Universal Product Catalog Resolver (Handles UUID, slug with/without hyphens, title, or SKU)
 const findCatalogProduct = (idOrSlug) => {
   if (!idOrSlug) return null;
+  if (typeof idOrSlug === 'object' && idOrSlug !== null && (idOrSlug.id || idOrSlug.name || idOrSlug.title)) {
+    return idOrSlug;
+  }
   const str = String(idOrSlug).trim();
+
+  if (typeof window !== 'undefined' && window.currentProduct && (window.currentProduct.id === str || window.currentProduct.slug === str || window.currentProduct.sku === str || window.currentProduct.name === str || window.currentProduct.title === str)) {
+    return window.currentProduct;
+  }
+  if (typeof currentProduct !== 'undefined' && currentProduct && (currentProduct.id === str || currentProduct.slug === str || currentProduct.sku === str || currentProduct.name === str || currentProduct.title === str)) {
+    return currentProduct;
+  }
+
   const list = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
   const staticList = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA._staticProducts)) ? HARINAMA_DATA._staticProducts : [];
   const allProds = [...list, ...staticList];
@@ -1795,25 +1806,36 @@ const renderProductCard = (p) => {
 window.renderProductCard = renderProductCard;
 
 // Cart Helpers with Universal Product Resolution
-const handleAddToCart = (productId, qty = 1, selectedMaterial = null, btnElement = null) => {
+const handleAddToCart = (productIdOrObj, qty = 1, selectedMaterial = null, btnElement = null) => {
   if (!isUserLoggedIn()) {
-    openAuthModal(() => handleAddToCart(productId, qty, selectedMaterial, btnElement), 'Sign in to add divine items to your sacred cart 🌸');
+    openAuthModal(() => handleAddToCart(productIdOrObj, qty, selectedMaterial, btnElement), 'Sign in to add divine items to your sacred cart 🌸');
     return;
   }
 
-  const product = findCatalogProduct(productId);
+  let product = typeof productIdOrObj === 'object' && productIdOrObj !== null 
+    ? productIdOrObj 
+    : findCatalogProduct(productIdOrObj);
+
+  if (!product && typeof window !== 'undefined' && window.currentProduct) {
+    product = window.currentProduct;
+  }
+  if (!product && typeof currentProduct !== 'undefined' && currentProduct) {
+    product = currentProduct;
+  }
+
   if (!product) {
     showToast('Product not found in catalog.', 'error');
     return;
   }
 
-  const material = selectedMaterial || product.material || 'Acrylic';
+  const productId = product.id || (typeof productIdOrObj === 'string' ? productIdOrObj : 'prod_item');
+  const material = selectedMaterial || product.material || 'Standard';
   const quantity = Math.max(1, Number(qty) || 1);
 
   let cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
 
-  const canonId = product.id;
-  const legacyId = product.legacy_id || product.id;
+  const canonId = product.id || productId;
+  const legacyId = product.legacy_id || product.id || productId;
 
   const existingIndex = cart.findIndex(item =>
     (item.id === canonId || (legacyId && item.id === legacyId) || item.id === productId) &&
@@ -1838,6 +1860,9 @@ const handleAddToCart = (productId, qty = 1, selectedMaterial = null, btnElement
 
   localStorage.setItem('hn_cart', JSON.stringify(cart));
   localStorage.setItem('cres_cart', JSON.stringify(cart));
+
+  // Calculate total count
+  const totalCount = cart.reduce((acc, item) => acc + (parseInt(item.qty, 10) || 1), 0);
 
   // Update badge with micro bounce animation
   updateHeaderBadges();
@@ -1875,24 +1900,35 @@ const handleAddToCart = (productId, qty = 1, selectedMaterial = null, btnElement
 window.handleAddToCart = handleAddToCart;
 
 // Buy Now Helper (Instant Checkout)
-const handleBuyNow = (productId, qty = 1, selectedMaterial = null) => {
+const handleBuyNow = (productIdOrObj, qty = 1, selectedMaterial = null) => {
   if (!isUserLoggedIn()) {
-    openAuthModal(() => handleBuyNow(productId, qty, selectedMaterial), 'Sign in to proceed to instant checkout 🌸');
+    openAuthModal(() => handleBuyNow(productIdOrObj, qty, selectedMaterial), 'Sign in to proceed to instant checkout 🌸');
     return;
   }
 
-  const product = findCatalogProduct(productId);
+  let product = typeof productIdOrObj === 'object' && productIdOrObj !== null 
+    ? productIdOrObj 
+    : findCatalogProduct(productIdOrObj);
+
+  if (!product && typeof window !== 'undefined' && window.currentProduct) {
+    product = window.currentProduct;
+  }
+  if (!product && typeof currentProduct !== 'undefined' && currentProduct) {
+    product = currentProduct;
+  }
+
   if (!product) {
     showToast('Product not found in catalog.', 'error');
     return;
   }
 
-  const material = selectedMaterial || product.material || 'Acrylic';
+  const productId = product.id || (typeof productIdOrObj === 'string' ? productIdOrObj : 'prod_item');
+  const material = selectedMaterial || product.material || 'Standard';
   const quantity = Math.max(1, Number(qty) || 1);
 
   let cart = JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]');
-  const canonId = product.id;
-  const legacyId = product.legacy_id || product.id;
+  const canonId = product.id || productId;
+  const legacyId = product.legacy_id || product.id || productId;
 
   const existingIndex = cart.findIndex(item =>
     (item.id === canonId || (legacyId && item.id === legacyId) || item.id === productId) &&
@@ -1923,13 +1959,17 @@ const handleBuyNow = (productId, qty = 1, selectedMaterial = null) => {
 window.handleBuyNow = handleBuyNow;
 
 // Wishlist Helper with Dual-ID Persistence & UI Sync
-const toggleWishlist = (productId, btn = null) => {
+const toggleWishlist = (productIdOrObj, btn = null) => {
   if (!isUserLoggedIn()) {
-    openAuthModal(() => toggleWishlist(productId, btn), 'Sign in to save items to your sacred wishlist 🌸');
+    openAuthModal(() => toggleWishlist(productIdOrObj, btn), 'Sign in to save items to your sacred wishlist 🌸');
     return;
   }
 
-  const prod = findCatalogProduct(productId);
+  const prod = typeof productIdOrObj === 'object' && productIdOrObj !== null
+    ? productIdOrObj
+    : findCatalogProduct(productIdOrObj);
+
+  const productId = typeof productIdOrObj === 'string' ? productIdOrObj : (prod ? prod.id : 'item');
   const canonId = prod ? prod.id : productId;
   const legacyId = prod ? prod.legacy_id : null;
   const slug = prod ? prod.slug : null;

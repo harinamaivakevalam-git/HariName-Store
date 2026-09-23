@@ -2084,6 +2084,12 @@ const getApiUrl = (path) => {
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
   if (typeof window === 'undefined') return path;
 
+  // Custom base URL support
+  const customBase = window.HN_API_BASE_URL || localStorage.getItem('hn_api_base_url');
+  if (customBase && customBase.startsWith('http')) {
+    return customBase.replace(/\/+$/, '') + path;
+  }
+
   const { hostname, port, protocol } = window.location;
 
   // Running via local file protocol

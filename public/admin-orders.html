@@ -349,6 +349,13 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
 
     function getApiUrl(path) {
+      if (typeof window !== 'undefined' && typeof window.getApiUrl === 'function' && window.getApiUrl !== getApiUrl) {
+        return window.getApiUrl(path);
+      }
+      const customBase = (typeof window !== 'undefined' && (window.HN_API_BASE_URL || localStorage.getItem('hn_api_base_url')));
+      if (customBase && customBase.startsWith('http')) {
+        return customBase.replace(/\/+$/, '') + path;
+      }
       if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         if (window.location.port === '5000') return path;
@@ -391,7 +398,9 @@
         status: res.status,
         data: {
           success: false,
-          message: text ? text.replace(/<[^>]*>?/gm, '').trim().slice(0, 200) : `Server responded with HTTP ${res.status}`
+          message: text 
+            ? text.replace(/<[^>]*>?/gm, '').trim().slice(0, 200) 
+            : `Backend API server is unreachable at ${url} (received empty ${res.status} response from static CDN). Please ensure the Node.js Web Service on Render is running.`
         }
       };
     }

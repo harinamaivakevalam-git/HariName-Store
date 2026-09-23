@@ -55,7 +55,14 @@ async function sendOrderConfirmationEmail(order) {
 
     const customerName = order.shipping_address?.name || order.guest_name || 'Devotee';
     const orderNumber = order.order_number || order.id;
-    const clientUrl = (process.env.CLIENT_URL || process.env.API_BASE_URL || 'https://www.harinamastore.com').replace(/\/$/, '');
+
+    // Use live website domain for customer-facing email templates
+    let clientUrl = process.env.CLIENT_URL || 'https://www.harinamastore.com';
+    if (clientUrl.includes('localhost') || clientUrl.includes('127.0.0.1')) {
+      clientUrl = 'https://www.harinamastore.com';
+    }
+    clientUrl = clientUrl.replace(/\/$/, '');
+
     const trackingUrl = `${clientUrl}/order-tracking.html?order=${encodeURIComponent(orderNumber)}`;
     const invoiceUrl = `${clientUrl}/invoice.html?order=${encodeURIComponent(orderNumber)}&print=true`;
 
@@ -65,7 +72,12 @@ async function sendOrderConfirmationEmail(order) {
       const qty = item.quantity || item.qty || 1;
       const price = parseFloat(item.price) || 0;
       const total = price * qty;
-      const img = item.product_image || item.image || `${clientUrl}/assets/images/krishna-logo.jpg`;
+      let img = item.product_image || item.image || `${clientUrl}/assets/images/krishna-logo.jpg`;
+      if (img.startsWith('/')) {
+        img = `${clientUrl}${img}`;
+      } else if (!img.startsWith('http')) {
+        img = `${clientUrl}/${img}`;
+      }
 
       return `
         <tr style="border-bottom: 1px solid #EFE8DE;">

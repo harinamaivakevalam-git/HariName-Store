@@ -96,6 +96,18 @@ async function runShiprocketConsole() {
     console.log('  • Supabase admin not initialized.');
   }
 
+  // 5. If specific order provided as argument, fulfill it
+  const targetOrderNum = process.argv[2];
+  if (targetOrderNum && targetOrderNum !== 'status') {
+    console.log(`\n[5/5] Fulfilling Order ${targetOrderNum} to Shiprocket...`);
+    try {
+      const res = await processOrderFulfillment(targetOrderNum, { force: true });
+      console.log('  • Result:', JSON.stringify(res, null, 2));
+    } catch (e) {
+      console.error('  ❌ Fulfillment error:', e.message);
+    }
+  }
+
   console.log('\n' + '='.repeat(65));
   console.log('✅  DIAGNOSTICS COMPLETE');
   console.log('='.repeat(65) + '\n');

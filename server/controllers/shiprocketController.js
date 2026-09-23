@@ -133,6 +133,42 @@ exports.createOrder = async (req, res, next) => {
 };
 
 /**
+ * 2b. Public/Order Checkout Sync to Shiprocket
+ * POST /api/shiprocket/sync-order
+ */
+exports.syncOrder = async (req, res, next) => {
+  try {
+    const { order_id, order_number } = req.body;
+    const identifier = order_id || order_number;
+
+    if (!identifier) {
+      return res.status(400).json({ success: false, message: 'order_id or order_number is required.' });
+    }
+
+    const result = await processOrderFulfillment(identifier);
+
+    if (result.success) {
+      return res.status(200).json({
+        success: true,
+        message: 'Order synced to Shiprocket successfully.',
+        data: result.data
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: result.message || 'Order received, processing fulfillment.',
+      data: result.data || null
+    });
+  } catch (err) {
+    res.status(200).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
+
+/**
  * 3. Assign Courier & AWB
  * POST /api/shiprocket/assign-awb
  */

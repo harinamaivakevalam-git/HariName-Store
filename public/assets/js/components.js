@@ -1740,7 +1740,7 @@ const renderProductCard = (p) => {
   const prodLink = `/product-details?id=${encodeURIComponent(p.slug || p.id)}`;
 
   return `
-    <div class="col-6 col-md-4 col-lg-2">
+    <div class="col-6 col-md-6 col-lg-3">
       <div class="hn-product-card" data-product-id="${p.id}" data-legacy-id="${p.legacy_id || ''}">
         
         <button class="hn-card-wishlist ${isWish ? 'active text-danger' : ''}" onclick="toggleWishlist('${p.id}', this)" title="Wishlist" aria-label="Add to wishlist">

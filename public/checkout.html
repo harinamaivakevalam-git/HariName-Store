@@ -847,35 +847,45 @@
               }).select().maybeSingle();
 
               if (!orderErr && insertedOrder && insertedOrder.id) {
-                // Insert line items
+                // Insert line items safely
                 const lineItems = [];
                 for (const i of cart) {
                   const isValidUuid = i.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(i.id);
-                  const pId = isValidUuid ? i.id : null;
                   const itemPrice = parseFloat(i.price) || 0;
                   const itemQty = parseInt(i.qty, 10) || 1;
 
-                  lineItems.push({
+                  const itemObj = {
                     order_id: insertedOrder.id,
-                    product_id: pId,
                     product_name: i.name || 'Sacred Devotional Item',
                     product_image: i.image || '',
                     sku: i.sku || 'HN-SKU-01',
                     quantity: itemQty,
                     price: itemPrice,
                     total: itemPrice * itemQty
-                  });
+                  };
+                  if (isValidUuid) {
+                    itemObj.product_id = i.id;
+                  }
+
+                  lineItems.push(itemObj);
                 }
                 if (lineItems.length > 0) {
-                  await sb.from('order_items').insert(lineItems);
+                  try {
+                    await sb.from('order_items').insert(lineItems);
+                  } catch (itErr) {
+                    console.warn('[Supabase] order_items insert notice:', itErr);
+                  }
                 }
 
-                // Trigger backend Shiprocket fulfillment for the client-inserted order
-                fetch(getApiUrl('/api/shiprocket/create-order'), {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ order_id: finalOrderNum })
-                }).catch(() => {});
+                // Trigger backend Shiprocket fulfillment for the client-inserted order with await & keepalive
+                try {
+                  await fetch(getApiUrl('/api/shiprocket/sync-order'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: finalOrderNum, order_number: finalOrderNum }),
+                    keepalive: true
+                  });
+                } catch (_) {}
               }
             }
           } catch (sbE) {

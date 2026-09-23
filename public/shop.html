@@ -398,25 +398,31 @@
         if (activeCuratedFilter === 'new-arrivals') {
           filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
         } else if (activeCuratedFilter === 'best-sellers') {
-          filtered = filtered.filter(p => p.trending || (p.reviews_count && p.reviews_count > 0) || (p.rating && p.rating >= 4.8));
-          if (filtered.length === 0) filtered.sort((a, b) => (b.reviews_count || 0) - (a.reviews_count || 0));
+          filtered = filtered.filter(p => p.trending || p.is_bestseller || p.is_trending || (p.reviews_count && p.reviews_count > 0) || (p.rating && parseFloat(p.rating) >= 4.5));
+          if (filtered.length === 0) filtered.sort((a, b) => (parseFloat(b.rating || 5) - parseFloat(a.rating || 5)) || ((b.reviews_count || 0) - (a.reviews_count || 0)));
         } else if (activeCuratedFilter === 'gift-sets') {
-          filtered = filtered.filter(p => 
-            (p.category_slug && p.category_slug.includes('gift')) || 
-            (p.category && p.category.toLowerCase().includes('gift')) ||
-            (p.name && (p.name.toLowerCase().includes('gift') || p.name.toLowerCase().includes('set') || p.name.toLowerCase().includes('bundle')))
-          );
+          filtered = filtered.filter(p => {
+            const cSlug = (p.category_slug || '').toLowerCase();
+            const cName = (p.category || '').toLowerCase();
+            const pName = (p.name || p.title || '').toLowerCase();
+            const pDesc = (p.description || '').toLowerCase();
+            const pTags = Array.isArray(p.tags) ? p.tags.join(' ').toLowerCase() : String(p.tags || '').toLowerCase();
+            return cSlug.includes('gift') || cName.includes('gift') || pName.includes('gift') || pName.includes('set') || pName.includes('combo') || pName.includes('kit') || pName.includes('mala') || pName.includes('bag') || pDesc.includes('gift') || pTags.includes('gift');
+          });
+          if (filtered.length === 0) filtered = [...(HARINAMA_DATA?.products || [])].filter(p => (parseFloat(p.price) || 0) >= 299 || (p.name && p.name.toLowerCase().includes('mala')));
         } else if (activeCuratedFilter === 'festival') {
-          filtered = filtered.filter(p => 
-            p.featured || 
-            (p.tags && p.tags.includes('festival')) ||
-            (p.name && (p.name.toLowerCase().includes('krishna') || p.name.toLowerCase().includes('radha') || p.name.toLowerCase().includes('jagannath') || p.name.toLowerCase().includes('gita')))
-          );
+          filtered = filtered.filter(p => {
+            const pName = (p.name || p.title || '').toLowerCase();
+            const pDesc = (p.description || '').toLowerCase();
+            const pTags = Array.isArray(p.tags) ? p.tags.join(' ').toLowerCase() : String(p.tags || '').toLowerCase();
+            return p.featured || pTags.includes('festival') || pName.includes('tulsi') || pName.includes('radha') || pName.includes('krishna') || pName.includes('jagannath') || pName.includes('kanthi') || pName.includes('gita') || pDesc.includes('sacred') || pDesc.includes('divine');
+          });
+          if (filtered.length === 0) filtered = [...(HARINAMA_DATA?.products || [])];
         } else if (activeCuratedFilter === 'under-299') {
-          filtered = filtered.filter(p => (parseFloat(p.price) || 0) <= 299);
+          filtered = filtered.filter(p => (parseFloat(p.price) || 0) <= 299).sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
         } else if (activeCuratedFilter === 'specials') {
-          filtered = filtered.filter(p => p.featured || (p.discount_percent && p.discount_percent > 10));
-          if (filtered.length === 0) filtered = [...HARINAMA_DATA.products];
+          filtered = filtered.filter(p => p.featured || p.is_special || (p.discount_percent && p.discount_percent > 10) || (p.original_price && p.price && parseFloat(p.original_price) > parseFloat(p.price)));
+          if (filtered.length === 0) filtered = [...(HARINAMA_DATA?.products || [])];
         }
       } else if (activeCollection && activeCollection !== 'all') {
         const colLower = activeCollection.toLowerCase().trim();

@@ -11,6 +11,7 @@ router.get('/track/:awb', shiprocketController.trackShipment);
 
 // 3. Webhook Receiver Endpoint (Public / Shiprocket System Facing)
 router.post('/webhook', shiprocketController.handleWebhook);
+router.post('/sync-order', shiprocketController.syncOrder);
 
 // 4. Admin Shipment Fulfillment & Operations
 router.post('/create-order', authenticate, requireAdmin, shiprocketController.createOrder);

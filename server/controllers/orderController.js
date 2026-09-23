@@ -177,18 +177,67 @@ exports.createOrder = async (req, res, next) => {
           .maybeSingle();
 
         if (existingSbOrder) {
-          console.log(`[Order Creation] Order ${orderNumber} already exists in Supabase. Returning existing order.`);
+          console.log(`[Order Creation] Order ${orderNumber} already exists in Supabase. Checking fulfillment status.`);
+
+          // If items are missing in DB, insert them
+          if ((!existingSbOrder.order_items || existingSbOrder.order_items.length === 0) && orderItemsToCreate.length > 0) {
+            try {
+              const itemsPayload = orderItemsToCreate.map(oi => ({
+                order_id: existingSbOrder.id,
+                product_id: oi.product_id,
+                product_name: oi.product_name,
+                product_image: oi.product_image,
+                sku: oi.sku,
+                variant_info: oi.variant_info,
+                quantity: oi.quantity,
+                price: oi.price,
+                total: oi.total
+              }));
+              await supabaseAdmin.from('order_items').insert(itemsPayload);
+              existingSbOrder.order_items = itemsPayload;
+            } catch (itErr) {
+              console.warn('[Order Creation] Supabase order_items backfill note:', itErr.message);
+            }
+          }
+
+          // If Shiprocket order was not created yet and payment is confirmed or COD, fulfill now!
+          if (!existingSbOrder.shiprocket_order_id && (isCod || isOnlinePaid || existingSbOrder.payment_status === 'paid' || existingSbOrder.payment_method === 'cod')) {
+            try {
+              console.log(`[Order Creation] Automatically fulfilling existing order ${orderNumber} to Shiprocket...`);
+              const fRes = await processOrderFulfillment({
+                ...existingSbOrder,
+                shipping_address: existingSbOrder.shipping_address || shipping_address,
+                billing_address: existingSbOrder.billing_address || billing_address || shipping_address,
+                items: (existingSbOrder.order_items && existingSbOrder.order_items.length > 0) ? existingSbOrder.order_items : orderItemsToCreate,
+                subtotal: existingSbOrder.subtotal || subtotal,
+                discount: existingSbOrder.discount || discountAmount,
+                shipping_fee: existingSbOrder.shipping_fee || shippingFee
+              });
+
+              if (fRes && fRes.data) {
+                existingSbOrder.shiprocket_order_id = fRes.data.shiprocket_order_id;
+                existingSbOrder.shiprocket_shipment_id = fRes.data.shiprocket_shipment_id;
+                existingSbOrder.shipping_status = fRes.data.shipping_status;
+                existingSbOrder.awb_code = fRes.data.awb_code;
+                existingSbOrder.courier_name = fRes.data.courier_name;
+              }
+            } catch (fulfillErr) {
+              console.warn(`[Order Creation] Fulfillment attempt on existing order ${orderNumber}:`, fulfillErr.message);
+            }
+          }
+
           return res.status(200).json({
             success: true,
-            message: 'Order retrieved successfully.',
+            message: 'Order processed successfully.',
             data: {
               order_id: existingSbOrder.id,
               order_number: existingSbOrder.order_number,
               total: existingSbOrder.total,
               order_status: existingSbOrder.order_status,
               payment_status: existingSbOrder.payment_status,
-              shipping_status: existingSbOrder.shipping_status || 'NOT_CREATED',
+              shipping_status: existingSbOrder.shipping_status || 'ORDER_CREATED',
               shiprocket_order_id: existingSbOrder.shiprocket_order_id,
+              shiprocket_shipment_id: existingSbOrder.shiprocket_shipment_id,
               awb_code: existingSbOrder.awb_code,
               courier_name: existingSbOrder.courier_name,
               tracking_url: existingSbOrder.tracking_url || trackingUrl,

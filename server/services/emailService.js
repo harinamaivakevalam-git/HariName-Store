@@ -5,29 +5,45 @@ require('dotenv').config();
 let transporter = null;
 
 function getTransporter() {
-  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-  const port = parseInt(process.env.SMTP_PORT, 10) || 465;
-  const secure = process.env.SMTP_SECURE === 'false' ? false : (port === 465);
-  const user = process.env.SMTP_USER || process.env.EMAIL_FROM;
-  const pass = process.env.SMTP_PASSWORD || process.env.SMTP_PASS;
+  const user = (process.env.SMTP_USER || process.env.EMAIL_FROM || '').trim();
+  const pass = (process.env.SMTP_PASSWORD || process.env.SMTP_PASS || '').trim().replace(/\s+/g, '');
+  const host = (process.env.SMTP_HOST || 'smtp.gmail.com').toLowerCase().trim();
 
   if (!user || !pass || pass.includes('placeholder') || pass.includes('your_')) {
     return null;
   }
 
   if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure,
-      auth: {
-        user: user.trim(),
-        pass: pass.trim().replace(/\s+/g, '') // remove spaces from Google app password
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
+    if (host.includes('gmail') || user.endsWith('@gmail.com')) {
+      transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user,
+          pass
+        },
+        pool: true,
+        maxConnections: 3,
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000
+      });
+    } else {
+      const port = parseInt(process.env.SMTP_PORT, 10) || 465;
+      const secure = process.env.SMTP_SECURE === 'false' ? false : (port === 465);
+      transporter = nodemailer.createTransport({
+        host,
+        port,
+        secure,
+        auth: {
+          user,
+          pass
+        },
+        tls: {
+          rejectUnauthorized: false
+        },
+        connectionTimeout: 10000
+      });
+    }
   }
 
   return transporter;

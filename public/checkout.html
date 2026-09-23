@@ -854,17 +854,20 @@
                 // Insert line items
                 const lineItems = [];
                 for (const i of cart) {
-                  let pId = (i.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(i.id)) 
-                    ? i.id 
-                    : '8ff21c2a-e054-43b8-abad-0bd414e39a88';
+                  const isValidUuid = i.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(i.id);
+                  const pId = isValidUuid ? i.id : null;
+                  const itemPrice = parseFloat(i.price) || 0;
+                  const itemQty = parseInt(i.qty, 10) || 1;
+
                   lineItems.push({
                     order_id: insertedOrder.id,
                     product_id: pId,
-                    product_name: i.name || 'Lord Jagannath Devotional Keychain | Spiritual Blessings & Protection',
+                    product_name: i.name || 'Sacred Devotional Item',
                     product_image: i.image || '',
-                    quantity: parseInt(i.qty, 10) || 1,
-                    price: parseFloat(i.price) || 0,
-                    total: (parseFloat(i.price) || 0) * (parseInt(i.qty, 10) || 1)
+                    sku: i.sku || 'HN-SKU-01',
+                    quantity: itemQty,
+                    price: itemPrice,
+                    total: itemPrice * itemQty
                   });
                 }
                 if (lineItems.length > 0) {

@@ -2079,12 +2079,14 @@ if (document.readyState === 'loading') {
 }
 
 // Universal API URL Resolver
+const DEPLOYED_BACKEND_URL = 'https://hariname-storebackend.onrender.com';
+
 const getApiUrl = (path) => {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  if (typeof window === 'undefined') return path;
+  if (typeof window === 'undefined') return DEPLOYED_BACKEND_URL + path;
 
-  // Custom base URL support
+  // Custom base URL override (from localStorage or window override)
   const customBase = window.HN_API_BASE_URL || localStorage.getItem('hn_api_base_url');
   if (customBase && customBase.startsWith('http')) {
     return customBase.replace(/\/+$/, '') + path;
@@ -2107,8 +2109,13 @@ const getApiUrl = (path) => {
     return `http://${hostname}:5000${path}`;
   }
 
-  // In production / deployed website, use same-origin relative path
-  return path;
+  // When running directly on the backend web service domain itself
+  if (hostname === 'hariname-storebackend.onrender.com') {
+    return path;
+  }
+
+  // In production / deployed domain (e.g. www.harinamastore.com), route API requests to Render backend
+  return `${DEPLOYED_BACKEND_URL}${path}`;
 };
 window.getApiUrl = getApiUrl;
 

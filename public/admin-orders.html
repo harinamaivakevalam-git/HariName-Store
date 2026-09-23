@@ -348,6 +348,8 @@
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
 
+    const DEPLOYED_BACKEND_URL = 'https://hariname-storebackend.onrender.com';
+
     function getApiUrl(path) {
       if (typeof window !== 'undefined' && typeof window.getApiUrl === 'function' && window.getApiUrl !== getApiUrl) {
         return window.getApiUrl(path);
@@ -361,7 +363,8 @@
         if (window.location.port === '5000') return path;
         return `http://${window.location.hostname}:5000${path}`;
       }
-      return path;
+      if (window.location.hostname === 'hariname-storebackend.onrender.com') return path;
+      return `${DEPLOYED_BACKEND_URL}${path}`;
     }
 
     function getAuthHeaders() {

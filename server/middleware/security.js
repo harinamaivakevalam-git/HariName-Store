@@ -44,6 +44,7 @@ const helmetConfig = helmet({
         "'self'",
         "http://localhost:*",
         "http://127.0.0.1:*",
+        "https://hariname-storebackend.onrender.com",
         "https://harinama-store.onrender.com",
         "https://*.harinamastore.com",
         "https://harinamastore.com",

@@ -25,7 +25,9 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   
   <!-- Harinama Store Master Stylesheet -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=10">
+  <link rel="stylesheet" href="/assets/css/style.css?v=28">
+  <!-- Supabase JS Client v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     .hn-track-card {
       background: #FFFFFF;
@@ -343,11 +345,14 @@
   <script src="/assets/js/data.js"></script>
   <script src="/assets/js/components.js"></script>
   <script>
+    const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
+
     let activePollTimer = null;
     let currentOrderNumber = null;
 
     function setStepperState(shippingStatus) {
-      const status = String(shippingStatus || 'NOT_CREATED').toUpperCase();
+      const status = String(shippingStatus || 'CONFIRMED').toUpperCase();
       const progressEl = document.getElementById('hn-stepper-progress');
 
       const steps = [
@@ -391,60 +396,99 @@
       document.getElementById('hn-tracking-not-found').classList.add('d-none');
 
       document.getElementById('hn-track-order-num').textContent = `#${order.order_number || order.id}`;
-      const customer = order.customer || order.guest_name || order.shipping_address?.name || 'Devotee Customer';
+      const customer = order.customer?.name || order.customer || order.guest_name || order.shipping_address?.name || 'Devotee Customer';
       document.getElementById('hn-track-customer-name').textContent = `Devotee: ${customer}`;
 
-      // Status Badge
-      const shipStatus = order.shipping_status || (order.order_status ? order.order_status.toUpperCase() : 'CONFIRMED');
+      // Status Badge (Aligned directly with Admin Dashboard colors & styles)
+      const rawStatus = order.order_status || order.status || order.shipping_status || 'Confirmed';
       const badgeEl = document.getElementById('hn-track-status-badge');
-      let badgeClass = 'bg-primary-subtle text-primary border border-primary-subtle';
-      if (shipStatus === 'DELIVERED') badgeClass = 'bg-success-subtle text-success border border-success-subtle';
-      else if (shipStatus === 'CANCELLED') badgeClass = 'bg-danger-subtle text-danger border border-danger-subtle';
-      else if (['ORDER_CREATED', 'NOT_CREATED'].includes(shipStatus)) badgeClass = 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
-
-      badgeEl.innerHTML = `<span class="badge ${badgeClass} fs-6 px-3 py-1">${shipStatus.replace(/_/g, ' ')}</span>`;
+      if (typeof getHarinamaOrderStatusBadge === 'function') {
+        badgeEl.innerHTML = getHarinamaOrderStatusBadge(rawStatus);
+      } else {
+        badgeEl.innerHTML = `<span class="hn-status-badge hn-status-confirmed">${rawStatus}</span>`;
+      }
 
       // Stepper
-      setStepperState(shipStatus);
+      const stepperStatus = (order.order_status || order.shipping_status || 'CONFIRMED').toUpperCase();
+      setStepperState(stepperStatus);
 
       // Carrier & AWB
-      const carrier = order.courier_name || order.courier || (order.awb_code ? 'Shiprocket Express Partner' : (order.shiprocket_order_id ? 'Shiprocket / Delivery Partner' : 'Assigned Delivery Partner'));
+      const carrier = order.courier_name || order.courier || (order.awb_code ? 'Shiprocket Express Partner' : (order.shiprocket_order_id ? 'Shiprocket / Delivery Partner' : 'Sri Dham Vrindavan Express'));
       const awb = order.awb_code || order.tracking_number;
       document.getElementById('hn-track-carrier').textContent = carrier;
       
       const awbEl = document.getElementById('hn-track-awb');
+      const carrierBtn = document.getElementById('hn-btn-carrier-track');
       if (awb && awb !== 'Processing' && !awb.includes('HN-EXP')) {
         awbEl.textContent = awb;
-        const carrierBtn = document.getElementById('hn-btn-carrier-track');
         if (carrierBtn) {
           carrierBtn.href = `https://shiprocket.co/tracking/${encodeURIComponent(awb)}`;
           carrierBtn.classList.remove('d-none');
         }
       } else {
-        awbEl.textContent = 'Shipment is being prepared with sacred care';
+        awbEl.textContent = 'Package packed & awaiting courier pickup';
+        if (carrierBtn) carrierBtn.classList.add('d-none');
       }
 
       // Updated At
-      if (order.shipping_updated_at || order.updated_at) {
-        const d = new Date(order.shipping_updated_at || order.updated_at);
-        document.getElementById('hn-track-last-updated').textContent = `Last update: ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}, ${d.toLocaleDateString()}`;
+      const updateDate = order.shipping_updated_at || order.updated_at || order.created_at;
+      if (updateDate) {
+        const d = new Date(updateDate);
+        document.getElementById('hn-track-last-updated').textContent = `Last update: ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}, ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`;
       }
 
       // Render Scans History
       const scansList = document.getElementById('hn-tracking-scans-list');
-      const history = Array.isArray(order.tracking_history) && order.tracking_history.length > 0
+      let history = Array.isArray(order.tracking_history) && order.tracking_history.length > 0
         ? order.tracking_history
-        : [
-            { date: order.created_at || new Date().toISOString(), status: 'ORDER_PLACED', location: 'Vrindavan Dham', activity: 'Sacred order received and confirmed.' }
-          ];
+        : [];
+
+      if (history.length === 0) {
+        const orderDate = order.created_at || new Date().toISOString();
+        const st = String(rawStatus).toLowerCase();
+        
+        history.push({
+          date: orderDate,
+          status: 'ORDER_PLACED',
+          location: 'Vrindavan Dham',
+          activity: 'Sacred order received and confirmed with divine blessings.'
+        });
+
+        if (st.includes('pack') || st.includes('dispatch') || st.includes('ship') || st.includes('transit') || st.includes('deliver')) {
+          history.push({
+            date: order.updated_at || orderDate,
+            status: 'PACKED',
+            location: 'Vrindavan Dham Fulfillment Hub',
+            activity: 'Package packed carefully with Tulsi leaves & holy protection cards.'
+          });
+        }
+
+        if (st.includes('dispatch') || st.includes('ship') || st.includes('transit') || st.includes('deliver')) {
+          history.push({
+            date: order.shipping_updated_at || order.updated_at || orderDate,
+            status: 'IN_TRANSIT',
+            location: 'Mathura Logistics Hub',
+            activity: 'Dispatched via express logistics network.'
+          });
+        }
+
+        if (st.includes('deliver')) {
+          history.push({
+            date: order.shipping_updated_at || order.updated_at || orderDate,
+            status: 'DELIVERED',
+            location: 'Destination Address',
+            activity: 'Blessed parcel successfully delivered to devotee.'
+          });
+        }
+      }
 
       scansList.innerHTML = history.slice().reverse().map((h, idx) => `
         <div class="hn-scan-event ${idx === 0 ? 'latest' : ''}">
           <div class="hn-scan-dot"></div>
           <div class="d-flex justify-content-between align-items-start">
             <div>
-              <div class="fw-bold text-navy small">${h.activity || h.status.replace(/_/g, ' ')}</div>
-              <div class="text-secondary small"><i class="bi bi-geo-alt me-1"></i>${h.location || 'Fulfillment Center'}</div>
+              <div class="fw-bold text-navy small">${h.activity || (h.status ? h.status.replace(/_/g, ' ') : 'Status Update')}</div>
+              <div class="text-secondary small"><i class="bi bi-geo-alt me-1"></i>${h.location || 'Vrindavan Dham'}</div>
             </div>
             <div class="text-muted small text-end" style="font-size: 0.75rem;">
               ${h.date ? new Date(h.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
@@ -455,35 +499,50 @@
 
       // Render Items
       const itemsList = document.getElementById('hn-track-items-list');
-      const items = order.items || [];
-      itemsList.innerHTML = items.map(i => {
-        const rawImg = i.image || i.product_image || '';
-        const itemImg = window.getProductImageUrl ? window.getProductImageUrl(rawImg) : (rawImg || '/assets/images/krishna-logo.jpg');
-        return `
-          <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-            <div class="d-flex align-items-center gap-2">
-              ${rawImg ? `<img src="${itemImg}" data-original-src="${rawImg}" alt="${i.name || i.product_name}" class="rounded border" style="width: 38px; height: 38px; object-fit: cover;" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawImg}');}else{this.onerror=null;this.src='/assets/images/krishna-logo.jpg';}">` : ''}
-              <div>
-                <div class="small fw-semibold text-navy lh-sm">${i.name || i.product_name}</div>
-                <div class="text-muted" style="font-size: 0.75rem;">Qty: ${i.qty || i.quantity || 1}</div>
+      const items = order.items || order.order_items || [];
+      if (items.length > 0) {
+        itemsList.innerHTML = items.map(i => {
+          const rawImg = i.product_image || i.image || '';
+          const itemImg = window.getProductImageUrl ? window.getProductImageUrl(rawImg) : (rawImg || '/assets/images/krishna-logo.jpg');
+          return `
+            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+              <div class="d-flex align-items-center gap-2">
+                <img src="${itemImg}" data-original-src="${rawImg}" alt="${i.product_name || i.name || 'Product'}" class="rounded border" style="width: 38px; height: 38px; object-fit: cover;" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawImg}');}else{this.onerror=null;this.src='/assets/images/krishna-logo.jpg';}">
+                <div>
+                  <div class="small fw-semibold text-navy lh-sm">${i.product_name || i.name || 'Sacred Item'}</div>
+                  <div class="text-muted" style="font-size: 0.75rem;">Qty: ${i.quantity || i.qty || 1}</div>
+                </div>
               </div>
+              <div class="small fw-bold text-navy">₹${(parseFloat(i.price || 0) * (i.quantity || i.qty || 1)).toLocaleString('en-IN')}</div>
             </div>
-            <div class="small fw-bold text-navy">₹${(parseFloat(i.price || 0) * (i.qty || i.quantity || 1))}</div>
-          </div>
-        `;
-      }).join('');
+          `;
+        }).join('');
+      } else {
+        itemsList.innerHTML = `<div class="text-muted small py-2">Sacred Devotional Package (1 Item)</div>`;
+      }
 
-      document.getElementById('hn-track-total-amount').textContent = `₹${order.total || 0}`;
+      document.getElementById('hn-track-total-amount').textContent = `₹${Number(order.total || 0).toLocaleString('en-IN')}`;
 
       // Destination Address
       const shipAddr = order.shipping_address || {};
-      const fullAddr = typeof shipAddr === 'string'
-        ? shipAddr
-        : `${shipAddr.address_line_1 || ''}, ${shipAddr.city || ''}, ${shipAddr.state || ''} - ${shipAddr.postal_code || shipAddr.pin || ''}`.replace(/^[\s,]+|[\s,]+$/g, '');
-      document.getElementById('hn-track-destination-addr').textContent = fullAddr || 'Delivery address on file';
+      let fullAddr = '';
+      if (typeof shipAddr === 'string') {
+        try {
+          const parsed = JSON.parse(shipAddr);
+          fullAddr = `${parsed.name ? parsed.name + ', ' : ''}${parsed.address_line_1 || parsed.address || ''}, ${parsed.city || ''}, ${parsed.state || ''} - ${parsed.postal_code || parsed.pincode || ''}`;
+        } catch (_) {
+          fullAddr = shipAddr;
+        }
+      } else if (typeof shipAddr === 'object') {
+        fullAddr = `${shipAddr.name ? shipAddr.name + ', ' : ''}${shipAddr.address_line_1 || shipAddr.address || ''}, ${shipAddr.city || ''}, ${shipAddr.state || ''} - ${shipAddr.postal_code || shipAddr.pincode || ''}`;
+      }
+      
+      fullAddr = fullAddr.replace(/^[\s,]+|[\s,]+$/g, '');
+      document.getElementById('hn-track-destination-addr').textContent = fullAddr || 'Delivery address on record';
 
       // Auto-poll if shipment is actively in transit (every 35s), stop if DELIVERED or CANCELLED
-      if (['DELIVERED', 'CANCELLED'].includes(shipStatus)) {
+      const currentStatusStr = String(rawStatus).toLowerCase();
+      if (currentStatusStr.includes('deliver') || currentStatusStr.includes('cancel')) {
         if (activePollTimer) clearInterval(activePollTimer);
       } else if (!activePollTimer) {
         activePollTimer = setInterval(() => {
@@ -494,8 +553,9 @@
 
     async function fetchOrderLive(orderNum, isSilent = false) {
       if (!orderNum) return;
-      const cleanNum = orderNum.trim().replace(/^#/, '');
+      const cleanNum = String(orderNum).trim().replace(/^#/, '');
 
+      // 1. Try Backend Order Details API
       try {
         const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
         const headers = {};
@@ -513,14 +573,87 @@
         if (!isSilent) console.warn('[OrderTracking] Backend fetch notice:', err);
       }
 
-      // Fallback to local storage
+      // 2. Direct Supabase Query Fallback
       try {
-        const local = JSON.parse(localStorage.getItem('harinama_admin_orders') || '[]')
-          .concat(JSON.parse(localStorage.getItem('hn_orders') || '[]'));
-        const found = local.find(o => (o.id === cleanNum || o.order_number === cleanNum || o.awb_code === cleanNum));
-        if (found) {
-          renderTrackingData(found);
-          return;
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+          const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanNum);
+          
+          let q = sb.from('orders').select('*, order_items(*)');
+          if (isUuid) q = q.eq('id', cleanNum);
+          else q = q.or(`order_number.eq.${cleanNum},order_number.ilike.%${cleanNum}%,awb_code.eq.${cleanNum}`);
+
+          const { data: sbOrder, error: sbErr } = await q.maybeSingle();
+          if (sbOrder && !sbErr) {
+            renderTrackingData({
+              ...sbOrder,
+              items: sbOrder.order_items || []
+            });
+            return;
+          }
+
+          // Single table query if relation join failed
+          let qSingle = sb.from('orders').select('*');
+          if (isUuid) qSingle = qSingle.eq('id', cleanNum);
+          else qSingle = qSingle.or(`order_number.eq.${cleanNum},order_number.ilike.%${cleanNum}%,awb_code.eq.${cleanNum}`);
+
+          const { data: singleOrd } = await qSingle.maybeSingle();
+          if (singleOrd) {
+            const { data: items } = await sb.from('order_items').select('*').eq('order_id', singleOrd.id);
+            renderTrackingData({
+              ...singleOrd,
+              items: items || []
+            });
+            return;
+          }
+        }
+      } catch (sbEx) {
+        if (!isSilent) console.warn('[OrderTracking] Supabase query notice:', sbEx);
+      }
+
+      // 3. Supabase REST Direct Fetch
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanNum);
+        let restUrl = isUuid 
+          ? `${SUPABASE_URL}/rest/v1/orders?select=*,order_items(*)&id=eq.${encodeURIComponent(cleanNum)}`
+          : `${SUPABASE_URL}/rest/v1/orders?select=*,order_items(*)&order_number=eq.${encodeURIComponent(cleanNum)}`;
+        
+        const sbHeaders = {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+        };
+
+        const sbRes = await fetch(restUrl, { headers: sbHeaders });
+        if (sbRes.ok) {
+          const list = await sbRes.json();
+          if (Array.isArray(list) && list.length > 0) {
+            const ord = list[0];
+            renderTrackingData({
+              ...ord,
+              items: ord.order_items || []
+            });
+            return;
+          }
+        }
+      } catch (_) {}
+
+      // 4. Fallback to Local Storage Caches
+      try {
+        const storageKeys = ['harinama_admin_orders', 'hn_orders', 'hn_user_orders', 'hn_all_orders'];
+        for (const key of storageKeys) {
+          const localList = JSON.parse(localStorage.getItem(key) || '[]');
+          if (Array.isArray(localList)) {
+            const found = localList.find(o => 
+              (o.id && String(o.id).toLowerCase() === cleanNum.toLowerCase()) || 
+              (o.order_number && String(o.order_number).toLowerCase() === cleanNum.toLowerCase()) || 
+              (o.orderId && String(o.orderId).toLowerCase() === cleanNum.toLowerCase()) ||
+              (o.awb_code && String(o.awb_code).toLowerCase() === cleanNum.toLowerCase())
+            );
+            if (found) {
+              renderTrackingData(found);
+              return;
+            }
+          }
         }
       } catch (e) {}
 

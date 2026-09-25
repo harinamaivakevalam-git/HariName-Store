@@ -1588,9 +1588,9 @@
         }
 
         container.innerHTML = orders.map(ord => {
-          const isDelivered = (ord.order_status || '').toLowerCase().includes('deliver');
-          const badgeClass = isDelivered ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-primary-subtle text-primary border border-primary-subtle';
-          const badgeIcon = isDelivered ? 'bi-check-circle-fill' : 'bi-truck';
+          const statusHtml = (typeof getHarinamaOrderStatusBadge === 'function') 
+            ? getHarinamaOrderStatusBadge(ord.order_status || ord.status || 'Confirmed')
+            : `<span class="hn-status-badge hn-status-confirmed">${ord.order_status || 'Confirmed'}</span>`;
           const dateStr = ord.created_at ? new Date(ord.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recent';
 
           return `
@@ -1600,9 +1600,9 @@
                   <span class="fw-bold text-navy me-2">Order #${ord.order_number || ord.id}</span>
                   <span class="text-muted small">Placed on ${dateStr}</span>
                 </div>
-                <span class="hn-order-badge-status ${badgeClass}">
-                  <i class="bi ${badgeIcon}"></i> ${ord.order_status || 'Confirmed'}
-                </span>
+                <div>
+                  ${statusHtml}
+                </div>
               </div>
               ${(ord.items || []).map(item => `
                 <div class="d-flex align-items-center justify-content-between mb-2">

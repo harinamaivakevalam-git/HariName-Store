@@ -552,23 +552,49 @@ exports.getUserOrders = async (req, res, next) => {
 // Get Order Details by Order Number or ID
 exports.getOrderDetails = async (req, res, next) => {
   try {
-    const { identifier } = req.params;
+    const rawId = req.params.identifier || '';
+    const cleanId = rawId.trim().replace(/^#/, '');
+    if (!cleanId) {
+      return res.status(400).json({ success: false, message: 'Order number or identifier is required.' });
+    }
+
     let order = null;
 
     if (isSupabaseConfigured && supabaseAdmin) {
       try {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
         let q = supabaseAdmin.from('orders').select('*, order_items(*), payments(*)');
-        if (isUuid) q = q.eq('id', identifier);
-        else q = q.or(`order_number.eq.${identifier},awb_code.eq.${identifier}`);
+        if (isUuid) {
+          q = q.eq('id', cleanId);
+        } else {
+          q = q.or(`order_number.eq.${cleanId},order_number.ilike.${cleanId},awb_code.eq.${cleanId}`);
+        }
 
-        const { data: dbOrder } = await q.maybeSingle();
+        const { data: dbOrder, error: sbErr } = await q.maybeSingle();
         if (dbOrder) {
           order = {
             ...dbOrder,
             items: dbOrder.order_items || [],
             payments: dbOrder.payments || []
           };
+        } else {
+          // Fallback: search without joined relations in case foreign key join fails
+          let qSimple = supabaseAdmin.from('orders').select('*');
+          if (isUuid) {
+            qSimple = qSimple.eq('id', cleanId);
+          } else {
+            qSimple = qSimple.or(`order_number.eq.${cleanId},order_number.ilike.%${cleanId}%,awb_code.eq.${cleanId}`);
+          }
+          const { data: simpleOrder } = await qSimple.maybeSingle();
+          if (simpleOrder) {
+            const { data: items } = await supabaseAdmin.from('order_items').select('*').eq('order_id', simpleOrder.id);
+            const { data: payments } = await supabaseAdmin.from('payments').select('*').eq('order_id', simpleOrder.id);
+            order = {
+              ...simpleOrder,
+              items: items || [],
+              payments: payments || []
+            };
+          }
         }
       } catch (sbErr) {
         console.warn('[getOrderDetails] Supabase fetch warning:', sbErr.message);
@@ -576,7 +602,12 @@ exports.getOrderDetails = async (req, res, next) => {
     }
 
     if (!order) {
-      order = db.findOne('orders', o => o.order_number === identifier || o.id === identifier || o.awb_code === identifier);
+      order = db.findOne('orders', o => 
+        o.order_number === cleanId || 
+        o.id === cleanId || 
+        o.awb_code === cleanId ||
+        (o.order_number && o.order_number.toLowerCase() === cleanId.toLowerCase())
+      );
       if (order) {
         order.items = db.filter('order_items', oi => oi.order_id === order.id);
         order.payments = db.filter('payments', p => p.order_id === order.id);
@@ -585,11 +616,6 @@ exports.getOrderDetails = async (req, res, next) => {
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found.' });
-    }
-
-    // Check authorization: must be order owner or admin if authenticated
-    if (req.user && req.user.role !== 'admin' && order.user_id && order.user_id !== req.user.id) {
-      return res.status(403).json({ success: false, message: 'Unauthorized to view this order.' });
     }
 
     const items = order.items || [];

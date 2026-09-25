@@ -2185,7 +2185,43 @@ const downloadOrderInvoice = async (orderIdentifier) => {
     window.location.href = invoiceUrl;
   }
 };
-window.downloadOrderInvoice = downloadOrderInvoice;
+// Universal Harinama Order Status Badge Generator (Exact Admin Dashboard Match)
+const getHarinamaOrderStatusBadge = (rawStatus) => {
+  const st = String(rawStatus || 'Confirmed').toLowerCase().trim();
+  let badgeClass = 'hn-status-confirmed';
+  let icon = 'bi-check2-circle';
+  let label = 'Confirmed';
+
+  if (st.includes('deliver')) {
+    badgeClass = 'hn-status-delivered';
+    icon = 'bi-check-circle-fill';
+    label = 'Delivered';
+  } else if (st.includes('dispatch') || st.includes('ship') || st.includes('transit')) {
+    badgeClass = 'hn-status-dispatched';
+    icon = 'bi-truck';
+    label = 'Dispatched';
+  } else if (st.includes('pack')) {
+    badgeClass = 'hn-status-packed';
+    icon = 'bi-box-seam';
+    label = 'Packed';
+  } else if (st.includes('cancel')) {
+    badgeClass = 'hn-status-cancelled';
+    icon = 'bi-x-circle-fill';
+    label = 'Cancelled';
+  } else if (st.includes('pend') || st.includes('process')) {
+    badgeClass = 'hn-status-pending';
+    icon = 'bi-clock-history';
+    label = 'Processing';
+  } else {
+    badgeClass = 'hn-status-confirmed';
+    icon = 'bi-patch-check';
+    label = 'Confirmed';
+  }
+
+  return `<span class="hn-status-badge ${badgeClass}"><i class="bi ${icon}"></i> ${label}</span>`;
+};
+window.getHarinamaOrderStatusBadge = getHarinamaOrderStatusBadge;
+window.getStatusBadge = getHarinamaOrderStatusBadge;
 
 // Global Window Exports for Inline HTML Handlers
 window.formatPrice = formatPrice;

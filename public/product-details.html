@@ -73,7 +73,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
   <!-- Harinama Store Master Stylesheet -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=26">
+  <link rel="stylesheet" href="/assets/css/style.css?v=29">
   <!-- Brand Favicon -->
   <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
   <link rel="shortcut icon" href="/favicon.ico">
@@ -100,9 +100,15 @@
               <!-- Dynamic thumbs -->
             </div>
 
-            <!-- Main Product Image -->
-            <div class="flex-grow-1 overflow-hidden">
+            <!-- Main Product Image with Touch Swipe Slider -->
+            <div class="flex-grow-1 hn-gallery-wrap position-relative overflow-hidden" id="hn-main-image-wrap">
               <img id="hn-main-image" src="" alt="Sacred Item" class="hn-detail-main-img">
+
+              <!-- Image indicator counter badge -->
+              <div class="hn-gallery-counter d-none" id="hn-gallery-counter">1 / 1</div>
+
+              <!-- Mobile Dots Indicator -->
+              <div class="hn-gallery-dots d-none" id="hn-gallery-dots"></div>
             </div>
 
           </div>
@@ -455,6 +461,144 @@
 
     let currentProduct = null;
     let selectedRating = 5;
+    let currentGalleryIndex = 0;
+    let currentGalleryList = [];
+
+    function goToGalleryImage(idx, direction = 'next') {
+      if (!currentGalleryList || currentGalleryList.length === 0) return;
+      currentGalleryIndex = (idx + currentGalleryList.length) % currentGalleryList.length;
+
+      const mainImg = document.getElementById('hn-main-image');
+      if (mainImg) {
+        const rawUrl = currentGalleryList[currentGalleryIndex] || '';
+        const targetSrc = window.getProductImageUrl ? window.getProductImageUrl(rawUrl) : (rawUrl || '/assets/images/krishna_hero_keychain.jpg');
+
+        // Smooth slide transition effect
+        mainImg.style.transition = 'opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)';
+        mainImg.style.opacity = '0.35';
+        mainImg.style.transform = direction === 'next' ? 'scale(0.97)' : 'scale(0.97)';
+
+        setTimeout(() => {
+          mainImg.src = targetSrc;
+          mainImg.dataset.originalSrc = rawUrl;
+          mainImg.style.opacity = '1';
+          mainImg.style.transform = 'scale(1)';
+        }, 120);
+      }
+
+      // Sync active thumbnail
+      const thumbs = document.querySelectorAll('.hn-thumb-img');
+      thumbs.forEach((t, i) => {
+        const isActive = i === currentGalleryIndex;
+        t.classList.toggle('active', isActive);
+        if (isActive) {
+          t.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+      });
+
+      // Sync counter badge
+      const counterEl = document.getElementById('hn-gallery-counter');
+      if (counterEl && currentGalleryList.length > 1) {
+        counterEl.innerText = `${currentGalleryIndex + 1} / ${currentGalleryList.length}`;
+      }
+
+      // Sync dots indicator
+      const dots = document.querySelectorAll('.hn-gallery-dot');
+      dots.forEach((d, i) => d.classList.toggle('active', i === currentGalleryIndex));
+    }
+
+    function nextGalleryImage(e) {
+      if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (currentGalleryList.length <= 1) return;
+      goToGalleryImage(currentGalleryIndex + 1, 'next');
+    }
+
+    function prevGalleryImage(e) {
+      if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (currentGalleryList.length <= 1) return;
+      goToGalleryImage(currentGalleryIndex - 1, 'prev');
+    }
+
+    function initGalleryTouchSwipe() {
+      const wrap = document.getElementById('hn-main-image-wrap');
+      if (!wrap || wrap.dataset.swipeInitialized) return;
+      wrap.dataset.swipeInitialized = 'true';
+
+      let startX = 0;
+      let startY = 0;
+      let startTime = 0;
+      let isTouching = false;
+
+      wrap.addEventListener('touchstart', (e) => {
+        if (currentGalleryList.length <= 1) return;
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        startTime = Date.now();
+        isTouching = true;
+      }, { passive: true });
+
+      wrap.addEventListener('touchmove', (e) => {
+        if (!isTouching || currentGalleryList.length <= 1) return;
+        const touch = e.touches[0];
+        const diffX = touch.clientX - startX;
+        const diffY = touch.clientY - startY;
+
+        // If horizontal motion is greater than vertical motion, prevent window scrolling during swipe
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 8) {
+          if (e.cancelable) e.preventDefault();
+        }
+      }, { passive: false });
+
+      wrap.addEventListener('touchend', (e) => {
+        if (!isTouching) return;
+        isTouching = false;
+        const touch = e.changedTouches[0];
+        const diffX = touch.clientX - startX;
+        const diffY = touch.clientY - startY;
+        const duration = Date.now() - startTime;
+
+        // Valid swipe if moved > 30px horizontally and horizontal delta > vertical delta
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30 && duration < 600) {
+          if (diffX < 0) {
+            nextGalleryImage();
+          } else {
+            prevGalleryImage();
+          }
+        }
+      }, { passive: true });
+
+      // Mouse drag sliding for desktop testing
+      let isMouseDown = false;
+      let mouseStartX = 0;
+
+      wrap.addEventListener('mousedown', (e) => {
+        if (currentGalleryList.length <= 1) return;
+        isMouseDown = true;
+        mouseStartX = e.clientX;
+      });
+
+      window.addEventListener('mouseup', (e) => {
+        if (!isMouseDown) return;
+        isMouseDown = false;
+        const diffX = e.clientX - mouseStartX;
+        if (Math.abs(diffX) > 35) {
+          if (diffX < 0) nextGalleryImage();
+          else prevGalleryImage();
+        }
+      });
+    }
+
+    window.goToGalleryImage = goToGalleryImage;
+    window.nextGalleryImage = nextGalleryImage;
+    window.prevGalleryImage = prevGalleryImage;
+    window.initGalleryTouchSwipe = initGalleryTouchSwipe;
 
     function incrementQty() {
       const el = document.getElementById('hn-qty-val');
@@ -1102,6 +1246,9 @@
         gallery = [fallbackImg];
       }
 
+      currentGalleryList = gallery;
+      currentGalleryIndex = 0;
+
       const mainImg = document.getElementById('hn-main-image');
       if (mainImg) {
         const firstRaw = gallery[0] || '';
@@ -1118,35 +1265,35 @@
         };
       }
 
-      const reviewsEl = document.getElementById('hn-product-reviews');
-      if (reviewsEl) {
-        reviewsEl.innerText = `(${prod.reviews_count || 0} reviews)`;
-        reviewsEl.style.cursor = 'pointer';
-        reviewsEl.onclick = switchToReviewsTab;
-      }
+      // Slider Controls Visibility & Setup (Dots & Counter)
+      const counterEl = document.getElementById('hn-gallery-counter');
+      const dotsContainer = document.getElementById('hn-gallery-dots');
 
-      // Specifications
-      const specUl = document.getElementById('hn-tab-specs');
-      if (specUl) {
-        if (prod.specifications && Object.keys(prod.specifications).length > 0) {
-          specUl.innerHTML = Object.entries(prod.specifications).map(([k, v]) => `
-            <li class="py-1"><strong>${k}:</strong> ${v}</li>
+      const hasMultipleImages = gallery.length > 1;
+
+      if (counterEl) {
+        counterEl.classList.toggle('d-none', !hasMultipleImages);
+        counterEl.innerText = `1 / ${gallery.length}`;
+      }
+      if (dotsContainer) {
+        dotsContainer.classList.toggle('d-none', !hasMultipleImages);
+        if (hasMultipleImages) {
+          dotsContainer.innerHTML = gallery.map((_, i) => `
+            <div class="hn-gallery-dot ${i === 0 ? 'active' : ''}" onclick="goToGalleryImage(${i})"></div>
           `).join('');
         } else {
-          specUl.innerHTML = `
-            <li class="py-1"><strong>Category:</strong> ${prod.category || 'Devotional Items'}</li>
-            <li class="py-1"><strong>Material:</strong> ${prod.material || 'Sacred Traditional Finish'}</li>
-            <li class="py-1"><strong>Availability:</strong> ${prod.stock > 0 ? `In Stock (${prod.stock} units)` : 'Made on Order'}</li>
-          `;
+          dotsContainer.innerHTML = '';
         }
       }
+
+      initGalleryTouchSwipe();
 
       const thumbContainer = document.getElementById('hn-thumb-gallery');
       if (thumbContainer) {
         thumbContainer.innerHTML = gallery.map((rawUrl, idx) => {
           const thumbSrc = window.getProductImageUrl ? window.getProductImageUrl(rawUrl) : (rawUrl || '/assets/images/krishna_hero_keychain.jpg');
           return `
-            <img src="${thumbSrc}" data-original-src="${rawUrl}" class="hn-thumb-img ${idx === 0 ? 'active' : ''}" onclick="const m = document.getElementById('hn-main-image'); if(m){ m.src = this.src; m.dataset.originalSrc = this.dataset.originalSrc || ''; } document.querySelectorAll('.hn-thumb-img').forEach(t => t.classList.remove('active')); this.classList.add('active');" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawUrl}');}else{this.onerror=null; this.src='/assets/images/krishna_hero_keychain.jpg';}" alt="${prod.title || prod.name || 'Sacred Item'}">
+            <img src="${thumbSrc}" data-original-src="${rawUrl}" class="hn-thumb-img ${idx === 0 ? 'active' : ''}" onclick="goToGalleryImage(${idx})" onerror="if(window.handleProductImageError){handleProductImageError(this, '${rawUrl}');}else{this.onerror=null; this.src='/assets/images/krishna_hero_keychain.jpg';}" alt="${prod.title || prod.name || 'Sacred Item'}">
           `;
         }).join('');
       }

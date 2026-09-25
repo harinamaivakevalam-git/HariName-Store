@@ -13,11 +13,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Frequently Asked Questions — Harinama Store</title>
+  <meta name="description" content="Find answers to frequently asked questions about Harinama Store products, orders, shipping, and returns.">
   
-  <!-- Google Fonts: Poppins Master Typography -->
+  <!-- Google Fonts: Playfair Display & Poppins -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
   <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -29,73 +30,105 @@
   <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
   <link rel="shortcut icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/assets/images/krishna-logo.jpg">
+
+  <style>
+    .faq-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 700;
+      font-size: 2.25rem;
+      color: #0F1F38;
+      margin-bottom: 0.5rem;
+    }
+    .accordion-button:not(.collapsed) {
+      background-color: #F8FAFC;
+      color: #0B2545;
+      box-shadow: none;
+    }
+    .accordion-button:focus {
+      box-shadow: none;
+      border-color: #E2E8F0;
+    }
+    @media (max-width: 768px) {
+      .faq-title {
+        font-size: 1.75rem;
+      }
+    }
+  </style>
 </head>
 <body>
 
   <!-- Top Announcement Bar & Header -->
   <div id="hn-header-placeholder"></div>
 
-  <main class="py-5">
+  <main class="py-5" style="background-color: #FAF7F0; min-height: 70vh;">
     <div class="container">
       
+      <!-- Breadcrumb -->
+      <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb mb-0" style="font-size: 0.88rem;">
+          <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted">Home</a></li>
+          <li class="breadcrumb-item active text-navy fw-semibold" aria-current="page">FAQ</li>
+        </ol>
+      </nav>
+
       <div class="text-center mb-5">
-        <h1 class="hn-section-title">Frequently Asked Questions</h1>
-        <div class="hn-section-subtitle">Everything you need to know about Harinama Store products and orders.</div>
+        <h1 class="faq-title">Frequently Asked Questions</h1>
+        <p class="text-secondary" style="font-size: 0.95rem;">Everything you need to know about Harinama Store products and orders.</p>
       </div>
 
       <div class="row justify-content-center">
-        <div class="col-lg-8">
+        <div class="col-lg-9 col-xl-8">
           
-          <div class="accordion" id="hnFaqAccordion">
+          <div class="accordion shadow-sm rounded overflow-hidden" id="hnFaqAccordion">
             
-            <div class="accordion-item mb-3 border rounded shadow-sm">
+            <div class="accordion-item border-0 mb-3 rounded overflow-hidden border">
               <h2 class="accordion-header">
-                <button class="accordion-button fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                <button class="accordion-button fw-semibold py-3" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
                   What materials are used in Harinama Store products?
                 </button>
               </h2>
               <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#hnFaqAccordion">
-                <div class="accordion-body text-secondary small">
-                  We use premium high-gloss acrylic resin, 100% solid cast brass alloy, and authentic sustainably sourced sandalwood. All metals are coated with a protective anti-tarnish finish to ensure long lasting shine.
+                <div class="accordion-body text-secondary" style="font-size: 0.94rem; line-height: 1.7;">
+                  We use premium high-gloss acrylic resin, 100% solid cast brass alloy, and authentic sustainably sourced sacred wood. All metal components are treated with a protective finish for enduring shine and devotional reverence.
                 </div>
               </div>
             </div>
 
-            <div class="accordion-item mb-3 border rounded shadow-sm">
+            <div class="accordion-item border-0 mb-3 rounded overflow-hidden border">
               <h2 class="accordion-header">
-                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                <button class="accordion-button collapsed fw-semibold py-3" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
                   What are the shipping charges and delivery time?
                 </button>
               </h2>
               <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#hnFaqAccordion">
-                <div class="accordion-body text-secondary small">
-                  We provide free standard shipping across India on all orders above ₹499. For orders below ₹499, a nominal ₹40 shipping fee applies. Delivery generally takes 3 to 5 business days.
+                <div class="accordion-body text-secondary" style="font-size: 0.94rem; line-height: 1.7;">
+                  Orders are processed within 1-2 business days. Standard shipping takes 3-5 business days (₹25.00), and orders over ₹500 qualify for free Standard Shipping. For full details, please visit our <a href="/shipping" class="text-decoration-underline fw-medium" style="color: #0B2545;">Shipping Policy</a>.
                 </div>
               </div>
             </div>
 
-            <div class="accordion-item mb-3 border rounded shadow-sm">
+            <div class="accordion-item border-0 mb-3 rounded overflow-hidden border">
               <h2 class="accordion-header">
-                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
-                  Can I order in bulk for temple festivals or spiritual gifts?
+                <button class="accordion-button collapsed fw-semibold py-3" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                  What is your return &amp; refund policy?
                 </button>
               </h2>
               <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#hnFaqAccordion">
-                <div class="accordion-body text-secondary small">
-                  Yes! We gladly support temple festivals, marriage celebrations, and bulk distribution. Please contact us via WhatsApp (+91 98765 43210) for special bulk discounts.
+                <div class="accordion-body text-secondary" style="font-size: 0.94rem; line-height: 1.7;">
+                  You have 30 calendar days to return an item from the date received. Items must be unused, in original packaging, and accompanied by proof of purchase. Check our full <a href="/refund" class="text-decoration-underline fw-medium" style="color: #0B2545;">Refund Policy</a> for complete details.
                 </div>
               </div>
             </div>
 
-            <div class="accordion-item border rounded shadow-sm">
+            <div class="accordion-item border-0 rounded overflow-hidden border">
               <h2 class="accordion-header">
-                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
-                  What is your return policy?
+                <button class="accordion-button collapsed fw-semibold py-3" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                  Can I order in bulk for temple festivals or spiritual gifts?
                 </button>
               </h2>
               <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#hnFaqAccordion">
-                <div class="accordion-body text-secondary small">
-                  We offer a 7-day hassle-free replacement or refund policy if your product arrives broken, damaged, or defective.
+                <div class="accordion-body text-secondary" style="font-size: 0.94rem; line-height: 1.7;">
+                  Yes! We gladly support temple festivals, marriage celebrations, and congregational bulk distribution. Please contact us via our <a href="/contact" class="text-decoration-underline fw-medium" style="color: #0B2545;">Contact page</a> or WhatsApp for bulk arrangements.
                 </div>
               </div>
             </div>

@@ -7,6 +7,9 @@ Allow: /product-details
 Allow: /about
 Allow: /contact
 Allow: /faq
+Allow: /shipping
+Allow: /refund
+Allow: /returns
 Allow: /terms
 Allow: /privacy
 Allow: /assets/

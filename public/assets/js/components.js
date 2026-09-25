@@ -1645,12 +1645,14 @@ const renderFooter = () => {
             <a href="/shop">New Arrivals</a>
           </div>
 
-          <!-- Col 3: Help Links -->
+          <!-- Col 3: Support Links -->
           <div class="col-6 col-sm-6 col-lg-2">
-            <div class="hn-footer-title">Help</div>
-            <a href="/faq">Shipping</a>
-            <a href="/terms">Returns</a>
-            <a href="/faq">FAQs</a>
+            <div class="hn-footer-title">Support</div>
+            <a href="/faq">FAQ</a>
+            <a href="/shipping">Shipping Policy</a>
+            <a href="/refund">Returns &amp; Refunds</a>
+            <a href="/terms">Terms &amp; Conditions</a>
+            <a href="/privacy">Privacy Policy</a>
           </div>
 
           <!-- Col 4: About Links -->

@@ -863,12 +863,41 @@ exports.adminUpdateOrderStatus = async (req, res, next) => {
       shiprocket_order_id,
       shiprocket_shipment_id,
       shipping_label_url,
-      pickup_status
+      pickup_status,
+      payment_method
     } = req.body;
 
+    const normalizeOrderStatus = (status) => {
+      if (!status) return undefined;
+      const s = String(status).toLowerCase().trim();
+      if (s.includes('dispatch') || s.includes('transit') || s.includes('shipped') || s.includes('ship')) return 'shipped';
+      if (s.includes('pack')) return 'packed';
+      if (s.includes('deliv')) return 'delivered';
+      if (s.includes('cancel')) return 'cancelled';
+      if (s.includes('process')) return 'processing';
+      if (s.includes('return')) return 'returned';
+      if (s.includes('refund')) return 'refunded';
+      if (s.includes('pending')) return 'pending';
+      if (s.includes('confirm')) return 'confirmed';
+      return s;
+    };
+
+    const normalizePaymentStatus = (status) => {
+      if (!status) return undefined;
+      const s = String(status).toLowerCase().trim();
+      if (s.includes('paid')) return 'paid';
+      if (s.includes('refund')) return 'refunded';
+      if (s.includes('fail')) return 'failed';
+      if (s.includes('cancel')) return 'cancelled';
+      return 'pending';
+    };
+
+    const normOrderStatus = normalizeOrderStatus(order_status);
+    const normPaymentStatus = normalizePaymentStatus(payment_status);
+
     const updates = {};
-    if (order_status) updates.order_status = order_status.toLowerCase();
-    if (payment_status) updates.payment_status = payment_status.toLowerCase();
+    if (normOrderStatus) updates.order_status = normOrderStatus;
+    if (normPaymentStatus) updates.payment_status = normPaymentStatus;
     if (shipping_status) updates.shipping_status = shipping_status.toUpperCase();
     if (tracking_number) updates.tracking_number = tracking_number;
     if (awb_code) {
@@ -876,55 +905,98 @@ exports.adminUpdateOrderStatus = async (req, res, next) => {
       if (!updates.tracking_number) updates.tracking_number = awb_code;
     }
     if (tracking_url) updates.tracking_url = tracking_url;
-    if (notes) updates.notes = notes;
+    if (notes !== undefined) updates.notes = notes;
     if (courier || courier_name) {
       updates.courier = courier || courier_name;
       updates.courier_name = courier || courier_name;
     }
+    if (payment_method) updates.payment_method = payment_method;
     if (shiprocket_order_id) updates.shiprocket_order_id = shiprocket_order_id;
     if (shiprocket_shipment_id) updates.shiprocket_shipment_id = shiprocket_shipment_id;
     if (shipping_label_url) updates.shipping_label_url = shipping_label_url;
     if (pickup_status) updates.pickup_status = pickup_status;
 
-    // Customer & Shipping Updates
-    if (req.body.customer || req.body.guest_name) {
-      updates.guest_name = req.body.customer || req.body.guest_name;
-    }
-    if (req.body.phone || req.body.guest_phone) {
-      updates.guest_phone = req.body.phone || req.body.guest_phone;
-    }
-    if (req.body.email || req.body.guest_email) {
-      updates.guest_email = req.body.email || req.body.guest_email;
-    }
-    if (req.body.payment_method) {
-      updates.payment_method = req.body.payment_method;
-    }
-    if (req.body.address || req.body.shipping_address) {
-      if (typeof req.body.shipping_address === 'object' && req.body.shipping_address !== null) {
-        updates.shipping_address = req.body.shipping_address;
-      } else {
-        const addrText = req.body.address || (typeof req.body.shipping_address === 'string' ? req.body.shipping_address : '');
-        updates.shipping_address = {
-          name: updates.guest_name || req.body.customer || 'Customer',
-          phone: updates.guest_phone || req.body.phone || '',
-          email: updates.guest_email || req.body.email || '',
-          address_line_1: addrText,
-          address: addrText
-        };
-      }
-    }
-
-    updates.shipping_updated_at = new Date().toISOString();
-    updates.updated_at = new Date().toISOString();
-
     // 1. Update in Supabase if configured
     if (isSupabaseConfigured && supabaseAdmin) {
       try {
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-        let q = supabaseAdmin.from('orders').update(updates);
-        if (isUuid) q = q.eq('id', id);
-        else q = q.eq('order_number', id);
-        await q;
+        
+        // Find existing order in Supabase
+        let existingSbOrder = null;
+        if (isUuid) {
+          const { data } = await supabaseAdmin.from('orders').select('*').eq('id', id).maybeSingle();
+          existingSbOrder = data;
+        } else {
+          const { data } = await supabaseAdmin.from('orders').select('*').eq('order_number', id).maybeSingle();
+          existingSbOrder = data;
+        }
+        if (!existingSbOrder) {
+          const { data } = await supabaseAdmin.from('orders').select('*').or(`id.eq.${id},order_number.eq.${id}`).maybeSingle();
+          existingSbOrder = data;
+        }
+
+        // Build clean address JSONB
+        let currentShipAddr = {};
+        if (existingSbOrder && existingSbOrder.shipping_address) {
+          currentShipAddr = typeof existingSbOrder.shipping_address === 'object' ? existingSbOrder.shipping_address : {};
+        }
+
+        const customerName = req.body.customer || req.body.guest_name || currentShipAddr.name || 'Customer';
+        const customerPhone = req.body.phone || req.body.guest_phone || currentShipAddr.phone || '';
+        const customerEmail = req.body.email || req.body.guest_email || currentShipAddr.email || '';
+        const addressText = req.body.address || (typeof req.body.shipping_address === 'string' ? req.body.shipping_address : (req.body.shipping_address?.address_line_1 || currentShipAddr.address_line_1 || currentShipAddr.address || ''));
+
+        const mergedShippingAddress = {
+          ...currentShipAddr,
+          name: customerName,
+          phone: customerPhone,
+          email: customerEmail,
+          address_line_1: addressText,
+          address: addressText
+        };
+
+        const sbUpdates = {
+          shipping_address: mergedShippingAddress,
+          updated_at: new Date().toISOString()
+        };
+
+        if (normOrderStatus) sbUpdates.order_status = normOrderStatus;
+        if (normPaymentStatus) sbUpdates.payment_status = normPaymentStatus;
+        if (payment_method) sbUpdates.payment_method = payment_method;
+        if (tracking_number || awb_code) {
+          sbUpdates.tracking_number = tracking_number || awb_code;
+          sbUpdates.awb_code = awb_code || tracking_number;
+        }
+        if (courier_name || courier) sbUpdates.courier_name = courier_name || courier;
+        if (notes !== undefined) sbUpdates.notes = notes;
+        if (shipping_status) sbUpdates.shipping_status = shipping_status.toUpperCase();
+        if (tracking_url) sbUpdates.tracking_url = tracking_url;
+        if (shipping_label_url) sbUpdates.shipping_label_url = shipping_label_url;
+        if (pickup_status) sbUpdates.pickup_status = pickup_status;
+        if (shiprocket_order_id) sbUpdates.shiprocket_order_id = shiprocket_order_id;
+        if (shiprocket_shipment_id) sbUpdates.shiprocket_shipment_id = shiprocket_shipment_id;
+
+        const targetColumn = (existingSbOrder && existingSbOrder.id) ? 'id' : (isUuid ? 'id' : 'order_number');
+        const targetValue = (existingSbOrder && existingSbOrder.id) ? existingSbOrder.id : id;
+
+        const { error: sbUpdateErr } = await supabaseAdmin
+          .from('orders')
+          .update(sbUpdates)
+          .eq(targetColumn, targetValue);
+
+        if (sbUpdateErr) {
+          console.warn('[adminUpdateOrderStatus] Supabase full update notice:', sbUpdateErr.message);
+          // Fallback retry with core columns only
+          const coreUpdates = {
+            order_status: sbUpdates.order_status,
+            payment_status: sbUpdates.payment_status,
+            shipping_address: sbUpdates.shipping_address,
+            tracking_number: sbUpdates.tracking_number,
+            notes: sbUpdates.notes,
+            updated_at: sbUpdates.updated_at
+          };
+          await supabaseAdmin.from('orders').update(coreUpdates).eq(targetColumn, targetValue);
+        }
       } catch (sbErr) {
         console.warn('[adminUpdateOrderStatus] Supabase update notice:', sbErr.message);
       }
@@ -934,14 +1006,19 @@ exports.adminUpdateOrderStatus = async (req, res, next) => {
     let order = db.findById('orders', id) || db.findOne('orders', o => o.order_number === id);
     let updated = null;
     if (order) {
+      if (req.body.customer || req.body.guest_name) updates.customer = req.body.customer || req.body.guest_name;
+      if (req.body.phone || req.body.guest_phone) updates.phone = req.body.phone || req.body.guest_phone;
+      if (req.body.email || req.body.guest_email) updates.email = req.body.email || req.body.guest_email;
+      if (req.body.address) updates.address = req.body.address;
+
       updated = db.update('orders', order.id, updates);
 
-      // Notify Customer
-      if (order_status && order.user_id) {
+      // Notify Customer if user_id exists
+      if (normOrderStatus && order.user_id) {
         db.insert('notifications', {
           user_id: order.user_id,
           title: `Order #${order.order_number} Update`,
-          message: `Your order status changed to "${order_status.replace(/_/g, ' ').toUpperCase()}".`,
+          message: `Your order status changed to "${normOrderStatus.replace(/_/g, ' ').toUpperCase()}".`,
           type: 'order',
           link: `/order-tracking.html?order=${order.order_number}`,
           is_read: false
@@ -951,7 +1028,7 @@ exports.adminUpdateOrderStatus = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: 'Order status updated successfully.',
+      message: 'Order status updated successfully in database.',
       data: updated || { id, ...updates }
     });
   } catch (err) {

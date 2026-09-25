@@ -958,32 +958,58 @@
       const idx = localOrders.findIndex(o => o.id === id);
       if (idx === -1) return;
 
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const origBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+      }
+
+      const rawStatus = document.getElementById('edit-order-status').value;
+      const rawPaymentStatus = document.getElementById('edit-order-payment-status').value;
+
       const updatedFields = {
         customer: document.getElementById('edit-order-customer').value.trim(),
         phone: document.getElementById('edit-order-phone').value.trim(),
         email: document.getElementById('edit-order-email').value.trim(),
         address: document.getElementById('edit-order-address').value.trim(),
-        status: document.getElementById('edit-order-status').value,
+        status: rawStatus,
         payment_method: document.getElementById('edit-order-payment-method').value,
-        payment_status: document.getElementById('edit-order-payment-status').value,
+        payment_status: rawPaymentStatus,
         courier: document.getElementById('edit-order-courier').value.trim(),
         tracking_number: document.getElementById('edit-order-tracking').value.trim(),
         notes: document.getElementById('edit-order-notes').value.trim()
       };
 
       Object.assign(localOrders[idx], updatedFields);
-
       localStorage.setItem('harinama_admin_orders', JSON.stringify(localOrders));
-      showToast(`Order ${id} updated successfully!`);
 
-      const editModalEl = document.getElementById('editOrderModal');
-      const editModal = bootstrap.Modal.getInstance(editModalEl);
-      if (editModal) editModal.hide();
+      const normalizeStatus = (s) => {
+        const str = String(s || '').toLowerCase().trim();
+        if (str.includes('dispatch') || str.includes('transit') || str.includes('shipped') || str.includes('ship')) return 'shipped';
+        if (str.includes('pack')) return 'packed';
+        if (str.includes('deliv')) return 'delivered';
+        if (str.includes('cancel')) return 'cancelled';
+        if (str.includes('process')) return 'processing';
+        if (str.includes('return')) return 'returned';
+        if (str.includes('refund')) return 'refunded';
+        if (str.includes('pending')) return 'pending';
+        return 'confirmed';
+      };
 
-      updateMetricCounters();
-      filterOrders();
+      const normalizePayStatus = (s) => {
+        const str = String(s || '').toLowerCase().trim();
+        if (str.includes('paid')) return 'paid';
+        if (str.includes('refund')) return 'refunded';
+        if (str.includes('fail')) return 'failed';
+        if (str.includes('cancel')) return 'cancelled';
+        return 'pending';
+      };
 
-      // Sync with Live Backend API
+      const normStatus = normalizeStatus(rawStatus);
+      const normPayStatus = normalizePayStatus(rawPaymentStatus);
+
+      // 1. Sync with Live Backend API
       try {
         await fetchJsonSafe(`/api/orders/admin/${encodeURIComponent(id)}/status`, {
           method: 'PUT',
@@ -993,10 +1019,11 @@
             email: updatedFields.email,
             address: updatedFields.address,
             payment_method: updatedFields.payment_method,
-            order_status: updatedFields.status.toLowerCase(),
-            payment_status: updatedFields.payment_status.toLowerCase(),
+            order_status: normStatus,
+            payment_status: normPayStatus,
             tracking_number: updatedFields.tracking_number,
             courier: updatedFields.courier,
+            courier_name: updatedFields.courier,
             notes: updatedFields.notes
           })
         });
@@ -1004,38 +1031,67 @@
         console.warn('[AdminOrders] API status update note:', err);
       }
 
-      // Sync with Supabase Database
+      // 2. Direct Supabase Sync
       try {
         const sb = initSupabase();
         if (sb) {
-          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+          const dbId = localOrders[idx].db_id || id;
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(dbId);
+
           const sbUpdates = {
-            guest_name: updatedFields.customer,
-            guest_phone: updatedFields.phone,
-            guest_email: updatedFields.email,
+            order_status: normStatus,
+            payment_status: normPayStatus,
             payment_method: updatedFields.payment_method,
-            order_status: updatedFields.status.toLowerCase(),
-            payment_status: updatedFields.payment_status.toLowerCase(),
-            tracking_number: updatedFields.tracking_number,
-            courier: updatedFields.courier,
-            notes: updatedFields.notes,
+            tracking_number: updatedFields.tracking_number || null,
+            awb_code: updatedFields.tracking_number || null,
+            courier_name: updatedFields.courier || null,
+            notes: updatedFields.notes || '',
             shipping_address: {
               name: updatedFields.customer,
               phone: updatedFields.phone,
               email: updatedFields.email,
               address_line_1: updatedFields.address,
               address: updatedFields.address
-            }
+            },
+            updated_at: new Date().toISOString()
           };
 
           let q = sb.from('orders').update(sbUpdates);
-          if (isUuid) q = q.eq('id', id);
+          if (isUuid) q = q.eq('id', dbId);
           else q = q.eq('order_number', id);
-          await q;
+          
+          const { error: sbErr } = await q;
+          if (sbErr) {
+            console.warn('[AdminOrders] Supabase update retry with core fields:', sbErr.message);
+            // Core fallback
+            const coreUpdates = {
+              order_status: normStatus,
+              payment_status: normPayStatus,
+              shipping_address: sbUpdates.shipping_address,
+              notes: sbUpdates.notes,
+              updated_at: sbUpdates.updated_at
+            };
+            if (isUuid) await sb.from('orders').update(coreUpdates).eq('id', dbId);
+            else await sb.from('orders').update(coreUpdates).eq('order_number', id);
+          }
         }
       } catch (sbE) {
         console.warn('[AdminOrders] Supabase update note:', sbE);
       }
+
+      showToast(`Order ${id} updated successfully in database!`);
+
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = origBtnHtml;
+      }
+
+      const editModalEl = document.getElementById('editOrderModal');
+      const editModal = bootstrap.Modal.getInstance(editModalEl);
+      if (editModal) editModal.hide();
+
+      updateMetricCounters();
+      filterOrders();
     }
 
     async function updateOrderStatusFromModal() {
@@ -1047,11 +1103,26 @@
         localStorage.setItem('harinama_admin_orders', JSON.stringify(localOrders));
         showToast(`Order ${currentSelectedOrderId} status updated to ${newStatus}`);
 
+        const normalizeStatus = (s) => {
+          const str = String(s || '').toLowerCase().trim();
+          if (str.includes('dispatch') || str.includes('transit') || str.includes('shipped') || str.includes('ship')) return 'shipped';
+          if (str.includes('pack')) return 'packed';
+          if (str.includes('deliv')) return 'delivered';
+          if (str.includes('cancel')) return 'cancelled';
+          if (str.includes('process')) return 'processing';
+          if (str.includes('return')) return 'returned';
+          if (str.includes('refund')) return 'refunded';
+          if (str.includes('pending')) return 'pending';
+          return 'confirmed';
+        };
+
+        const normStatus = normalizeStatus(newStatus);
+
         // Sync with API
         try {
           await fetchJsonSafe(`/api/orders/admin/${encodeURIComponent(currentSelectedOrderId)}/status`, {
             method: 'PUT',
-            body: JSON.stringify({ order_status: newStatus.toLowerCase() })
+            body: JSON.stringify({ order_status: normStatus })
           });
         } catch(e) {}
 
@@ -1059,10 +1130,12 @@
         try {
           const sb = initSupabase();
           if (sb) {
-            await sb
-              .from('orders')
-              .update({ order_status: newStatus.toLowerCase() })
-              .or(`order_number.eq.${currentSelectedOrderId},id.eq.${localOrders[idx].db_id || currentSelectedOrderId}`);
+            const dbId = localOrders[idx].db_id || currentSelectedOrderId;
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(dbId);
+            let q = sb.from('orders').update({ order_status: normStatus, updated_at: new Date().toISOString() });
+            if (isUuid) q = q.eq('id', dbId);
+            else q = q.eq('order_number', currentSelectedOrderId);
+            await q;
           }
         } catch (sbE) {}
       }

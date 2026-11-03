@@ -190,6 +190,15 @@
       const grid = document.getElementById('hn-shop-grid');
       if (!grid) return;
       if (!items || items.length === 0) {
+        // If catalog is still initializing or syncing, keep showing skeletons instead of empty notice
+        if (typeof HARINAMA_DATA === 'undefined' || !HARINAMA_DATA.isLoaded) {
+          if (typeof window.renderProductSkeletons === 'function') {
+            grid.innerHTML = window.renderProductSkeletons(8);
+          } else {
+            grid.innerHTML = '<div class="col-12 py-5 text-center text-muted"><span class="fs-1 d-block mb-2">🪷</span>Loading sacred products...</div>';
+          }
+          return;
+        }
         grid.innerHTML = '<div class="col-12 py-5 text-center text-muted"><i class="bi bi-box-seam fs-1 d-block mb-2 text-gold"></i>No products found matching your selected filters.</div>';
         return;
       }
@@ -374,7 +383,20 @@
           else if (checkedPrices[0] === '300-600') queryParams.set('min_price', '300');
         }
 
-        const res = await fetch(`/api/products?${queryParams.toString()}`, {
+        function getBackendUrl(path) {
+          if (typeof window !== 'undefined') {
+            if (window.location.protocol === 'file:') return 'http://localhost:5000' + path;
+            const { hostname, port } = window.location;
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+              if (port === '5000') return path;
+              return 'http://localhost:5000' + path;
+            }
+            return path;
+          }
+          return 'http://localhost:5000' + path;
+        }
+
+        const res = await fetch(getBackendUrl(`/api/products?${queryParams.toString()}`), {
           cache: 'no-store',
           headers: { 'Accept': 'application/json' }
         });
@@ -394,6 +416,14 @@
       }
 
       // 2. Local memory fallback if server was temporarily offline
+      if (typeof HARINAMA_DATA === 'undefined' || !HARINAMA_DATA.isLoaded) {
+        // Database sync is still in flight, keep displaying skeleton loaders
+        if (grid && typeof window.renderProductSkeletons === 'function') {
+          grid.innerHTML = window.renderProductSkeletons(8);
+        }
+        return;
+      }
+
       let filtered = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.products)) ? [...HARINAMA_DATA.products] : [];
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
@@ -450,11 +480,20 @@
         }
       } else if (activeCollection && activeCollection !== 'all') {
         const colLower = activeCollection.toLowerCase().trim();
+        const slugAliases = {
+          'japa-malas': 'japa-mala-bags',
+          'japa-bags': 'japa-mala-bags',
+          'spiritual-gifts': 'devotional-gifts',
+          'keychains': 'devotional-gifts',
+          'books': 'devotional-gifts',
+          'deity-statues': 'art-home-decor'
+        };
+        const resolvedCol = slugAliases[colLower] || colLower;
         filtered = filtered.filter(p => {
           if (!p) return false;
           if (p.category_id === activeCollection) return true;
-          if (p.category_slug && p.category_slug.toLowerCase() === colLower) return true;
-          if (p.category && p.category.toLowerCase() === colLower) return true;
+          if (p.category_slug && (p.category_slug.toLowerCase() === colLower || p.category_slug.toLowerCase() === resolvedCol)) return true;
+          if (p.category && (p.category.toLowerCase() === colLower || p.category.toLowerCase() === resolvedCol)) return true;
           return false;
         });
       }
@@ -506,13 +545,17 @@
       renderShopCategories();
       applyFilters(true);
 
-      window.addEventListener('hn:catalog-loaded', () => {
+      let _lastCatalogSyncTime = 0;
+      const onCatalogSync = () => {
+        const now = Date.now();
+        if (now - _lastCatalogSyncTime < 400) return;
+        _lastCatalogSyncTime = now;
         renderShopCategories();
         applyFilters(false);
-      });
-      window.addEventListener('hn:catalog-changed', () => {
-        applyFilters(false);
-      });
+      };
+
+      window.addEventListener('hn:catalog-loaded', onCatalogSync);
+      window.addEventListener('hn:catalog-changed', onCatalogSync);
       window.addEventListener('hn_wishlist_updated', () => applyFilters(false));
     });
   </script>

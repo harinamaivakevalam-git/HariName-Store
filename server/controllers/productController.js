@@ -141,9 +141,13 @@ exports.getProducts = async (req, res, next) => {
           if (isUuid) {
             query = query.eq('category_id', category);
           } else {
-            const { data: catRecord } = await supabase.from('categories').select('id').eq('slug', category).single();
+            const slugAliases = { 'japa-malas': 'japa-mala-bags', 'japa-bags': 'japa-mala-bags', 'spiritual-gifts': 'devotional-gifts', 'keychains': 'devotional-gifts', 'books': 'devotional-gifts', 'deity-statues': 'art-home-decor' };
+            const resolvedSlug = slugAliases[String(category).toLowerCase().trim()] || String(category).toLowerCase().trim();
+            const { data: catRecord } = await supabase.from('categories').select('id').or('slug.eq.' + resolvedSlug + ',slug.eq.' + category + ',name.ilike.%' + category + '%').maybeSingle();
             if (catRecord) {
               query = query.eq('category_id', catRecord.id);
+            } else {
+              query = query.eq('category_id', '00000000-0000-0000-0000-000000000000');
             }
           }
         }
@@ -255,8 +259,11 @@ exports.getProducts = async (req, res, next) => {
     }
 
     if (category && category !== 'all-products') {
-      const cat = db.findOne('categories', c => c.slug === category || c.id === category);
+      const slugAliases = { 'japa-malas': 'japa-mala-bags', 'japa-bags': 'japa-mala-bags', 'spiritual-gifts': 'devotional-gifts', 'keychains': 'devotional-gifts', 'books': 'devotional-gifts', 'deity-statues': 'art-home-decor' };
+      const resolvedSlug = slugAliases[String(category).toLowerCase().trim()] || String(category).toLowerCase().trim();
+      const cat = db.findOne('categories', c => c.slug === category || c.slug === resolvedSlug || c.id === category || (c.name && c.name.toLowerCase() === category.toLowerCase()));
       if (cat) products = products.filter(p => p.category_id === cat.id);
+      else products = [];
     }
 
     if (brand) {

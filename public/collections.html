@@ -146,6 +146,10 @@
       });
 
       if (cats.length === 0) {
+        if (typeof HARINAMA_DATA === 'undefined' || !HARINAMA_DATA.isLoaded) {
+          // Keep displaying the initial loading spinner while catalog synchronizes
+          return;
+        }
         grid.innerHTML = `
           <div class="col-12 py-5 text-center text-muted">
             <i class="bi bi-collection fs-1 d-block mb-3 text-gold"></i>

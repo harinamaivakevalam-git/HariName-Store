@@ -18,7 +18,14 @@ function resolveSafeAssetUrl(url) {
 
 const HARINAMA_AUTHENTIC_PRODUCTS = [];
 
-const HARINAMA_BASE_AUTHENTIC_COLLECTIONS = [];
+const HARINAMA_BASE_AUTHENTIC_COLLECTIONS = [
+  { id: '56aaf58d-c3cb-445f-b6b8-3204e56ba5ea', name: 'Tulsi Kanthi Mala', slug: 'tulsi-kanthi-mala', desc: 'Sacred Tulsi Kanthi Mala for devotees.', image: 'https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1790071634910-4go4mxv.webp', sort_order: 1 },
+  { id: '2401c1be-5665-472b-b517-ea1ceea9c810', name: 'Japa Mala & Bags', slug: 'japa-mala-bags', desc: 'Sacred Japa Mala and devotional bags.', image: 'https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1790845452346-5hjfp2g.webp', sort_order: 2 },
+  { id: '97b72fae-78e4-48c8-b207-e3f3dbee540c', name: 'Tulsi Jewelry', slug: 'tulsi-jewelry', desc: 'Carry the sacred beauty of Tulsi into everyday life.', image: 'https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1790080321961-0nszesu.webp', sort_order: 3 },
+  { id: '398b48ab-83ca-4dcf-b329-0a2a5deabce6', name: 'Devotional Gifts', slug: 'devotional-gifts', desc: 'Meaningful gifts inspired by Krishna, Radha, and bhakti.', image: 'https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1790845288611-1gwnou4.webp', sort_order: 4 },
+  { id: '70661ea1-9280-45c1-a718-4ea324a8228f', name: 'Art, Home & Decor', slug: 'art-home-decor', desc: 'Devotional art and decor for your sacred home.', image: 'https://wnaqfadlxrrvvjvqqbch.supabase.co/storage/v1/object/public/product-images/categories/1790845640282-6fphcmz.webp', sort_order: 5 },
+  { id: 'f3d89880-2e08-4605-bc80-6f658d698d0e', name: 'Deity Fragrance & Oils', slug: 'deity-fragrance-oils', desc: 'Temple-inspired natural fragrances and attars.', image: '/assets/images/cat_deity_statues.jpg', sort_order: 6 }
+];
 
 // Dynamic Category Counts based on Database Categories & Products
 function computeCategoryCounts(productsList = [], dbCategories = null) {
@@ -87,10 +94,19 @@ function computeCategoryCounts(productsList = [], dbCategories = null) {
   } catch (_) {}
 })();
 
+let _initCachedProds = [];
+try {
+  const _rawCP = localStorage.getItem('hn_cached_catalog_prods');
+  if (_rawCP) {
+    const _parsedCP = JSON.parse(_rawCP);
+    if (Array.isArray(_parsedCP) && _parsedCP.length > 0) _initCachedProds = _parsedCP;
+  }
+} catch (_) {}
+
 const HARINAMA_DATA = {
-  products: [...HARINAMA_AUTHENTIC_PRODUCTS],
-  categories: computeCategoryCounts(HARINAMA_AUTHENTIC_PRODUCTS, HARINAMA_BASE_AUTHENTIC_COLLECTIONS),
-  isLoaded: false
+  products: _initCachedProds.length > 0 ? _initCachedProds : [...HARINAMA_AUTHENTIC_PRODUCTS],
+  categories: computeCategoryCounts(_initCachedProds.length > 0 ? _initCachedProds : HARINAMA_AUTHENTIC_PRODUCTS, HARINAMA_BASE_AUTHENTIC_COLLECTIONS),
+  isLoaded: _initCachedProds.length > 0
 };
 
 // Backwards compatibility alias
@@ -419,7 +435,11 @@ HARINAMA_DATA.syncWithApi = async function(forceRefresh = false) {
     fetchedCategories = (HARINAMA_DATA.categories && HARINAMA_DATA.categories.length > 0) ? HARINAMA_DATA.categories : [...HARINAMA_BASE_AUTHENTIC_COLLECTIONS];
   }
 
-  // Apply to in-memory global state (NOT to localStorage)
+  try {
+    if (Array.isArray(fetchedProducts) && fetchedProducts.length > 0) {
+      localStorage.setItem('hn_cached_catalog_prods', JSON.stringify(fetchedProducts));
+    }
+  } catch (_) {}
   HARINAMA_DATA.products = fetchedProducts;
   HARINAMA_DATA.categories = computeCategoryCounts(fetchedProducts, fetchedCategories);
   HARINAMA_DATA.isLoaded = true;

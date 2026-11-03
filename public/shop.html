@@ -319,7 +319,7 @@
       const catListEl = document.getElementById('hn-shop-categories-list');
       if (!catListEl) return;
 
-      const cats = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.categories)) ? HARINAMA_DATA.categories : [];
+      const cats = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.categories)) ? HARINAMA_DATA.categories.filter(c => c.status !== 'inactive' && c.status !== 'archived') : [];
       const isAllActive = activeCollection === 'all' && !activeCuratedFilter;
       let markup = `<a href="#" class="hn-filter-link ${isAllActive ? 'active' : ''}" onclick="filterByCollection('all', this); return false;">All Products</a>`;
 

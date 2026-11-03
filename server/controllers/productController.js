@@ -135,16 +135,21 @@ exports.getProducts = async (req, res, next) => {
           query = query.eq('status', 'active');
         }
 
-        // Category filter
+        // Category filter (strictly active categories for non-admin storefront)
         if (category && category !== 'all-products') {
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(category);
           if (isUuid) {
-            query = query.eq('category_id', category);
+            const { data: catRecord } = await supabase.from('categories').select('id, status').eq('id', category).maybeSingle();
+            if (catRecord && (catRecord.status === 'active' || (req.user && req.user.role === 'admin'))) {
+              query = query.eq('category_id', category);
+            } else {
+              query = query.eq('category_id', '00000000-0000-0000-0000-000000000000');
+            }
           } else {
             const slugAliases = { 'japa-malas': 'japa-mala-bags', 'japa-bags': 'japa-mala-bags', 'spiritual-gifts': 'devotional-gifts', 'keychains': 'devotional-gifts', 'books': 'devotional-gifts', 'deity-statues': 'art-home-decor' };
             const resolvedSlug = slugAliases[String(category).toLowerCase().trim()] || String(category).toLowerCase().trim();
-            const { data: catRecord } = await supabase.from('categories').select('id').or('slug.eq.' + resolvedSlug + ',slug.eq.' + category + ',name.ilike.%' + category + '%').maybeSingle();
-            if (catRecord) {
+            const { data: catRecord } = await supabase.from('categories').select('id, status').or('slug.eq.' + resolvedSlug + ',slug.eq.' + category + ',name.ilike.%' + category + '%').maybeSingle();
+            if (catRecord && (catRecord.status === 'active' || (req.user && req.user.role === 'admin'))) {
               query = query.eq('category_id', catRecord.id);
             } else {
               query = query.eq('category_id', '00000000-0000-0000-0000-000000000000');

@@ -45,8 +45,8 @@ function computeCategoryCounts(productsList = [], dbCategories = null) {
     return [];
   }
 
-  // Separate "All Products" from custom categories so we can sort by sort_order
-  const nonAllCats = catList.filter(c => c.slug !== 'all-products' && c.id !== 'cat-all');
+  // Separate "All Products" from custom categories (strictly active only)
+  const nonAllCats = catList.filter(c => c.slug !== 'all-products' && c.id !== 'cat-all' && c.status !== 'inactive' && c.status !== 'archived');
   
   // Sort categories strictly by sort_order ascending (1, 2, 3...)
   nonAllCats.sort((a, b) => {
@@ -296,7 +296,9 @@ HARINAMA_DATA.syncWithApi = async function(forceRefresh = false) {
     ]);
 
     if (catRes.status === 'fulfilled' && catRes.value && catRes.value.success && Array.isArray(catRes.value.data) && catRes.value.data.length > 0) {
-      fetchedCategories = catRes.value.data.map(c => ({
+      fetchedCategories = catRes.value.data
+        .filter(c => c.status !== 'inactive' && c.status !== 'archived')
+        .map(c => ({
         id: c.id,
         name: c.name,
         slug: c.slug,
@@ -352,13 +354,15 @@ HARINAMA_DATA.syncWithApi = async function(forceRefresh = false) {
     try {
       if (!categoriesLoaded) {
         const catRes = await fetchWithTimeout(
-          SUPABASE_URL + '/rest/v1/categories?status=neq.archived&order=sort_order.asc,name.asc',
+          SUPABASE_URL + '/rest/v1/categories?status=eq.active&order=sort_order.asc,name.asc',
           { headers: sbHeaders },
           8000
         ).then(r => r.ok ? r.json() : null).catch(() => null);
 
         if (Array.isArray(catRes) && catRes.length > 0) {
-          fetchedCategories = catRes.map(c => ({
+          fetchedCategories = catRes
+            .filter(c => c.status !== 'inactive' && c.status !== 'archived')
+            .map(c => ({
             id: c.id,
             name: c.name,
             slug: c.slug,

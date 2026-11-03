@@ -66,6 +66,9 @@ exports.getCategoryBySlug = async (req, res, next) => {
       const { data, error } = await query.single();
 
       if (!error && data) {
+        if (data.status !== 'active' && (!req.user || req.user.role !== 'admin')) {
+          return res.status(404).json({ success: false, message: 'Category not found or inactive.' });
+        }
         const productCount = (data.products || []).filter(p => p.status === 'active').length;
         return res.json({
           success: true,

@@ -128,12 +128,12 @@
       if (!grid) return;
 
       let cats = (HARINAMA_DATA && Array.isArray(HARINAMA_DATA.categories)) 
-        ? HARINAMA_DATA.categories.filter(c => c.slug !== 'all-products' && c.id !== 'cat-all')
+        ? HARINAMA_DATA.categories.filter(c => c.slug !== 'all-products' && c.id !== 'cat-all' && c.status !== 'inactive' && c.status !== 'archived')
         : [];
 
       if (cats.length === 0) {
         cats = (typeof HARINAMA_BASE_AUTHENTIC_COLLECTIONS !== 'undefined' && Array.isArray(HARINAMA_BASE_AUTHENTIC_COLLECTIONS))
-          ? HARINAMA_BASE_AUTHENTIC_COLLECTIONS
+          ? HARINAMA_BASE_AUTHENTIC_COLLECTIONS.filter(c => c.status !== 'inactive' && c.status !== 'archived')
           : [];
       }
 

@@ -243,6 +243,14 @@
           <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
           <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
           <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
         </div>
 
       </div>
@@ -433,7 +441,7 @@
 
       if (!prods || prods.length === 0) {
         grid.innerHTML = (typeof window.renderProductSkeletons === 'function') 
-          ? window.renderProductSkeletons(4, 'col-6 col-md-6 col-lg-3') 
+          ? window.renderProductSkeletons(12, 'col-6 col-md-6 col-lg-3') 
           : '<div class="col-12 text-center py-5 text-muted"><span class="fs-1 d-block mb-2">🪷</span>Loading sacred collection...</div>';
         return;
       }
@@ -486,7 +494,19 @@
         filtered = [...prods];
       }
 
-      const displayList = filtered.slice(0, 4);
+      // If fewer than 12 products match the filter, append remaining catalog items so all 3 rows (12 items total: 4 on top + another 8 below) are beautifully filled
+      if (filtered.length < 12) {
+        const seenIds = new Set(filtered.map(p => p.id));
+        for (const p of prods) {
+          if (!seenIds.has(p.id)) {
+            filtered.push(p);
+            seenIds.add(p.id);
+            if (filtered.length >= 12) break;
+          }
+        }
+      }
+
+      const displayList = filtered.slice(0, 12);
 
       grid.innerHTML = displayList.map(p => renderProductCard(p)).join('');
       if (typeof initScrollAnimations === 'function') initScrollAnimations();

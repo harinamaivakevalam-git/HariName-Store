@@ -1813,17 +1813,18 @@ const findCatalogProduct = (idOrSlug) => {
 window.findCatalogProduct = findCatalogProduct;
 
 // Render Product Card (Exact match to reference image with dual-ID wishlist awareness & resilient fallback images)
-const renderProductCard = (p) => {
+const renderProductCard = (p, customColClass = '') => {
   if (!p) return '';
-  const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+  const wishlist = typeof getStoredWishlist === 'function' ? getStoredWishlist() : JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
   const isWish = Array.isArray(wishlist) && (wishlist.includes(p.id) || (p.legacy_id && wishlist.includes(p.legacy_id)) || (p.slug && wishlist.includes(p.slug)));
   const rawImg = p.image || p.primary_image || (p.images && p.images[0]) || '';
   const imgSrc = window.getProductImageUrl ? window.getProductImageUrl(rawImg, { width: 360, quality: 80, format: 'webp' }) : (rawImg || '/assets/images/krishna-logo.jpg');
   const prodTitle = p.name || p.title || 'Sacred Devotional Item';
   const prodLink = `/product-details?id=${encodeURIComponent(p.slug || p.id)}`;
+  const colClass = customColClass || 'col-6 col-md-6 col-lg-3';
 
   return `
-    <div class="col-6 col-md-6 col-lg-3">
+    <div class="${colClass}">
       <div class="hn-product-card" data-product-id="${p.id}" data-legacy-id="${p.legacy_id || ''}">
         
         <button class="hn-card-wishlist ${isWish ? 'active text-danger' : ''}" onclick="toggleWishlist('${p.id}', this)" title="Wishlist" aria-label="Add to wishlist">

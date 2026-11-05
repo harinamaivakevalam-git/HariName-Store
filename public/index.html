@@ -6,7 +6,7 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-MSKX0904SY"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag() { dataLayer.push(arguments); }
     gtag('js', new Date());
 
     gtag('config', 'G-MSKX0904SY');
@@ -86,11 +86,11 @@
   }
   </script>
 
-  <!-- Google Fonts: Poppins Master Typography -->
+  <!-- Google Fonts: Poppins Master Typography & Sacred Cormorant Garamond -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,600&display=swap"
     rel="stylesheet">
 
   <!-- Bootstrap 5 CSS & Icons -->
@@ -99,7 +99,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Harinama Store Master Stylesheet -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=27">
+  <link rel="stylesheet" href="/assets/css/style.css?v=28">
   <!-- Brand Favicon -->
   <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
   <link rel="shortcut icon" href="/favicon.ico">
@@ -154,7 +154,9 @@
           </div>
 
           <!-- Right Column: Kept clear for hero background artwork -->
-          <div class="col-lg-5 col-xl-6 d-none d-lg-flex flex-column justify-content-end align-items-lg-end position-relative" style="min-height: 280px;">
+          <div
+            class="col-lg-5 col-xl-6 d-none d-lg-flex flex-column justify-content-end align-items-lg-end position-relative"
+            style="min-height: 280px;">
           </div>
 
         </div>
@@ -217,40 +219,154 @@
         <!-- Curated Featured Tabs Strip -->
         <div class="hn-featured-tabs-wrapper mb-4 hn-reveal">
           <div class="hn-featured-tabs-scroll" id="hn-curated-tabs">
-            <button type="button" class="hn-curated-tab active" data-tab="new-arrivals" onclick="switchFeaturedTab('new-arrivals', this)">
+            <button type="button" class="hn-curated-tab active" data-tab="new-arrivals"
+              onclick="switchFeaturedTab('new-arrivals', this)">
               <span>✨ New Arrivals</span>
             </button>
-            <button type="button" class="hn-curated-tab" data-tab="best-sellers" onclick="switchFeaturedTab('best-sellers', this)">
+            <button type="button" class="hn-curated-tab" data-tab="best-sellers"
+              onclick="switchFeaturedTab('best-sellers', this)">
               <span>🔥 Best Sellers</span>
             </button>
-            <button type="button" class="hn-curated-tab" data-tab="gift-sets" onclick="switchFeaturedTab('gift-sets', this)">
+            <button type="button" class="hn-curated-tab" data-tab="gift-sets"
+              onclick="switchFeaturedTab('gift-sets', this)">
               <span>🎁 Gift Sets</span>
             </button>
-            <button type="button" class="hn-curated-tab" data-tab="festival" onclick="switchFeaturedTab('festival', this)">
+            <button type="button" class="hn-curated-tab" data-tab="festival"
+              onclick="switchFeaturedTab('festival', this)">
               <span>🌸 Festival Collection</span>
             </button>
-            <button type="button" class="hn-curated-tab" data-tab="under-299" onclick="switchFeaturedTab('under-299', this)">
+            <button type="button" class="hn-curated-tab" data-tab="under-299"
+              onclick="switchFeaturedTab('under-299', this)">
               <span>💛 Under ₹299</span>
             </button>
-            <button type="button" class="hn-curated-tab" data-tab="specials" onclick="switchFeaturedTab('specials', this)">
+            <button type="button" class="hn-curated-tab" data-tab="specials"
+              onclick="switchFeaturedTab('specials', this)">
               <span>🪷 HarinamaStore SPECIALS</span>
             </button>
           </div>
         </div>
 
         <div class="row g-2 g-md-3 hn-reveal-stagger" id="hn-featured-grid">
-          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
-          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
-          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
-          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
-          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
-          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
-          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
-          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
-          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
-          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
-          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
-          <div class="col-6 col-md-6 col-lg-3"><div class="hn-skeleton-card"><div class="hn-skeleton hn-skeleton-img"></div><div class="hn-skeleton hn-skeleton-title"></div><div class="hn-skeleton hn-skeleton-title-short"></div><div class="hn-skeleton hn-skeleton-price"></div><div class="hn-skeleton hn-skeleton-rating"></div><div class="hn-skeleton hn-skeleton-btn"></div></div></div>
+          <div class="col-6 col-md-6 col-lg-3">
+            <div class="hn-skeleton-card">
+              <div class="hn-skeleton hn-skeleton-img"></div>
+              <div class="hn-skeleton hn-skeleton-title"></div>
+              <div class="hn-skeleton hn-skeleton-title-short"></div>
+              <div class="hn-skeleton hn-skeleton-price"></div>
+              <div class="hn-skeleton hn-skeleton-rating"></div>
+              <div class="hn-skeleton hn-skeleton-btn"></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-6 col-lg-3">
+            <div class="hn-skeleton-card">
+              <div class="hn-skeleton hn-skeleton-img"></div>
+              <div class="hn-skeleton hn-skeleton-title"></div>
+              <div class="hn-skeleton hn-skeleton-title-short"></div>
+              <div class="hn-skeleton hn-skeleton-price"></div>
+              <div class="hn-skeleton hn-skeleton-rating"></div>
+              <div class="hn-skeleton hn-skeleton-btn"></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-6 col-lg-3">
+            <div class="hn-skeleton-card">
+              <div class="hn-skeleton hn-skeleton-img"></div>
+              <div class="hn-skeleton hn-skeleton-title"></div>
+              <div class="hn-skeleton hn-skeleton-title-short"></div>
+              <div class="hn-skeleton hn-skeleton-price"></div>
+              <div class="hn-skeleton hn-skeleton-rating"></div>
+              <div class="hn-skeleton hn-skeleton-btn"></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-6 col-lg-3">
+            <div class="hn-skeleton-card">
+              <div class="hn-skeleton hn-skeleton-img"></div>
+              <div class="hn-skeleton hn-skeleton-title"></div>
+              <div class="hn-skeleton hn-skeleton-title-short"></div>
+              <div class="hn-skeleton hn-skeleton-price"></div>
+              <div class="hn-skeleton hn-skeleton-rating"></div>
+              <div class="hn-skeleton hn-skeleton-btn"></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-6 col-lg-3">
+            <div class="hn-skeleton-card">
+              <div class="hn-skeleton hn-skeleton-img"></div>
+              <div class="hn-skeleton hn-skeleton-title"></div>
+              <div class="hn-skeleton hn-skeleton-title-short"></div>
+              <div class="hn-skeleton hn-skeleton-price"></div>
+              <div class="hn-skeleton hn-skeleton-rating"></div>
+              <div class="hn-skeleton hn-skeleton-btn"></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-6 col-lg-3">
+            <div class="hn-skeleton-card">
+              <div class="hn-skeleton hn-skeleton-img"></div>
+              <div class="hn-skeleton hn-skeleton-title"></div>
+              <div class="hn-skeleton hn-skeleton-title-short"></div>
+              <div class="hn-skeleton hn-skeleton-price"></div>
+              <div class="hn-skeleton hn-skeleton-rating"></div>
+              <div class="hn-skeleton hn-skeleton-btn"></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-6 col-lg-3">
+            <div class="hn-skeleton-card">
+              <div class="hn-skeleton hn-skeleton-img"></div>
+              <div class="hn-skeleton hn-skeleton-title"></div>
+              <div class="hn-skeleton hn-skeleton-title-short"></div>
+              <div class="hn-skeleton hn-skeleton-price"></div>
+              <div class="hn-skeleton hn-skeleton-rating"></div>
+              <div class="hn-skeleton hn-skeleton-btn"></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-6 col-lg-3">
+            <div class="hn-skeleton-card">
+              <div class="hn-skeleton hn-skeleton-img"></div>
+              <div class="hn-skeleton hn-skeleton-title"></div>
+              <div class="hn-skeleton hn-skeleton-title-short"></div>
+              <div class="hn-skeleton hn-skeleton-price"></div>
+              <div class="hn-skeleton hn-skeleton-rating"></div>
+              <div class="hn-skeleton hn-skeleton-btn"></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-6 col-lg-3">
+            <div class="hn-skeleton-card">
+              <div class="hn-skeleton hn-skeleton-img"></div>
+              <div class="hn-skeleton hn-skeleton-title"></div>
+              <div class="hn-skeleton hn-skeleton-title-short"></div>
+              <div class="hn-skeleton hn-skeleton-price"></div>
+              <div class="hn-skeleton hn-skeleton-rating"></div>
+              <div class="hn-skeleton hn-skeleton-btn"></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-6 col-lg-3">
+            <div class="hn-skeleton-card">
+              <div class="hn-skeleton hn-skeleton-img"></div>
+              <div class="hn-skeleton hn-skeleton-title"></div>
+              <div class="hn-skeleton hn-skeleton-title-short"></div>
+              <div class="hn-skeleton hn-skeleton-price"></div>
+              <div class="hn-skeleton hn-skeleton-rating"></div>
+              <div class="hn-skeleton hn-skeleton-btn"></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-6 col-lg-3">
+            <div class="hn-skeleton-card">
+              <div class="hn-skeleton hn-skeleton-img"></div>
+              <div class="hn-skeleton hn-skeleton-title"></div>
+              <div class="hn-skeleton hn-skeleton-title-short"></div>
+              <div class="hn-skeleton hn-skeleton-price"></div>
+              <div class="hn-skeleton hn-skeleton-rating"></div>
+              <div class="hn-skeleton hn-skeleton-btn"></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-6 col-lg-3">
+            <div class="hn-skeleton-card">
+              <div class="hn-skeleton hn-skeleton-img"></div>
+              <div class="hn-skeleton hn-skeleton-title"></div>
+              <div class="hn-skeleton hn-skeleton-title-short"></div>
+              <div class="hn-skeleton hn-skeleton-price"></div>
+              <div class="hn-skeleton hn-skeleton-rating"></div>
+              <div class="hn-skeleton hn-skeleton-btn"></div>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -440,8 +556,8 @@
       }
 
       if (!prods || prods.length === 0) {
-        grid.innerHTML = (typeof window.renderProductSkeletons === 'function') 
-          ? window.renderProductSkeletons(12, 'col-6 col-md-6 col-lg-3') 
+        grid.innerHTML = (typeof window.renderProductSkeletons === 'function')
+          ? window.renderProductSkeletons(12, 'col-6 col-md-6 col-lg-3')
           : '<div class="col-12 text-center py-5 text-muted"><span class="fs-1 d-block mb-2">🪷</span>Loading sacred collection...</div>';
         return;
       }
@@ -506,9 +622,27 @@
         }
       }
 
-      const displayList = filtered.slice(0, 12);
+      // Ensure we only show complete 4-column rows (e.g. 12, 8, or 4 items) so there is NEVER an awkward half-filled row with blank empty space
+      let targetCount = 12;
+      if (filtered.length >= 12) {
+        targetCount = 12;
+      } else if (filtered.length >= 8) {
+        targetCount = 8;
+      } else if (filtered.length >= 4) {
+        targetCount = 4;
+      } else {
+        targetCount = filtered.length;
+      }
 
-      grid.innerHTML = displayList.map(p => renderProductCard(p)).join('');
+      const displayList = filtered.slice(0, targetCount);
+
+      // If fewer than 4 items, adapt column widths so they fill the row nicely without empty gaps
+      let customCol = '';
+      if (displayList.length === 1) customCol = 'col-12 col-md-6 col-lg-5 mx-auto';
+      else if (displayList.length === 2) customCol = 'col-6 col-md-6 col-lg-6';
+      else if (displayList.length === 3) customCol = 'col-6 col-md-4 col-lg-4';
+
+      grid.innerHTML = displayList.map(p => renderProductCard(p, customCol)).join('');
       if (typeof initScrollAnimations === 'function') initScrollAnimations();
     }
     window.renderFeaturedSection = renderFeaturedSection;
@@ -768,7 +902,7 @@
         const imgEl = document.querySelector('.hn-bhakti-banner-img');
         if (imgEl && dailyBhakti.image_url) {
           imgEl.src = safeImgUrl(dailyBhakti.image_url);
-          imgEl.onerror = function() { this.onerror=null; this.src='/assets/images/bhakti_mug_banner.jpg'; };
+          imgEl.onerror = function () { this.onerror = null; this.src = '/assets/images/bhakti_mug_banner.jpg'; };
         }
       }
 
@@ -877,7 +1011,7 @@
             img.src = finalImg;
             img.className = 'hn-promo-img';
             img.alt = promo.title || 'Sacred Devotional Item';
-            img.onerror = function() { this.onerror=null; this.src='/assets/images/krishna-logo.jpg'; };
+            img.onerror = function () { this.onerror = null; this.src = '/assets/images/krishna-logo.jpg'; };
             promoImgWrap.appendChild(img);
           }
         }
@@ -922,7 +1056,7 @@
           gallery.items.forEach((item, idx) => {
             if (imgs[idx]) {
               imgs[idx].src = typeof item === 'string' ? item : item.url;
-              imgs[idx].onerror = function() { this.onerror=null; this.src='/assets/images/krishna_hero_keychain.jpg'; };
+              imgs[idx].onerror = function () { this.onerror = null; this.src = '/assets/images/krishna_hero_keychain.jpg'; };
             }
           });
         }

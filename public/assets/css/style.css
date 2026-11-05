@@ -1438,15 +1438,15 @@ a.hn-btn-gold:active,
 .hn-promo-title,
 .hn-promo-subtitle,
 .hn-promo-desc {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: #0B2545;
-  line-height: 1.6;
+  font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--hn-navy, #0B2545);
+  line-height: 1.55;
   margin: 0;
   padding: 0;
-  font-style: italic;
-  letter-spacing: 0.01em;
+  font-style: normal;
+  letter-spacing: 0.02em;
 }
 
 .hn-mantra-box {

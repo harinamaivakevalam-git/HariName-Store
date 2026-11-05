@@ -1536,8 +1536,18 @@
         loadLiveProduct();
       });
 
-      window.addEventListener('hn_wishlist_updated', () => {
-        if (currentProduct) populateDetails(currentProduct);
+      window.addEventListener('hn_wishlist_updated', (e) => {
+        if (!currentProduct) return;
+        const wishlist = Array.isArray(e && e.detail) ? e.detail : JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+        const isWish = wishlist.some(id => id === currentProduct.id || (currentProduct.legacy_id && id === currentProduct.legacy_id) || (currentProduct.slug && id === currentProduct.slug));
+        const detailWishBtn = document.getElementById('hn-detail-wishlist-btn');
+        if (detailWishBtn) {
+          detailWishBtn.classList.toggle('active', isWish);
+          detailWishBtn.classList.toggle('btn-danger', isWish);
+          detailWishBtn.classList.toggle('btn-outline-danger', !isWish);
+          const heartIcon = detailWishBtn.querySelector('i');
+          if (heartIcon) heartIcon.className = isWish ? 'bi bi-heart-fill fs-5 text-white' : 'bi bi-heart fs-5';
+        }
       });
     });
   </script>

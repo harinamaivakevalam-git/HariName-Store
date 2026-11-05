@@ -2014,11 +2014,19 @@ const toggleWishlist = (productIdOrObj, btn = null) => {
   }
 
   const buttonsToUpdate = new Set();
-  if (btn) buttonsToUpdate.add(btn);
+  if (btn && btn.id !== 'hn-detail-wishlist-btn') buttonsToUpdate.add(btn);
 
-  // Also check product details wishlist button
+  // Also check product details wishlist button separately
   const detailBtn = document.getElementById('hn-detail-wishlist-btn');
-  if (detailBtn) buttonsToUpdate.add(detailBtn);
+  if (detailBtn) {
+    detailBtn.classList.toggle('active', isNowWish);
+    detailBtn.classList.toggle('btn-danger', isNowWish);
+    detailBtn.classList.toggle('btn-outline-danger', !isNowWish);
+    const detailIcon = detailBtn.querySelector('i');
+    if (detailIcon) {
+      detailIcon.className = isNowWish ? 'bi bi-heart-fill fs-5 text-white' : 'bi bi-heart fs-5';
+    }
+  }
 
   document.querySelectorAll(idSelectors.join(', ')).forEach(b => buttonsToUpdate.add(b));
 

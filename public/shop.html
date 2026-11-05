@@ -556,7 +556,25 @@
 
       window.addEventListener('hn:catalog-loaded', onCatalogSync);
       window.addEventListener('hn:catalog-changed', onCatalogSync);
-      window.addEventListener('hn_wishlist_updated', () => applyFilters(false));
+
+      // Update heart icons in-place without triggering skeletons or full grid reloads
+      window.addEventListener('hn_wishlist_updated', (e) => {
+        const wishlist = Array.isArray(e && e.detail) ? e.detail : JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+        document.querySelectorAll('#hn-shop-grid .hn-product-card').forEach(card => {
+          const pid = card.getAttribute('data-product-id');
+          const legId = card.getAttribute('data-legacy-id');
+          const isWish = wishlist.some(id => id === pid || (legId && id === legId));
+          const btn = card.querySelector('.hn-card-wishlist');
+          if (btn) {
+            btn.classList.toggle('active', isWish);
+            btn.classList.toggle('text-danger', isWish);
+            const icon = btn.querySelector('i');
+            if (icon) {
+              icon.className = isWish ? 'bi bi-heart-fill text-danger' : 'bi bi-heart';
+            }
+          }
+        });
+      });
     });
   </script>
 </body>

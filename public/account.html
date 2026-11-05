@@ -881,9 +881,9 @@
       if (countryInput) countryInput.value = user.country || 'India';
 
       // 3. Update Wishlist Count & Mini-Grid
-      const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+      const wishlist = typeof getStoredWishlist === 'function' ? getStoredWishlist() : JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
       const wishCountEl = document.getElementById('stat-wishlist-count');
-      if (wishCountEl) wishCountEl.innerText = wishlist.length;
+      if (wishCountEl) wishCountEl.innerText = typeof getWishlistCount === 'function' ? getWishlistCount() : wishlist.length;
       renderWishlistMiniGrid(wishlist);
 
       // 4. Load Real User Addresses & Orders
@@ -1645,21 +1645,15 @@
       const grid = document.getElementById('hn-profile-wishlist-grid');
       if (!grid) return;
 
-      const allCatalog = [...(typeof HARINAMA_DATA !== 'undefined' ? (HARINAMA_DATA.products || []) : []), ...(typeof HARINAMA_DATA !== 'undefined' ? (HARINAMA_DATA._staticProducts || []) : [])];
       const seen = new Set();
-      const uniqueCatalog = [];
-      for (const p of allCatalog) {
-        if (!p) continue;
-        const key = p.slug || p.id;
-        if (!seen.has(key)) {
-          seen.add(key);
-          uniqueCatalog.push(p);
+      const items = [];
+      (wishlistIds || []).forEach(id => {
+        const p = typeof findCatalogProduct === 'function' ? findCatalogProduct(id) : null;
+        if (p && !seen.has(p.id)) {
+          seen.add(p.id);
+          items.push(p);
         }
-      }
-
-      const items = uniqueCatalog.filter(p => 
-        wishlistIds.includes(p.id) || (p.legacy_id && wishlistIds.includes(p.legacy_id)) || (p.slug && wishlistIds.includes(p.slug))
-      );
+      });
 
       if (items.length === 0) {
         grid.innerHTML = `
@@ -1760,9 +1754,9 @@
       });
 
       window.addEventListener('hn_wishlist_updated', () => {
-        const wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+        const wishlist = typeof getStoredWishlist === 'function' ? getStoredWishlist() : JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
         const wishCountEl = document.getElementById('stat-wishlist-count');
-        if (wishCountEl) wishCountEl.innerText = wishlist.length;
+        if (wishCountEl) wishCountEl.innerText = typeof getWishlistCount === 'function' ? getWishlistCount() : wishlist.length;
         renderWishlistMiniGrid(wishlist);
       });
     });

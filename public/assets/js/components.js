@@ -1278,6 +1278,72 @@
   };
   window.handleHeaderCartClick = handleHeaderCartClick;
 
+  // Centralized Wishlist Storage & Count Helpers
+  function getStoredWishlist() {
+    if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) return [];
+    let raw = localStorage.getItem('hn_wishlist');
+    // Check fallback legacy key if hn_wishlist is empty/missing
+    if (!raw || raw === '[]' || raw === 'null') {
+      const legacy = localStorage.getItem('wishlist');
+      if (legacy && legacy !== '[]' && legacy !== 'null') {
+        raw = legacy;
+        try { localStorage.setItem('hn_wishlist', raw); } catch (_) {}
+      }
+    }
+    let list = [];
+    try {
+      const parsed = JSON.parse(raw || '[]');
+      if (Array.isArray(parsed)) list = parsed;
+    } catch (_) {
+      list = [];
+    }
+    // Filter out invalid/falsy/placeholder strings
+    const cleaned = list
+      .map(id => (typeof id === 'string' ? id.trim() : (id !== null && id !== undefined ? String(id).trim() : '')))
+      .filter(id => id && id !== 'item' && id !== 'null' && id !== 'undefined' && id !== '[object Object]');
+
+    // Deduplicate
+    const unique = Array.from(new Set(cleaned));
+    if (unique.length !== list.length) {
+      try {
+        localStorage.setItem('hn_wishlist', JSON.stringify(unique));
+        localStorage.removeItem('wishlist');
+      } catch (_) {}
+    }
+    return unique;
+  }
+  window.getStoredWishlist = getStoredWishlist;
+
+  function getWishlistCount() {
+    if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) return 0;
+    const list = getStoredWishlist();
+    if (list.length === 0) return 0;
+
+    const allProds = (typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) ? HARINAMA_DATA.products : [];
+    if (allProds.length > 0) {
+      const matched = new Set();
+      list.forEach(id => {
+        const p = typeof findCatalogProduct === 'function' ? findCatalogProduct(id) : null;
+        if (p && p.id) {
+          matched.add(p.id);
+        }
+      });
+      // If catalog is fully loaded and none of the IDs exist, purge orphaned/invalid IDs
+      if (typeof HARINAMA_DATA !== 'undefined' && HARINAMA_DATA.isLoaded) {
+        if (matched.size === 0 && list.length > 0) {
+          try {
+            localStorage.setItem('hn_wishlist', '[]');
+            localStorage.removeItem('wishlist');
+          } catch (_) {}
+          return 0;
+        }
+        return matched.size;
+      }
+    }
+    return list.length;
+  }
+  window.getWishlistCount = getWishlistCount;
+
   // Global Header Component
   let _lastHeaderStateKey = '';
   const renderHeader = (activePage = '', force = false) => {
@@ -1323,8 +1389,8 @@
     // Show count ONLY when user is logged in AND has items
     const cart = loggedIn ? JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]') : [];
     const cartCount = loggedIn ? cart.reduce((acc, i) => acc + (i.qty || 1), 0) : 0;
-    const wishlist = loggedIn ? JSON.parse(localStorage.getItem('hn_wishlist') || localStorage.getItem('wishlist') || '[]') : [];
-    const wishlistCount = loggedIn && Array.isArray(wishlist) ? wishlist.length : 0;
+    const wishlist = getStoredWishlist();
+    const wishlistCount = getWishlistCount();
 
     const userActionMarkup = loggedIn && user ? `
     <div class="hn-user-dropdown" id="hnUserDropdown">
@@ -1598,22 +1664,6 @@ const renderFooter = () => {
   if (!container) return;
 
   container.innerHTML = `
-    <!-- Devotional Footer Artwork Signoff Strip -->
-    <div class="hn-footer-signoff">
-      <div class="hn-footer-signoff-bg" style="background-image: url('/assets/images/footer_lotus_bg.jpg');"></div>
-      <div class="container position-relative">
-        <div class="hn-footer-signoff-content text-center py-4">
-          <div class="hn-signoff-verse">Hare Krishna <span class="hn-signoff-heart">♡</span></div>
-          <div class="hn-signoff-divider">
-            <span class="hn-divider-line"></span>
-            <span class="hn-divider-icon">🪷</span>
-            <span class="hn-divider-line"></span>
-          </div>
-          <div class="hn-signoff-sub">A KINDER WORLD THROUGH DEVOTION</div>
-        </div>
-      </div>
-    </div>
-
     <footer class="hn-footer">
       <div class="container">
         <div class="row g-4">
@@ -1969,36 +2019,40 @@ const toggleWishlist = (productIdOrObj, btn = null) => {
 
   const prod = typeof productIdOrObj === 'object' && productIdOrObj !== null
     ? productIdOrObj
-    : findCatalogProduct(productIdOrObj);
+    : (typeof findCatalogProduct === 'function' ? findCatalogProduct(productIdOrObj) : null);
 
-  const productId = typeof productIdOrObj === 'string' ? productIdOrObj : (prod ? prod.id : 'item');
-  const canonId = prod ? prod.id : productId;
+  const rawId = typeof productIdOrObj === 'string' ? productIdOrObj.trim() : (prod ? prod.id : '');
+  if (!rawId && !prod) return;
+  if (rawId === 'item' || rawId === 'null' || rawId === 'undefined' || rawId === '[object Object]') return;
+
+  const canonId = prod ? prod.id : rawId;
   const legacyId = prod ? prod.legacy_id : null;
   const slug = prod ? prod.slug : null;
 
-  let wishlist = JSON.parse(localStorage.getItem('hn_wishlist') || '[]');
+  let wishlist = getStoredWishlist();
   const exists = wishlist.some(id =>
-    id === canonId || (legacyId && id === legacyId) || (slug && id === slug) || id === productId
+    id === canonId || (legacyId && id === legacyId) || (slug && id === slug) || id === rawId
   );
 
   let isNowWish = false;
   if (exists) {
     wishlist = wishlist.filter(id =>
-      id !== canonId && id !== legacyId && id !== slug && id !== productId
+      id !== canonId && id !== legacyId && id !== slug && id !== rawId
     );
     isNowWish = false;
     showToast('Item removed from your sacred wishlist.');
   } else {
-    wishlist.push(canonId);
-    if (legacyId && legacyId !== canonId) {
-      wishlist.push(legacyId);
+    if (!wishlist.includes(canonId)) {
+      wishlist.push(canonId);
     }
     isNowWish = true;
     const title = prod ? (prod.title || prod.name) : 'Item';
     showToast(`Saved "${title}" to your sacred wishlist 🌸`);
   }
 
+  wishlist = Array.from(new Set(wishlist.filter(id => id && id !== 'item' && id !== 'null' && id !== 'undefined' && id !== '[object Object]')));
   localStorage.setItem('hn_wishlist', JSON.stringify(wishlist));
+  try { localStorage.removeItem('wishlist'); } catch (_) {}
 
   // Update ALL heart buttons in the DOM matching this product
   const idSelectors = [
@@ -2088,8 +2142,7 @@ const updateHeaderBadges = () => {
   const loggedIn = isUserLoggedIn();
   const cart = loggedIn ? JSON.parse(localStorage.getItem('hn_cart') || localStorage.getItem('cres_cart') || '[]') : [];
   const cartCount = loggedIn ? cart.reduce((acc, i) => acc + (i.qty || 1), 0) : 0;
-  const wishlist = loggedIn ? JSON.parse(localStorage.getItem('hn_wishlist') || localStorage.getItem('wishlist') || '[]') : [];
-  const wishlistCount = loggedIn && Array.isArray(wishlist) ? wishlist.length : 0;
+  const wishlistCount = typeof getWishlistCount === 'function' ? getWishlistCount() : (loggedIn ? JSON.parse(localStorage.getItem('hn_wishlist') || '[]').length : 0);
 
   const cartBadge = document.getElementById('hn-cart-badge') || document.getElementById('cres-cart-badge');
   if (cartBadge) {

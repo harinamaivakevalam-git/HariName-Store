@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-MSKX0904SY"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag() { dataLayer.push(arguments); }
     gtag('js', new Date());
 
     gtag('config', 'G-MSKX0904SY');
@@ -13,17 +14,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Devotee Account — Harinama Store</title>
-  <meta name="description" content="Manage your sacred Harinama Store profile, shipping addresses, past orders, and divine wishlist.">
-  
+  <meta name="description"
+    content="Manage your sacred Harinama Store profile, shipping addresses, past orders, and divine wishlist.">
+
   <!-- Google Fonts: Poppins & Work Sans Master Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Work+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
   <!-- Bootstrap 5 CSS & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  
+
   <!-- Harinama Store Master Stylesheet -->
   <link rel="stylesheet" href="/assets/css/style.css?v=29">
   <!-- Brand Favicon -->
@@ -47,30 +51,36 @@
       border-bottom: none !important;
       margin-bottom: 24px;
     }
+
     .hn-profile-hero::before,
     .hn-profile-hero::after {
       display: none !important;
     }
+
     .hn-profile-hero .text-white-50 {
       color: rgba(255, 255, 255, 0.78) !important;
     }
+
     .hn-profile-hero .btn-outline-light {
       background: transparent;
       border: 1.5px solid rgba(255, 255, 255, 0.6);
       color: #FFFFFF !important;
     }
+
     .hn-profile-hero .btn-outline-light:hover {
       background: #FFFFFF;
       color: #0B2545 !important;
     }
+
     .hn-profile-avatar-large {
       width: 78px;
       height: 78px;
       border-radius: 50%;
       object-fit: cover;
       border: 3px solid #FFFFFF;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
     }
+
     .hn-profile-badge-pill {
       display: inline-flex;
       align-items: center;
@@ -83,20 +93,23 @@
       padding: 3px 10px;
       border-radius: 20px;
     }
+
     .hn-profile-stat-box {
       background: #FFFFFF;
       border-radius: 16px;
       padding: 20px;
       text-align: center;
-      border: 1px solid rgba(0,0,0,0.06);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
       transition: all 0.2s ease;
     }
+
     .hn-profile-stat-box:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
       border-color: rgba(197, 155, 39, 0.4);
     }
+
     .hn-profile-stat-num {
       font-size: 1.85rem;
       font-weight: 700;
@@ -104,6 +117,7 @@
       line-height: 1.1;
       margin-bottom: 4px;
     }
+
     .hn-profile-stat-label {
       font-size: 0.78rem;
       font-weight: 600;
@@ -111,13 +125,15 @@
       letter-spacing: 0.04em;
       color: #718096;
     }
+
     .hn-profile-nav-card {
       background: #FFFFFF;
       border-radius: 18px;
       padding: 14px 10px;
-      border: 1px solid rgba(0,0,0,0.06);
-      box-shadow: 0 4px 18px rgba(0,0,0,0.03);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
     }
+
     .hn-profile-tab-link {
       display: flex !important;
       align-items: center !important;
@@ -140,9 +156,11 @@
       touch-action: manipulation;
       box-sizing: border-box !important;
     }
+
     .hn-profile-tab-link * {
       pointer-events: none !important;
     }
+
     .hn-profile-tab-link .tab-icon {
       font-size: 1.15rem;
       margin-right: 12px;
@@ -151,17 +169,21 @@
       width: 22px;
       text-align: center;
     }
+
     .hn-profile-tab-link:hover {
       background: #F8F6F0;
       color: #0B2545;
     }
+
     .hn-profile-tab-link:hover .tab-icon {
       color: #C59B27;
     }
+
     .hn-profile-tab-link:active {
       transform: scale(0.985);
       background: #F3ECE0;
     }
+
     .hn-profile-tab-link.active {
       background: #FAF4E6 !important;
       color: #8C6D1F !important;
@@ -169,27 +191,33 @@
       font-weight: 700;
       box-shadow: 0 2px 8px rgba(197, 155, 39, 0.12);
     }
+
     .hn-profile-tab-link.active .tab-icon {
       color: #C59B27 !important;
     }
+
     .hn-profile-stat-box * {
       pointer-events: none !important;
     }
+
     .hn-profile-content-card {
       background: #FFFFFF;
       border-radius: 20px;
       padding: 32px 34px;
-      border: 1px solid rgba(0,0,0,0.06);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
     }
+
     @media (max-width: 576px) {
       .hn-profile-content-card {
         padding: 22px 18px;
       }
+
       .hn-profile-hero {
         padding: 24px 20px;
       }
     }
+
     .hn-profile-input {
       border: 1.5px solid #E2E8F0;
       border-radius: 10px;
@@ -198,10 +226,12 @@
       color: #2D3748;
       transition: border-color 0.2s;
     }
+
     .hn-profile-input:focus {
       border-color: #C59B27;
       box-shadow: 0 0 0 3px rgba(197, 155, 39, 0.15);
     }
+
     .hn-order-card {
       background: #FFFFFF;
       border: 1.5px solid #EDF2F7;
@@ -210,10 +240,12 @@
       margin-bottom: 16px;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
+
     .hn-order-card:hover {
       border-color: #CBD5E0;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
     }
+
     .hn-order-badge-status {
       font-size: 0.75rem;
       font-weight: 600;
@@ -223,6 +255,7 @@
       align-items: center;
       gap: 4px;
     }
+
     .hn-address-card {
       background: #FAFAFA;
       border: 1.5px solid #E2E8F0;
@@ -235,11 +268,13 @@
       flex-direction: column;
       justify-content: space-between;
     }
+
     .hn-address-card.is-default {
       background: #FCFAF5;
       border-color: #C59B27;
       box-shadow: 0 4px 16px rgba(197, 155, 39, 0.09);
     }
+
     .addr-count-pill {
       background: #FAF4E6 !important;
       color: #8C6D1F !important;
@@ -251,6 +286,7 @@
       display: inline-flex !important;
       align-items: center !important;
     }
+
     #hn-address-form-wrap {
       background: #FCFAF6 !important;
       border: 2px solid #E8D8A6 !important;
@@ -258,10 +294,19 @@
       box-shadow: 0 8px 24px rgba(197, 155, 39, 0.12) !important;
       animation: hnAddressFadeIn 0.25s ease-out;
     }
+
     @keyframes hnAddressFadeIn {
-      from { opacity: 0; transform: translateY(-8px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
+
     #btn-show-add-addr {
       background-color: #C59B27 !important;
       background: #C59B27 !important;
@@ -273,6 +318,7 @@
       box-shadow: 0 2px 8px rgba(197, 155, 39, 0.28) !important;
       transition: all 0.2s ease !important;
     }
+
     #btn-show-add-addr:hover {
       background-color: #A67E14 !important;
       background: #A67E14 !important;
@@ -280,6 +326,7 @@
       color: #FFFFFF !important;
       transform: translateY(-1px) !important;
     }
+
     .hn-address-tag {
       font-size: 0.72rem;
       font-weight: 700;
@@ -290,6 +337,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <!-- Top Announcement Bar & Header -->
@@ -297,12 +345,14 @@
 
   <main class="py-5" style="min-height: 75vh; background: #FAF7F2;">
     <div class="container">
-      
+
       <!-- Container when user is Logged Out -->
       <div id="hn-logged-out-state" class="d-none py-5 text-center">
-        <div class="card border-0 shadow-sm p-5 mx-auto" style="max-width: 520px; border-radius: 20px; background: #FFFFFF; border: 1px solid rgba(197, 155, 39, 0.3) !important;">
+        <div class="card border-0 shadow-sm p-5 mx-auto"
+          style="max-width: 520px; border-radius: 20px; background: #FFFFFF; border: 1px solid rgba(197, 155, 39, 0.3) !important;">
           <div class="mb-3">
-            <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 72px; height: 72px; background: linear-gradient(135deg, #FAF4E6, #F2E3C6); border: 2px solid var(--hn-gold); color: #7A1C1C; font-size: 2rem;">
+            <span class="d-inline-flex align-items-center justify-content-center rounded-circle"
+              style="width: 72px; height: 72px; background: linear-gradient(135deg, #FAF4E6, #F2E3C6); border: 2px solid var(--hn-gold); color: #7A1C1C; font-size: 2rem;">
               <i class="bi bi-person-lock"></i>
             </span>
           </div>
@@ -323,24 +373,28 @@
 
       <!-- Container when user is Logged In -->
       <div id="hn-logged-in-state">
-        
+
         <!-- Devotee Hero Banner -->
         <div class="hn-profile-hero">
           <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
-            
+
             <div class="d-flex align-items-center gap-3 gap-md-4">
-              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80" id="hn-hero-avatar" class="hn-profile-avatar-large" alt="Devotee Avatar">
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80"
+                id="hn-hero-avatar" class="hn-profile-avatar-large" alt="Devotee Avatar">
               <div>
                 <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                  <h2 class="fw-bold mb-0 text-white" id="hn-hero-name" style="font-size: 1.75rem; letter-spacing: -0.01em;">Devotee</h2>
+                  <h2 class="fw-bold mb-0 text-white" id="hn-hero-name"
+                    style="font-size: 1.75rem; letter-spacing: -0.01em;">Devotee</h2>
                   <span class="hn-profile-badge-pill">
                     <i class="bi bi-flower1"></i> Devotee Member
                   </span>
                 </div>
                 <div class="text-white-50 small mb-2" id="hn-hero-email">devotee@harinama.com</div>
                 <div class="d-flex align-items-center gap-3 text-white-50 small flex-wrap">
-                  <span id="hero-city-wrap" style="display: none;"><i class="bi bi-geo-alt text-warning me-1"></i><span id="hn-hero-city"></span></span>
-                  <span id="hero-phone-wrap" style="display: none;"><i class="bi bi-telephone text-warning me-1"></i><span id="hn-hero-phone"></span></span>
+                  <span id="hero-city-wrap" style="display: none;"><i class="bi bi-geo-alt text-warning me-1"></i><span
+                      id="hn-hero-city"></span></span>
+                  <span id="hero-phone-wrap" style="display: none;"><i
+                      class="bi bi-telephone text-warning me-1"></i><span id="hn-hero-phone"></span></span>
                   <span><i class="bi bi-shield-check text-warning me-1"></i>Verified Member</span>
                 </div>
               </div>
@@ -362,19 +416,22 @@
         <!-- 3 Quick Stat Summary Cards -->
         <div class="row g-3 mb-4">
           <div class="col-4">
-            <div class="hn-profile-stat-box" id="stat-card-orders" data-tab="orders" onclick="switchProfileTab('orders')" style="cursor: pointer;">
+            <div class="hn-profile-stat-box" id="stat-card-orders" data-tab="orders"
+              onclick="switchProfileTab('orders')" style="cursor: pointer;">
               <div class="hn-profile-stat-num" id="stat-orders-count">0</div>
               <div class="hn-profile-stat-label">Orders</div>
             </div>
           </div>
           <div class="col-4">
-            <div class="hn-profile-stat-box" id="stat-card-addresses" data-tab="addresses" onclick="switchProfileTab('addresses')" style="cursor: pointer;">
+            <div class="hn-profile-stat-box" id="stat-card-addresses" data-tab="addresses"
+              onclick="switchProfileTab('addresses')" style="cursor: pointer;">
               <div class="hn-profile-stat-num" id="stat-addresses-count">0 / 5</div>
               <div class="hn-profile-stat-label">Saved Addresses</div>
             </div>
           </div>
           <div class="col-4">
-            <div class="hn-profile-stat-box" id="stat-card-wishlist" data-tab="wishlist" onclick="switchProfileTab('wishlist')" style="cursor: pointer;">
+            <div class="hn-profile-stat-box" id="stat-card-wishlist" data-tab="wishlist"
+              onclick="switchProfileTab('wishlist')" style="cursor: pointer;">
               <div class="hn-profile-stat-num" id="stat-wishlist-count">0</div>
               <div class="hn-profile-stat-label">Sacred Wishlist</div>
             </div>
@@ -383,30 +440,40 @@
 
         <!-- Main Workspace: Nav Tabs + Content Card -->
         <div class="row g-4">
-          
+
           <!-- Left Tab Sidebar -->
           <div class="col-lg-3">
             <div class="hn-profile-nav-card p-2">
               <div class="d-flex flex-column gap-1">
-                <button type="button" class="hn-profile-tab-link active w-100" id="tab-btn-overview" data-tab="overview" onclick="switchProfileTab('overview')">
-                  <span class="d-inline-flex align-items-center"><i class="bi bi-person-badge tab-icon"></i> Devotee Profile</span>
+                <button type="button" class="hn-profile-tab-link active w-100" id="tab-btn-overview" data-tab="overview"
+                  onclick="switchProfileTab('overview')">
+                  <span class="d-inline-flex align-items-center"><i class="bi bi-person-badge tab-icon"></i> Devotee
+                    Profile</span>
                   <i class="bi bi-chevron-right small text-muted"></i>
                 </button>
-                <button type="button" class="hn-profile-tab-link w-100" id="tab-btn-orders" data-tab="orders" onclick="switchProfileTab('orders')">
+                <button type="button" class="hn-profile-tab-link w-100" id="tab-btn-orders" data-tab="orders"
+                  onclick="switchProfileTab('orders')">
                   <span class="d-inline-flex align-items-center"><i class="bi bi-box-seam tab-icon"></i> Orders</span>
                   <i class="bi bi-chevron-right small text-muted"></i>
                 </button>
-                <button type="button" class="hn-profile-tab-link w-100" id="tab-btn-addresses" data-tab="addresses" onclick="switchProfileTab('addresses')">
-                  <span class="d-inline-flex align-items-center"><i class="bi bi-geo-alt tab-icon"></i> Saved Addresses</span>
-                  <span class="badge bg-light text-secondary border px-2 py-0" id="sidebar-addr-badge" style="font-size: 0.72rem;">0/5</span>
+                <button type="button" class="hn-profile-tab-link w-100" id="tab-btn-addresses" data-tab="addresses"
+                  onclick="switchProfileTab('addresses')">
+                  <span class="d-inline-flex align-items-center"><i class="bi bi-geo-alt tab-icon"></i> Saved
+                    Addresses</span>
+                  <span class="badge bg-light text-secondary border px-2 py-0" id="sidebar-addr-badge"
+                    style="font-size: 0.72rem;">0/5</span>
                 </button>
-                <button type="button" class="hn-profile-tab-link w-100" id="tab-btn-wishlist" data-tab="wishlist" onclick="switchProfileTab('wishlist')">
-                  <span class="d-inline-flex align-items-center"><i class="bi bi-heart tab-icon"></i> Sacred Wishlist</span>
+                <button type="button" class="hn-profile-tab-link w-100" id="tab-btn-wishlist" data-tab="wishlist"
+                  onclick="switchProfileTab('wishlist')">
+                  <span class="d-inline-flex align-items-center"><i class="bi bi-heart tab-icon"></i> Sacred
+                    Wishlist</span>
                   <i class="bi bi-chevron-right small text-muted"></i>
                 </button>
                 <hr class="my-2 text-muted">
-                <button type="button" class="hn-profile-tab-link text-danger w-100" id="tab-btn-logout" onclick="logoutUser(event)">
-                  <span class="d-inline-flex align-items-center"><i class="bi bi-box-arrow-right tab-icon text-danger"></i> Sign Out Safely</span>
+                <button type="button" class="hn-profile-tab-link text-danger w-100" id="tab-btn-logout"
+                  onclick="logoutUser(event)">
+                  <span class="d-inline-flex align-items-center"><i
+                      class="bi bi-box-arrow-right tab-icon text-danger"></i> Sign Out Safely</span>
                   <i class="bi bi-arrow-right small text-danger"></i>
                 </button>
               </div>
@@ -415,12 +482,13 @@
 
           <!-- Right Tab Content Panel -->
           <div class="col-lg-9">
-            
+
             <!-- 1. Profile Overview Tab -->
             <div class="hn-profile-content-card" id="tab-panel-overview">
               <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
                 <div>
-                  <h4 class="fw-bold mb-0 text-navy" style="font-family: var(--hn-font-serif);">Devotee Profile Details</h4>
+                  <h4 class="fw-bold mb-0 text-navy" style="font-family: var(--hn-font-serif);">Devotee Profile Details
+                  </h4>
                   <p class="text-muted small mb-0">Your personal details and default shipping address</p>
                 </div>
                 <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
@@ -432,40 +500,50 @@
                 <!-- Basic Info -->
                 <div class="row g-3 mb-3">
                   <div class="col-md-6">
-                    <label class="form-label small fw-bold text-secondary">Full Name <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control hn-profile-input" id="profile-name" required placeholder="e.g. Radhe Shyam">
+                    <label class="form-label small fw-bold text-secondary">Full Name <span
+                        class="text-danger">*</span></label>
+                    <input type="text" class="form-control hn-profile-input" id="profile-name" required
+                      placeholder="e.g. Radhe Shyam">
                   </div>
                   <div class="col-md-6">
                     <label class="form-label small fw-bold text-secondary">Email Address</label>
-                    <input type="email" class="form-control hn-profile-input" id="profile-email" readonly style="background-color: #F3EFE9; cursor: not-allowed;">
-                    <div class="form-text" style="font-size: 0.72rem;">Email is securely verified with your account.</div>
+                    <input type="email" class="form-control hn-profile-input" id="profile-email" readonly
+                      style="background-color: #F3EFE9; cursor: not-allowed;">
+                    <div class="form-text" style="font-size: 0.72rem;">Email is securely verified with your account.
+                    </div>
                   </div>
                 </div>
 
                 <div class="row g-3 mb-4">
                   <div class="col-md-12">
-                    <label class="form-label small fw-bold text-secondary">Mobile / WhatsApp Number <span class="text-danger">*</span></label>
-                    <input type="tel" class="form-control hn-profile-input" id="profile-phone" required placeholder="+91 98765 43210">
+                    <label class="form-label small fw-bold text-secondary">Mobile / WhatsApp Number <span
+                        class="text-danger">*</span></label>
+                    <input type="tel" class="form-control hn-profile-input" id="profile-phone" required
+                      placeholder="+91 98765 43210">
                   </div>
                 </div>
 
                 <!-- Detailed Address Header -->
                 <div class="mb-3 pt-2 border-top">
-                  <h6 class="fw-bold text-navy mb-1"><i class="bi bi-house-door me-2 text-warning"></i>Primary Delivery Address</h6>
+                  <h6 class="fw-bold text-navy mb-1"><i class="bi bi-house-door me-2 text-warning"></i>Primary Delivery
+                    Address</h6>
                   <p class="text-muted small mb-3">Used by default for fast checkout and delivery parcel shipments</p>
                 </div>
 
                 <div class="row g-3 mb-3">
                   <div class="col-md-12">
-                    <label class="form-label small fw-bold text-secondary">House / Flat / Building No. &amp; Name</label>
-                    <input type="text" class="form-control hn-profile-input" id="profile-address-line1" placeholder="e.g. Flat 302, Gokul Heights">
+                    <label class="form-label small fw-bold text-secondary">House / Flat / Building No. &amp;
+                      Name</label>
+                    <input type="text" class="form-control hn-profile-input" id="profile-address-line1"
+                      placeholder="e.g. Flat 302, Gokul Heights">
                   </div>
                 </div>
 
                 <div class="row g-3 mb-3">
                   <div class="col-md-12">
                     <label class="form-label small fw-bold text-secondary">Street / Area / Colony / Landmark</label>
-                    <input type="text" class="form-control hn-profile-input" id="profile-address-line2" placeholder="e.g. Near Main Market Road, Sector 5">
+                    <input type="text" class="form-control hn-profile-input" id="profile-address-line2"
+                      placeholder="e.g. Near Main Market Road, Sector 5">
                   </div>
                 </div>
 
@@ -473,17 +551,21 @@
                   <div class="col-md-4">
                     <label class="form-label small fw-bold text-secondary d-flex justify-content-between">
                       <span>PIN Code</span>
-                      <span id="profile-pin-spinner" class="spinner-border spinner-border-sm text-warning d-none" style="width: 0.8rem; height: 0.8rem;"></span>
+                      <span id="profile-pin-spinner" class="spinner-border spinner-border-sm text-warning d-none"
+                        style="width: 0.8rem; height: 0.8rem;"></span>
                     </label>
-                    <input type="text" class="form-control hn-profile-input" id="profile-pincode" maxlength="6" pattern="[0-9]{6}" placeholder="e.g. 281001" oninput="lookupProfilePincode(this.value)">
+                    <input type="text" class="form-control hn-profile-input" id="profile-pincode" maxlength="6"
+                      pattern="[0-9]{6}" placeholder="e.g. 281001" oninput="lookupProfilePincode(this.value)">
                   </div>
                   <div class="col-md-4">
                     <label class="form-label small fw-bold text-secondary">City / District</label>
-                    <input type="text" class="form-control hn-profile-input" id="profile-city" placeholder="e.g. Mathura">
+                    <input type="text" class="form-control hn-profile-input" id="profile-city"
+                      placeholder="e.g. Mathura">
                   </div>
                   <div class="col-md-4">
                     <label class="form-label small fw-bold text-secondary">State</label>
-                    <input type="text" class="form-control hn-profile-input" id="profile-state" placeholder="e.g. Uttar Pradesh">
+                    <input type="text" class="form-control hn-profile-input" id="profile-state"
+                      placeholder="e.g. Uttar Pradesh">
                   </div>
                 </div>
 
@@ -528,7 +610,8 @@
                   </div>
                   <p class="text-muted small mb-0">Manage up to 5 shipping addresses for seamless delivery</p>
                 </div>
-                <button type="button" class="btn hn-btn-gold btn-sm px-3 fw-bold" id="btn-show-add-addr" onclick="toggleAddressForm('toggle')">
+                <button type="button" class="btn hn-btn-gold btn-sm px-3 fw-bold" id="btn-show-add-addr"
+                  onclick="toggleAddressForm('toggle')">
                   <i class="bi bi-plus-lg me-1"></i> Add New Address
                 </button>
               </div>
@@ -537,35 +620,45 @@
               <div id="hn-address-form-wrap" class="p-4 bg-light rounded-4 border mb-4 d-none">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                   <h5 class="fw-bold text-navy mb-0" id="addr-form-title">Add New Delivery Address</h5>
-                  <button type="button" class="btn btn-sm btn-light border rounded-circle d-flex align-items-center justify-content-center shadow-sm" id="btn-close-address-form" onclick="toggleAddressForm(false)" style="width: 32px; height: 32px; cursor: pointer;" title="Close Form">
+                  <button type="button"
+                    class="btn btn-sm btn-light border rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                    id="btn-close-address-form" onclick="toggleAddressForm(false)"
+                    style="width: 32px; height: 32px; cursor: pointer;" title="Close Form">
                     <i class="bi bi-x-lg text-secondary" style="font-size: 0.9rem;"></i>
                   </button>
                 </div>
                 <form id="addressForm" onsubmit="handleSaveAddress(event)">
                   <input type="hidden" id="addr-edit-id" value="">
-                  
+
                   <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                      <label class="form-label small fw-bold text-secondary">Contact / Recipient Name <span class="text-danger">*</span></label>
-                      <input type="text" class="form-control hn-profile-input" id="addr-form-name" required placeholder="e.g. Radharani Devi">
+                      <label class="form-label small fw-bold text-secondary">Contact / Recipient Name <span
+                          class="text-danger">*</span></label>
+                      <input type="text" class="form-control hn-profile-input" id="addr-form-name" required
+                        placeholder="e.g. Radharani Devi">
                     </div>
                     <div class="col-md-6">
-                      <label class="form-label small fw-bold text-secondary">Phone Number <span class="text-danger">*</span></label>
-                      <input type="tel" class="form-control hn-profile-input" id="addr-form-phone" required placeholder="+91 98765 43210">
+                      <label class="form-label small fw-bold text-secondary">Phone Number <span
+                          class="text-danger">*</span></label>
+                      <input type="tel" class="form-control hn-profile-input" id="addr-form-phone" required
+                        placeholder="+91 98765 43210">
                     </div>
                   </div>
 
                   <div class="row g-3 mb-3">
                     <div class="col-md-12">
-                      <label class="form-label small fw-bold text-secondary">Flat / House / Building No., Building <span class="text-danger">*</span></label>
-                      <input type="text" class="form-control hn-profile-input" id="addr-form-line1" required placeholder="e.g. Flat 204, Govinda Enclave">
+                      <label class="form-label small fw-bold text-secondary">Flat / House / Building No., Building <span
+                          class="text-danger">*</span></label>
+                      <input type="text" class="form-control hn-profile-input" id="addr-form-line1" required
+                        placeholder="e.g. Flat 204, Govinda Enclave">
                     </div>
                   </div>
 
                   <div class="row g-3 mb-3">
                     <div class="col-md-12">
                       <label class="form-label small fw-bold text-secondary">Street, Area, Colony, Landmark</label>
-                      <input type="text" class="form-control hn-profile-input" id="addr-form-line2" placeholder="e.g. Near Krishna Temple Road">
+                      <input type="text" class="form-control hn-profile-input" id="addr-form-line2"
+                        placeholder="e.g. Near Krishna Temple Road">
                     </div>
                   </div>
 
@@ -573,24 +666,32 @@
                     <div class="col-md-4">
                       <label class="form-label small fw-bold text-secondary d-flex justify-content-between">
                         <span>PIN Code <span class="text-danger">*</span></span>
-                        <span id="addr-pin-spinner" class="spinner-border spinner-border-sm text-warning d-none" style="width: 0.8rem; height: 0.8rem;"></span>
+                        <span id="addr-pin-spinner" class="spinner-border spinner-border-sm text-warning d-none"
+                          style="width: 0.8rem; height: 0.8rem;"></span>
                       </label>
-                      <input type="text" class="form-control hn-profile-input" id="addr-form-pincode" required maxlength="6" pattern="[0-9]{6}" placeholder="e.g. 281001" oninput="lookupSavedAddrPincode(this.value)">
+                      <input type="text" class="form-control hn-profile-input" id="addr-form-pincode" required
+                        maxlength="6" pattern="[0-9]{6}" placeholder="e.g. 281001"
+                        oninput="lookupSavedAddrPincode(this.value)">
                     </div>
                     <div class="col-md-4">
-                      <label class="form-label small fw-bold text-secondary">City / District <span class="text-danger">*</span></label>
-                      <input type="text" class="form-control hn-profile-input" id="addr-form-city" required placeholder="e.g. Mathura">
+                      <label class="form-label small fw-bold text-secondary">City / District <span
+                          class="text-danger">*</span></label>
+                      <input type="text" class="form-control hn-profile-input" id="addr-form-city" required
+                        placeholder="e.g. Mathura">
                     </div>
                     <div class="col-md-4">
-                      <label class="form-label small fw-bold text-secondary">State <span class="text-danger">*</span></label>
-                      <input type="text" class="form-control hn-profile-input" id="addr-form-state" required placeholder="e.g. Uttar Pradesh">
+                      <label class="form-label small fw-bold text-secondary">State <span
+                          class="text-danger">*</span></label>
+                      <input type="text" class="form-control hn-profile-input" id="addr-form-state" required
+                        placeholder="e.g. Uttar Pradesh">
                     </div>
                   </div>
 
                   <div class="row g-3 mb-3">
                     <div class="col-md-6">
                       <label class="form-label small fw-bold text-secondary">Country</label>
-                      <input type="text" class="form-control hn-profile-input" id="addr-form-country" value="India" placeholder="India">
+                      <input type="text" class="form-control hn-profile-input" id="addr-form-country" value="India"
+                        placeholder="India">
                     </div>
                     <div class="col-md-6">
                       <label class="form-label small fw-bold text-secondary">Address Type</label>
@@ -613,7 +714,8 @@
                     <button type="submit" class="btn hn-btn-gold px-4 py-2 fw-bold" id="btn-save-addr-submit">
                       <i class="bi bi-check2 me-1"></i> Save Address
                     </button>
-                    <button type="button" class="btn btn-outline-secondary px-3 py-2" onclick="toggleAddressForm(false)">
+                    <button type="button" class="btn btn-outline-secondary px-3 py-2"
+                      onclick="toggleAddressForm(false)">
                       Cancel
                     </button>
                   </div>
@@ -684,21 +786,21 @@
             return { city: p[0].PostOffice[0].District || p[0].PostOffice[0].Division || p[0].PostOffice[0].Name, state: p[0].PostOffice[0].State };
           }
         }
-      } catch (_) {}
+      } catch (_) { }
       try {
         const r = await fetch(`/api/pincode/${pin}`);
         if (r.ok) {
           const res = await r.json();
           if (res?.success && res?.state) return { city: res.district || res.city, state: res.state };
         }
-      } catch (_) {}
+      } catch (_) { }
       try {
         const r = await fetch(`https://api.zippopotam.us/in/${pin}`);
         if (r.ok) {
           const z = await r.json();
           if (z?.places?.[0]) return { city: z.places[0]['place name'], state: z.places[0].state };
         }
-      } catch (_) {}
+      } catch (_) { }
       return null;
     }
 
@@ -751,7 +853,7 @@
     // Switch between Profile Tabs with robust scrolling, URL history update, and safety
     function switchProfileTab(tab, shouldScroll = true) {
       if (!tab) tab = 'overview';
-      
+
       // Update active state on sidebar buttons
       document.querySelectorAll('.hn-profile-tab-link').forEach(btn => btn.classList.remove('active'));
       const activeBtn = document.getElementById(`tab-btn-${tab}`);
@@ -785,7 +887,7 @@
         const currentUrl = new URL(window.location.href);
         currentUrl.searchParams.set('tab', tab);
         window.history.replaceState({ tab }, '', currentUrl.toString());
-      } catch (_) {}
+      } catch (_) { }
 
       // Scroll smoothly to panel on mobile and tablet devices
       if (shouldScroll && targetPanel) {
@@ -895,7 +997,7 @@
     async function handleProfileUpdate(e) {
       if (e) e.preventDefault();
       const user = getLoggedInUser() || {};
-      
+
       const name = document.getElementById('profile-name')?.value.trim();
       const phone = document.getElementById('profile-phone')?.value.trim();
       const city = document.getElementById('profile-city')?.value.trim();
@@ -931,7 +1033,7 @@
             },
             body: JSON.stringify({ name, phone, city, address: user.address })
           });
-        } catch (_) {}
+        } catch (_) { }
       }
 
       renderHeader('account', true);
@@ -972,7 +1074,7 @@
             if (stateEl && data.state) stateEl.value = data.state;
           }
         }
-      } catch (_) {}
+      } catch (_) { }
       if (spinner) spinner.classList.add('d-none');
     }
     window.lookupProfilePincode = lookupProfilePincode;
@@ -1002,7 +1104,7 @@
             if (stateEl && data.state) stateEl.value = data.state;
           }
         }
-      } catch (_) {}
+      } catch (_) { }
       if (spinner) spinner.classList.add('d-none');
     }
     window.lookupSavedAddrPincode = lookupSavedAddrPincode;
@@ -1014,7 +1116,7 @@
       try {
         const stored = localStorage.getItem('hn_user_addresses');
         if (stored) return JSON.parse(stored);
-      } catch (_) {}
+      } catch (_) { }
       return [];
     }
     window.getStoredAddresses = getStoredAddresses;
@@ -1040,7 +1142,7 @@
               addresses = session.user.user_metadata.addresses;
               saveStoredAddresses(addresses);
             }
-          } catch (_) {}
+          } catch (_) { }
         }
 
         if (token) {
@@ -1206,7 +1308,7 @@
 
         wrap.classList.remove('d-none');
         document.getElementById('addr-form-title').innerText = editData ? 'Edit Delivery Address' : 'Add New Delivery Address';
-        
+
         document.getElementById('addr-edit-id').value = editData ? (editData.id || '') : '';
         document.getElementById('addr-form-name').value = editData ? (editData.name || '') : (getLoggedInUser()?.name || '');
         document.getElementById('addr-form-phone').value = editData ? (editData.phone || '') : (getLoggedInUser()?.phone || '');
@@ -1342,7 +1444,7 @@
               body: JSON.stringify({ name, phone, address_line_1: line1, address_line_2: line2, city, state, postal_code: pincode, country, address_type: type, is_default: isDefault })
             });
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       // Sync with Supabase Auth user metadata if logged in
@@ -1350,8 +1452,8 @@
         try {
           sbClient.auth.updateUser({
             data: { addresses: addresses }
-          }).catch(() => {});
-        } catch (_) {}
+          }).catch(() => { });
+        } catch (_) { }
       }
 
       toggleAddressForm(false);
@@ -1388,7 +1490,7 @@
         : getStoredAddresses();
 
       addresses = addresses.filter(a => String(a.id) !== String(id) && String(a._id) !== String(id));
-      
+
       // If deleted default and others remain, set first as default
       if (addresses.length > 0 && !addresses.some(a => a.is_default)) {
         addresses[0].is_default = true;
@@ -1401,8 +1503,8 @@
         try {
           sbClient.auth.updateUser({
             data: { addresses: addresses }
-          }).catch(() => {});
-        } catch (_) {}
+          }).catch(() => { });
+        } catch (_) { }
       }
 
       const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
@@ -1412,7 +1514,7 @@
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
           });
-        } catch (_) {}
+        } catch (_) { }
       }
 
       renderAddressesGrid(addresses);
@@ -1433,7 +1535,7 @@
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ is_default: true })
           });
-        } catch (_) {}
+        } catch (_) { }
       }
 
       renderAddressesGrid(addresses);
@@ -1481,7 +1583,7 @@
               }
             });
           }
-        } catch (_) {}
+        } catch (_) { }
 
         // 2. Fetch from Backend API
         const token = localStorage.getItem('hn_auth_token') || localStorage.getItem('token');
@@ -1526,8 +1628,8 @@
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
             const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             let u = null;
-            try { u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}'); } catch (_) {}
-            
+            try { u = JSON.parse(localStorage.getItem('hn_user') || localStorage.getItem('hn_user_profile') || '{}'); } catch (_) { }
+
             const adminEmails = ['harinamaivakevalam@gmail.com', 'katturojuanilkumar@gmail.com', 'admin@harinama.com'];
             const userEmail = u && u.email ? String(u.email).toLowerCase().trim() : '';
             const isAdmin = u && (u.role === 'admin' || u.is_admin || adminEmails.includes(userEmail));
@@ -1567,7 +1669,7 @@
               });
             }
           }
-        } catch (_) {}
+        } catch (_) { }
 
         const orders = Array.from(orderMap.values());
 
@@ -1588,7 +1690,7 @@
         }
 
         container.innerHTML = orders.map(ord => {
-          const statusHtml = (typeof getHarinamaOrderStatusBadge === 'function') 
+          const statusHtml = (typeof getHarinamaOrderStatusBadge === 'function')
             ? getHarinamaOrderStatusBadge(ord.order_status || ord.status || 'Confirmed')
             : `<span class="hn-status-badge hn-status-confirmed">${ord.order_status || 'Confirmed'}</span>`;
           const dateStr = ord.created_at ? new Date(ord.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recent';
@@ -1762,4 +1864,5 @@
     });
   </script>
 </body>
+
 </html>

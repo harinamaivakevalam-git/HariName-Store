@@ -99,7 +99,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Harinama Store Master Stylesheet -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=28">
+  <link rel="stylesheet" href="/assets/css/style.css?v=29">
   <!-- Brand Favicon -->
   <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
   <link rel="shortcut icon" href="/favicon.ico">
@@ -199,7 +199,7 @@
     <!-- ====================================================================
          4. FEATURED PRODUCTS SECTION (With Header & View All Link)
          ==================================================================== -->
-    <section class="py-4 py-md-5">
+    <section class="pt-3 pt-md-4 pb-2 hn-featured-section">
       <div class="container">
 
         <div class="hn-featured-header-wrap mb-3 mb-md-4 hn-reveal">
@@ -375,7 +375,7 @@
     <!-- ====================================================================
          5. PROMOTIONAL MAHA-MANTRA SECTION (Desktop Only)
          ==================================================================== -->
-    <section class="py-4 d-none d-lg-block" id="hn-promo-section-wrapper" style="display: none;">
+    <section class="pt-2 pb-4 d-none d-lg-block" id="hn-promo-section-wrapper" style="display: none;">
       <div class="container">
         <div class="hn-promo-banner hn-reveal">
           <div class="row g-0 align-items-stretch">
@@ -450,9 +450,9 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/assets/js/product-image-service.js"></script>
-  <script src="/assets/js/data.js?v=5"></script>
-  <script src="/assets/js/components.js?v=27"></script>
+  <script src="/assets/js/product-image-service.js?v=29"></script>
+  <script src="/assets/js/data.js?v=29"></script>
+  <script src="/assets/js/components.js?v=29"></script>
   <script>
     const SUPABASE_URL = 'https://wnaqfadlxrrvvjvqqbch.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InduYXFmYWRseHJydnZqdnFxYmNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMzg4NTYsImV4cCI6MjEwNDkxNDg1Nn0.aZcWAzKfjHkozCus4V_xD3BwDSL8KIIEhASdf2NtdtM';
@@ -564,6 +564,7 @@
 
       let filtered = [];
 
+      // Curated Tab Sorting: Each tab prioritizes matching items first, seamlessly followed by the rest of the store favorites
       if (currentFeaturedTab === 'new-arrivals') {
         // ✨ New Arrivals: Latest additions & newly released pendants first
         filtered = [...prods].sort((a, b) => {
@@ -573,34 +574,43 @@
           return new Date(b.created_at || 0) - new Date(a.created_at || 0);
         });
       } else if (currentFeaturedTab === 'best-sellers') {
-        // 🔥 Best Sellers: Authentic daily Vaishnava Kanthi Malas & popular neckwear
-        filtered = prods.filter(p => {
-          const name = (p.name || '').toLowerCase();
-          return name.includes('kanthi mala') || name.includes('traditional hare krishna');
-        }).sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+        // 🔥 Best Sellers: Authentic daily Vaishnava Kanthi Malas, popular keychains & devotee favorites first
+        filtered = [...prods].sort((a, b) => {
+          const aName = (a.name || '').toLowerCase();
+          const bName = (b.name || '').toLowerCase();
+          const aScore = aName.includes('kanthi mala') ? 3 : (aName.includes('keychain') ? 2 : 1);
+          const bScore = bName.includes('kanthi mala') ? 3 : (bName.includes('keychain') ? 2 : 1);
+          if (bScore !== aScore) return bScore - aScore;
+          return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
+        });
       } else if (currentFeaturedTab === 'gift-sets') {
-        // 🎁 Gift Sets: 108 Beads Traditional Japa Malas & Devotional Gift Sets
-        filtered = prods.filter(p => {
-          const name = (p.name || '').toLowerCase();
-          const desc = (p.description || '').toLowerCase();
-          const slug = (p.category_slug || '').toLowerCase();
-          return name.includes('108 beads') || name.includes('pendant') || name.includes('gift') || desc.includes('gift') || slug.includes('gift');
-        }).sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
+        // 🎁 Gift Sets: 108 Beads Traditional Japa Malas, gift combos, folding pocket mirrors first
+        filtered = [...prods].sort((a, b) => {
+          const aName = (a.name || '').toLowerCase();
+          const bName = (b.name || '').toLowerCase();
+          const aScore = aName.includes('108 beads') ? 4 : (aName.includes('mirror') ? 3 : (aName.includes('gift') ? 2 : 1));
+          const bScore = bName.includes('108 beads') ? 4 : (bName.includes('mirror') ? 3 : (bName.includes('gift') ? 2 : 1));
+          if (bScore !== aScore) return bScore - aScore;
+          return (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0);
+        });
       } else if (currentFeaturedTab === 'festival') {
-        // 🌸 Festival Collection: Deity pendants (Jagannath, Radhe) & Sacred multi-round festive neckwear
-        filtered = prods.filter(p => {
-          const name = (p.name || '').toLowerCase();
-          return name.includes('jagannath') || name.includes('radhe') || name.includes('3 round') || name.includes('2 round');
-        }).sort((a, b) => {
-          const aScore = (a.name.includes('Jagannath') ? 4 : (a.name.includes('Radhe') ? 3 : (a.name.includes('3 Round') ? 2 : 1)));
-          const bScore = (b.name.includes('Jagannath') ? 4 : (b.name.includes('Radhe') ? 3 : (b.name.includes('3 Round') ? 2 : 1)));
-          return bScore - aScore;
+        // 🌸 Festival Collection: Deity pendants (Jagannath, Radhe), multi-round malas & spiritual decor first
+        filtered = [...prods].sort((a, b) => {
+          const aName = (a.name || '').toLowerCase();
+          const bName = (b.name || '').toLowerCase();
+          const aScore = (aName.includes('jagannath') ? 4 : (aName.includes('radhe') ? 3 : (aName.includes('wall art') ? 2 : 1)));
+          const bScore = (bName.includes('jagannath') ? 4 : (bName.includes('radhe') ? 3 : (bName.includes('wall art') ? 2 : 1)));
+          if (bScore !== aScore) return bScore - aScore;
+          return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
         });
       } else if (currentFeaturedTab === 'under-299') {
-        // 💛 Under ₹299: Strictly products priced <= ₹299 (sorted low to high)
-        filtered = prods
-          .filter(p => (parseFloat(p.price) || 0) <= 299)
-          .sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+        // 💛 Under ₹299: Products priced <= ₹299 first (sorted low to high), followed by signature higher-value items
+        filtered = [...prods].sort((a, b) => {
+          const aUnder = (parseFloat(a.price) || 0) <= 299 ? 1 : 0;
+          const bUnder = (parseFloat(b.price) || 0) <= 299 ? 1 : 0;
+          if (bUnder !== aUnder) return bUnder - aUnder;
+          return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
+        });
       } else if (currentFeaturedTab === 'specials') {
         // 🪷 HarinamaStore SPECIALS: Premium signature collections & high-value sacred items
         filtered = [...prods].sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
@@ -610,8 +620,8 @@
         filtered = [...prods];
       }
 
-      // If fewer than 12 products match the filter, append remaining catalog items so all 3 rows (12 items total: 4 on top + another 8 below) are beautifully filled
-      if (filtered.length < 12) {
+      // Guarantee all 3 complete rows (12 items total: 4 on top + another 8 below) are always displayed without empty space
+      if (filtered.length < 12 && prods.length > 0) {
         const seenIds = new Set(filtered.map(p => p.id));
         for (const p of prods) {
           if (!seenIds.has(p.id)) {
@@ -620,29 +630,32 @@
             if (filtered.length >= 12) break;
           }
         }
+        // If total catalog has fewer than 12 unique items, repeat top items to complete the 12-item grid cleanly
+        let fillIdx = 0;
+        const baseList = [...filtered];
+        while (filtered.length < 12 && baseList.length > 0) {
+          filtered.push(baseList[fillIdx % baseList.length]);
+          fillIdx++;
+        }
       }
 
-      // Ensure we only show complete 4-column rows (e.g. 12, 8, or 4 items) so there is NEVER an awkward half-filled row with blank empty space
-      let targetCount = 12;
-      if (filtered.length >= 12) {
-        targetCount = 12;
-      } else if (filtered.length >= 8) {
-        targetCount = 8;
-      } else if (filtered.length >= 4) {
-        targetCount = 4;
-      } else {
-        targetCount = filtered.length;
+      const displayList = filtered.slice(0, 12);
+
+      // Adaptive column layout based on item count so orphaned cards or small sets NEVER leave blank space
+      let colClass = 'col-6 col-md-6 col-lg-3';
+      grid.classList.remove('hn-grid-count-1', 'hn-grid-count-2', 'hn-grid-count-3');
+      if (displayList.length === 1) {
+        colClass = 'col-12 col-md-6 col-lg-5 mx-auto';
+        grid.classList.add('hn-grid-count-1');
+      } else if (displayList.length === 2) {
+        colClass = 'col-6 col-md-6 col-lg-6';
+        grid.classList.add('hn-grid-count-2');
+      } else if (displayList.length === 3) {
+        colClass = 'col-6 col-md-4 col-lg-4';
+        grid.classList.add('hn-grid-count-3');
       }
 
-      const displayList = filtered.slice(0, targetCount);
-
-      // If fewer than 4 items, adapt column widths so they fill the row nicely without empty gaps
-      let customCol = '';
-      if (displayList.length === 1) customCol = 'col-12 col-md-6 col-lg-5 mx-auto';
-      else if (displayList.length === 2) customCol = 'col-6 col-md-6 col-lg-6';
-      else if (displayList.length === 3) customCol = 'col-6 col-md-4 col-lg-4';
-
-      grid.innerHTML = displayList.map(p => renderProductCard(p, customCol)).join('');
+      grid.innerHTML = displayList.map(p => renderProductCard(p, colClass)).join('');
       if (typeof initScrollAnimations === 'function') initScrollAnimations();
     }
     window.renderFeaturedSection = renderFeaturedSection;

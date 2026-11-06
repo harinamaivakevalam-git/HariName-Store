@@ -25,7 +25,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   
   <!-- Harinama Store Master Stylesheet -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=27">
+  <link rel="stylesheet" href="/assets/css/style.css?v=29">
   <!-- Brand Favicon -->
   <link rel="icon" type="image/jpeg" href="/assets/images/krishna-logo.jpg">
   <link rel="shortcut icon" href="/favicon.ico">
@@ -175,9 +175,9 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/assets/js/product-image-service.js?v=6"></script>
-  <script src="/assets/js/data.js?v=6"></script>
-  <script src="/assets/js/components.js?v=6"></script>
+  <script src="/assets/js/product-image-service.js?v=29"></script>
+  <script src="/assets/js/data.js?v=29"></script>
+  <script src="/assets/js/components.js?v=29"></script>
   <script>
     let activeCollection = 'all';
     let currentPage = 1;
@@ -207,9 +207,17 @@
 
       // Dynamic column sizing so 1, 2, or 3 products fill the row nicely without empty gaps
       let colClass = 'col-6 col-md-4 col-lg-3';
-      if (items.length === 1) colClass = 'col-12 col-md-6 col-lg-5 mx-auto';
-      else if (items.length === 2) colClass = 'col-6 col-md-6 col-lg-6';
-      else if (items.length === 3) colClass = 'col-6 col-md-4 col-lg-4';
+      grid.classList.remove('hn-grid-count-1', 'hn-grid-count-2', 'hn-grid-count-3');
+      if (items.length === 1) {
+        colClass = 'col-12 col-md-6 col-lg-5 mx-auto';
+        grid.classList.add('hn-grid-count-1');
+      } else if (items.length === 2) {
+        colClass = 'col-6 col-md-6 col-lg-6';
+        grid.classList.add('hn-grid-count-2');
+      } else if (items.length === 3) {
+        colClass = 'col-6 col-md-4 col-lg-4';
+        grid.classList.add('hn-grid-count-3');
+      }
 
       let mainHtml = items.map(p => {
         const isWish = wishlist.includes(p.id) || (p.legacy_id && wishlist.includes(p.legacy_id)) || (p.slug && wishlist.includes(p.slug));
@@ -253,7 +261,8 @@
       let extraHtml = '';
       if (items.length > 0 && items.length < 4 && typeof HARINAMA_DATA !== 'undefined' && Array.isArray(HARINAMA_DATA.products)) {
         const itemIds = new Set(items.map(p => p.id));
-        const extraProds = HARINAMA_DATA.products.filter(p => !itemIds.has(p.id)).slice(0, 4);
+        // Fill enough extra products to make complete 4-column rows (up to 8 items)
+        const extraProds = HARINAMA_DATA.products.filter(p => !itemIds.has(p.id)).slice(0, 8);
         if (extraProds.length > 0) {
           extraHtml = `
             <div class="col-12 mt-4 pt-3 border-top">
@@ -497,34 +506,43 @@
             return new Date(b.created_at || 0) - new Date(a.created_at || 0);
           });
         } else if (activeCuratedFilter === 'best-sellers') {
-          // 🔥 Best Sellers: Authentic daily Vaishnava Kanthi Malas & popular neckwear
-          filtered = filtered.filter(p => {
-            const name = (p.name || '').toLowerCase();
-            return name.includes('kanthi mala') || name.includes('traditional hare krishna');
-          }).sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+          // 🔥 Best Sellers: Authentic daily Vaishnava Kanthi Malas, popular keychains & devotee favorites first
+          filtered = [...filtered].sort((a, b) => {
+            const aName = (a.name || '').toLowerCase();
+            const bName = (b.name || '').toLowerCase();
+            const aScore = aName.includes('kanthi mala') ? 3 : (aName.includes('keychain') ? 2 : 1);
+            const bScore = bName.includes('kanthi mala') ? 3 : (bName.includes('keychain') ? 2 : 1);
+            if (bScore !== aScore) return bScore - aScore;
+            return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
+          });
         } else if (activeCuratedFilter === 'gift-sets') {
-          // 🎁 Gift Sets: 108 Beads Traditional Japa Malas & Devotional Gift Sets
-          filtered = filtered.filter(p => {
-            const name = (p.name || '').toLowerCase();
-            const desc = (p.description || '').toLowerCase();
-            const slug = (p.category_slug || '').toLowerCase();
-            return name.includes('108 beads') || name.includes('pendant') || name.includes('gift') || desc.includes('gift') || slug.includes('gift');
-          }).sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
+          // 🎁 Gift Sets: 108 Beads Traditional Japa Malas, gift combos, folding pocket mirrors first
+          filtered = [...filtered].sort((a, b) => {
+            const aName = (a.name || '').toLowerCase();
+            const bName = (b.name || '').toLowerCase();
+            const aScore = aName.includes('108 beads') ? 4 : (aName.includes('mirror') ? 3 : (aName.includes('gift') ? 2 : 1));
+            const bScore = bName.includes('108 beads') ? 4 : (bName.includes('mirror') ? 3 : (bName.includes('gift') ? 2 : 1));
+            if (bScore !== aScore) return bScore - aScore;
+            return (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0);
+          });
         } else if (activeCuratedFilter === 'festival') {
-          // 🌸 Festival Collection: Deity pendants (Jagannath, Radhe) & Sacred multi-round festive neckwear
-          filtered = filtered.filter(p => {
-            const name = (p.name || '').toLowerCase();
-            return name.includes('jagannath') || name.includes('radhe') || name.includes('3 round') || name.includes('2 round');
-          }).sort((a, b) => {
-            const aScore = (a.name.includes('Jagannath') ? 4 : (a.name.includes('Radhe') ? 3 : (a.name.includes('3 Round') ? 2 : 1)));
-            const bScore = (b.name.includes('Jagannath') ? 4 : (b.name.includes('Radhe') ? 3 : (b.name.includes('3 Round') ? 2 : 1)));
-            return bScore - aScore;
+          // 🌸 Festival Collection: Deity pendants (Jagannath, Radhe), multi-round malas & spiritual decor first
+          filtered = [...filtered].sort((a, b) => {
+            const aName = (a.name || '').toLowerCase();
+            const bName = (b.name || '').toLowerCase();
+            const aScore = (aName.includes('jagannath') ? 4 : (aName.includes('radhe') ? 3 : (aName.includes('wall art') ? 2 : 1)));
+            const bScore = (bName.includes('jagannath') ? 4 : (bName.includes('radhe') ? 3 : (bName.includes('wall art') ? 2 : 1)));
+            if (bScore !== aScore) return bScore - aScore;
+            return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
           });
         } else if (activeCuratedFilter === 'under-299') {
-          // 💛 Under ₹299: Strictly products priced <= ₹299 (sorted low to high)
-          filtered = filtered
-            .filter(p => (parseFloat(p.price) || 0) <= 299)
-            .sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+          // 💛 Under ₹299: Products priced <= ₹299 first (sorted low to high), followed by signature higher-value items
+          filtered = [...filtered].sort((a, b) => {
+            const aUnder = (parseFloat(a.price) || 0) <= 299 ? 1 : 0;
+            const bUnder = (parseFloat(b.price) || 0) <= 299 ? 1 : 0;
+            if (bUnder !== aUnder) return bUnder - aUnder;
+            return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
+          });
         } else if (activeCuratedFilter === 'specials') {
           // 🪷 HarinamaStore SPECIALS: Premium signature collections & high-value sacred items
           filtered = [...filtered].sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));

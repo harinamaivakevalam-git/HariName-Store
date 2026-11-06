@@ -1258,7 +1258,9 @@
         e.preventDefault();
         e.stopPropagation();
       }
-      window.location.href = '/index.html?auth=1&prompt=wishlist';
+      openAuthModal(() => {
+        window.location.href = '/wishlist';
+      }, 'Sign in to access your sacred wishlist and saved items 🌸');
       return false;
     }
     return true;
@@ -1827,7 +1829,7 @@ const renderProductCard = (p, customColClass = '') => {
     <div class="${colClass}">
       <div class="hn-product-card" data-product-id="${p.id}" data-legacy-id="${p.legacy_id || ''}">
         
-        <button class="hn-card-wishlist ${isWish ? 'active text-danger' : ''}" onclick="toggleWishlist('${p.id}', this)" title="Wishlist" aria-label="Add to wishlist">
+        <button type="button" class="hn-card-wishlist ${isWish ? 'active text-danger' : ''}" onclick="toggleWishlist('${p.id}', this)" title="Wishlist" aria-label="Add to wishlist">
           <i class="bi ${isWish ? 'bi-heart-fill text-danger' : 'bi-heart'}"></i>
         </button>
 
@@ -2057,9 +2059,11 @@ const toggleWishlist = (productIdOrObj, btn = null) => {
 
   // Update ALL heart buttons in the DOM matching this product
   const idSelectors = [
-    `[data-product-id="${canonId}"] .hn-card-wishlist`,
-    `[data-product-id="${productId}"] .hn-card-wishlist`
+    `[data-product-id="${canonId}"] .hn-card-wishlist`
   ];
+  if (rawId && rawId !== canonId) {
+    idSelectors.push(`[data-product-id="${rawId}"] .hn-card-wishlist`);
+  }
   if (legacyId) {
     idSelectors.push(`[data-product-id="${legacyId}"] .hn-card-wishlist`);
     idSelectors.push(`[data-legacy-id="${legacyId}"] .hn-card-wishlist`);
@@ -2069,7 +2073,10 @@ const toggleWishlist = (productIdOrObj, btn = null) => {
   }
 
   const buttonsToUpdate = new Set();
-  if (btn && btn.id !== 'hn-detail-wishlist-btn') buttonsToUpdate.add(btn);
+  if (btn) {
+    const actualBtn = (btn.closest && typeof btn.closest === 'function') ? (btn.closest('.hn-card-wishlist') || btn) : btn;
+    if (actualBtn && actualBtn.id !== 'hn-detail-wishlist-btn') buttonsToUpdate.add(actualBtn);
+  }
 
   // Also check product details wishlist button separately
   const detailBtn = document.getElementById('hn-detail-wishlist-btn');
